@@ -708,10 +708,28 @@ class Ligand(DataModelAbstractBase):
             relationship |= ChemicalRelationship.DISTINCT
         return relationship
 
-    def sort_confs(self, by: str, ascending: bool = True) -> np.ndarray:
+    def sort_confs_by_sd_tag_value(self, by: str, ascending: bool = True) -> np.ndarray:
         """
-        Sort the conformers of the ligand by a particular tag.
-        Returns the indices of the conformers in the sorted order.
+        Sort the conformers of the ligand by a particular sd tag.
+        Changes the Ligand object IN PLACE and returns the indices of the conformers in the sorted order.
+
+        Parameters
+        ----------
+        by: str
+            Key value of SD tag to use
+        ascending: bool
+            Whether to sort the values in ascending order, by default True.
+
+        Returns
+        -------
+        np.ndarray
+            Array of len(num_confs) returned by `np.argsort`.
+            Represents the set of indices that sorts the original conformer list into the new order.
+
+        Raises
+        ------
+        Value Error
+            If 'by' tag not found in ligand tags or if unable to sort the conformers
         """
         import numpy as np
         from asapdiscovery.data.backend.openeye import get_multiconf_SD_data

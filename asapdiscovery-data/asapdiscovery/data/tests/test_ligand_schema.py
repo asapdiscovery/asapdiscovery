@@ -263,7 +263,7 @@ def test_multiconformer_sorting(sort_by, top_tags_dict, multipose_ligand):
         "Dataset": "Mpro-P2005_0A",
     }
 
-    lig.sort_confs(sort_by, ascending=True)
+    lig.sort_confs_by_sd_tag_value(sort_by, ascending=True)
 
     assert lig.tags == top_tags_dict
     assert lig_unsorted.tags != lig.tags
