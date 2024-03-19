@@ -94,7 +94,10 @@ def get_SD_data(mol: Chem.Mol) -> dict[str, list]:
         Dictionary of SD data
     """
     if mol.GetNumConformers() == 1:
-        from asapdiscovery.data.util.data_conversion import get_dict_of_lists_from_dict_of_str
+        from asapdiscovery.data.util.data_conversion import (
+            get_dict_of_lists_from_dict_of_str,
+        )
+
         return get_dict_of_lists_from_dict_of_str(_get_SD_data(mol))
 
     from asapdiscovery.data.util.data_conversion import (
