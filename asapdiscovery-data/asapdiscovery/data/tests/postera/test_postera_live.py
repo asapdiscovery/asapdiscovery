@@ -19,6 +19,7 @@ from asapdiscovery.data.services.postera.molecule_set import (
 from asapdiscovery.data.services.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.services.services_config import PosteraSettings
+from requests.exceptions import HTTPError
 
 # WARNING IMPORTANT: - this is a live test and will make real requests to the POSTERA API
 # A sanboxed API key is required to run this test, DO NOT USE A PRODUCTION API KEY
@@ -102,7 +103,8 @@ class TestPosteraLive:
     def test_garbage_api_key(self):
         postera_settings_garbage = PosteraSettings(POSTERA_API_KEY="garbage_api")
         ms_api = MoleculeSetAPI.from_settings(postera_settings_garbage)
-        assert ms_api.list_available() == {}
+        with pytest.raises(HTTPError):
+            ms_api.list_available()
 
     def test_get(self, live_postera_ms_api_instance, simple_moleculeset):
         molecule_set_name, uuid = simple_moleculeset
