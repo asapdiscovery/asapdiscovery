@@ -280,10 +280,7 @@ class Ligand(DataModelAbstractBase):
         """
         Convert the current molecule state to an RDKit molecule including all fields as SD tags.
         """
-        from asapdiscovery.data.backend.rdkit import (
-            sdf_str_to_rdkit_mol,
-            set_SD_data,
-        )
+        from asapdiscovery.data.backend.rdkit import sdf_str_to_rdkit_mol, set_SD_data
         from rdkit import Chem
 
         rdkit_mol: Chem.Mol = sdf_str_to_rdkit_mol(self.data)
@@ -307,10 +304,11 @@ class Ligand(DataModelAbstractBase):
 
         # set the SD that is different for each conformer
         # convert to str first
-        data.update({
-            tag: [str(v) for v in values] for tag, values in self.conf_tags.items()
-        })
+        data.update(
+            {tag: [str(v) for v in values] for tag, values in self.conf_tags.items()}
+        )
         import pdb
+
         pdb.set_trace()
         set_SD_data(rdkit_mol, data)
         return rdkit_mol
