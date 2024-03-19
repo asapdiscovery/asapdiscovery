@@ -3,7 +3,7 @@ import traceback
 from unittest import mock
 
 import pytest
-from asapdiscovery.docking.cli import docking as cli
+from asapdiscovery.workflows.docking_workflows.cli import docking as cli
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.simulation.simulate import SimulationResult, VanillaMDSimulator
 from click.testing import CliRunner

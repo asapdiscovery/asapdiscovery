@@ -25,7 +25,8 @@ dependencies = []
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-asap-docking = "asapdiscovery.workflows.cli:docking"
+asap-docking = "asapdiscovery.workflows.docking_workflows.cli:docking"
+asap-prep = "asapdiscovery.workflows.prep_workflows.cli:prep"
 
 [tool.setuptools.packages.find]
 where = ["."]
