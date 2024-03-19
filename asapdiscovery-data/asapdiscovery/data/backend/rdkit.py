@@ -4,6 +4,7 @@ from typing import Union
 from asapdiscovery.data.schema.schema_base import read_file_directly
 from rdkit import Chem
 
+
 def _set_SD_data(mol: Union[Chem.Mol, Chem.Conformer], data: dict[str, str]):
     """
     Set the SD data on an rdkit molecule or conformer
@@ -18,6 +19,7 @@ def _set_SD_data(mol: Union[Chem.Mol, Chem.Conformer], data: dict[str, str]):
     """
     for key, value in data.items():
         mol.SetProp(str(key), str(value))
+
 
 def set_SD_data(mol: Chem.Mol, data: dict[str, list]):
     """
@@ -53,6 +55,7 @@ def set_SD_data(mol: Chem.Mol, data: dict[str, list]):
 
     # Set the properties for the highest level to be the data for the first conformer
     from asapdiscovery.data.util.data_conversion import get_first_value_of_dict_of_lists
+
     first_conf_data = get_first_value_of_dict_of_lists(data)
     _set_SD_data(mol, first_conf_data)
 
@@ -72,6 +75,7 @@ def _get_SD_data(mol: Union[Chem.Mol, Chem.Conformer]) -> dict[str, str]:
         Dictionary of SD data
     """
     return mol.GetPropsAsDict()
+
 
 def get_SD_data(mol: Chem.Mol) -> dict[str, list]:
     """
@@ -93,7 +97,10 @@ def get_SD_data(mol: Chem.Mol) -> dict[str, list]:
         from asapdiscovery.data.util.data_conversion import get_dict_of_lists_from_dict_of_str
         return get_dict_of_lists_from_dict_of_str(_get_SD_data(mol))
 
-    from asapdiscovery.data.util.data_conversion import get_dict_of_lists_from_list_of_dicts
+    from asapdiscovery.data.util.data_conversion import (
+        get_dict_of_lists_from_list_of_dicts,
+    )
+
     data_list = [_get_SD_data(conf) for conf in mol.GetConformers()]
     return get_dict_of_lists_from_list_of_dicts(data_list)
 
