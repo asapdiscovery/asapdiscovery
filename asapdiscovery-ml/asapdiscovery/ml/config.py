@@ -170,23 +170,22 @@ class EarlyStoppingConfig(BaseModel):
     def check_args(cls, values):
         match values["es_type"]:
             case EarlyStoppingType.best:
-                assert (
-                    values["patience"] is not None
-                ), "Value required for patience when using BestEarlyStopping."
+                if values["patience"] is None:
+                    raise ValueError(
+                        "Value required for patience when using BestEarlyStopping."
+                    )
             case EarlyStoppingType.converged:
-                assert (values["n_check"] is not None) and (
-                    values["divergence"] is not None
-                ), (
-                    "Values required for n_check and divergence when using "
-                    "ConvergedEarlyStopping."
-                )
+                if (values["n_check"] is None) or (values["divergence"] is None):
+                    raise ValueError(
+                        "Values required for n_check and divergence when using "
+                        "ConvergedEarlyStopping."
+                    )
             case EarlyStoppingType.patient_converged:
-                assert (values["n_check"] is not None) and (
-                    values["divergence"] is not None
-                ), (
-                    "Values required for n_check and divergence when using "
-                    "PatientConvergedEarlyStopping."
-                )
+                if (values["n_check"] is None) or (values["divergence"] is None):
+                    raise ValueError(
+                        "Values required for n_check and divergence when using "
+                        "PatientConvergedEarlyStopping."
+                    )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
@@ -272,15 +271,19 @@ class DatasetConfig(BaseModel):
         inp = values["input_data"][0]
         match values["ds_type"]:
             case DatasetType.graph:
-                assert isinstance(inp, Ligand), (
-                    "Expected Ligand input data for graph-based model, but got "
-                    f"{type(inp)}."
-                )
+                if not isinstance(inp, Ligand):
+                    raise ValueError(
+                        "Expected Ligand input data for graph-based model, but got "
+                        f"{type(inp)}."
+                    )
+
             case DatasetType.structural:
-                assert isinstance(inp, Complex), (
-                    "Expected Complex input data for structure-based model, but got "
-                    f"{type(inp)}."
-                )
+                if not isinstance(inp, Complex):
+                    raise ValueError(
+                        "Expected Complex input data for structure-based model, but got "
+                        f"{type(inp)}."
+                    )
+
             case other:
                 raise ValueError(f"Unknown dataset type {other}.")
 
