@@ -127,13 +127,24 @@ def test_ligand_from_sdf_title_used(moonshot_sdf):
     assert lig.compound_name == "Mpro-P0008_0A_ERI-UCB-ce40166b-17"
 
 
-def test_multi_pose_ligand_roundtrip(multipose_ligand, tmp_path):
+def test_multi_pose_ligand_sdf_roundtrip(multipose_ligand, tmp_path):
     lig = Ligand.from_sdf(multipose_ligand)
     assert lig.num_poses == 50
 
     lig.to_sdf(tmp_path / "test.sdf")
 
     lig2 = Ligand.from_sdf(tmp_path / "test.sdf")
+
+    assert lig2.num_poses == 50
+    assert lig2 == lig
+
+def test_multi_pose_ligand_json_roundtrip(multipose_ligand, tmp_path):
+    lig = Ligand.from_sdf(multipose_ligand)
+    assert lig.num_poses == 50
+
+    lig.to_json_file(tmp_path / "test.json")
+
+    lig2 = Ligand.from_json_file(tmp_path / "test.json")
 
     assert lig2.num_poses == 50
     assert lig2 == lig
