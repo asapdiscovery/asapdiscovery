@@ -15,7 +15,6 @@ from asapdiscovery.ml.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
-from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
 from mtenn.config import (
     E3NNModelConfig,
     GATModelConfig,
@@ -734,7 +733,7 @@ class Trainer(BaseModel):
 
             # Stop training if EarlyStopping says to
             if self.es:
-                if isinstance(self.es, BestEarlyStopping) and self.es.check(
+                if self.es_config.es_type == "best" and self.es.check(
                     epoch_idx, epoch_val_loss, self.model.state_dict()
                 ):
                     print(
@@ -757,19 +756,65 @@ class Trainer(BaseModel):
                                 "best_loss": self.es.best_loss,
                             }
                         )
+                    use_epoch = self.es.best_epoch
                     break
-                elif isinstance(self.es, ConvergedEarlyStopping) and self.es.check(
+                elif self.es_config.es_type == "patient_converged" and self.es.check(
+                    epoch_idx, epoch_val_loss, self.model.state_dict()
+                ):
+                    print(
+                        (
+                            f"Stopping training after epoch {epoch_idx}, "
+                            f"using weights from epoch {self.es.converged_epoch}"
+                        ),
+                        flush=True,
+                    )
+                    if self.log_file:
+                        self.logger.info(
+                            f"Stopping training after epoch {epoch_idx}, "
+                            f"using weights from epoch {self.es.converged_epoch}"
+                        )
+                    self.model.load_state_dict(self.es.converged_wts)
+                    if self.use_wandb or self.sweep:
+                        wandb.log(
+                            {
+                                "converged_epoch": self.es.converged_epoch,
+                                "converged_loss": self.es.converged_loss,
+                            }
+                        )
+                    use_epoch = self.es.converged_epoch
+                    break
+                elif self.es_config.es_type == "converged" and self.es.check(
                     epoch_val_loss
                 ):
                     print(f"Stopping training after epoch {epoch_idx}", flush=True)
                     if self.log_file:
                         self.logger.info(f"Stopping training after epoch {epoch_idx}")
+                    use_epoch = epoch_idx
                     break
+        else:
+            use_epoch = None
+
+        if use_epoch is not None:
+            (self.output_dir / "loss_dict_full.json").write_text(
+                json.dumps(self.loss_dict)
+            )
+            # Trim the loss_dict
+            self.loss_dict = {
+                sp: {
+                    compound_id: {
+                        k: v[: use_epoch + 1] if isinstance(v, list) else v
+                        for k, v in compound_d.items()
+                    }
+                    for compound_id, compound_d in sp_d.items()
+                }
+                for sp, sp_d in self.loss_dict.items()
+            }
 
         if self.use_wandb or self.sweep:
             wandb.finish()
 
         torch.save(self.model.state_dict(), self.output_dir / "final.th")
+        (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
     def _update_loss_dict(
         self,
