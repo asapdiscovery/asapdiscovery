@@ -280,10 +280,7 @@ class Ligand(DataModelAbstractBase):
         """
         Convert the current molecule state to an RDKit molecule including all fields as SD tags.
         """
-        from asapdiscovery.data.backend.rdkit import (
-            sdf_str_to_rdkit_mol,
-            set_SD_data,
-        )
+        from asapdiscovery.data.backend.rdkit import sdf_str_to_rdkit_mol, set_SD_data
         from rdkit import Chem
 
         rdkit_mol: Chem.Mol = sdf_str_to_rdkit_mol(self.data)
