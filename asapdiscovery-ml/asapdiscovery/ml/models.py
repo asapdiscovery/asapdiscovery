@@ -241,7 +241,7 @@ class MLModelRegistry(BaseModel):
             {model.type for model in self.models.values() if target in model.targets}
         )
 
-    def get_latest_models_for_target(self, target: TargetTags) -> List[MLModelSpec]:
+    def get_latest_models_for_target(self, target: TargetTags) -> list[MLModelSpec]:
         """
         For each model type, get the latest model spec for a target
 
