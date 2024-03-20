@@ -43,6 +43,8 @@ There are a range of workflows and tooling to use split into several namespace s
 
 `asapdiscovery-simulation`: MD simulations and analysis using OpenMM
 
+`asapdiscovery-workflows`: Workflows that combine components to enable project support
+
 
 ### Disclaimer
 
