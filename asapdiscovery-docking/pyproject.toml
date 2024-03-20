@@ -11,7 +11,7 @@ authors = [
 ]
 description = "API and scripts related to running docking and preparing the input structures"
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.9,<3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -26,7 +26,6 @@ dependencies = []
 
 [project.scripts]
 make-docked-complexes = "asapdiscovery.docking.scripts.make_docked_complexes_schema_v2:main"
-asap-docking = "asapdiscovery.docking.cli:docking"
 
 [tool.setuptools.packages.find]
 where = ["."]

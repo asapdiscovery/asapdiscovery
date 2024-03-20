@@ -6,13 +6,17 @@ def cli(help="Command-line interface for asapdiscovery"):
     ...
 
 
-from asapdiscovery.docking.cli import docking  # noqa: F401, E402, F811
+from asapdiscovery.workflows.docking_workflows.cli import (  # noqa: F401, E402, F811
+    docking,
+)
 
 cli.add_command(docking)
 
-from asapdiscovery.modeling.cli import modeling  # noqa: F401, E402, F811
+from asapdiscovery.workflows.prep_workflows.cli import (  # noqa: F401, E402, F811
+    protein_prep,
+)
 
-cli.add_command(modeling)
+cli.add_command(protein_prep)
 
 from asapdiscovery.alchemy.cli.cli import alchemy  # noqa: F401, E402, F811
 

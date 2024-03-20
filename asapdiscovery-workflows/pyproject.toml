@@ -3,15 +3,15 @@ requires = ["setuptools>=61.0", "versioningit"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "asapdiscovery-modeling"
+name = "asapdiscovery-workflows"
 #version = "0.0.1"
 dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
 ]
-description = "API and scripts for preparing protein and ligand models for downstream applications"
+description = "API and scripts related to running docking and preparing the input structures"
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.9,<3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -25,7 +25,8 @@ dependencies = []
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-blast-search = "asapdiscovery.modeling.scripts.blast_search:main"
+asap-docking = "asapdiscovery.workflows.docking_workflows.cli:docking"
+asap-prep = "asapdiscovery.workflows.prep_workflows.cli:protein_prep"
 
 [tool.setuptools.packages.find]
 where = ["."]
