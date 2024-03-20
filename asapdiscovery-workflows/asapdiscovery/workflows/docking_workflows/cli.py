@@ -24,7 +24,7 @@ from asapdiscovery.cli.cli_args import (
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
-
+from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.workflows.docking_workflows.cross_docking import (
     CrossDockingWorkflowInputs,
     cross_docking_workflow,
@@ -37,7 +37,6 @@ from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
     SmallScaleDockingInputs,
     small_scale_docking_workflow,
 )
-from asapdiscovery.simulation.simulate import OpenMMPlatform
 
 
 @click.group()

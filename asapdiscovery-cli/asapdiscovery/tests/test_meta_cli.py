@@ -1,7 +1,8 @@
+import traceback
+
 import pytest
 from asapdiscovery.cli.cli import cli
 from click.testing import CliRunner
-import traceback
 
 
 def click_success(result):
@@ -11,11 +12,13 @@ def click_success(result):
         print(result.exc_info[0], result.exc_info[1])
     return result.exit_code == 0
 
+
 def test_toplevel_runnable():
     runner = CliRunner()
     args = ["--help"]
     result = runner.invoke(cli, args)
     assert click_success(result)
+
 
 @pytest.mark.parametrize("subcommand", ["protein-prep", "docking", "alchemy"])
 def test_subcommand_runnable(subcommand):

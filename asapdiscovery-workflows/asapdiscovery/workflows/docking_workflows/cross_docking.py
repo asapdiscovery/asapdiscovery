@@ -19,8 +19,10 @@ from asapdiscovery.docking.docking import DockingInputMultiStructure
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer import ChemGauss4Scorer, MetaScorer
-from asapdiscovery.workflows.docking_workflows.workflows import DockingWorkflowInputsBase
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
+from asapdiscovery.workflows.docking_workflows.workflows import (
+    DockingWorkflowInputsBase,
+)
 from pydantic import Field, PositiveInt
 
 
