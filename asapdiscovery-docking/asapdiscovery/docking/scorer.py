@@ -370,8 +370,8 @@ class MLModelScorer(ScorerBase):
         models = ASAPMLModelRegistry.get_latest_models_for_target(target)
         scorer_classes = []
         for model in models:
-            ml_scorer_class = get_ml_scorer_cls_from_model_type(model.model_type)
-            scorer_classes.append(ml_scorer_class.from_model_name(model.model_name))
+            ml_scorer_class = get_ml_scorer_cls_from_model_type(model.type)
+            scorer_classes.append(ml_scorer_class.from_model_name(model.name))
         return scorer_classes
 
     @staticmethod
