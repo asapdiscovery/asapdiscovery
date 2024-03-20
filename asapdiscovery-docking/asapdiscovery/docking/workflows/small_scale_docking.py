@@ -41,7 +41,6 @@ from asapdiscovery.docking.scorer import (
 )
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.genetics.fitness import target_has_fitness_data
-from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from pydantic import Field, PositiveInt, root_validator, validator
@@ -95,9 +94,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         1, description="Number of targets to dock each ligand against."
     )
 
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
-    )
     allow_dask_cuda: bool = Field(
         True,
         description="Whether to allow regenerating dask cuda cluster when in local mode",
@@ -111,20 +107,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     md_openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
-
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
 
     @root_validator
     @classmethod
@@ -405,9 +387,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
+            fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        )
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(

@@ -11,6 +11,8 @@ from asapdiscovery.cli.cli_args import (
     loglevel,
     md_args,
     ml_scorer,
+    ml_scorer_bymodel,
+    ml_scorer_auto,
     output_dir,
     overwrite,
     pdb_file,
@@ -88,6 +90,8 @@ def docking():
 @overwrite
 @input_json
 @ml_scorer
+@ml_scorer_bymodel
+@ml_scorer_auto
 @loglevel
 @walltime
 def large_scale(
@@ -113,6 +117,8 @@ def large_scale(
     dask_type: DaskType = DaskType.LOCAL,
     dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
+    ml_scorer_bymodel: Optional[list[str]] = None,
+    ml_scorer_auto: bool = True,
     loglevel: Union[int, str] = logging.INFO,
     walltime: Optional[str] = "72h",
 ):
@@ -145,6 +151,8 @@ def large_scale(
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
             ml_scorers=ml_scorer,
+            ml_scorers_bymodel=ml_scorer_bymodel,
+            ml_scorers_auto=ml_scorer_auto,
             output_dir=output_dir,
             overwrite=overwrite,
             loglevel=loglevel,
@@ -292,6 +300,8 @@ def cross_docking(
 @overwrite
 @input_json
 @ml_scorer
+@ml_scorer_bymodel
+@ml_scorer_auto
 @md_args
 @loglevel
 @walltime
@@ -316,6 +326,8 @@ def small_scale(
     dask_type: DaskType = DaskType.LOCAL,
     dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
+    ml_scorer_bymodel: Optional[list[str]] = None,
+    ml_scorer_auto: bool = True,
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
@@ -349,6 +361,8 @@ def small_scale(
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
             ml_scorers=ml_scorer,
+            ml_scorers_bymodel=ml_scorer_bymodel,
+            ml_scorers_auto=ml_scorer_auto,
             output_dir=output_dir,
             overwrite=overwrite,
             md=md,

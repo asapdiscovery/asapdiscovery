@@ -39,7 +39,6 @@ from asapdiscovery.docking.scorer import (
 )
 from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.genetics.fitness import target_has_fitness_data
-from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from pydantic import Field, PositiveInt, validator
 
@@ -86,24 +85,6 @@ class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
         False,
         description="Whether to allow retries in docking with varying settings, warning: more expensive",
     )
-
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
-    )
-
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
 
 
 def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):

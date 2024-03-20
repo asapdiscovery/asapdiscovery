@@ -8,7 +8,9 @@ from typing import Optional, Union
 
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
-from pydantic import BaseModel, Field, PositiveInt, root_validator
+from asapdiscovery.ml.models import ASAPMLModelRegistry
+
+from pydantic import BaseModel, Field, PositiveInt, root_validator, validator
 
 
 class DockingWorkflowInputsBase(BaseModel):
@@ -134,3 +136,44 @@ class PosteraDockingWorkflowInputs(DockingWorkflowInputsBase):
     postera_molset_name: Optional[str] = Field(
         None, description="The name of the molecule set to upload to."
     )
+
+    ml_scorers: Optional[list[str]] = Field(
+        None,
+        description="The type of the ml scorers to use eg, GAT, schnet, e3nn, will pick latest available for target",
+    )
+
+    ml_scorers_bymodel: Optional[list[str]] = Field(
+        None,
+        description="The exact name of the ml scorers to use, eg. asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06",
+    )
+
+    ml_scorers_auto: bool = Field(
+        True,
+        description="Whether to automatically latest available ml scorers for target",
+    )
+
+    @classmethod
+    @validator("ml_scorers")
+    def ml_scorers_must_be_valid(cls, v):
+        """
+        Validate that the ml scorers are valid
+        """
+        if v is not None:
+            for ml_scorer in v:
+                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
+                    raise ValueError(
+                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
+                    )
+        return v
+
+    @classmethod
+    @validator("ml_scorers_bymodel")
+    def ml_scorers_bymodel_must_be_valid(cls, v):
+        """
+        Validate that the ml scorers are valid
+        """
+        if v is not None:
+            for ml_model_name in v:
+                ASAPMLModelRegistry.get_model(ml_model_name)
+                # will throw if not found
+        return v
