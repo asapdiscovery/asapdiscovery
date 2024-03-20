@@ -84,12 +84,6 @@ jobs:
         micromamba list
 
     - name: Run tests
-      env:
-        CDDTOKEN: ${{ secrets.ASAP_CDD_VAULT_TOKEN_READ_ONLY }}
-        MOONSHOT_CDD_VAULT_NUMBER: ${{ secrets.MOONSHOT_CDD_VAULT_NUMBER }}
-        POSTERA_API_KEY: ${{ secrets.ASAP_POSTERA_TESTING_API_KEY }}
-        POSTERA_API_KEY_IS_SANDBOX: ${{ secrets.POSTERA_API_KEY_IS_SANDBOX }}
-        POSTERA_API_KEY_HASH: ${{ secrets.ASAP_POSTERA_TESTING_API_KEY_HASH }}
       run: |
         # run each package test suite; append to coverage file
         # Exit immediately if a command exits with a non-zero status.
