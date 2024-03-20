@@ -305,6 +305,23 @@ class MLModelRegistry(BaseModel):
             raise ValueError(f"Model {name} not found in model registry")
         return self.models[name]
 
+    def get_model_type_from_name(self, name: str) -> ModelType:
+        """
+        Get model type by name
+
+        Parameters
+        ----------
+        name : str
+
+        Returns
+        -------
+        ModelType
+            Model type
+        """
+        if name not in self.models:
+            raise ValueError(f"Model {name} not found in model registry")
+        return self.models[name].type
+
     def get_implemented_model_types(self):
         """
         Get list of implemented model types

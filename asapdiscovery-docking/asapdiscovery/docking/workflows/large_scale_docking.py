@@ -278,31 +278,46 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         logger.info("Target has fitness data, adding FINT scorer")
         scorers.append(FINTScorer(target=inputs.target))
 
+    logger.info(f"Loaded {len(scorers)} scoring functions")
+    for scorer in scorers:
+        logger.info(f"Active scorer: {scorer.score_type}")
+
     # load ml scorers
+    ml_scorers = []
     if inputs.ml_scorers:
         for ml_scorer in inputs.ml_scorers:
             logger.info(f"Loading ml scorer: {ml_scorer}")
             scorer = MLModelScorer.from_latest_by_target_and_type(
                 inputs.target, ml_scorer
             )
-            scorers.append(scorer)
+            ml_scorers.append(scorer)
 
     if inputs.ml_scorers_bymodel:
+        logger.info("Loading ml scorers by model name")
         for ml_scorer in inputs.ml_scorers_bymodel:
-            logger.info(f"Loading ml scorer: {ml_scorer}")
-            # we assume if you gave a model name you want to raise an error if it's not found
-            scorer = MLModelScorer.from_model_name(ml_scorer, error="raise")
-            scorers.append(scorer)
+            scorer = MLModelScorer.from_model_name(ml_scorer)
+            ml_scorers.append(scorer)
 
     if inputs.ml_scorers_auto:
         logger.info("Loading all ml scorers available for target")
         # load latest available ml scorers of each type for target
-        scorers += MLModelScorer.autoselect_by_target(inputs.target)
+        ml_scorers += MLModelScorer.autoselect_by_target(inputs.target)
+
+    logger.info(f"Loaded {len(ml_scorers)} ML scorers")
+    for scorer in ml_scorers:
+        logger.info(
+            f"Active ML scorer: {scorer.model_name} with type: {scorer.model_type}"
+        )
+
+    scorers += ml_scorers
+
+    logger.info(f"Loaded {len(scorers)} scorers total")
 
     # remove None scorers
     scorers = [scorer for scorer in scorers if scorer is not None]
     # make sure scorers are unique, because of the three ways of adding them they may be duplicated
     scorers = list(set(scorers))
+    logger.info(f"Loaded {len(scorers)} unique scorers total")
 
     # score results using multiple scoring functions
     logger.info("Scoring docking results")
@@ -375,9 +390,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
-            fitness_visualizations[DockingResultCols.TARGET_ID.value]
-        )
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
 
         # join the two dataframes on ligand_id, target_id and smiles
         scores_df = scores_df.merge(

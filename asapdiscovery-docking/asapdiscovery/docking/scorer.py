@@ -133,7 +133,8 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]: ...
+    def _score() -> list[DockingResult]:
+        ...
 
     def score(
         self,
@@ -158,6 +159,9 @@ class ScorerBase(BaseModel):
             return self.scores_to_df(outputs)
         else:
             return outputs
+
+    def __hash__(self) -> int:
+        return self.score_type.__hash__()
 
     @staticmethod
     def scores_to_df(scores: list[Score]) -> pd.DataFrame:
@@ -275,6 +279,10 @@ class MLModelScorer(ScorerBase):
     model_name: str = Field(..., description="String indicating which model to use")
     inference_cls: InferenceBase = Field(..., description="Inference class")
 
+    # make sure we can hash this
+    def __hash__(self) -> int:
+        return self.model_name.__hash__()
+
     @classmethod
     def from_latest_by_target(
         cls, target: TargetTags, error: str = "skip"
@@ -334,11 +342,16 @@ class MLModelScorer(ScorerBase):
         MLModelScorer
         """
         if cls.model_type == ModelType.INVALID:
-            raise Exception("trying to instantiate some kind a baseclass")
-        inference_cls = get_inference_cls_from_model_type(cls.model_type)
+            model_type = ASAPMLModelRegistry.get_model_type_from_name(model_name)
+        else:
+            model_type = cls.model_type
+        inference_cls = get_inference_cls_from_model_type(model_type)
         inference_instance = inference_cls.from_model_name(model_name)
+        scorer_cls = get_ml_scorer_cls_from_model_type(model_type)
         if inference_instance is None:
-            estring = f"no ML model of name {model_name} found for model type: {cls.model_type}"
+            estring = (
+                f"no ML model of name {model_name} found for model type: {model_type}"
+            )
             if error == "raise":
                 raise Exception(estring)
             elif error == "skip":
@@ -346,7 +359,7 @@ class MLModelScorer(ScorerBase):
                 return None
             else:
                 raise ValueError(f"error must be 'raise' or 'skip', got {error}")
-        return cls(
+        return scorer_cls(
             targets=inference_instance.targets,
             model_name=inference_instance.model_name,
             inference_cls=inference_instance,
@@ -365,7 +378,7 @@ class MLModelScorer(ScorerBase):
         Returns
         -------
         list[MLModelScorer]
-            List of scorers, one for each model type availble for the target
+            List of scorers, one for each model type available for the target
         """
         models = ASAPMLModelRegistry.get_latest_models_for_target(target)
         scorer_classes = []
@@ -380,18 +393,6 @@ class MLModelScorer(ScorerBase):
             raise Exception("trying to instantiate some kind a baseclass")
         scorer_class = get_ml_scorer_cls_from_model_type(type)
         return scorer_class.from_latest_by_target(target)
-
-    @classmethod
-    def from_model_name(cls, model_name: str):
-        if cls.model_type == ModelType.INVALID:
-            raise Exception("trying to instantiate some kind a baseclass")
-        inference_cls = get_inference_cls_from_model_type(cls.model_type)
-        inference_instance = inference_cls.from_model_name(model_name)
-        return cls(
-            targets=inference_instance.targets,
-            model_name=inference_instance.model_name,
-            inference_cls=inference_instance,
-        )
 
 
 @register_ml_scorer

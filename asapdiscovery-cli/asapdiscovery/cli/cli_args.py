@@ -128,6 +128,7 @@ def ml_scorer_bymodel(func):
     return click.option(
         "--ml-scorer-bymodel",
         type=str,
+        multiple=True,
         help="Exact name of the ml model to use, can be specified multiple times to use multiple ml scorers.",
     )(func)
 
