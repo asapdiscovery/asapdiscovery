@@ -103,12 +103,8 @@ class Trainer(BaseModel):
     sweep: bool = Field(False, description="This run is part of a W&B sweep.")
     wandb_project: str | None = Field(None, description="W&B project name.")
     wandb_name: str | None = Field(None, description="W&B project name.")
-    extra_config: list[str] | None = Field(
-        None,
-        description=(
-            "Any extra config options to log to W&B, as a list of "
-            "comma-separated key:value pairs."
-        ),
+    extra_config: dict | None = Field(
+        None, description="Any extra config options to log to W&B."
     )
 
     # Tracker to make sure the optimizer and ML model are built before trying to train
@@ -364,6 +360,28 @@ class Trainer(BaseModel):
         automatically cast it back to a device.
         """
         return torch.device(v)
+
+    @validator("extra_config", pre=True)
+    def parse_extra_config(cls, v):
+        """
+        This is for compatibility with the CLI, in which these config args will be
+        passed as key:value strings. Here we split them up and parse into a dict.
+        """
+
+        # Just use the dict that's passed if we're not coming from the CLI
+        if isinstance(v, dict):
+            return v
+
+        extra_config = {}
+        for kvp in v:
+            try:
+                key, val = kvp.split(":")
+            except Exception:
+                raise ValueError(f"Couldn't parse key:value pair '{kvp}'.")
+
+            extra_config[key] = val
+
+        return extra_config
 
     def wandb_init(self):
         """
