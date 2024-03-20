@@ -13,7 +13,11 @@ from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.stringenum import StringEnum
 from asapdiscovery.data.util.utils import extract_compounds_from_filenames
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
-from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
+from asapdiscovery.ml.es import (
+    BestEarlyStopping,
+    ConvergedEarlyStopping,
+    PatientConvergedEarlyStopping,
+)
 from pydantic import BaseModel, Field, root_validator
 
 
@@ -123,6 +127,7 @@ class EarlyStoppingType(StringEnum):
 
     best = "best"
     converged = "converged"
+    patient_converged = "patient_converged"
 
 
 class EarlyStoppingConfig(BaseModel):
@@ -165,27 +170,39 @@ class EarlyStoppingConfig(BaseModel):
     def check_args(cls, values):
         match values["es_type"]:
             case EarlyStoppingType.best:
-                assert (
-                    values["patience"] is not None
-                ), "Value required for patience when using BestEarlyStopping."
+                if values["patience"] is None:
+                    raise ValueError(
+                        "Value required for patience when using BestEarlyStopping."
+                    )
             case EarlyStoppingType.converged:
-                assert (values["n_check"] is not None) and (
-                    values["divergence"] is not None
-                ), (
-                    "Values required for n_check and divergence when using "
-                    "ConvergedEarlyStopping."
-                )
+                if (values["n_check"] is None) or (values["divergence"] is None):
+                    raise ValueError(
+                        "Values required for n_check and divergence when using "
+                        "ConvergedEarlyStopping."
+                    )
+            case EarlyStoppingType.patient_converged:
+                if (values["n_check"] is None) or (values["divergence"] is None):
+                    raise ValueError(
+                        "Values required for n_check and divergence when using "
+                        "PatientConvergedEarlyStopping."
+                    )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
         return values
 
-    def build(self) -> BestEarlyStopping | ConvergedEarlyStopping:
+    def build(
+        self,
+    ) -> BestEarlyStopping | ConvergedEarlyStopping | PatientConvergedEarlyStopping:
         match self.es_type:
             case EarlyStoppingType.best:
                 return BestEarlyStopping(self.patience)
             case EarlyStoppingType.converged:
                 return ConvergedEarlyStopping(self.n_check, self.divergence)
+            case EarlyStoppingType.patient_converged:
+                return PatientConvergedEarlyStopping(
+                    self.n_check, self.divergence, self.patience
+                )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
@@ -254,15 +271,19 @@ class DatasetConfig(BaseModel):
         inp = values["input_data"][0]
         match values["ds_type"]:
             case DatasetType.graph:
-                assert isinstance(inp, Ligand), (
-                    "Expected Ligand input data for graph-based model, but got "
-                    f"{type(inp)}."
-                )
+                if not isinstance(inp, Ligand):
+                    raise ValueError(
+                        "Expected Ligand input data for graph-based model, but got "
+                        f"{type(inp)}."
+                    )
+
             case DatasetType.structural:
-                assert isinstance(inp, Complex), (
-                    "Expected Complex input data for structure-based model, but got "
-                    f"{type(inp)}."
-                )
+                if not isinstance(inp, Complex):
+                    raise ValueError(
+                        "Expected Complex input data for structure-based model, but got "
+                        f"{type(inp)}."
+                    )
+
             case other:
                 raise ValueError(f"Unknown dataset type {other}.")
 
