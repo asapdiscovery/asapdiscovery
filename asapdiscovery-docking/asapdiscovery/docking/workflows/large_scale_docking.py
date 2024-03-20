@@ -304,8 +304,24 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             scorer = MLModelScorer.from_latest_by_target_and_type(
                 inputs.target, ml_scorer
             )
-            if scorer:
-                scorers.append(scorer)
+            scorers.append(scorer)
+
+    if inputs.ml_scorers_bymodel:
+        for ml_scorer in inputs.ml_scorers_bymodel:
+            logger.info(f"Loading ml scorer: {ml_scorer}")
+            # we assume if you gave a model name you want to raise an error if it's not found
+            scorer = MLModelScorer.from_model_name(ml_scorer, error="raise")
+            scorers.append(scorer)
+
+    if inputs.ml_scorers_auto:
+        logger.info("Loading all ml scorers available for target")
+        # load latest available ml scorers of each type for target
+        scorers += MLModelScorer.autoselect_by_target(inputs.target)
+
+    # remove None scorers
+    scorers = [scorer for scorer in scorers if scorer is not None]
+    # make sure scorers are unique, because of the three ways of adding them they may be duplicated
+    scorers = list(set(scorers))
 
     # score results using multiple scoring functions
     logger.info("Scoring docking results")
@@ -378,9 +394,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
+            fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        )
 
         # join the two dataframes on ligand_id, target_id and smiles
         scores_df = scores_df.merge(

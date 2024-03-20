@@ -21,6 +21,7 @@ from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.genetics.fitness import target_has_fitness_data
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
+from asapdiscovery.ml.models import ASAPMLModelRegistry
 from mtenn.config import ModelType
 from pydantic import BaseModel, Field, validator
 
@@ -132,8 +133,7 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]:
-        ...
+    def _score() -> list[DockingResult]: ...
 
     def score(
         self,
@@ -261,6 +261,8 @@ def register_ml_scorer(cls):
 class MLModelScorer(ScorerBase):
     """
     Score from some kind of ML model
+
+    This is a base class for all the ML model scorers
     """
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
@@ -274,22 +276,103 @@ class MLModelScorer(ScorerBase):
     inference_cls: InferenceBase = Field(..., description="Inference class")
 
     @classmethod
-    def from_latest_by_target(cls, target: TargetTags):
+    def from_latest_by_target(
+        cls, target: TargetTags, error: str = "skip"
+    ) -> Optional["MLModelScorer"]:
+        """
+        Get the latest model for a target and a model type and return the scorer
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get model for
+        error : str, optional
+            What to do if no model is found, by default "skip" and return None
+
+        Returns
+        -------
+        MLModelScorer
+            Scorer for the model
+        """
+
         if cls.model_type == ModelType.INVALID:
             raise Exception("trying to instantiate some kind a baseclass")
         inference_cls = get_inference_cls_from_model_type(cls.model_type)
         inference_instance = inference_cls.from_latest_by_target(target)
         if inference_instance is None:
-            logger.warn(
-                f"no ML model of type {cls.model_type} found for target: {target}, skipping"
-            )
-            return None
+            estring = f"no ML model of type {cls.model_type} found for target: {target}"
+            if error == "raise":
+                raise Exception(estring)
+            elif error == "skip":
+                logger.warn(estring)
+                return None
+            else:
+                raise ValueError(f"error must be 'raise' or 'skip', got {error}")
         else:
             return cls(
                 targets=inference_instance.targets,
                 model_name=inference_instance.model_name,
                 inference_cls=inference_instance,
             )
+
+    @classmethod
+    def from_model_name(
+        cls, model_name: str, error: str = "skip"
+    ) -> Optional["MLModelScorer"]:
+        """
+        Get a scorer from a specific model name
+
+        Parameters
+        ----------
+        model_name : str
+            Name of the model to get
+        error : str, optional
+            What to do if no model is found, by default "skip" and return None
+
+        Returns
+        -------
+        MLModelScorer
+        """
+        if cls.model_type == ModelType.INVALID:
+            raise Exception("trying to instantiate some kind a baseclass")
+        inference_cls = get_inference_cls_from_model_type(cls.model_type)
+        inference_instance = inference_cls.from_model_name(model_name)
+        if inference_instance is None:
+            estring = f"no ML model of name {model_name} found for model type: {cls.model_type}"
+            if error == "raise":
+                raise Exception(estring)
+            elif error == "skip":
+                logger.warn(estring)
+                return None
+            else:
+                raise ValueError(f"error must be 'raise' or 'skip', got {error}")
+        return cls(
+            targets=inference_instance.targets,
+            model_name=inference_instance.model_name,
+            inference_cls=inference_instance,
+        )
+
+    @staticmethod
+    def autoselect_by_target(target: TargetTags) -> list["MLModelScorer"]:
+        """
+        Get the latest models of EACH TYPE for a target and return the scorers
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get models for
+
+        Returns
+        -------
+        list[MLModelScorer]
+            List of scorers, one for each model type availble for the target
+        """
+        models = ASAPMLModelRegistry.get_latest_models_for_target(target)
+        scorer_classes = []
+        for model in models:
+            ml_scorer_class = get_ml_scorer_cls_from_model_type(model.model_type)
+            scorer_classes.append(ml_scorer_class.from_model_name(model.model_name))
+        return scorer_classes
 
     @staticmethod
     def from_latest_by_target_and_type(target: TargetTags, type: ModelType):

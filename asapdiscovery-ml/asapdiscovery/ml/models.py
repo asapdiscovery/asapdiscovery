@@ -219,6 +219,50 @@ class MLModelRegistry(BaseModel):
             )
         return [model for model in self.models.values() if target in model.targets]
 
+    def get_model_types_for_target(self, target: TargetTags) -> list[ModelType]:
+        """
+        Get available model types for a target
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get models for
+
+        Returns
+        -------
+        List[ModelType]
+            List of model types
+        """
+        if target not in TargetTags.get_values():
+            raise ValueError(
+                f"Target {target} not valid, must be one of {TargetTags.get_values()}"
+            )
+        return list(
+            {model.type for model in self.models.values() if target in model.targets}
+        )
+
+    def get_latest_models_for_target(self, target: TargetTags) -> List[MLModelSpec]:
+        """
+        For each model type, get the latest model spec for a target
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get model for
+
+        Returns
+        -------
+        List[MLModelSpec]
+            List of latest model specs
+        """
+        model_types = self.get_model_types_for_target(target)
+        latest_models = []
+        for model_type in model_types:
+            latest_models.append(
+                self.get_latest_model_for_target_and_type(target, model_type)
+            )
+        return latest_models
+
     def get_latest_model_for_target_and_type(
         self, target: TargetTags, type: ModelType
     ) -> MLModelSpec:
@@ -303,20 +347,24 @@ class MLModelRegistry(BaseModel):
                 base_url=model_data["base_url"],
                 weights_resource=model_data["weights"]["resource"],
                 weights_sha256hash=model_data["weights"]["sha256hash"],
-                config_resource=model_data["config"]["resource"]
-                if has_config
-                else None,
-                config_sha256hash=model_data["config"]["sha256hash"]
-                if has_config
-                else None,
+                config_resource=(
+                    model_data["config"]["resource"] if has_config else None
+                ),
+                config_sha256hash=(
+                    model_data["config"]["sha256hash"] if has_config else None
+                ),
                 last_updated=model_data["last_updated"],
                 targets=set(model_data["targets"]),
-                mtenn_lower_pin=model_data["mtenn_lower_pin"]
-                if "mtenn_lower_pin" in model_data
-                else None,
-                mtenn_upper_pin=model_data["mtenn_upper_pin"]
-                if "mtenn_upper_pin" in model_data
-                else None,
+                mtenn_lower_pin=(
+                    model_data["mtenn_lower_pin"]
+                    if "mtenn_lower_pin" in model_data
+                    else None
+                ),
+                mtenn_upper_pin=(
+                    model_data["mtenn_upper_pin"]
+                    if "mtenn_upper_pin" in model_data
+                    else None
+                ),
             )
 
         return cls(models=models)
