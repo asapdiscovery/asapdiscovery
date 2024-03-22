@@ -9,7 +9,6 @@ from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
-    PosedLigands,
     RDKitConstrainedPoseGenerator,
 )
 from pydantic import Field

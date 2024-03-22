@@ -1,5 +1,5 @@
 import logging
-from typing import ClassVar, Literal, Union
+from typing import ClassVar, Union
 
 import numpy as np
 from asapdiscovery.data.backend.openeye import oechem
