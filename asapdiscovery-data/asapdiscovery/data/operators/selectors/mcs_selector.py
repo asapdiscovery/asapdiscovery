@@ -1,5 +1,5 @@
 import logging
-from typing import ClassVar, Union
+from typing import ClassVar, Union, Literal
 
 import numpy as np
 from asapdiscovery.data.backend.openeye import oechem
@@ -11,6 +11,84 @@ from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to back
 from pydantic import Field
 
 logger = logging.getLogger(__name__)
+
+
+def sort_by_mcs(reference_ligand: Ligand, target_ligands: list[Ligand], structure_matching: bool = False) -> np.array:
+    """
+    Get the sorted order of the target ligands by the MCS overlap with the reference ligand.
+
+    Args:
+        reference_ligand: The ligand the targets should be matched to.
+        target_ligands: The list of target ligands which should be ordered.
+        structure_matching: If structure-based matching `True` should be used or element-based `False`.
+
+    Returns:
+        An array of the target ligand indices ordered by MCS overlap.
+    """
+
+    # generate the matching expressions
+    if structure_matching is True:
+        """
+        For structure based matching
+        Options for atom matching:
+        * Aromaticity
+        * HvyDegree - # heavy atoms bonded to
+        * RingMember
+        Options for bond matching:
+        * Aromaticity
+        * BondOrder
+        * RingMember
+        """
+        atomexpr = (
+                oechem.OEExprOpts_Aromaticity
+                | oechem.OEExprOpts_HvyDegree
+                | oechem.OEExprOpts_RingMember
+        )
+        bondexpr = (
+                oechem.OEExprOpts_Aromaticity
+                | oechem.OEExprOpts_BondOrder
+                | oechem.OEExprOpts_RingMember
+        )
+    else:
+        """
+        For atom based matching
+        Options for atom matching (predefined AutomorphAtoms):
+        * AtomicNumber
+        * Aromaticity
+        * RingMember
+        * HvyDegree - # heavy atoms bonded to
+        Options for bond matching:
+        * Aromaticity
+        * BondOrder
+        * RingMember
+        """
+        atomexpr = oechem.OEExprOpts_AutomorphAtoms
+        bondexpr = (
+                oechem.OEExprOpts_Aromaticity
+                | oechem.OEExprOpts_BondOrder
+                | oechem.OEExprOpts_RingMember
+        )
+
+    # use the ref mol as the pattern
+    pattern_query = oechem.OEQMol(reference_ligand.to_oemol())
+    pattern_query.BuildExpressions(atomexpr, bondexpr)
+    mcss = oechem.OEMCSSearch(pattern_query)
+    mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
+
+    mcs_matches = []
+
+    for ligand in target_ligands:
+        # MCS search on each ligand
+        try:
+            mcs = next(iter(mcss.Match(ligand.to_oemol(), True)))
+            mcs_matches.append((mcs.NumBonds(), mcs.NumAtoms()))
+        except StopIteration:  # no match found
+            mcs_matches.append((0, 0))
+
+    # sort by the size of the MCS match
+    sort_args = np.asarray(mcs_matches)
+    sort_idx = np.lexsort(-sort_args.T)
+    return sort_idx
 
 
 class MCSSelector(SelectorBase):
@@ -72,68 +150,17 @@ class MCSSelector(SelectorBase):
         # clip n_select if it is larger than length of complexes to search from
         n_select = min(n_select, len(complexes))
 
-        if self.structure_based:
-            """
-            For structure based matching
-            Options for atom matching:
-            * Aromaticity
-            * HvyDegree - # heavy atoms bonded to
-            * RingMember
-            Options for bond matching:
-            * Aromaticity
-            * BondOrder
-            * RingMember
-            """
-            atomexpr = (
-                oechem.OEExprOpts_Aromaticity
-                | oechem.OEExprOpts_HvyDegree
-                | oechem.OEExprOpts_RingMember
-            )
-            bondexpr = (
-                oechem.OEExprOpts_Aromaticity
-                | oechem.OEExprOpts_BondOrder
-                | oechem.OEExprOpts_RingMember
-            )
-        else:
-            """
-            For atom based matching
-            Options for atom matching (predefined AutomorphAtoms):
-            * AtomicNumber
-            * Aromaticity
-            * RingMember
-            * HvyDegree - # heavy atoms bonded to
-            Options for bond matching:
-            * Aromaticity
-            * BondOrder
-            * RingMember
-            """
-            atomexpr = oechem.OEExprOpts_AutomorphAtoms
-            bondexpr = (
-                oechem.OEExprOpts_Aromaticity
-                | oechem.OEExprOpts_BondOrder
-                | oechem.OEExprOpts_RingMember
-            )
-
         # Set up the search pattern and MCS objects
         pairs = []
 
-        for ligand in ligands:
-            pattern_query = oechem.OEQMol(ligand.to_oemol())
-            pattern_query.BuildExpressions(atomexpr, bondexpr)
-            mcss = oechem.OEMCSSearch(pattern_query)
-            mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
+        complex_ligands = [c.ligand for c in complexes]
 
-            sort_args = []
-            for complex in complexes:
-                complex_mol = complex.ligand.to_oemol()
-                # MCS search
-                try:
-                    mcs = next(iter(mcss.Match(complex_mol, True)))
-                    sort_args.append((mcs.NumBonds(), mcs.NumAtoms()))
-                except StopIteration:  # no match found
-                    sort_args.append((0, 0))
-            sort_args = np.asarray(sort_args)
-            sort_idx = np.lexsort(-sort_args.T)
+        for ligand in ligands:
+            sort_idx = sort_by_mcs(
+                reference_ligand=ligand,
+                target_ligands=complex_ligands,
+                structure_matching=self.structure_based
+            )
             complexes_sorted = np.asarray(complexes)[sort_idx]
 
             for i in range(n_select):

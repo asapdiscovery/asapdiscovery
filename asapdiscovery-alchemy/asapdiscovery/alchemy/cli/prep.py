@@ -80,8 +80,8 @@ def create(filename: str, core_smarts: str):
     "--processors",
     default="auto",
     show_default=True,
-    help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), `all` will use all"
-    "or the exact number of cpus to use can be provided.",
+    help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), "
+         "`all` will use all or the exact number of cpus to use can be provided.",
 )
 @click.option(
     "-pm",
@@ -91,6 +91,14 @@ def create(filename: str, core_smarts: str):
     show_default=True,
     help="The name of the Postera molecule set to pull the input ligands from.",
 )
+@click.option(
+    "-ep",
+    "--experimental-protocol",
+    help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+)
 def run(
     dataset_name: str,
     ligands: str,
@@ -99,6 +107,7 @@ def run(
     core_smarts: Optional[str] = None,
     processors: int = 1,
     postera_molset_name: Optional[str] = None,
+    experimental_protocol: Optional[str] = None,
 ):
     """
     Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate
@@ -177,6 +186,28 @@ def run(
         # can be a string from click
         processors = int(processors)
 
+    # check if we need to add experimental ligands
+    if experimental_protocol is not None and factory.n_references > 0:
+        from asapdiscovery.alchemy.cli.utils import get_cdd_molecules
+
+        message = Padding(f"Requested injection of {factory.n_references} experimental references into the network",
+                          (1, 0, 1, 0))
+        console.print(message)
+
+        cdd_status = console.status(f"Downloading experimental ligands from CDD protocol {experimental_protocol}")
+        cdd_status.start()
+        # get all molecules with data for the given protocol
+        ref_ligands = get_cdd_molecules(protocol_name=experimental_protocol)
+        cdd_status.stop()
+
+        message = Padding(
+            f"Extracted {len(ref_ligands)} ligands from the CDD protocol {experimental_protocol}",
+            (1, 0, 1, 0)
+        )
+        console.print(message)
+    else:
+        ref_ligands = None
+
     message = Padding(
         f"Starting Alchemy-Prep workflow with {processors} processors", (1, 0, 1, 0)
     )
@@ -187,6 +218,7 @@ def run(
         ligands=asap_ligands,
         reference_complex=ref_complex,
         processors=processors,
+        reference_ligands=ref_ligands
     )
     output_folder = pathlib.Path(dataset_name)
     output_folder.mkdir(parents=True, exist_ok=True)
