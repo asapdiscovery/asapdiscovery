@@ -601,6 +601,10 @@ class Trainer(BaseModel):
 
                 # Perform backprop if we've done all the preds for this batch
                 if batch_counter == self.batch_size:
+                    # Need to scale the gradients by batch_size to get to MSE loss
+                    for p in self.model.parameters():
+                        p.grad /= batch_counter
+
                     # Backprop
                     self.optimizer.step()
                     if any(
@@ -617,6 +621,10 @@ class Trainer(BaseModel):
                     self.optimizer.zero_grad()
 
             if batch_counter > 0:
+                # Need to scale the gradients by batch_size to get to MSE loss
+                for p in self.model.parameters():
+                    p.grad /= batch_counter
+
                 # Backprop for final incomplete batch
                 self.optimizer.step()
                 if any(
