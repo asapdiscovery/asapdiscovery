@@ -170,78 +170,86 @@ def dG_to_pIC50(dG):
     )  # abs to prevent pIC50s from being negative in cases where 0<DG<1.
 
 
-def dg_to_pic50_dataframe(df):
+def dg_to_postera_dataframe(absolute_predictions: pd.DataFrame) -> pd.DataFrame:
     """
-    Given a wrangled `FEMap` dataframe of absolute DG values (kcal/mol), replace 'kcal/mol' columns with
-    pIC50 values.
+    Given a wrangled `FEMap` dataframe of absolute predicted DG values (kcal/mol), replace 'kcal/mol' columns with
+    pIC50 values and rename the columns to match what's expected by manifold. These names are defined in
+    data.services.postera.manifold_data_tags.yaml
+
+    Args:
+        absolute_predictions: The dataframe of absolute DG predictions from asap-alchemy
+
+    Returns:
+        A copy of the dataframe with calculated pIC50 values rather than DGs ready for upload to postera.
     """
-    # we have a decent amount of columns to get through, so replacing all numeric columns
-    # with their respective pIC50 values will be much cleaner.
-    for column in df._get_numeric_data().columns:
+    # use the expected column names from alchemy predict and convert them into the allowed column names defined in
+    # data.services.postera.manifold_data_tags.yaml
+    postera_df = absolute_predictions.copy(deep=True)
+
+    for column, new_name in [
+        ("DG (kcal/mol) (FECS)", "FEC"),
+        ("uncertainty (kcal/mol) (FECS)", "FEC-uncertainty"),
+    ]:
         # replace the kcal/mol values with pIC50s.
-        df[column] = dG_to_pIC50(df[column].values)
+        postera_df[column] = dG_to_pIC50(postera_df[column].values)
 
-        # just need to rename the column now. No clean way of doing this AFAIK.
-        if "DDG (kcal/mol)" in column:
-            df = df.rename(
-                columns={
-                    column: f"{column.replace('DDG (kcal/mol)', 'relative pIC50')}"
-                }
-            )
-        elif "DG (kcal/mol)" in column:
-            df = df.rename(
-                columns={column: f"{column.replace('DG (kcal/mol)', 'pIC50')}"}
-            )
-        elif "uncertainty (kcal/mol)" in column:
-            df = df.rename(
-                columns={
-                    column: f"{column.replace('uncertainty (kcal/mol)', 'pIC50 uncertainty')}"
-                }
-            )
-        elif "prediction error (kcal/mol)" in column:
-            df = df.rename(
-                columns={
-                    column: f"{column.replace('prediction error (kcal/mol)', 'prediction error (pIC50)')}"
-                }
-            )
+        # rename the column
+        postera_df.rename(columns={column: f"computed-{new_name}-pIC50"}, inplace=True)
+    # rename the label column to be clear in postera
+    postera_df.rename(columns={"label": "Ligand_ID"}, inplace=True)
 
-    return df
+    return postera_df
 
 
-def add_smiles_to_df(dataframe: pd.DataFrame, ligands: list) -> pd.DataFrame:
+def add_identifiers_to_df(dataframe: pd.DataFrame, ligands: list) -> pd.DataFrame:
     """
     Given a wrangled DF containing either `label` (absolute) or `labelA` and `labelB` (relative),
-    add SMILES for each row.
+    add molecule identifiers for each row.
 
     Args:
         dataframe: The pandas dataframe we should add the smiles to.
-        ligands: The list of ligands from which we should extract the smiles based on matching by name.
+        ligands: The list of ligands from which we should extract the identifiers based on matching by name.
     Returns:
-        The dataframe with added smiles column(s)
-    """
-    # get the experimental data for SMILES per compound name.
-    expt_smiles = {ligand.name: ligand.smiles for ligand in ligands}
+        The dataframe with added column(s) with molecule identifiers
 
-    # get the SMILES. Relative dataframe is a bit more involved than absolute.
+    Notes:
+        Currently adds the smiles and inchi key
+    """
+    # get the identifiers for each ligand by name
+    ligands_by_name = {
+        ligand.compound_name: {"smiles": ligand.smiles, "inchi_key": ligand.inchikey}
+        for ligand in ligands
+    }
+
+    # get the identifiers. Relative dataframe is a bit more involved than absolute.
     if "labelA" in dataframe.columns:
-        smiles_a = []
-        smiles_b = []
+        smiles_a, smiles_b, inchi_key_a, inchi_key_b = [], [], [], []
         for labelA, labelB in dataframe[["labelA", "labelB"]].values:
-            smiles_a.append(expt_smiles[labelA])
-            smiles_b.append(expt_smiles[labelB])
+            smiles_a.append(ligands_by_name[labelA]["smiles"])
+            smiles_b.append(ligands_by_name[labelB]["smiles"])
+            inchi_key_a.append(ligands_by_name[labelA]["inchi_key"])
+            inchi_key_b.append(ligands_by_name[labelB]["inchi_key"])
         dataframe["SMILES_A"] = smiles_a
         dataframe["SMILES_B"] = smiles_b
+        dataframe["Inchi_Key_A"] = inchi_key_a
+        dataframe["Inchi_Key_B"] = inchi_key_b
 
     elif "label" in dataframe.columns:
-        smiles = [expt_smiles[label] for label in dataframe["label"].values]
+        smiles = [
+            ligands_by_name[label]["smiles"] for label in dataframe["label"].values
+        ]
+        inchi_key = [
+            ligands_by_name[label]["inchi_key"] for label in dataframe["label"].values
+        ]
         dataframe["SMILES"] = smiles
+        dataframe["Inchi_Key"] = inchi_key
 
     return dataframe
 
 
 def extract_experimental_data(
     reference_csv: str, assay_units: Literal["pIC50", "IC50"]
-) -> dict[str, tuple[unit.Quantity, unit.Quantity]]:
+) -> pd.DataFrame:
     """
     Extract the experimental data from the given csv file, this assumes the csv has been downloaded from cdd.
     Where the molecule identifier is under column 'Molecule Name' and the experimental data is pIC50 / IC50
@@ -252,10 +260,9 @@ def extract_experimental_data(
         assay_units: The assay units of 'pIC50' or 'IC50' that the experimental data is given in.
 
     Returns:
-        A dictionary of molecule names and tuples of
-        experimental data and its associated uncertainty converted to Gibbs free energy in kcal/mol.
+        A pandas dataframe of the reference data with added columns containing the calculated binding affinity and
+        its associated uncertainty converted to Gibbs free energy in kcal / mol.
     """
-    experimental_data = {}
     assay_tags = {
         "pIC50": ("pIC50_Mean", "pIC50_Mean Standard Deviation (±)"),
         "IC50": ("IC50_GMean (µM)", "IC50_GMean (µM) Standard Deviation (×/÷)"),
@@ -286,9 +293,9 @@ def extract_experimental_data(
         converter = ki_to_dg
         units = unit.micromolar
 
+    experimental_affinity, experimental_affinity_error = [], []
+    # add the calculated affinity and error to the dataframe
     for _, row in exp_data.iterrows():
-        # get the data.
-        name = row["Molecule Name"]
         exp_value = row[assay_endpoint_tag]
         if assay_endpoint_confidence_tag:
             uncertainty = row[assay_endpoint_confidence_tag]
@@ -296,33 +303,80 @@ def extract_experimental_data(
             uncertainty = 0
 
         dg, ddg = converter(exp_value * units, uncertainty * units)
-        experimental_data[name] = (dg, ddg)
+        experimental_affinity.append(dg.m)
+        experimental_affinity_error.append(ddg.m)
 
-    return experimental_data
+    # the column names here match those made by `parse_fluorescence_data_cdd`
+    exp_data["exp_binding_affinity_kcal_mol"] = experimental_affinity
+    exp_data["exp_binding_affinity_kcal_mol_stderr"] = experimental_affinity_error
+    return exp_data
+
+
+def _find_ligand_data(
+    name: str, inchi_key: str, experimental_data: pd.DataFrame
+) -> dict:
+    """
+    Multi search method which tries to match the name then the inchi key when looking for a molecules experimental data.
+
+    Notes:
+        Columns should have names `Molecule Name` and `Inchi Key`, if the molecule can not be found dummy data
+        is returned.
+        We use InchiKey when matching as this is atom order and cheminformatics toolkit independent.
+
+    Args:
+        name: The name which should be used to match the molecules
+        inchi_key: The inchi key which should be used to match the molecules
+        experimental_data: The experimental dataframe which should be searched for the target molecule
+
+    Returns:
+        A dictionary of the data from the dataframe which matches the provided name or inchi key
+    """
+
+    ligand_data = experimental_data[experimental_data["Molecule Name"] == name]
+    if len(ligand_data) < 1:
+        ligand_data = experimental_data[experimental_data["Inchi Key"] == inchi_key]
+    if len(ligand_data) == 1:
+        ligand_data = ligand_data.iloc[0]
+    else:
+        # dummy data if not found easy to drop later
+        ligand_data = {
+            "exp_binding_affinity_kcal_mol": np.nan,
+            "exp_binding_affinity_kcal_mol_stderr": np.nan,
+        }
+
+    return ligand_data
 
 
 def add_absolute_expt(
     dataframe: pd.DataFrame,
-    experimental_data: dict[str, tuple[unit.Quantity, unit.Quantity]],
+    experimental_data: pd.DataFrame,
 ):
     """
     Edit the dataframe inplace by adding experimental data provided to it.
 
     Args:
-        dataframe: The dataframe of absolute free energy predictions to add the experimental data to.
-        experimental_data: A dictionary of experimental free energies in units of kcal/mol to add to the dataframe.
+        dataframe: The dataframe of absolute free energy predictions to add the experimental data to, this should
+            contain the name, smiles and inchi key of the molecules.
+        experimental_data: A dataframe containing the experimental free energies in units of kcal/mol to add to the
+            dataframe.
     """
     experimental_col, uncertainty_col = [], []
-    for mol_name in dataframe["label"].values:
-        experimental_col.append(get_magnitude(experimental_data[mol_name][0]))
-        uncertainty_col.append(get_magnitude(experimental_data[mol_name][1]))
+    for _, row in dataframe.iterrows():
+        # use the two stage lookup
+        ligand_data = _find_ligand_data(
+            name=row["label"],
+            inchi_key=row["Inchi_Key"],
+            experimental_data=experimental_data,
+        )
+        experimental_col.append(ligand_data["exp_binding_affinity_kcal_mol"])
+        uncertainty_col.append(ligand_data["exp_binding_affinity_kcal_mol_stderr"])
     dataframe["DG (kcal/mol) (EXPT)"] = experimental_col
     dataframe["uncertainty (kcal/mol) (EXPT)"] = uncertainty_col
 
 
 def add_relative_expt(
     dataframe: pd.DataFrame,
-    experimental_data: dict[str, tuple[unit.Quantity, unit.Quantity]],
+    experimental_data: pd.DataFrame,
 ):
     """
     Edit the relative dataframe in place by adding experimental data provided to it.
@@ -333,17 +387,27 @@ def add_relative_expt(
     """
     experimental_col, uncertainty_col = [], []
     for _, row in dataframe.iterrows():
-        label_a, label_b = row[["labelA", "labelB"]]
+        ligand_a_data = _find_ligand_data(
+            name=row["labelA"],
+            inchi_key=row["Inchi_Key_A"],
+            experimental_data=experimental_data,
+        )
+        ligand_b_data = _find_ligand_data(
+            name=row["labelB"],
+            inchi_key=row["Inchi_Key_B"],
+            experimental_data=experimental_data,
+        )
 
         # compute experimental DDG for this edge
-        ddg = get_magnitude(experimental_data[label_b][0]) - get_magnitude(
-            experimental_data[label_a][0]
+        ddg = (
+            ligand_b_data["exp_binding_affinity_kcal_mol"]
+            - ligand_a_data["exp_binding_affinity_kcal_mol"]
         )
         # take the average uncertainty between measurements for this edge.
         delta_ddg = np.mean(
             [
-                get_magnitude(experimental_data[label_a][1]),
-                get_magnitude(experimental_data[label_b][1]),
+                ligand_a_data["exp_binding_affinity_kcal_mol_stderr"],
+                ligand_b_data["exp_binding_affinity_kcal_mol_stderr"],
             ]
         )
         experimental_col.append(ddg)
@@ -358,6 +422,7 @@ def get_data_from_femap(
     ligands: list,
     assay_units: Optional[str] = None,
     reference_dataset: Optional[str] = None,
+    cdd_protocol: Optional[str] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Given a `cinnabar` `FEMap` add the experimental reference data and generate and return:
@@ -366,9 +431,10 @@ def get_data_from_femap(
 
     Args:
         fe_map: The cinnabar FEMap which has all calculated edges present and the absolute estimates.
-        ligands: The list of openfe ligands which are part of the network.
+        ligands: The list of asap ligands which are part of the network.
         assay_units: The units of the experimental data, which should be extracted from the reference dataset.
         reference_dataset: The name of the cdd csv file which contains the experimental data.
+        cdd_protocol: The name of the CDD protocol from which we should extract experimental data.
 
     Returns:
          An absolute and relative free energy prediction dataframe.
@@ -395,24 +461,29 @@ def get_data_from_femap(
         .drop(["source", "computational"], axis=1)
     )
 
+    # add identifiers to each dataframe these help with matching if names fail
+    for df in [absolute_df, relative_df]:
+        add_identifiers_to_df(df, ligands)
+
     # add experimental data if available
+    experimental_data = None
     if reference_dataset:
         experimental_data = extract_experimental_data(
             reference_csv=reference_dataset, assay_units=assay_units
         )
+    elif cdd_protocol:
+        experimental_data = download_cdd_data(protocol_name=cdd_protocol)
+
+    if experimental_data is not None:
         add_absolute_expt(dataframe=absolute_df, experimental_data=experimental_data)
         add_relative_expt(dataframe=relative_df, experimental_data=experimental_data)
 
         absolute_df = shift_and_add_prediction_error(df=absolute_df, point_type="DG")
         relative_df = shift_and_add_prediction_error(df=relative_df, point_type="DDG")
 
-    # now also generate the pCI50 absolute dataframe.
+    # now also add the calculated pCI50 absolute dataframe which is used .
     # absolute_df = dg_to_pic50_dataframe(absolute_df)
     # relative_df_wrangled_pic50 = dg_to_pic50_dataframe(relative_df_wrangled)
-
-    # finally add SMILES to each dataframe.
-    for df in [absolute_df, relative_df]:
-        add_smiles_to_df(df, ligands)
 
     return absolute_df, relative_df
 
@@ -669,27 +740,32 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
 
     Returns:
         A panel column containing an interactive plot and table of the free energy predictions.
+
+    Notes:
+        Only plots molecules with experimental values
     """
+    # create a plotting dataframe which drops rows with nans
+    plotting_df = dataframe.dropna(axis=0, inplace=False)
     # add drawn molecule as a column
     mols = [draw_mol(smiles) for smiles in dataframe["SMILES"]]
     dataframe["Molecule"] = mols
     # create the DG plot
     fig = plotmol_absolute(
-        calculated=dataframe["DG (kcal/mol) (FECS)"],
-        experimental=dataframe["DG (kcal/mol) (EXPT)"],
-        smiles=dataframe["SMILES"],
-        titles=dataframe["label"],
-        calculated_uncertainty=dataframe["uncertainty (kcal/mol) (FECS)"],
-        experimental_uncertainty=dataframe["uncertainty (kcal/mol) (EXPT)"],
+        calculated=plotting_df["DG (kcal/mol) (FECS)"],
+        experimental=plotting_df["DG (kcal/mol) (EXPT)"],
+        smiles=plotting_df["SMILES"],
+        titles=plotting_df["label"],
+        calculated_uncertainty=plotting_df["uncertainty (kcal/mol) (FECS)"],
+        experimental_uncertainty=plotting_df["uncertainty (kcal/mol) (EXPT)"],
     )
     # calculate the bootstrapped stats using cinnabar
     stats_data = []
     for statistic in ["RMSE", "MUE", "R2", "rho"]:
         s = stats.bootstrap_statistic(
-            dataframe["DG (kcal/mol) (EXPT)"],
-            dataframe["DG (kcal/mol) (FECS)"],
-            dataframe["uncertainty (kcal/mol) (EXPT)"],
-            dataframe["uncertainty (kcal/mol) (FECS)"],
+            plotting_df["DG (kcal/mol) (EXPT)"],
+            plotting_df["DG (kcal/mol) (FECS)"],
+            plotting_df["uncertainty (kcal/mol) (EXPT)"],
+            plotting_df["uncertainty (kcal/mol) (FECS)"],
             statistic=statistic,
             include_true_uncertainty=False,
             include_pred_uncertainty=False,
@@ -721,9 +797,9 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
             ),
         ),
         panel.widgets.Tabulator(
+            # use full data frame including nans for table
             dataframe,
             show_index=False,
-            selectable="checkbox",
             disabled=True,
             formatters={
                 "SMILES": "html",
@@ -761,23 +837,27 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
         mols.append(draw_mol(smiles=smiles))
         titles.append((data["labelA"], data["labelB"]))
     dataframe["Molecules"] = mols
+    dataframe["labels"] = titles
+    dataframe["smiles"] = combined_smiles
+    # create a plotting dataframe which drops rows with nans
+    plotting_df = dataframe.dropna(axis=0, inplace=False)
     # create the DG plot
     fig = plotmol_relative(
-        calculated=dataframe["DDG (kcal/mol) (FECS)"],
-        experimental=dataframe["DDG (kcal/mol) (EXPT)"],
-        smiles=combined_smiles,
-        titles=titles,
-        calculated_uncertainty=dataframe["uncertainty (kcal/mol) (FECS)"],
-        experimental_uncertainty=dataframe["uncertainty (kcal/mol) (EXPT)"],
+        calculated=plotting_df["DDG (kcal/mol) (FECS)"],
+        experimental=plotting_df["DDG (kcal/mol) (EXPT)"],
+        smiles=plotting_df["smiles"],
+        titles=plotting_df["labels"],
+        calculated_uncertainty=plotting_df["uncertainty (kcal/mol) (FECS)"],
+        experimental_uncertainty=plotting_df["uncertainty (kcal/mol) (EXPT)"],
     )
     # calculate the bootstrapped stats using cinnabar
     stats_data = []
     for statistic in ["RMSE", "MUE", "R2", "rho"]:
         s = stats.bootstrap_statistic(
-            dataframe["DDG (kcal/mol) (EXPT)"],
-            dataframe["DDG (kcal/mol) (FECS)"],
-            dataframe["uncertainty (kcal/mol) (EXPT)"],
-            dataframe["uncertainty (kcal/mol) (FECS)"],
+            plotting_df["DDG (kcal/mol) (EXPT)"],
+            plotting_df["DDG (kcal/mol) (FECS)"],
+            plotting_df["uncertainty (kcal/mol) (EXPT)"],
+            plotting_df["uncertainty (kcal/mol) (FECS)"],
             statistic=statistic,
             include_true_uncertainty=False,
             include_pred_uncertainty=False,
@@ -809,9 +889,8 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
             ),
         ),
         panel.widgets.Tabulator(
-            dataframe,
+            dataframe.drop(columns=["labels", "smiles"]),
             show_index=False,
-            selectable="checkbox",
             disabled=True,
             formatters={
                 "SMILES_A": "html",
@@ -829,3 +908,29 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
         scroll=True,
     )
     return layout
+
+
+def download_cdd_data(protocol_name: str) -> pd.DataFrame:
+    """
+    A wrapper method to download CDD protocol data, mainly used to tuck imports.
+
+    Args:
+        protocol_name: The name of the CDD protocol to extract experimental data for.
+
+    Returns:
+        A dataframe of the extracted and formatted experimental data.
+    """
+    from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
+    from asapdiscovery.data.services.services_config import CDDSettings
+    from asapdiscovery.data.util.utils import parse_fluorescence_data_cdd
+
+    settings = CDDSettings()
+    cdd_api = CDDAPI.from_settings(settings=settings)
+
+    ic50_data = cdd_api.get_ic50_data(protocol_name=protocol_name)
+    # format the data to add the pIC50 and error
+    formatted_data = parse_fluorescence_data_cdd(
+        mol_df=ic50_data, assay_name=protocol_name
+    )
+
+    return formatted_data

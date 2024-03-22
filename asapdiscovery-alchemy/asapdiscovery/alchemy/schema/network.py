@@ -2,6 +2,7 @@ import abc
 from typing import Callable, Literal, Optional, Union
 
 import openfe
+from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import Field
 
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
@@ -109,12 +110,12 @@ class PlannedNetwork(_NetworkPlannerSettings):
         ...,
         description="The provenance of the software used to generate ligand network.",
     )
-    central_ligand: Optional[str] = Field(
+    central_ligand: Optional[Ligand] = Field(
         ..., description="The central ligand needed for radial networks."
     )
-    ligands: list[str] = Field(
+    ligands: list[Ligand] = Field(
         ...,
-        description="The list of docked ligands which should be included in the radial network.",
+        description="The list of docked ligands which should be included in the network.",
     )
     graphml: str = Field(
         ...,
@@ -140,14 +141,9 @@ class PlannedNetwork(_NetworkPlannerSettings):
         Returns:
             A list of openfe.SmallMoleculeComponents made from the central ligand followed by all ligands in the network.
         """
-        ligands = [
-            openfe.SmallMoleculeComponent.from_sdf_string(ligand_str)
-            for ligand_str in self.ligands
-        ]
+        ligands = [mol.to_openfe() for mol in self.ligands]
         if self.central_ligand is not None:
-            ligands.insert(
-                0, openfe.SmallMoleculeComponent.from_sdf_string(self.central_ligand)
-            )
+            ligands.insert(0, self.central_ligand.to_openfe())
         return ligands
 
 
@@ -167,8 +163,8 @@ class NetworkPlanner(_NetworkPlannerSettings):
 
     def generate_network(
         self,
-        ligands: list[openfe.SmallMoleculeComponent],
-        central_ligand: Optional[openfe.SmallMoleculeComponent] = None,
+        ligands: list[Ligand],
+        central_ligand: Optional[Ligand] = None,
     ) -> PlannedNetwork:
         """
         Generate a network with the configured settings.
@@ -191,24 +187,24 @@ class NetworkPlanner(_NetworkPlannerSettings):
 
         # build the network planner
         planner_data = {
-            "ligands": ligands,  # need to convert to rdkit objects?
+            "ligands": [
+                mol.to_openfe() for mol in ligands
+            ],  # need to convert to rdkit objects?
             "mappers": [self.atom_mapping_engine.get_mapper()],
             "scorer": self._get_scorer(),
         }
 
         # add the central ligand if required
         if self.network_planning_method.type == "RadialPlanner":
-            planner_data["central_ligand"] = central_ligand
+            planner_data["central_ligand"] = central_ligand.to_openfe()
 
         network_method = self.network_planning_method.get_planning_function()
         ligand_network = network_method(**planner_data)
 
         return PlannedNetwork(
             **self.dict(exclude={"type"}),
-            ligands=[ligand.to_sdf() for ligand in ligands],
-            central_ligand=central_ligand
-            if central_ligand is None
-            else central_ligand.to_sdf(),
+            ligands=ligands,
+            central_ligand=central_ligand,
             graphml=ligand_network.to_graphml(),
             provenance=self.atom_mapping_engine.provenance(),
         )

@@ -2,16 +2,16 @@ from datetime import datetime
 from functools import reduce
 
 import pytest
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
-from asapdiscovery.ml.schema_v2.config import (
+from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterConfig,
     DatasetSplitterType,
     DatasetType,
 )
+from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 
 
 @pytest.fixture(scope="session")
@@ -114,23 +114,17 @@ def test_grouped_docked_dataset_config(complex_pdb):
 
     compound_id, pose_list = next(iter(dd))
     assert compound_id == "test"
-    assert len(pose_list) == 2
+    assert len(pose_list["poses"]) == 2
 
-    assert pose_list[0]["compound"] == ("test1", "test")
-    assert (
-        pose_list[0]["pos"].shape[0]
-        == len(pose_list[0]["z"])
-        == len(pose_list[0]["lig"])
-    )
-    assert pose_list[0]["pos"].shape[0] > 0
+    pose = pose_list["poses"][0]
+    assert pose_list["compound"] == ("test1", "test")
+    assert pose["pos"].shape[0] == len(pose["z"]) == len(pose["lig"])
+    assert pose["pos"].shape[0] > 0
 
-    assert pose_list[1]["compound"] == ("test2", "test")
-    assert (
-        pose_list[1]["pos"].shape[0]
-        == len(pose_list[1]["z"])
-        == len(pose_list[1]["lig"])
-    )
-    assert pose_list[1]["pos"].shape[0] > 0
+    pose = pose_list["poses"][1]
+    assert pose["compound"] == ("test2", "test")
+    assert pose["pos"].shape[0] == len(pose["z"]) == len(pose["lig"])
+    assert pose["pos"].shape[0] > 0
 
 
 def test_grouped_docked_dataset_config_exp_dict(complex_pdb):
@@ -160,25 +154,19 @@ def test_grouped_docked_dataset_config_exp_dict(complex_pdb):
 
     compound_id, pose_list = next(iter(dd))
     assert compound_id == "test"
-    assert len(pose_list) == 2
+    assert len(pose_list["poses"]) == 2
 
-    assert pose_list[0]["compound"] == ("test1", "test")
-    assert (
-        pose_list[0]["pos"].shape[0]
-        == len(pose_list[0]["z"])
-        == len(pose_list[0]["lig"])
-    )
-    assert pose_list[0]["pos"].shape[0] > 0
-    assert pose_list[0]["pIC50"] == 5
+    pose = pose_list["poses"][0]
+    assert pose["compound"] == ("test1", "test")
+    assert pose["pos"].shape[0] == len(pose["z"]) == len(pose["lig"])
+    assert pose["pos"].shape[0] > 0
+    assert pose["pIC50"] == 5
 
-    assert pose_list[1]["compound"] == ("test2", "test")
-    assert (
-        pose_list[1]["pos"].shape[0]
-        == len(pose_list[1]["z"])
-        == len(pose_list[1]["lig"])
-    )
-    assert pose_list[1]["pos"].shape[0] > 0
-    assert pose_list[1]["pIC50"] == 5
+    pose = pose_list["poses"][1]
+    assert pose["compound"] == ("test2", "test")
+    assert pose["pos"].shape[0] == len(pose["z"]) == len(pose["lig"])
+    assert pose["pos"].shape[0] > 0
+    assert pose["pIC50"] == 5
 
 
 def test_graph_dataset_config(ligand_sdf):

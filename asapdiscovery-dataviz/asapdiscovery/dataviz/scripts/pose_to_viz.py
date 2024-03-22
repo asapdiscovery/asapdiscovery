@@ -2,18 +2,18 @@ import argparse
 import logging
 from pathlib import Path
 
-from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
-from asapdiscovery.dataviz.viz_targets import VizTargets
 
 parser = argparse.ArgumentParser(description="Turn a trajectory into a GIF")
 
 parser.add_argument(
-    "--viz-target",
+    "--target",
     type=str,
     required=True,
-    choices=VizTargets.get_allowed_targets(),
-    help="Target to write visualizations for, one of (sars2_mpro, mers_mpro, 7ene_mpro, 272_mpro, sars2_mac1)",
+    choices=TargetTags.get_values(),
+    help="Target to write visualizations for",
 )
 
 parser.add_argument(
@@ -73,7 +73,7 @@ def main():
         poses=[str(pose)],
         output_paths=[out],
         color_method=args.color_method,
-        target=args.viz_target,
+        target=args.target,
         protein=protein,
         align=True,
     )

@@ -1,7 +1,7 @@
 import pytest
-from asapdiscovery.data.schema import ExperimentalCompoundData
-from asapdiscovery.data.schema_v2.complex import Complex
-from asapdiscovery.data.schema_v2.ligand import Ligand
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
 
@@ -84,23 +84,17 @@ def test_grouped_docked_dataset_from_complexes(complex_pdb):
 
     compound_id, pose_list = next(iter(ds))
     assert compound_id == "test"
-    assert len(pose_list) == 2
+    assert len(pose_list["poses"]) == 2
 
-    assert pose_list[0]["compound"] == ("test1", "test")
-    assert (
-        pose_list[0]["pos"].shape[0]
-        == len(pose_list[0]["z"])
-        == len(pose_list[0]["lig"])
-    )
-    assert pose_list[0]["pos"].shape[0] > 0
+    pose = pose_list["poses"][0]
+    assert pose["compound"] == ("test1", "test")
+    assert pose["pos"].shape[0] == len(pose["z"]) == len(pose["lig"])
+    assert pose["pos"].shape[0] > 0
 
-    assert pose_list[1]["compound"] == ("test2", "test")
-    assert (
-        pose_list[1]["pos"].shape[0]
-        == len(pose_list[1]["z"])
-        == len(pose_list[1]["lig"])
-    )
-    assert pose_list[1]["pos"].shape[0] > 0
+    pose = pose_list["poses"][1]
+    assert pose["compound"] == ("test2", "test")
+    assert pose["pos"].shape[0] == len(pose["z"]) == len(pose["lig"])
+    assert pose["pos"].shape[0] > 0
 
 
 def test_grouped_docked_dataset_from_files(complex_pdb):
@@ -114,23 +108,17 @@ def test_grouped_docked_dataset_from_files(complex_pdb):
 
     compound_id, pose_list = next(iter(ds))
     assert compound_id == "test"
-    assert len(pose_list) == 2
+    assert len(pose_list["poses"]) == 2
 
-    assert pose_list[0]["compound"] == ("test1", "test")
-    assert (
-        pose_list[0]["pos"].shape[0]
-        == len(pose_list[0]["z"])
-        == len(pose_list[0]["lig"])
-    )
-    assert pose_list[0]["pos"].shape[0] > 0
+    pose = pose_list["poses"][0]
+    assert pose["compound"] == ("test1", "test")
+    assert pose["pos"].shape[0] == len(pose["z"]) == len(pose["lig"])
+    assert pose["pos"].shape[0] > 0
 
-    assert pose_list[1]["compound"] == ("test2", "test")
-    assert (
-        pose_list[1]["pos"].shape[0]
-        == len(pose_list[1]["z"])
-        == len(pose_list[1]["lig"])
-    )
-    assert pose_list[1]["pos"].shape[0] > 0
+    pose = pose_list["poses"][1]
+    assert pose["compound"] == ("test2", "test")
+    assert pose["pos"].shape[0] == len(pose["z"]) == len(pose["lig"])
+    assert pose["pos"].shape[0] > 0
 
 
 def test_graph_dataset_from_ligands(ligand_sdf, tmp_path):

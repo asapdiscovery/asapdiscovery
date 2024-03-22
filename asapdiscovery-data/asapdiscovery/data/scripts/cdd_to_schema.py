@@ -14,8 +14,8 @@ python cdd_to_schema.py \
 
 import argparse
 
-from asapdiscovery.data.utils import cdd_to_schema  # noqa: E402
-from asapdiscovery.data.utils import cdd_to_schema_pair  # noqa: E402
+from asapdiscovery.data.util.utils import cdd_to_schema  # noqa: E402
+from asapdiscovery.data.util.utils import cdd_to_schema_pair  # noqa: E402
 
 
 def get_args():

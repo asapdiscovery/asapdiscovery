@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from asapdiscovery.data.openeye import (
+from asapdiscovery.data.backend.openeye import (
     load_openeye_pdb,
     load_openeye_sdf,
     load_openeye_sdfs,

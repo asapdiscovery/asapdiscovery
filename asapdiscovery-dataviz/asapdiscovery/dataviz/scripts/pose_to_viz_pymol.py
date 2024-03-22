@@ -2,19 +2,19 @@ import argparse
 import logging
 from pathlib import Path
 
-from asapdiscovery.data.logging import FileLogger
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
-from asapdiscovery.dataviz.viz_targets import VizTargets
 
 parser = argparse.ArgumentParser(
     description="Turn a PDB complex into a PyMOL PSE file with canonical target view"
 )
 
 parser.add_argument(
-    "--viz-target",
+    "--target",
     type=str,
     required=True,
-    choices=VizTargets.get_allowed_targets(),
+    choices=TargetTags.get_values(),
     help="Target to write visualizations for",
 )
 
@@ -54,7 +54,7 @@ def main():
         [None],  # we just fill these args, they're not being used.
         [complex],
         [out],
-        args.viz_target,
+        args.target,
         frames_per_ns=0,
         smooth=5,
         static_view_only=True,

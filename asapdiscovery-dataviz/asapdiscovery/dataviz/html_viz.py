@@ -9,14 +9,7 @@ import logomaker
 import matplotlib.pyplot as plt
 import pandas as pd
 from airium import Airium
-from asapdiscovery.data.fitness import (
-    _FITNESS_DATA_FIT_THRESHOLD,
-    get_fitness_scores_bloom_by_target,
-    parse_fitness_json,
-    target_has_fitness_data,
-)
-from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.openeye import (
+from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
     oechem,
@@ -24,17 +17,27 @@ from asapdiscovery.data.openeye import (
     oemol_to_sdf_string,
     openeye_perceive_residues,
 )
-from asapdiscovery.data.plip import (
+from asapdiscovery.data.backend.plip import (
     get_interactions_plip,
     make_color_res_fitness,
     make_color_res_subpockets,
 )
-from asapdiscovery.data.postera.manifold_data_validation import TargetVirusMap
-from asapdiscovery.data.schema_v2.molfile import MolFileFactory
-from asapdiscovery.modeling.modeling import superpose_molecule
+from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.readers.molfile import MolFileFactory
+from asapdiscovery.data.services.postera.manifold_data_validation import (
+    TargetTags,
+    TargetVirusMap,
+)
+from asapdiscovery.data.util.logging import HiddenPrint
+from asapdiscovery.genetics.fitness import (
+    _FITNESS_DATA_FIT_THRESHOLD,
+    get_fitness_scores_bloom_by_target,
+    parse_fitness_json,
+    target_has_fitness_data,
+)
+from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 
 from ._html_blocks import HTMLBlockData
-from .viz_targets import VizTargets
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +47,7 @@ class HTMLVisualizer:
     Class for generating HTML visualizations of poses.
     """
 
-    allowed_targets = VizTargets.get_allowed_targets()
+    allowed_targets = TargetTags.get_values()
 
     # TODO: replace input with a schema rather than paths.
     def __init__(
@@ -65,7 +68,7 @@ class HTMLVisualizer:
         output_paths : List[Path]
             List of paths to write the visualizations to.
         target : str
-            Target to visualize poses for. Must be one of the allowed targets in VizTargets.
+            Target to visualize poses for. Must be one of the allowed targets.
         protein : Path
             Path to protein PDB file.
         color_method : str
@@ -109,7 +112,7 @@ class HTMLVisualizer:
         for pose, path in zip(poses, output_paths):
             if pose:
                 if isinstance(pose, oechem.OEMolBase):
-                    mol = pose.CreateCopy()
+                    mol = [pose.CreateCopy()]
                 else:
                     mol_fact = MolFileFactory(
                         filename=str(pose)
@@ -210,6 +213,13 @@ class HTMLVisualizer:
                 opts,
             )
 
+        else:
+            # just combine into a single molecule
+            _pose = oechem.OEGraphMol()
+            for pos in pose:
+                oechem.OEAddMols(_pose, pos)
+            pose = _pose
+
         oechem.OESuppressHydrogens(
             pose, True, True
         )  # retain polar hydrogens and hydrogens on chiral centers
@@ -290,7 +300,8 @@ class HTMLVisualizer:
                             )
                         with a.div(klass="dropdown-content"):
                             a.a(
-                                href="#", _t="⚪ : No amino acid substitutions tolerated"
+                                href="#",
+                                _t="⚪ : No amino acid substitutions tolerated",
                             )
                             a.a(
                                 href="#",
@@ -559,19 +570,33 @@ class HTMLVisualizer:
             warnings.warn(
                 f"Warning: no unfit residues found for residue {resi} in chain {chain}."
             )
-            # make a row with a fake unfit mutant instead.
-            site_df_unfit.loc[0] = [
-                site_df_fit["gene"].values[0],
-                resi,
-                "X",
-                -0.00001,
-                0,
-                site_df_fit["wildtype"].values[0],
-                chain,
-            ]
+            # make a dataframe with a fake unfit mutant instead.
+            site_df_unfit = pd.DataFrame(
+                [
+                    {
+                        "gene": site_df_fit["gene"].values[0],
+                        "site": resi,
+                        "mutant": "X",
+                        "fitness": -0.00001,
+                        "expected_count": 0,
+                        "wildtype": site_df_fit["wildtype"].values[0],
+                        "chain": chain,
+                    }
+                ]
+            )
 
         logoplot_base64s_dict = {}
-        with tempfile.TemporaryDirectory() as tmpdirname:
+        for fit_type, fitness_df in zip(["fit", "unfit"], [site_df_fit, site_df_unfit]):
+            # pivot table to make into LogoMaker format
+            logoplot_df = pd.DataFrame(
+                [fitness_df["fitness"].values], columns=fitness_df["mutant"]
+            )
+
+        # hide a shockingly large number of prints from inside logomaker
+        with tempfile.TemporaryDirectory() as tmpdirname, HiddenPrint() as _:
+            import matplotlib
+
+            matplotlib.use("agg")
             for fit_type, fitness_df in zip(
                 ["fit", "unfit"], [site_df_fit, site_df_unfit]
             ):
@@ -579,7 +604,6 @@ class HTMLVisualizer:
                 logoplot_df = pd.DataFrame(
                     [fitness_df["fitness"].values], columns=fitness_df["mutant"]
                 )
-
                 # create Logo object
                 logomaker.Logo(
                     logoplot_df,
@@ -591,6 +615,7 @@ class HTMLVisualizer:
                     flip_below=False,
                     show_spines=True,
                 )
+
                 plt.xticks([])
                 plt.yticks([])
 

@@ -13,6 +13,7 @@ on:
     #   (from https://help.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events-schedule)
     - cron: "0 0 * * *"
   workflow_dispatch:
+  merge_group:
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
@@ -90,6 +91,7 @@ jobs:
         pytest -n auto --durations=10 -v --cov-report=xml --cov-report=term --color=yes \
                        --cov=asapdiscovery-ml \
                        asapdiscovery-ml/asapdiscovery/ml/tests
+
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3

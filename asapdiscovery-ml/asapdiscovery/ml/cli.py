@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 import pydantic
 import torch
-from asapdiscovery.data.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
+from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (
     ds_cache_overwrite,
     ds_config_cache_overwrite,
@@ -26,16 +26,18 @@ from asapdiscovery.ml.cli_args import (
     struct_ds_args,
     trainer_args,
     trainer_config_cache,
+    visnet_args,
     wandb_args,
+    weights_path,
 )
-from asapdiscovery.ml.schema_v2.config import (
+from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterType,
     EarlyStoppingType,
     LossFunctionType,
     OptimizerType,
 )
-from asapdiscovery.ml.schema_v2.trainer import Trainer
+from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
 
 
@@ -75,6 +77,7 @@ cli.add_command(build_ds)
 
 @build.command(name="gat")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @wandb_args
@@ -90,6 +93,7 @@ cli.add_command(build_ds)
 @overwrite_args
 def build_gat(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -194,6 +198,7 @@ def build_gat(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.GAT,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -222,9 +227,9 @@ def build_gat(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -241,6 +246,7 @@ def build_gat(
             "cache": ds_split_config_cache,
             "overwrite_cache": overwrite_ds_split_config_cache,
             "split_type": ds_split_type,
+            "grouped": grouped,
             "train_frac": train_frac,
             "val_frac": val_frac,
             "test_frac": test_frac,
@@ -314,6 +320,7 @@ def build_gat(
 
 @build.command(name="schnet")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -330,6 +337,7 @@ def build_gat(
 @overwrite_args
 def build_schnet(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -436,6 +444,7 @@ def build_schnet(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.schnet,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -463,9 +472,9 @@ def build_schnet(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -487,6 +496,7 @@ def build_schnet(
             "cache": ds_split_config_cache,
             "overwrite_cache": overwrite_ds_split_config_cache,
             "split_type": ds_split_type,
+            "grouped": grouped,
             "train_frac": train_frac,
             "val_frac": val_frac,
             "test_frac": test_frac,
@@ -560,6 +570,7 @@ def build_schnet(
 
 @build.command(name="e3nn")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -576,6 +587,7 @@ def build_schnet(
 @overwrite_args
 def build_e3nn(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -683,6 +695,7 @@ def build_e3nn(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.e3nn,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -711,9 +724,9 @@ def build_e3nn(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -729,6 +742,259 @@ def build_e3nn(
             "overwrite": overwrite_ds_cache,
             "grouped": grouped,
             "for_e3nn": True,
+        }
+
+        ds_splitter_config = {
+            "cache": ds_split_config_cache,
+            "overwrite_cache": overwrite_ds_split_config_cache,
+            "split_type": ds_split_type,
+            "grouped": grouped,
+            "train_frac": train_frac,
+            "val_frac": val_frac,
+            "test_frac": test_frac,
+            "enforce_one": enforce_one,
+            "rand_seed": ds_rand_seed,
+        }
+        loss_config = {
+            "cache": loss_config_cache,
+            "overwrite_cache": overwrite_loss_config_cache,
+            "loss_type": loss_type,
+            "semiquant_fill": semiquant_fill,
+        }
+
+        # Parse loss_dict
+        if loss_dict:
+            loss_dict = json.loads(loss_dict.read_text())
+
+        # Filter out None Trainer kwargs
+        trainer_kwargs = {
+            "optimizer_config": optim_config,
+            "model_config": model_config,
+            "es_config": es_config,
+            "ds_config": ds_config,
+            "ds_splitter_config": ds_splitter_config,
+            "loss_config": loss_config,
+            "auto_init": auto_init,
+            "start_epoch": start_epoch,
+            "n_epochs": n_epochs,
+            "batch_size": batch_size,
+            "target_prop": target_prop,
+            "cont": cont,
+            "loss_dict": loss_dict,
+            "device": device,
+            "output_dir": output_dir,
+            "use_wandb": use_wandb,
+            "sweep": sweep,
+            "wandb_project": wandb_project,
+            "wandb_name": wandb_name,
+            "extra_config": extra_config,
+        }
+        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+
+        try:
+            t = Trainer(**trainer_kwargs)
+        except pydantic.ValidationError as exc:
+            # Only want to handle missing values, so if anything else went wrong just raise
+            #  the pydantic error
+            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+                raise exc
+
+            # Gather all missing values
+            missing_vals = [err["loc"][0] for err in exc.errors()]
+
+            raise ValueError(
+                "Tried to build Trainer but missing required values: ["
+                + ", ".join(missing_vals)
+                + "]"
+            )
+
+        # Save Trainer
+        if trainer_config_cache and (
+            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+        ):
+            trainer_config_cache.write_text(t.json())
+
+
+@build.command(name="visnet")
+@output_dir
+@trainer_config_cache
+@optim_args
+@model_config_cache
+@model_rand_seed
+@wandb_args
+@mtenn_args
+@visnet_args
+@es_args
+@graph_ds_args
+@struct_ds_args
+@ds_split_args
+@loss_args
+@trainer_args
+@overwrite_args
+def build_visnet(
+    output_dir: Path | None = None,
+    trainer_config_cache: Path | None = None,
+    optimizer_type: OptimizerType | None = None,
+    lr: float | None = None,
+    weight_decay: float | None = None,
+    momentum: float | None = None,
+    dampening: float | None = None,
+    b1: float | None = None,
+    b2: float | None = None,
+    eps: float | None = None,
+    rho: float | None = None,
+    optimizer_config_cache: Path | None = None,
+    use_wandb: bool | None = None,
+    sweep: bool | None = None,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
+    grouped: bool | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
+    max_comb_neg: bool | None = None,
+    max_comb_scale: float | None = None,
+    pred_substrate: float | None = None,
+    pred_km: float | None = None,
+    comb_substrate: float | None = None,
+    comb_km: float | None = None,
+    model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
+    lmax: int | None = None,
+    vecnorm_type: str | None = None,
+    trainable_vecnorm: bool | None = None,
+    num_heads: int | None = None,
+    num_layers: int | None = None,
+    hidden_channels: int | None = None,
+    num_rbf: int | None = None,
+    trainable_rbf: bool | None = None,
+    max_z: int | None = None,
+    cutoff: float | None = None,
+    max_num_neighbors: int | None = None,
+    vertex: bool | None = None,
+    reduce_op: str | None = None,
+    mean: float | None = None,
+    std: float | None = None,
+    derivative: bool | None = None,
+    es_type: EarlyStoppingType | None = None,
+    es_patience: int | None = None,
+    es_n_check: int | None = None,
+    es_divergence: float | None = None,
+    es_config_cache: Path | None = None,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    structures: str | None = None,
+    xtal_regex: str = MPRO_ID_REGEX,
+    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
+    ds_split_type: DatasetSplitterType | None = None,
+    train_frac: float | None = None,
+    val_frac: float | None = None,
+    test_frac: float | None = None,
+    enforce_one: bool | None = None,
+    ds_rand_seed: int | None = None,
+    ds_split_config_cache: Path | None = None,
+    loss_type: LossFunctionType | None = None,
+    semiquant_fill: float | None = None,
+    loss_config_cache: Path | None = None,
+    auto_init: bool | None = None,
+    start_epoch: int | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None,
+    target_prop: str | None = None,
+    cont: bool | None = None,
+    loss_dict: dict | None = None,
+    device: torch.device | None = None,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
+):
+    # First check if Trainer cache exists and skip everything else if so
+    if (
+        trainer_config_cache
+        and trainer_config_cache.exists()
+        and (not overwrite_trainer_config_cache)
+    ):
+        print("loaded trainer from cache", flush=True)
+        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    else:
+        # Build each dict and pass to Trainer
+        optim_config = {
+            "cache": optimizer_config_cache,
+            "overwrite_cache": overwrite_optimizer_config_cache,
+            "optimizer_type": optimizer_type,
+            "lr": lr,
+            "weight_decay": weight_decay,
+            "momentum": momentum,
+            "dampening": dampening,
+            "b1": b1,
+            "b2": b2,
+            "eps": eps,
+            "rho": rho,
+        }
+        model_config = {
+            "cache": model_config_cache,
+            "overwrite_cache": overwrite_model_config_cache,
+            "model_type": ModelType.visnet,
+            "rand_seed": model_rand_seed,
+            "grouped": grouped,
+            "strategy": strategy,
+            "pred_readout": pred_readout,
+            "combination": combination,
+            "comb_readout": comb_readout,
+            "max_comb_neg": max_comb_neg,
+            "max_comb_scale": max_comb_scale,
+            "pred_substrate": pred_substrate,
+            "pred_km": pred_km,
+            "comb_substrate": comb_substrate,
+            "comb_km": comb_km,
+            "lmax": lmax,
+            "vecnorm_type": vecnorm_type,
+            "trainable_vecnorm": trainable_vecnorm,
+            "num_heads": num_heads,
+            "num_layers": num_layers,
+            "hidden_channels": hidden_channels,
+            "num_rbf": num_rbf,
+            "trainable_rbf": trainable_rbf,
+            "max_z": max_z,
+            "cutoff": cutoff,
+            "max_num_neighbors": max_num_neighbors,
+            "vertex": vertex,
+            "reduce_op": reduce_op,
+            "mean": mean,
+            "std": std,
+            "derivative": derivative,
+        }
+        if (es_config_cache and es_config_cache.exists()) or es_type:
+            es_config = {
+                "cache": es_config_cache,
+                "overwrite_cache": overwrite_es_config_cache,
+                "es_type": es_type,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
+            }
+        else:
+            es_config = None
+        ds_config = {
+            "cache": ds_config_cache,
+            "overwrite_cache": overwrite_ds_config_cache,
+            "exp_file": exp_file,
+            "is_structural": True,
+            "structures": structures,
+            "xtal_regex": xtal_regex,
+            "cpd_regex": cpd_regex,
+            "cache_file": ds_cache,
+            "overwrite": overwrite_ds_cache,
+            "grouped": grouped,
+            "for_e3nn": False,
         }
 
         ds_splitter_config = {
@@ -808,6 +1074,7 @@ def build_e3nn(
 
 @build_and_train.command(name="gat")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @wandb_args
@@ -823,6 +1090,7 @@ def build_e3nn(
 @overwrite_args
 def build_and_train_gat(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -927,6 +1195,7 @@ def build_and_train_gat(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.GAT,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -955,9 +1224,9 @@ def build_and_train_gat(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -974,6 +1243,7 @@ def build_and_train_gat(
             "cache": ds_split_config_cache,
             "overwrite_cache": overwrite_ds_split_config_cache,
             "split_type": ds_split_type,
+            "grouped": grouped,
             "train_frac": train_frac,
             "val_frac": val_frac,
             "test_frac": test_frac,
@@ -1050,6 +1320,7 @@ def build_and_train_gat(
 
 @build_and_train.command(name="schnet")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -1066,6 +1337,7 @@ def build_and_train_gat(
 @overwrite_args
 def build_and_train_schnet(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1172,6 +1444,7 @@ def build_and_train_schnet(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.schnet,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -1199,9 +1472,9 @@ def build_and_train_schnet(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -1223,6 +1496,7 @@ def build_and_train_schnet(
             "cache": ds_split_config_cache,
             "overwrite_cache": overwrite_ds_split_config_cache,
             "split_type": ds_split_type,
+            "grouped": grouped,
             "train_frac": train_frac,
             "val_frac": val_frac,
             "test_frac": test_frac,
@@ -1299,6 +1573,7 @@ def build_and_train_schnet(
 
 @build_and_train.command("e3nn")
 @output_dir
+@weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -1315,6 +1590,7 @@ def build_and_train_schnet(
 @overwrite_args
 def build_and_train_e3nn(
     output_dir: Path | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1422,6 +1698,7 @@ def build_and_train_e3nn(
             "overwrite_cache": overwrite_model_config_cache,
             "model_type": ModelType.e3nn,
             "rand_seed": model_rand_seed,
+            "weights_path": weights_path,
             "grouped": grouped,
             "strategy": strategy,
             "pred_readout": pred_readout,
@@ -1450,9 +1727,9 @@ def build_and_train_e3nn(
                 "cache": es_config_cache,
                 "overwrite_cache": overwrite_es_config_cache,
                 "es_type": es_type,
-                "es_patience": es_patience,
-                "es_n_check": es_n_check,
-                "es_divergence": es_divergence,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
             }
         else:
             es_config = None
@@ -1468,6 +1745,263 @@ def build_and_train_e3nn(
             "overwrite": overwrite_ds_cache,
             "grouped": grouped,
             "for_e3nn": True,
+        }
+
+        ds_splitter_config = {
+            "cache": ds_split_config_cache,
+            "overwrite_cache": overwrite_ds_split_config_cache,
+            "split_type": ds_split_type,
+            "grouped": grouped,
+            "train_frac": train_frac,
+            "val_frac": val_frac,
+            "test_frac": test_frac,
+            "enforce_one": enforce_one,
+            "rand_seed": ds_rand_seed,
+        }
+        loss_config = {
+            "cache": loss_config_cache,
+            "overwrite_cache": overwrite_loss_config_cache,
+            "loss_type": loss_type,
+            "semiquant_fill": semiquant_fill,
+        }
+
+        # Parse loss_dict
+        if loss_dict:
+            loss_dict = json.loads(loss_dict.read_text())
+
+        # Filter out None Trainer kwargs
+        trainer_kwargs = {
+            "optimizer_config": optim_config,
+            "model_config": model_config,
+            "es_config": es_config,
+            "ds_config": ds_config,
+            "ds_splitter_config": ds_splitter_config,
+            "loss_config": loss_config,
+            "auto_init": auto_init,
+            "start_epoch": start_epoch,
+            "n_epochs": n_epochs,
+            "batch_size": batch_size,
+            "target_prop": target_prop,
+            "cont": cont,
+            "loss_dict": loss_dict,
+            "device": device,
+            "output_dir": output_dir,
+            "use_wandb": use_wandb,
+            "sweep": sweep,
+            "wandb_project": wandb_project,
+            "wandb_name": wandb_name,
+            "extra_config": extra_config,
+        }
+        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+
+        try:
+            t = Trainer(**trainer_kwargs)
+        except pydantic.ValidationError as exc:
+            # Only want to handle missing values, so if anything else went wrong just raise
+            #  the pydantic error
+            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+                raise exc
+
+            # Gather all missing values
+            missing_vals = [err["loc"][0] for err in exc.errors()]
+
+            raise ValueError(
+                "Tried to build Trainer but missing required values: ["
+                + ", ".join(missing_vals)
+                + "]"
+            )
+
+        # Save Trainer
+        if trainer_config_cache and (
+            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+        ):
+            trainer_config_cache.write_text(t.json())
+
+    t.initialize()
+    t.train()
+
+
+@build_and_train.command(name="visnet")
+@output_dir
+@trainer_config_cache
+@optim_args
+@model_config_cache
+@model_rand_seed
+@wandb_args
+@mtenn_args
+@visnet_args
+@es_args
+@graph_ds_args
+@struct_ds_args
+@ds_split_args
+@loss_args
+@trainer_args
+@overwrite_args
+def build_and_train_visnet(
+    output_dir: Path | None = None,
+    trainer_config_cache: Path | None = None,
+    optimizer_type: OptimizerType | None = None,
+    lr: float | None = None,
+    weight_decay: float | None = None,
+    momentum: float | None = None,
+    dampening: float | None = None,
+    b1: float | None = None,
+    b2: float | None = None,
+    eps: float | None = None,
+    rho: float | None = None,
+    optimizer_config_cache: Path | None = None,
+    use_wandb: bool | None = None,
+    sweep: bool | None = None,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
+    grouped: bool | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
+    max_comb_neg: bool | None = None,
+    max_comb_scale: float | None = None,
+    pred_substrate: float | None = None,
+    pred_km: float | None = None,
+    comb_substrate: float | None = None,
+    comb_km: float | None = None,
+    model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
+    lmax: int | None = None,
+    vecnorm_type: str | None = None,
+    trainable_vecnorm: bool | None = None,
+    num_heads: int | None = None,
+    num_layers: int | None = None,
+    hidden_channels: int | None = None,
+    num_rbf: int | None = None,
+    trainable_rbf: bool | None = None,
+    max_z: int | None = None,
+    cutoff: float | None = None,
+    max_num_neighbors: int | None = None,
+    vertex: bool | None = None,
+    reduce_op: str | None = None,
+    mean: float | None = None,
+    std: float | None = None,
+    derivative: bool | None = None,
+    es_type: EarlyStoppingType | None = None,
+    es_patience: int | None = None,
+    es_n_check: int | None = None,
+    es_divergence: float | None = None,
+    es_config_cache: Path | None = None,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    structures: str | None = None,
+    xtal_regex: str = MPRO_ID_REGEX,
+    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
+    ds_split_type: DatasetSplitterType | None = None,
+    train_frac: float | None = None,
+    val_frac: float | None = None,
+    test_frac: float | None = None,
+    enforce_one: bool | None = None,
+    ds_rand_seed: int | None = None,
+    ds_split_config_cache: Path | None = None,
+    loss_type: LossFunctionType | None = None,
+    semiquant_fill: float | None = None,
+    loss_config_cache: Path | None = None,
+    auto_init: bool | None = None,
+    start_epoch: int | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None,
+    target_prop: str | None = None,
+    cont: bool | None = None,
+    loss_dict: dict | None = None,
+    device: torch.device | None = None,
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
+):
+    # First check if Trainer cache exists and skip everything else if so
+    if (
+        trainer_config_cache
+        and trainer_config_cache.exists()
+        and (not overwrite_trainer_config_cache)
+    ):
+        print("loaded trainer from cache", flush=True)
+        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    else:
+        # Build each dict and pass to Trainer
+        optim_config = {
+            "cache": optimizer_config_cache,
+            "overwrite_cache": overwrite_optimizer_config_cache,
+            "optimizer_type": optimizer_type,
+            "lr": lr,
+            "weight_decay": weight_decay,
+            "momentum": momentum,
+            "dampening": dampening,
+            "b1": b1,
+            "b2": b2,
+            "eps": eps,
+            "rho": rho,
+        }
+
+        model_config = {
+            "cache": model_config_cache,
+            "overwrite_cache": overwrite_model_config_cache,
+            "model_type": ModelType.visnet,
+            "rand_seed": model_rand_seed,
+            "grouped": grouped,
+            "strategy": strategy,
+            "pred_readout": pred_readout,
+            "combination": combination,
+            "comb_readout": comb_readout,
+            "max_comb_neg": max_comb_neg,
+            "max_comb_scale": max_comb_scale,
+            "pred_substrate": pred_substrate,
+            "pred_km": pred_km,
+            "comb_substrate": comb_substrate,
+            "comb_km": comb_km,
+            "lmax": lmax,
+            "vecnorm_type": vecnorm_type,
+            "trainable_vecnorm": trainable_vecnorm,
+            "num_heads": num_heads,
+            "num_layers": num_layers,
+            "hidden_channels": hidden_channels,
+            "num_rbf": num_rbf,
+            "trainable_rbf": trainable_rbf,
+            "max_z": max_z,
+            "cutoff": cutoff,
+            "max_num_neighbors": max_num_neighbors,
+            "vertex": vertex,
+            "reduce_op": reduce_op,
+            "mean": mean,
+            "std": std,
+            "derivative": derivative,
+        }
+        if (es_config_cache and es_config_cache.exists()) or es_type:
+            es_config = {
+                "cache": es_config_cache,
+                "overwrite_cache": overwrite_es_config_cache,
+                "es_type": es_type,
+                "patience": es_patience,
+                "n_check": es_n_check,
+                "divergence": es_divergence,
+            }
+        else:
+            es_config = None
+        ds_config = {
+            "cache": ds_config_cache,
+            "overwrite_cache": overwrite_ds_config_cache,
+            "exp_file": exp_file,
+            "is_structural": True,
+            "structures": structures,
+            "xtal_regex": xtal_regex,
+            "cpd_regex": cpd_regex,
+            "cache_file": ds_cache,
+            "overwrite": overwrite_ds_cache,
+            "grouped": grouped,
+            "for_e3nn": False,
         }
 
         ds_splitter_config = {
@@ -1637,6 +2171,39 @@ def build_ds_e3nn(
         is_structural=True,
         is_grouped=grouped,
         for_e3nn=True,
+        config_overwrite=overwrite_ds_config_cache,
+        pkl_overwrite=overwrite_ds_cache,
+    )
+    ds_config.build()
+
+
+@build_ds.command(name="visnet")
+@graph_ds_args
+@struct_ds_args  # TODO: check what this on abouts
+@grouped
+@ds_cache_overwrite
+@ds_config_cache_overwrite
+def build_ds_visnet(
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    structures: str | None = None,
+    xtal_regex: str = MPRO_ID_REGEX,
+    cpd_regex: str = MOONSHOT_CDD_ID_REGEX,
+    grouped: bool | None = None,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+):
+    ds_config = _build_ds_config(
+        exp_file=exp_file,
+        structures=structures,
+        xtal_regex=xtal_regex,
+        cpd_regex=cpd_regex,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=True,  # TODO: check what this on about
+        is_grouped=grouped,
+        for_e3nn=False,  # TODO: check what this on about
         config_overwrite=overwrite_ds_config_cache,
         pkl_overwrite=overwrite_ds_cache,
     )

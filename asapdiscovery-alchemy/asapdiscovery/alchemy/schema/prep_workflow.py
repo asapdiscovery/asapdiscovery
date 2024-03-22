@@ -3,10 +3,10 @@ from typing import Any, Literal, Optional, Union
 
 import rich
 from asapdiscovery.alchemy.schema.base import _SchemaBase
-from asapdiscovery.data.schema_v2.complex import PreppedComplex
-from asapdiscovery.data.schema_v2.ligand import Ligand
-from asapdiscovery.data.state_expanders.protomer_expander import EpikExpander
-from asapdiscovery.data.state_expanders.stereo_expander import StereoExpander
+from asapdiscovery.data.operators.state_expanders.protomer_expander import EpikExpander
+from asapdiscovery.data.operators.state_expanders.stereo_expander import StereoExpander
+from asapdiscovery.data.schema.complex import PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
     RDKitConstrainedPoseGenerator,
@@ -85,7 +85,7 @@ class AlchemyDataSet(_AlchemyPrepBase):
         ----------
         filename: The name of the SDF the ligands should be saved to.
         """
-        from asapdiscovery.data.openeye import save_openeye_sdfs
+        from asapdiscovery.data.backend.openeye import save_openeye_sdfs
 
         oemols = [ligand.to_oemol() for ligand in self.posed_ligands]
         save_openeye_sdfs(oemols, filename)
