@@ -1,5 +1,5 @@
 import logging
-from typing import ClassVar, Union, Literal
+from typing import ClassVar, Literal, Union
 
 import numpy as np
 from asapdiscovery.data.backend.openeye import oechem
@@ -13,7 +13,11 @@ from pydantic import Field
 logger = logging.getLogger(__name__)
 
 
-def sort_by_mcs(reference_ligand: Ligand, target_ligands: list[Ligand], structure_matching: bool = False) -> np.array:
+def sort_by_mcs(
+    reference_ligand: Ligand,
+    target_ligands: list[Ligand],
+    structure_matching: bool = False,
+) -> np.array:
     """
     Get the sorted order of the target ligands by the MCS overlap with the reference ligand.
 
@@ -40,14 +44,14 @@ def sort_by_mcs(reference_ligand: Ligand, target_ligands: list[Ligand], structur
         * RingMember
         """
         atomexpr = (
-                oechem.OEExprOpts_Aromaticity
-                | oechem.OEExprOpts_HvyDegree
-                | oechem.OEExprOpts_RingMember
+            oechem.OEExprOpts_Aromaticity
+            | oechem.OEExprOpts_HvyDegree
+            | oechem.OEExprOpts_RingMember
         )
         bondexpr = (
-                oechem.OEExprOpts_Aromaticity
-                | oechem.OEExprOpts_BondOrder
-                | oechem.OEExprOpts_RingMember
+            oechem.OEExprOpts_Aromaticity
+            | oechem.OEExprOpts_BondOrder
+            | oechem.OEExprOpts_RingMember
         )
     else:
         """
@@ -64,9 +68,9 @@ def sort_by_mcs(reference_ligand: Ligand, target_ligands: list[Ligand], structur
         """
         atomexpr = oechem.OEExprOpts_AutomorphAtoms
         bondexpr = (
-                oechem.OEExprOpts_Aromaticity
-                | oechem.OEExprOpts_BondOrder
-                | oechem.OEExprOpts_RingMember
+            oechem.OEExprOpts_Aromaticity
+            | oechem.OEExprOpts_BondOrder
+            | oechem.OEExprOpts_RingMember
         )
 
     # use the ref mol as the pattern
@@ -159,7 +163,7 @@ class MCSSelector(SelectorBase):
             sort_idx = sort_by_mcs(
                 reference_ligand=ligand,
                 target_ligands=complex_ligands,
-                structure_matching=self.structure_based
+                structure_matching=self.structure_based,
             )
             complexes_sorted = np.asarray(complexes)[sort_idx]
 

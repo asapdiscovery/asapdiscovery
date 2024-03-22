@@ -77,6 +77,7 @@ class CDDAPI(_BaseWebAPI):
         # handle missing molecules, originally found when searching moonshot data
         if "error" in result:
             import re
+
             # extract the list of missing molecule ids
             missing_mols = []
             for match in re.finditer("[0-9]+", result["error"]):

@@ -9,8 +9,8 @@ from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
+    PosedLigands,
     RDKitConstrainedPoseGenerator,
-    PosedLigands
 )
 from pydantic import Field
 from rich import pretty
@@ -50,8 +50,11 @@ class _AlchemyPrepBase(_SchemaBase):
         True,
         description="Molecules will have conformers generated if their stereo chemistry matches the input molecule.",
     )
-    n_references: int = Field(3, description="The number of experimental reference molecules we should try to generate "
-                                             "poses for.")
+    n_references: int = Field(
+        3,
+        description="The number of experimental reference molecules we should try to generate "
+        "poses for.",
+    )
 
 
 class AlchemyDataSet(_AlchemyPrepBase):
@@ -116,7 +119,9 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         return failed_ligands
 
     @staticmethod
-    def _sort_similar_molecules(reference_ligand: Ligand, experimental_ligands: list[Ligand]) -> Ligand:
+    def _sort_similar_molecules(
+        reference_ligand: Ligand, experimental_ligands: list[Ligand]
+    ) -> Ligand:
         """
         Sort the list of experimental ligands by MCS overlap with the reference crystal ligand to determine the order
         in which the structures should be generated.
@@ -128,14 +133,14 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         Returns:
 
         """
-        from asapdiscovery.data.operators.selectors.mcs_selector import sort_by_mcs
         import numpy as np
+        from asapdiscovery.data.operators.selectors.mcs_selector import sort_by_mcs
 
         # use the mcs code to get the ordered indices of the matches
         sort_idx = sort_by_mcs(
             reference_ligand=reference_ligand,
             target_ligands=experimental_ligands,
-            structure_matching=False
+            structure_matching=False,
         )
 
         ligands_sorted = np.asarray(experimental_ligands)[sort_idx]
@@ -143,10 +148,10 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         return ligands_sorted
 
     def pose_experimental_molecules(
-            self,
-            reference_complex: PreppedComplex,
-            experimental_ligands: list[Ligand],
-            processors: int = 1,
+        self,
+        reference_complex: PreppedComplex,
+        experimental_ligands: list[Ligand],
+        processors: int = 1,
     ) -> list[Ligand]:
         """
         Iteratively try and generate poses for the experimental ligands until we have `self.n_references` posed.
@@ -163,33 +168,38 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         # run in batches so we don't try and generate poses for everything but run faster than serial
         batch_size = self.n_references * 2
         for i in range(0, len(experimental_ligands), batch_size):
-            ligand_batch = experimental_ligands[i: i + batch_size]
+            ligand_batch = experimental_ligands[i : i + batch_size]
             poses = self.pose_generator.generate_poses(
                 prepared_complex=reference_complex,
-                ligands=experimental_ligands[i: i + batch_size],
+                ligands=experimental_ligands[i : i + batch_size],
                 core_smarts=self.core_smarts,
                 processors=processors,
-                )
+            )
 
             posed_ligands = poses.posed_ligands
 
             if self.strict_stereo:
                 # remove the stereo issue molecules before checking how many have been posed
-                stereo_fails = AlchemyPrepWorkflow._validate_ligands(ligands=posed_ligands)
+                stereo_fails = AlchemyPrepWorkflow._validate_ligands(
+                    ligands=posed_ligands
+                )
                 posed_ligands = AlchemyPrepWorkflow._remove_fails(
-                    posed_ligands=posed_ligands,
-                    stereo_issue_ligands=stereo_fails
+                    posed_ligands=posed_ligands, stereo_issue_ligands=stereo_fails
                 )
 
             # skip to the next batch if none were generated
             if not posed_ligands:
                 continue
 
-            posed_ligands_by_inchi = dict((ligand.provenance.fixed_inchikey, ligand) for ligand in posed_ligands)
+            posed_ligands_by_inchi = {
+                ligand.provenance.fixed_inchikey: ligand for ligand in posed_ligands
+            }
             # ligands are not in order so check them in the input ordering
             for ligand in ligand_batch:
                 try:
-                    posed_refs.append(posed_ligands_by_inchi[ligand.provenance.fixed_inchikey])
+                    posed_refs.append(
+                        posed_ligands_by_inchi[ligand.provenance.fixed_inchikey]
+                    )
                 except KeyError:
                     continue
 
@@ -198,10 +208,12 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                 break
 
         # finally return either when we have enough or run out of ligands
-        return posed_refs[:self.n_references]
+        return posed_refs[: self.n_references]
 
     @staticmethod
-    def _remove_fails(posed_ligands: list[Ligand], stereo_issue_ligands: list[Ligand]) -> list[Ligand]:
+    def _remove_fails(
+        posed_ligands: list[Ligand], stereo_issue_ligands: list[Ligand]
+    ) -> list[Ligand]:
         """
         A helper method to remove ligands from the posed list which are in the stereo issue list.
 
@@ -224,7 +236,9 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         return final_ligands
 
     @staticmethod
-    def _deduplicate_experimental_ligands(posed_ligands: list[Ligand], experimental_ligands: list[Ligand]) -> list[Ligand]:
+    def _deduplicate_experimental_ligands(
+        posed_ligands: list[Ligand], experimental_ligands: list[Ligand]
+    ) -> list[Ligand]:
         """
         Remove duplicated ligands in the experimental list which have already been posed.
 
@@ -242,14 +256,18 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         """
         # find the protocol name so we can mark the experimental ligands
         protocol_name = experimental_ligands[0].tags.get("cdd_protocol")
-        posed_ligand_by_hash = dict((ligand.provenance.fixed_inchikey, ligand) for ligand in posed_ligands)
+        posed_ligand_by_hash = {
+            ligand.provenance.fixed_inchikey: ligand for ligand in posed_ligands
+        }
         final_exp_ligands = []
         for ligand in experimental_ligands:
             ligand_hash = ligand.provenance.fixed_inchikey
             if ligand_hash not in posed_ligand_by_hash:
                 final_exp_ligands.append(ligand)
             else:
-                posed_ligand_by_hash[ligand_hash].tags.update({"experimental": "True", "cdd_protocol": protocol_name})
+                posed_ligand_by_hash[ligand_hash].tags.update(
+                    {"experimental": "True", "cdd_protocol": protocol_name}
+                )
 
         return final_exp_ligands
 
@@ -259,7 +277,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         ligands: list[Ligand],
         reference_complex: PreppedComplex,
         processors: int = 1,
-        reference_ligands: Optional[list[Ligand]] = None
+        reference_ligands: Optional[list[Ligand]] = None,
     ) -> AlchemyDataSet:
         """
         Run the set of input ligands through the state enumeration and pose generation workflow to create a set of posed
@@ -353,8 +371,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                 # add the new fails to the rest
                 failed_ligands["InconsistentStereo"] = stereo_fails
                 posed_ligands = AlchemyPrepWorkflow._remove_fails(
-                    posed_ligands=posed_ligands,
-                    stereo_issue_ligands=stereo_fails
+                    posed_ligands=posed_ligands, stereo_issue_ligands=stereo_fails
                 )
 
             stereo_status.stop()
@@ -368,7 +385,9 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             # if so mark them with the correct tags for later and remove them from this list
             filter_status = console.status("Removing duplicated reference ligands")
             filter_status.start()
-            reference_ligands = AlchemyPrepWorkflow._deduplicate_experimental_ligands(posed_ligands=posed_ligands, experimental_ligands=reference_ligands)
+            reference_ligands = AlchemyPrepWorkflow._deduplicate_experimental_ligands(
+                posed_ligands=posed_ligands, experimental_ligands=reference_ligands
+            )
             filter_status.stop()
             if not reference_ligands:
                 console.print("All experimental ligands removed!")
@@ -377,7 +396,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             sort_status.start()
             sorted_exp_ligands = AlchemyPrepWorkflow._sort_similar_molecules(
                 reference_ligand=reference_complex.ligand,
-                experimental_ligands=reference_ligands
+                experimental_ligands=reference_ligands,
             )
             sort_status.stop()
 
@@ -399,8 +418,10 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             )
             posed_ligands.extend(posed_refs)
 
-        message = Padding(f"Poses successfully generated for {len(posed_ligands)} ligands.",
-                          (1, 0, 1, 0))
+        message = Padding(
+            f"Poses successfully generated for {len(posed_ligands)} ligands.",
+            (1, 0, 1, 0),
+        )
         console.print(message)
 
         # gather the results

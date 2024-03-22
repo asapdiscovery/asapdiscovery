@@ -1,6 +1,7 @@
+from typing import TYPE_CHECKING
+
 import pandas as pd
 import rich
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
@@ -84,7 +85,9 @@ def upload_to_postera(
     _, _, _ = postera_uploader.push(df=result_df)
 
 
-def get_cdd_molecules(protocol_name: str, defined_stereo_only: bool = True) -> list["Ligand"]:
+def get_cdd_molecules(
+    protocol_name: str, defined_stereo_only: bool = True
+) -> list["Ligand"]:
     """
     Search the CDD protocol for molecules with experimental values and return a list of asapdiscovery ligands.
 
@@ -106,7 +109,9 @@ def get_cdd_molecules(protocol_name: str, defined_stereo_only: bool = True) -> l
 
     ref_ligands = []
     for _, row in cdd_data.iterrows():
-        asap_mol = Ligand.from_smiles(smiles=row["Smiles"], compound_name=row["Molecule Name"])
+        asap_mol = Ligand.from_smiles(
+            smiles=row["Smiles"], compound_name=row["Molecule Name"]
+        )
         asap_mol.tags["cdd_protocol"] = protocol_name
         asap_mol.tags["experimental"] = "True"
         ref_ligands.append(asap_mol)
@@ -116,6 +121,7 @@ def get_cdd_molecules(protocol_name: str, defined_stereo_only: bool = True) -> l
         defined_ligands = []
         from openff.toolkit import Molecule
         from openff.toolkit.utils.exceptions import UndefinedStereochemistryError
+
         for mol in ref_ligands:
             try:
                 _ = Molecule.from_smiles(mol.smiles)

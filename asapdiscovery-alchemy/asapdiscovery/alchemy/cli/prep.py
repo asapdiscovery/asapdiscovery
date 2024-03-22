@@ -81,7 +81,7 @@ def create(filename: str, core_smarts: str):
     default="auto",
     show_default=True,
     help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), "
-         "`all` will use all or the exact number of cpus to use can be provided.",
+    "`all` will use all or the exact number of cpus to use can be provided.",
 )
 @click.option(
     "-pm",
@@ -190,11 +190,15 @@ def run(
     if experimental_protocol is not None and factory.n_references > 0:
         from asapdiscovery.alchemy.cli.utils import get_cdd_molecules
 
-        message = Padding(f"Requested injection of {factory.n_references} experimental references into the network",
-                          (1, 0, 1, 0))
+        message = Padding(
+            f"Requested injection of {factory.n_references} experimental references into the network",
+            (1, 0, 1, 0),
+        )
         console.print(message)
 
-        cdd_status = console.status(f"Downloading experimental ligands from CDD protocol {experimental_protocol}")
+        cdd_status = console.status(
+            f"Downloading experimental ligands from CDD protocol {experimental_protocol}"
+        )
         cdd_status.start()
         # get all molecules with data for the given protocol
         ref_ligands = get_cdd_molecules(protocol_name=experimental_protocol)
@@ -202,7 +206,7 @@ def run(
 
         message = Padding(
             f"Extracted {len(ref_ligands)} ligands from the CDD protocol {experimental_protocol}",
-            (1, 0, 1, 0)
+            (1, 0, 1, 0),
         )
         console.print(message)
     else:
@@ -218,7 +222,7 @@ def run(
         ligands=asap_ligands,
         reference_complex=ref_complex,
         processors=processors,
-        reference_ligands=ref_ligands
+        reference_ligands=ref_ligands,
     )
     output_folder = pathlib.Path(dataset_name)
     output_folder.mkdir(parents=True, exist_ok=True)
