@@ -3,7 +3,7 @@ import pickle as pkl
 
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.cli import cli
+from asapdiscovery.ml.cli import ml as cli
 from asapdiscovery.ml.config import DatasetConfig
 from asapdiscovery.ml.trainer import Trainer
 from click.testing import CliRunner
