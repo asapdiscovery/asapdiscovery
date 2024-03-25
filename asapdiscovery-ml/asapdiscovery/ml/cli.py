@@ -43,6 +43,7 @@ from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyCo
 
 @click.group()
 def ml():
+    """Tools to build and train ML models and run inference."""
     pass
 
 
