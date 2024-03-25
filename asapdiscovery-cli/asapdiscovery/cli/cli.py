@@ -23,6 +23,6 @@ from asapdiscovery.alchemy.cli.cli import alchemy  # noqa: F401, E402, F811
 cli.add_command(alchemy)
 
 
-from asapdiscovery.ml.cli import ml
+from asapdiscovery.ml.cli import ml  # noqa: F401, E402, F811
 
 cli.add_command(ml)
