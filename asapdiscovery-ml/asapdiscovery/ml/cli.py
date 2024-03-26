@@ -221,17 +221,14 @@ def build_gat(
             "biases": biases,
             "allow_zero_in_degree": allow_zero_in_degree,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -460,17 +457,14 @@ def build_schnet(
             "mean": mean,
             "std": std,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -706,17 +700,14 @@ def build_e3nn(
             "num_neighbors": num_neighbors,
             "num_nodes": num_nodes,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -959,17 +950,14 @@ def build_visnet(
             "std": std,
             "derivative": derivative,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -1200,17 +1188,14 @@ def build_and_train_gat(
             "biases": biases,
             "allow_zero_in_degree": allow_zero_in_degree,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -1442,17 +1427,14 @@ def build_and_train_schnet(
             "mean": mean,
             "std": std,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -1691,17 +1673,14 @@ def build_and_train_e3nn(
             "num_neighbors": num_neighbors,
             "num_nodes": num_nodes,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -1948,17 +1927,14 @@ def build_and_train_visnet(
             "std": std,
             "derivative": derivative,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
