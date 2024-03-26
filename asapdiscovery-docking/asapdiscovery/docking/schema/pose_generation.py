@@ -196,7 +196,9 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
                 best_pose = oechem.OEGraphMol(poses[0][1])
 
                 # set SD data to whole molecule, then get all the SD data and set to all conformers
-                set_SD_data(best_pose, {f"{self.selector.value}_score": str(poses[0][0])})
+                set_SD_data(
+                    best_pose, {f"{self.selector.value}_score": str(poses[0][0])}
+                )
 
             # turn back into a single conformer molecule
             posed_ligands.append(best_pose)
@@ -230,7 +232,6 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         best_pose = oechem.OEGraphMol(poses[0][1])
         set_SD_data(best_pose, {f"{self.backup_score.value}_energy": str(poses[0][0])})
         return best_pose
-
 
 
 class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
