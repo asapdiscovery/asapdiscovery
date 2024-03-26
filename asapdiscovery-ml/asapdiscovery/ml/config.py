@@ -137,7 +137,7 @@ class EarlyStoppingConfig(BaseModel):
     """
 
     es_type: EarlyStoppingType = Field(
-        ...,
+        EarlyStoppingType.none,
         description=(
             "Type of early stopping to use. "
             f"Options are [{', '.join(EarlyStoppingType.get_values())}]."
