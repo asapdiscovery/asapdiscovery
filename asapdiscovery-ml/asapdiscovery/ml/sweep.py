@@ -93,7 +93,10 @@ class Sweeper(Trainer):
             except AttributeError:
                 failed_keys.append(orig_key)
 
-        raise AttributeError(f"Could not assign values for these keys: {failed_keys}")
+        if len(failed_keys) > 0:
+            raise AttributeError(
+                f"Could not assign values for these keys: {failed_keys}"
+            )
 
     @staticmethod
     def _sweep_dispatch(sweeper: "Sweeper"):
