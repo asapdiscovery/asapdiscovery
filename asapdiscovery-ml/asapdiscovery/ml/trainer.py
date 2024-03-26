@@ -38,8 +38,8 @@ class Trainer(BaseModel):
     model_config: ModelConfigBase = Field(
         ..., description="Config describing the model to train."
     )
-    es_config: EarlyStoppingConfig | None = Field(
-        None, description="Config describing the early stopping check to use."
+    es_config: EarlyStoppingConfig = Field(
+        ..., description="Config describing the early stopping check to use."
     )
     ds_config: DatasetConfig = Field(
         ..., description="Config describing the dataset object to train on."
@@ -467,10 +467,7 @@ class Trainer(BaseModel):
         self.optimizer = self.optimizer_config.build(self.model.parameters())
 
         # Build early stopping
-        if self.es_config:
-            self.es = self.es_config.build()
-        else:
-            self.es = None
+        self.es = self.es_config.build()
 
         # Build dataset and split
         self.ds = self.ds_config.build()

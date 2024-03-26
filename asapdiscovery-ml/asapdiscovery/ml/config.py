@@ -125,6 +125,7 @@ class EarlyStoppingType(StringEnum):
     Enum for early stopping classes.
     """
 
+    none = "none"
     best = "best"
     converged = "converged"
     patient_converged = "patient_converged"
@@ -169,6 +170,8 @@ class EarlyStoppingConfig(BaseModel):
     @root_validator(pre=False)
     def check_args(cls, values):
         match values["es_type"]:
+            case EarlyStoppingType.none:
+                pass
             case EarlyStoppingType.best:
                 if values["patience"] is None:
                     raise ValueError(
@@ -195,6 +198,8 @@ class EarlyStoppingConfig(BaseModel):
         self,
     ) -> BestEarlyStopping | ConvergedEarlyStopping | PatientConvergedEarlyStopping:
         match self.es_type:
+            case EarlyStoppingType.none:
+                return None
             case EarlyStoppingType.best:
                 return BestEarlyStopping(self.patience)
             case EarlyStoppingType.converged:
