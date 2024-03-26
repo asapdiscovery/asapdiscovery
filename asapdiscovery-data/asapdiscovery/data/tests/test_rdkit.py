@@ -15,7 +15,7 @@ def test_ligand_sdf(moonshot_sdf, multipose_ligand, sdf_file):
 
 
 def test_sd_tag_processing(moonshot_sdf, multipose_ligand):
-    from asapdiscovery.data.backend.rdkit import get_SD_data
+    from asapdiscovery.data.backend.rdkit import get_SD_data, set_SD_data
 
     single_conf = load_sdf(moonshot_sdf)
     assert get_SD_data(single_conf) == {}
@@ -431,3 +431,19 @@ def test_sd_tag_processing(moonshot_sdf, multipose_ligand):
             "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
         ],
     }
+
+    simple_data = {"test": "value"}
+    set_SD_data(single_conf, simple_data)
+    assert get_SD_data(single_conf)["test"] == ["value"]
+
+    set_SD_data(multiconf, simple_data)
+    assert get_SD_data(multiconf)["test"] == ["value"] * multiconf.GetNumConformers()
+
+    with pytest.raises(ValueError):
+        set_SD_data(single_conf, {"test": ["value", "value2"]})
+
+    with pytest.raises(ValueError):
+        set_SD_data(single_conf, {"test": []})
+
+    with pytest.raises(ValueError):
+        set_SD_data(multiconf, {"test": ["value", "value2"]})

@@ -21,7 +21,7 @@ def _set_SD_data(mol: Union[Chem.Mol, Chem.Conformer], data: dict[str, str]):
         mol.SetProp(str(key), str(value))
 
 
-def set_SD_data(mol: Chem.Mol, data: dict[str, list]):
+def set_SD_data(mol: Chem.Mol, data: dict[str, str | list]):
     """
     Set the SD data on an rdkit molecule, overwriting any existing data.
     If the length of a list is 1, will set that value to all conformers.
