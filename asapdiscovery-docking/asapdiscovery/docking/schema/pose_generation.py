@@ -3,13 +3,12 @@ from enum import Enum
 from typing import Any, Literal, Optional
 
 from asapdiscovery.data.backend.openeye import (
-    _get_SD_data,
-    _set_SD_data,
+    get_SD_data,
+    set_SD_data,
     oechem,
     oedocking,
     oeff,
     oeomega,
-    set_SD_data,
 )
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
@@ -189,20 +188,21 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             # this will select the lowest energy conformer
             unique_scores = {pose[0] for pose in poses}
             if len(unique_scores) == 1 and len(poses) != 1:
-                self._select_by_energy(ligand)
+                best_pose = self._select_by_energy(ligand)
 
             else:
                 # set the best score as the active conformer
                 poses = sorted(poses, key=lambda x: x[0])
-                ligand.SetActive(poses[0][1])
+                best_pose = oechem.OEGraphMol(poses[0][1])
+
                 # set SD data to whole molecule, then get all the SD data and set to all conformers
-                _set_SD_data(ligand, {f"{self.selector.value}_score": str(poses[0][0])})
+                set_SD_data(best_pose, {f"{self.selector.value}_score": str(poses[0][0])})
 
             # turn back into a single conformer molecule
-            posed_ligands.append(oechem.OEGraphMol(ligand))
+            posed_ligands.append(best_pose)
         return posed_ligands
 
-    def _select_by_energy(self, ligand: oechem.OEMol):
+    def _select_by_energy(self, ligand: oechem.OEMol) -> oechem.OEGraphMol:
         """
         Calculate the internal energy of each conformer of the ligand using the backup score force field and select the lowest energy pose as active
 
@@ -227,8 +227,10 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             poses.append((ff(vec_coords), conformer))
 
         poses = sorted(poses, key=lambda x: x[0])
-        ligand.SetActive(poses[0][1])
-        set_SD_data(ligand, {f"{self.backup_score.value}_energy": str(poses[0][0])})
+        best_pose = oechem.OEGraphMol(poses[0][1])
+        set_SD_data(best_pose, {f"{self.backup_score.value}_energy": str(poses[0][0])})
+        return best_pose
+
 
 
 class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
@@ -361,6 +363,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         Returns:
             The openeye molecule containing the posed conformers.
         """
+        from asapdiscovery.data.backend.openeye import get_SD_data, set_SD_data
 
         if core_smarts is not None:
             core_fragment = self._generate_core_fragment(
@@ -377,6 +380,9 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             core_fragment=core_fragment, use_mcs=use_mcs
         )
 
+        # Get SD data because generating conformers will remove it
+        sd_data = get_SD_data(target_ligand)
+
         # run omega
         return_code = omega_generator.Build(target_ligand)
 
@@ -384,17 +390,14 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         oechem.OESuppressHydrogens(target_ligand)
         oechem.OEAddExplicitHydrogens(target_ligand)
 
+        # add SD data back
+        set_SD_data(target_ligand, sd_data)
+
         if (target_ligand.GetDimension() != 3) or (
             return_code != oeomega.OEOmegaReturnCode_Success
         ):
             # add the failure message as an SD tag, should be able to see visually if the molecule is 2D
 
-            # because of downstream inconsistencies in the way we handle SD data, here we'll just add both to the
-            # top level and conformations. There are testing errors if we don't do both.
-            _set_SD_data(
-                mol=target_ligand,
-                data={"omega_return_code": oeomega.OEGetOmegaError(return_code)},
-            )
             set_SD_data(
                 mol=target_ligand,
                 data={"omega_return_code": oeomega.OEGetOmegaError(return_code)},
@@ -430,7 +433,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     pool.submit(
                         self._generate_pose,
                         **{
-                            "target_ligand": oechem.OEMol(mol.to_oemol()),
+                            "target_ligand": mol.to_oemol(),
                             "core_smarts": core_smarts,
                             "reference_ligand": reference_ligand,
                         },
@@ -440,19 +443,19 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 for work in as_completed(work_list):
                     target_ligand = work.result()
                     # check if coordinates could be generated
-                    if "omega_return_code" in _get_SD_data(target_ligand):
+                    if "omega_return_code" in get_SD_data(target_ligand):
                         failed_ligands.append(target_ligand)
                     else:
                         result_ligands.append(target_ligand)
         else:
             for mol in ligands:
                 posed_ligand = self._generate_pose(
-                    target_ligand=oechem.OEMol(mol.to_oemol()),
+                    target_ligand=mol.to_oemol(),
                     core_smarts=core_smarts,
                     reference_ligand=reference_ligand,
                 )
                 # check if coordinates could be generated
-                if "omega_return_code" in _get_SD_data(posed_ligand):
+                if "omega_return_code" in get_SD_data(posed_ligand):
                     failed_ligands.append(posed_ligand)
                 else:
                     result_ligands.append(posed_ligand)

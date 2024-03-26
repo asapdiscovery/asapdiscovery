@@ -16,7 +16,6 @@ from typing import (  # noqa: F401
 import numpy as np
 from asapdiscovery.data.backend.openeye import (
     clear_SD_data,
-    get_multiconf_SD_data,
     load_openeye_sdf,
     oechem,
     oemol_to_inchi,
@@ -25,7 +24,7 @@ from asapdiscovery.data.backend.openeye import (
     oemol_to_smiles,
     oequacpac,
     sdf_string_to_oemol,
-    set_multiconf_SD_data,
+    set_SD_data,
     set_SD_data,
     smiles_to_oemol,
 )
@@ -183,15 +182,18 @@ class Ligand(DataModelAbstractBase):
         """
         Create a Ligand from an OEMol extracting all SD tags into the internal model
         """
+        from asapdiscovery.data.backend.openeye import get_SD_data
+        from asapdiscovery.data.util.data_conversion import get_first_value_of_dict_of_lists
         # work with a copy as we change the state of the molecule
         input_mol = oechem.OEMol(mol)
         oechem.OEClearAromaticFlags(input_mol)
         oechem.OEAssignAromaticFlags(input_mol, oechem.OEAroModel_MDL)
         oechem.OEAssignHybridization(input_mol)
         kwargs.pop("data", None)
-        sd_tags = {
-            k: values[0] for k, values in get_multiconf_SD_data(input_mol).items()
-        }
+
+        conf_tags = get_SD_data(mol)
+        sd_tags = get_first_value_of_dict_of_lists(conf_tags)
+
         for key, value in sd_tags.items():
             try:
                 # check to see if we have JSON of a model field
@@ -199,7 +201,7 @@ class Ligand(DataModelAbstractBase):
             except json.JSONDecodeError:
                 kwargs[key] = value
 
-        # extract all info as a tag if it has no field on the model
+        # extract all passed kwargs as a tag if it has no field in the model
         keys_to_save = [
             key for key in kwargs.keys() if key not in cls.__fields__.keys()
         ]
@@ -207,8 +209,6 @@ class Ligand(DataModelAbstractBase):
         kwargs["tags"] = tags
 
         # Do the same thing for the conformer tags, only keeping the ones in 'tags'
-        conf_tags = get_multiconf_SD_data(input_mol)
-
         kwargs["conf_tags"] = [
             (key, value) for key, value in conf_tags.items() if key in keys_to_save
         ]
@@ -250,31 +250,18 @@ class Ligand(DataModelAbstractBase):
         # dump the enum using value to get the str repr
         data["data_format"] = self.data_format.value
 
-        # set the SD that is the same for every conformer
-        mol = set_SD_data(mol, data)
+        # update conf tags to data
+        data.update(self.conf_tags)
 
-        # set the SD that is different for each conformer
-        # convert to str first
-        multiconf_data = {
-            tag: [str(v) for v in values] for tag, values in self.conf_tags.items()
-        }
-        mol = set_multiconf_SD_data(mol, multiconf_data)
+        mol = set_SD_data(mol, data)
 
         return mol
 
-    def to_oemols(self) -> list[oechem.OEMol]:
-        """
-        Convert the current molecule state to a list of OEMols
-        (one for each conformation) including all fields as SD tags.
-        """
-
-        return [oechem.OEMol(conf) for conf in self.to_oemol().GetConfs()]
-
     def to_single_conformers(self) -> ["Ligand"]:
         """
-        Return a new Ligand with only the conformer at the given index.
+        Return a Ligand object for each conformer.
         """
-        return [self.from_oemol(mol) for mol in self.to_oemols()]
+        return [self.from_oemol(conf) for conf in self.to_oemol().GetConfs()]
 
     def to_rdkit(self) -> "Chem.Mol":
         """
@@ -732,7 +719,7 @@ class Ligand(DataModelAbstractBase):
             If 'by' tag not found in ligand tags or if unable to sort the conformers
         """
         import numpy as np
-        from asapdiscovery.data.backend.openeye import get_multiconf_SD_data
+        from asapdiscovery.data.backend.openeye import get_SD_data
 
         if self.num_poses == 1:
             warnings.warn("Only one conformer present, no sorting will be done")
@@ -748,7 +735,7 @@ class Ligand(DataModelAbstractBase):
             sort_array = np.flip(sort_array)
         sorted_by_value = confs[sort_array]
         if mol.OrderConfs(sorted_by_value):
-            self.set_SD_data(get_multiconf_SD_data(mol))
+            self.set_SD_data(get_SD_data(mol))
             self.data = oemol_to_sdf_string(mol)
             return sort_array
         else:

@@ -37,7 +37,7 @@ def test_from_smiles_ids_made(smiles):
 def test_from_oemol_sd_tags_left(moonshot_sdf):
     """Make sure any sd tags on an oemol are not lost when building a ligand."""
     mol = load_openeye_sdf(str(moonshot_sdf))
-    sd_data = {"compound_name": "moonshot-mol", "energy": "1"}
+    sd_data = {"compound_name": ["moonshot-mol"], "energy": ["1"]}
     set_SD_data(mol, sd_data)
     # create a ligand keeping the original sd safe
     _ = Ligand.from_oemol(mol)
@@ -157,7 +157,7 @@ def test_multiconf_ligand_basics(multipose_ligand):
 
     ligs = lig.to_single_conformers()
 
-    mols = lig.to_oemols()
+    mols = [lig.to_oemol() for lig in ligs]
 
     assert len(ligs) == 50
     assert len(mols) == 50
