@@ -25,7 +25,6 @@ from asapdiscovery.data.backend.openeye import (
     oequacpac,
     sdf_string_to_oemol,
     set_SD_data,
-    set_SD_data,
     smiles_to_oemol,
 )
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
@@ -183,7 +182,10 @@ class Ligand(DataModelAbstractBase):
         Create a Ligand from an OEMol extracting all SD tags into the internal model
         """
         from asapdiscovery.data.backend.openeye import get_SD_data
-        from asapdiscovery.data.util.data_conversion import get_first_value_of_dict_of_lists
+        from asapdiscovery.data.util.data_conversion import (
+            get_first_value_of_dict_of_lists,
+        )
+
         # work with a copy as we change the state of the molecule
         input_mol = oechem.OEMol(mol)
         oechem.OEClearAromaticFlags(input_mol)
