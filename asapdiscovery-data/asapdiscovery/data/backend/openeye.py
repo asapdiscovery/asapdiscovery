@@ -831,16 +831,8 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
     # convert to dict of lists first
     data = {k: v if isinstance(v, list) else [v] for k, v in data.items()}
 
-    # The simplest option is for a GraphMol or ConfBase
-    if (
-        isinstance(mol, oechem.OEGraphMol)
-        or isinstance(mol, oechem.OEConfBase)
-        or isinstance(mol, oechem.OEMolBase)
-    ):
-        return _set_SD_data(mol, get_first_value_of_dict_of_lists(data))
-
     # If the object is an OEMol, we will set the SD data to all the conformers
-    elif isinstance(mol, oechem.OEMol):
+    if isinstance(mol, oechem.OEMol):
         for key, value_list in data.items():
             # if list is len 1, generate a list of len N, where N is the number of conformers
             if len(value_list) == 1:
@@ -853,8 +845,9 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
                 )
             for i, conf in enumerate(mol.GetConfs()):
                 oechem.OESetSDData(conf, key, value_list[i])
-        # _set_SD_data(mol, get_first_value_of_dict_of_lists(data))
         return mol
+    elif isinstance(mol, oechem.OEMolBase):
+        return _set_SD_data(mol, get_first_value_of_dict_of_lists(data))
 
     else:
         raise TypeError(
@@ -907,21 +900,14 @@ def get_SD_data(mol: oechem.OEMolBase) -> dict[str, list]:
         get_dict_of_lists_from_list_of_dicts,
     )
 
-    # The simplest option is for a GraphMol or ConfBase
-    if (
-        isinstance(mol, oechem.OEGraphMol)
-        or isinstance(mol, oechem.OEConfBase)
-        or isinstance(mol, oechem.OEMolBase)
-    ):
-        return get_dict_of_lists_from_dict_of_str(_get_SD_data(mol))
-
     # If the object is an OEMol, we have to pull from the conformers, because even if there is only one conformer
     # the data is stored at the conformer level if you generate an oemol from an sdf file
-    elif isinstance(mol, oechem.OEMol):
+    if isinstance(mol, oechem.OEMol):
         return get_dict_of_lists_from_list_of_dicts(
             [_get_SD_data(conf) for conf in mol.GetConfs()]
         )
-
+    elif isinstance(mol, oechem.OEMolBase):
+        return get_dict_of_lists_from_dict_of_str(_get_SD_data(mol))
     else:
         raise TypeError(
             f"Expected an OpenEye OEMol, OEGraphMol, or OEConf, but got {type(mol)}"
