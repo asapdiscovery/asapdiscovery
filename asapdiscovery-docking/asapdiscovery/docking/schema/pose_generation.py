@@ -380,7 +380,8 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             core_fragment=core_fragment, use_mcs=use_mcs
         )
 
-        # Get SD data because generating conformers will remove it
+        # Get SD data because the omega code will silently move it to the high level
+        # and that is inconsistent with what we do elsewhere
         sd_data = get_SD_data(target_ligand)
 
         # run omega
