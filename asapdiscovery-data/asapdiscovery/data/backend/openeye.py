@@ -834,7 +834,11 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
     data = {k: v if isinstance(v, list) else [v] for k, v in data.items()}
 
     # The simplest option is for a GraphMol or ConfBase
-    if isinstance(mol, oechem.OEGraphMol) or isinstance(mol, oechem.OEConfBase):
+    if (
+        isinstance(mol, oechem.OEGraphMol)
+        or isinstance(mol, oechem.OEConfBase)
+        or isinstance(mol, oechem.OEMolBase)
+    ):
         return _set_SD_data(mol, get_first_value_of_dict_of_lists(data))
 
     # If the object is an OEMol, we will set the SD data to all the conformers
@@ -907,7 +911,11 @@ def get_SD_data(mol: oechem.OEMolBase) -> dict[str, list]:
     )
 
     # The simplest option is for a GraphMol or ConfBase
-    if isinstance(mol, oechem.OEGraphMol) or isinstance(mol, oechem.OEConfBase):
+    if (
+        isinstance(mol, oechem.OEGraphMol)
+        or isinstance(mol, oechem.OEConfBase)
+        or isinstance(mol, oechem.OEMolBase)
+    ):
         return get_dict_of_lists_from_dict_of_str(_get_SD_data(mol))
 
     # If the object is an OEMol, we have to pull from the conformers, because even if there is only one conformer
