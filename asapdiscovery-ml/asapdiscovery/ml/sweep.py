@@ -46,7 +46,8 @@ class Sweeper(Trainer):
 
     def start_continue_sweep(self):
         """
-        Check for existing sweep, and start one if not.
+        Check for existing sweep, and start one if not. This is the function to run
+        when doing a sweep.
         """
 
         # If sweep_id_fn exists, load sweep_id from there
@@ -70,10 +71,29 @@ class Sweeper(Trainer):
             count=self.num_sweeps,
         )
 
-    def update_from_wandb_config(self):
+    def _update_from_wandb_config(self):
         """
         Parse the W&B sweep config and update the internal config objects appropriately.
         """
+
+        # Loop through keys and try to assign values
+        failed_keys = []
+        for k, v in wandb.config.items():
+            obj = self
+            orig_key = k
+            # Can't do nested accessions naturally, so keep taking the leftmost property
+            #  and updating the object we're pointing at
+            while not hasattr(obj, k):
+                accession, _, k = k.partition(".")
+                obj = getattr(obj, accession)
+
+            # Reached the bottom, so assign value
+            try:
+                setattr(obj, k, v)
+            except AttributeError:
+                failed_keys.append(orig_key)
+
+        raise AttributeError(f"Could not assign values for these keys: {failed_keys}")
 
     @staticmethod
     def _sweep_dispatch(sweeper: "Sweeper"):
@@ -91,5 +111,20 @@ class Sweeper(Trainer):
             This is the Sweeper class that will ultimately run the training
         """
 
-        wandb.init()
-        sweeper.update_from_wandb_config()
+        # Get config from sweep agent
+        run_id = wandb.init()
+
+        # Update output_dir to avoid overwriting stuff
+        sweeper.output_dir = sweeper.output_dir / run_id
+
+        # Update internal configs from sweep config
+        sweeper._update_from_wandb_config()
+
+        # Temporary un-set use_wandb flag to avoid confusing the initialize method
+        sweeper.use_wandb = False
+        # Run initialize to build all the objects
+        sweeper.initialize()
+        sweeper.use_wandb = True
+
+        # Finally run training
+        sweeper.train()
