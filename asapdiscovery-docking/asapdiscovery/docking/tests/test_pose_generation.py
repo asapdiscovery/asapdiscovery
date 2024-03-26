@@ -129,12 +129,10 @@ def test_select_by_energy(forcefield, ff_energy, mol_with_constrained_confs):
 
     # select best pose by energy
     best_pose = pose_generator._select_by_energy(ligand=mol_with_constrained_confs)
-    assert (
-        mol_with_constrained_confs.GetActive().GetCoords() != best_pose.GetCoords()
+    assert mol_with_constrained_confs.GetActive().GetCoords() != best_pose.GetCoords()
+    assert float(get_SD_data(best_pose)[f"{forcefield}_energy"][0]) == pytest.approx(
+        ff_energy
     )
-    assert float(
-        get_SD_data(best_pose)[f"{forcefield}_energy"][0]
-    ) == pytest.approx(ff_energy)
 
 
 def test_omega_fail_codes(mac1_complex):

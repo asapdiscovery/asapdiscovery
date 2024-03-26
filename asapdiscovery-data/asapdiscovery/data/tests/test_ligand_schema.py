@@ -138,6 +138,7 @@ def test_multi_pose_ligand_sdf_roundtrip(multipose_ligand, tmp_path):
     assert lig2.num_poses == 50
     assert lig2 == lig
 
+
 def test_multi_pose_ligand_json_roundtrip(multipose_ligand, tmp_path):
     lig = Ligand.from_sdf(multipose_ligand)
     assert lig.num_poses == 50
