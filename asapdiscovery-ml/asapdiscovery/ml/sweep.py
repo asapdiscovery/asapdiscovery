@@ -112,7 +112,7 @@ class Sweeper(Trainer):
         """
 
         # Get config from sweep agent
-        run_id = wandb.init()
+        run_id = wandb.init().id
 
         # Update output_dir to avoid overwriting stuff
         sweeper.output_dir = sweeper.output_dir / run_id
