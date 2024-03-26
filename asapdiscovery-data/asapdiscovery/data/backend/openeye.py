@@ -826,9 +826,7 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
-    from asapdiscovery.data.util.data_conversion import (
-        get_first_value_of_dict_of_lists,
-    )
+    from asapdiscovery.data.util.data_conversion import get_first_value_of_dict_of_lists
 
     # convert to dict of lists first
     data = {k: v if isinstance(v, list) else [v] for k, v in data.items()}
@@ -844,7 +842,6 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
     # If the object is an OEMol, we will set the SD data to all the conformers
     elif isinstance(mol, oechem.OEMol):
         for key, value_list in data.items():
-
             # if list is len 1, generate a list of len N, where N is the number of conformers
             if len(value_list) == 1:
                 value_list = value_list * mol.NumConfs()
