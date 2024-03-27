@@ -76,26 +76,31 @@ class Sweeper(Trainer):
         Parse the W&B sweep config and update the internal config objects appropriately.
         """
 
-        # Loop through keys and try to assign values
-        failed_keys = []
+        # Decompose parameter names into nested dict
+        config_update_dict = {}
         for k, v in wandb.config.items():
-            obj = self
-            orig_key = k
-            # Can't do nested accessions naturally, so keep taking the leftmost property
-            #  and updating the object we're pointing at
-            while not hasattr(obj, k):
+            d = config_update_dict
+            while "." in k:
                 accession, _, k = k.partition(".")
-                obj = getattr(obj, accession)
+                if accession not in d:
+                    d[accession] = {}
+                d = d[accession]
 
-            # Reached the bottom, so assign value
+            d[k] = v
+
+        # Loop through keys and try to update configs
+        failed_configs = []
+        for config_name, config_d in config_update_dict.items():
             try:
-                setattr(obj, k, v)
+                orig_config = getattr(self, config_name)
             except AttributeError:
-                failed_keys.append(orig_key)
+                failed_configs.append(config_name)
 
-        if len(failed_keys) > 0:
+            setattr(self, config_name, orig_config.update(config_d))
+
+        if len(failed_configs) > 0:
             raise AttributeError(
-                f"Could not assign values for these keys: {failed_keys}"
+                f"Could not assign values for these keys: {failed_configs}"
             )
 
     @staticmethod
