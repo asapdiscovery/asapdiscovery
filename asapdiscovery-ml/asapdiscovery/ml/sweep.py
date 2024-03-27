@@ -123,6 +123,14 @@ class Sweeper(Trainer):
         # Update internal configs from sweep config
         sweeper._update_from_wandb_config()
 
+        # Update W&B config to include everything from all the Trainer configs
+        # Don't serialize input_data for confidentiality/size reasons
+        ds_config = sweeper.ds_config.dict()
+        del ds_config["input_data"]
+        config = sweeper.dict()
+        config["ds_config"] = ds_config
+        wandb.config.update(config)
+
         # Temporary un-set use_wandb flag to avoid confusing the initialize method
         sweeper.use_wandb = False
         # Run initialize to build all the objects
