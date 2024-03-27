@@ -138,11 +138,17 @@ class Sweeper(Trainer):
         config["ds_config"] = ds_config
         wandb.config.update(config)
 
-        # Temporary un-set use_wandb flag to avoid confusing the initialize method
+        # Temporarily un-set use_wandb flag to avoid confusing the initialize method
         sweeper.use_wandb = False
         # Run initialize to build all the objects
         sweeper.initialize()
         sweeper.use_wandb = True
+
+        # Log dataset splits
+        for split, table in zip(
+            ["train", "val", "test"], sweeper._make_wandb_ds_tables()
+        ):
+            wandb.log({f"dataset_splits/{split}": table})
 
         # Finally run training
         sweeper.train()
