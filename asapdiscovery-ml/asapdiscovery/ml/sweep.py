@@ -30,6 +30,9 @@ class Sweeper(Trainer):
     )
 
     num_sweeps: int = Field(1, description="Number of different sweep configs to try.")
+    force_new_sweep: bool = Field(
+        False, description="Start a new sweep even if an existing sweep_id is present."
+    )
 
     @validator("sweep_config", pre=True)
     def load_config(cls, v):
@@ -53,7 +56,7 @@ class Sweeper(Trainer):
         # If sweep_id_fn exists, load sweep_id from there
         self.output_dir.mkdir(parents=True, exist_ok=True)
         sweep_id_fn = self.output_dir / "sweep_id"
-        if sweep_id_fn.exists():
+        if sweep_id_fn.exists() and (not self.force_new_sweep):
             sweep_id = sweep_id_fn.read_text().strip()
         else:
             sweep_id = wandb.sweep(sweep=self.sweep_config, project=self.wandb_project)
