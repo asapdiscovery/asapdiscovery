@@ -2,7 +2,7 @@ import pytest
 from asapdiscovery.alchemy.schema.prep_workflow import (
     AlchemyPrepWorkflow,
     OpenEyeConstrainedPoseGenerator,
-    RDKitConstrainedPoseGenerator
+    RDKitConstrainedPoseGenerator,
 )
 from asapdiscovery.data.schema.ligand import Ligand
 
@@ -96,10 +96,12 @@ def test_prep_remove_fails():
 
     ligands = [
         Ligand.from_smiles("CCO", compound_name="ethanol"),
-        Ligand.from_smiles("CC", compound_name="ethane")
+        Ligand.from_smiles("CC", compound_name="ethane"),
     ]
     fails = ligands[1:]
-    filtered_ligands = AlchemyPrepWorkflow._remove_fails(posed_ligands=ligands, stereo_issue_ligands=fails)
+    filtered_ligands = AlchemyPrepWorkflow._remove_fails(
+        posed_ligands=ligands, stereo_issue_ligands=fails
+    )
     assert len(filtered_ligands) == 1
     assert filtered_ligands[0].compound_name == "ethanol"
 
@@ -109,15 +111,18 @@ def test_prep_deduplicate():
 
     ligands = [
         Ligand.from_smiles("CCO", compound_name="ethanol"),
-        Ligand.from_smiles("CC", compound_name="ethane")
+        Ligand.from_smiles("CC", compound_name="ethane"),
     ]
     experimental_ligands = [
-        Ligand.from_smiles("CCO", compound_name="drug-1", **{"cdd_protocol": "my-protocol"}),
-        Ligand.from_smiles("C", compound_name="drug-2", **{"cdd_protocol": "my-protocol"})
+        Ligand.from_smiles(
+            "CCO", compound_name="drug-1", **{"cdd_protocol": "my-protocol"}
+        ),
+        Ligand.from_smiles(
+            "C", compound_name="drug-2", **{"cdd_protocol": "my-protocol"}
+        ),
     ]
     filtered_ligands = AlchemyPrepWorkflow._deduplicate_experimental_ligands(
-        posed_ligands=ligands,
-        experimental_ligands=experimental_ligands
+        posed_ligands=ligands, experimental_ligands=experimental_ligands
     )
     assert len(filtered_ligands) == 1
     assert filtered_ligands[0].compound_name == "drug-2"
@@ -160,8 +165,8 @@ def test_prep_workflow_ref_ligands(mac1_complex):
                 "Cc1c(cn(n1)C)c2cc3c([nH]2)ncnc3N[C@H](c4ccc5c(c4)S(=O)(=O)CCC5)C(C)C",
                 compound_name="ref_stereo_mol",
                 **experimental_data
-            )
-        ]
+            ),
+        ],
     )
     assert len(alchemy_dataset.input_ligands) == 1
     # we should have the input molecule and the experimental molecule

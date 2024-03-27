@@ -4,7 +4,7 @@ from uuid import uuid4
 import pandas
 import pytest
 from alchemiscale import Scope, ScopedKey
-from asapdiscovery.alchemy.cli.utils import upload_to_postera, get_cdd_molecules
+from asapdiscovery.alchemy.cli.utils import get_cdd_molecules, upload_to_postera
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
@@ -363,10 +363,11 @@ def test_upload_to_postera(monkeypatch, tyk2_result_network):
 
 
 @pytest.mark.parametrize(
-    "defined_only, n_ligands", [
+    "defined_only, n_ligands",
+    [
         pytest.param(True, 1, id="Defined only."),
-        pytest.param(False, 2, id="All ligands.")
-    ]
+        pytest.param(False, 2, id="All ligands."),
+    ],
 )
 def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands):
     """Test downloading molecules from a cdd mocked protocol and removing molecules with undefined stereo."""
@@ -376,13 +377,21 @@ def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands):
     def get_cdd_data(protocol_name: str):
         data = [
             {"Smiles": "CCO", "Molecule Name": "ethanol", "CXSmiles": "CCO"},
-            {"Smiles": "NC(C)C(=O)O", "Molecule Name": "alanine", "CXSmiles": "NC(C)C(=O)O"}
+            {
+                "Smiles": "NC(C)C(=O)O",
+                "Molecule Name": "alanine",
+                "CXSmiles": "NC(C)C(=O)O",
+            },
         ]
         return pandas.DataFrame(data)
 
-    monkeypatch.setattr(asapdiscovery.alchemy.predict, "download_cdd_data", get_cdd_data)
+    monkeypatch.setattr(
+        asapdiscovery.alchemy.predict, "download_cdd_data", get_cdd_data
+    )
 
-    molecules = get_cdd_molecules(protocol_name="my-protocol", defined_stereo_only=defined_only)
+    molecules = get_cdd_molecules(
+        protocol_name="my-protocol", defined_stereo_only=defined_only
+    )
     assert len(molecules) == n_ligands
     # check they are marked as experimental
     for ligand in molecules:

@@ -110,7 +110,9 @@ def get_cdd_molecules(
     ref_ligands = []
     for _, row in cdd_data.iterrows():
         asap_mol = Ligand.from_smiles(
-            smiles=row["Smiles"], compound_name=row["Molecule Name"], cxsmiles=row["CXSmiles"]
+            smiles=row["Smiles"],
+            compound_name=row["Molecule Name"],
+            cxsmiles=row["CXSmiles"],
         )
         asap_mol.tags["cdd_protocol"] = protocol_name
         asap_mol.tags["experimental"] = "True"
@@ -131,7 +133,10 @@ def get_cdd_molecules(
                 rdmol = Chem.MolFromSmiles(mol.tags["cxsmiles"])
                 groups = rdmol.GetStereoGroups()
                 for stereo_group in groups:
-                    if stereo_group.GetGroupType() != Chem.StereoGroupType.STEREO_ABSOLUTE:
+                    if (
+                        stereo_group.GetGroupType()
+                        != Chem.StereoGroupType.STEREO_ABSOLUTE
+                    ):
                         raise UndefinedStereochemistryError("missing absolute stereo")
                 # if we make it through all checks add the molecule
                 defined_ligands.append(mol)
