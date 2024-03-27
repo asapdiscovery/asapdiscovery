@@ -511,6 +511,11 @@ class DatasetConfig(ConfigBase):
     @staticmethod
     def fix_e3nn_labels(ds):
         for _, pose in ds:
+            # Check if this pose has already been adjusted
+            if pose["z"].is_floating_point():
+                # Assume it'll only be floats if we've already run this function
+                continue
+
             pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
             pose["z"] = pose["lig"].reshape((-1, 1)).float()
 
