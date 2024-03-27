@@ -29,7 +29,6 @@ class Sweeper(Trainer):
         ),
     )
 
-    num_sweeps: int = Field(1, description="Number of different sweep configs to try.")
     force_new_sweep: bool = Field(
         False, description="Start a new sweep even if an existing sweep_id is present."
     )
@@ -71,7 +70,7 @@ class Sweeper(Trainer):
             sweep_id,
             function=sweep_func,
             project=self.wandb_project,
-            count=self.num_sweeps,
+            count=1,
         )
 
     def _update_from_wandb_config(self):
