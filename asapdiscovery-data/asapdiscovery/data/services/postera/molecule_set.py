@@ -165,6 +165,7 @@ class MoleculeSetAPI(_BaseWebAPI):
 
     def _read_page(self, url: str, page: int) -> tuple[pd.DataFrame, str]:
         response = self._session.get(url, params={"page": page})
+        response.raise_for_status()
         response_json = response.json()
         return response_json["results"], response_json["paginationInfo"]["hasNext"]
 

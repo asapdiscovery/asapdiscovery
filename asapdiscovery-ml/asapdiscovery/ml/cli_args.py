@@ -920,7 +920,7 @@ def es_type(func):
         type=EarlyStoppingType,
         help=(
             "Which early stopping strategy to use. "
-            f"Options are [{', '.join(OptimizerType.get_values())}]."
+            f"Options are [{', '.join(EarlyStoppingType.get_values())}]."
         ),
     )(func)
 

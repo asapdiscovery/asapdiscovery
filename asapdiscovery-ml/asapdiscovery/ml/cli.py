@@ -42,7 +42,8 @@ from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyCo
 
 
 @click.group()
-def cli():
+def ml():
+    """Tools to build and train ML models and run inference."""
     pass
 
 
@@ -53,7 +54,7 @@ def build():
 
 
 # Function for training using an already built Trainer
-@cli.command()
+@ml.command()
 def train():
     pass
 
@@ -70,9 +71,9 @@ def build_ds():
     pass
 
 
-cli.add_command(build)
-cli.add_command(build_and_train)
-cli.add_command(build_ds)
+ml.add_command(build)
+ml.add_command(build_and_train)
+ml.add_command(build_ds)
 
 
 @build.command(name="gat")

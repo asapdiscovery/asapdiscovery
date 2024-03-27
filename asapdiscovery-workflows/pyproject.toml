@@ -3,15 +3,15 @@ requires = ["setuptools>=61.0", "versioningit"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "asapdiscovery-data"
+name = "asapdiscovery-workflows"
 #version = "0.0.1"
 dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
 ]
-description = "API and scripts related to downloading and interacting with data from the Collaborative Drug Discovery Vault, Fragalysis, and the PDB"
+description = "API and scripts related to running docking and preparing the input structures"
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.9,<3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -25,11 +25,8 @@ dependencies = []
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-cdd-to-schema = "asapdiscovery.data.scripts.cdd_to_schema:main"
-download-fragalysis-data = "asapdiscovery.data.scripts.download_fragalysis_data:main"
-download-cdd-data = "asapdiscovery.data.scripts.download_cdd_data:main"
-download-pdbs = "asapdiscovery.data.scripts.download_pdbs:main"
-split-fragment-screen = "asapdiscovery.data.scripts.split_fragment_screen:main"
+asap-docking = "asapdiscovery.workflows.docking_workflows.cli:docking"
+asap-prep = "asapdiscovery.workflows.prep_workflows.cli:protein_prep"
 
 [tool.setuptools.packages.find]
 where = ["."]
