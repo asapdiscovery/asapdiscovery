@@ -250,6 +250,7 @@ class CDDAPI(_BaseWebAPI):
                 compound_data["Inchi"] = mol_data["inchi"]
                 compound_data["Inchi Key"] = mol_data["inchi_key"]
                 compound_data["Molecule Name"] = mol_data["name"]
+                compound_data["CXSmiles"] = mol_data["cxsmiles"]
                 final_data.append(compound_data)
             except KeyError:
                 continue

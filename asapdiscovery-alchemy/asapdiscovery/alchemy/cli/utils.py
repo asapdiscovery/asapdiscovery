@@ -110,22 +110,32 @@ def get_cdd_molecules(
     ref_ligands = []
     for _, row in cdd_data.iterrows():
         asap_mol = Ligand.from_smiles(
-            smiles=row["Smiles"], compound_name=row["Molecule Name"]
+            smiles=row["Smiles"], compound_name=row["Molecule Name"], cxsmiles=row["CXSmiles"]
         )
         asap_mol.tags["cdd_protocol"] = protocol_name
         asap_mol.tags["experimental"] = "True"
         ref_ligands.append(asap_mol)
 
     if defined_stereo_only:
-        # remove ligands with undefined stereochemistry
+        # remove ligands with undefined or non-absolute stereochemistry
         defined_ligands = []
         from openff.toolkit import Molecule
         from openff.toolkit.utils.exceptions import UndefinedStereochemistryError
+        from rdkit import Chem
 
         for mol in ref_ligands:
             try:
+                # this checks for any undefined stereo centers
                 _ = Molecule.from_smiles(mol.smiles)
+                # check for non-absolute centers using the enhanced stereo smiles
+                rdmol = Chem.MolFromSmiles(mol.tags["cxsmiles"])
+                groups = rdmol.GetStereoGroups()
+                for stereo_group in groups:
+                    if stereo_group.GetGroupType() != Chem.StereoGroupType.STEREO_ABSOLUTE:
+                        raise UndefinedStereochemistryError("missing absolute stereo")
+                # if we make it through all checks add the molecule
                 defined_ligands.append(mol)
+
             except UndefinedStereochemistryError:
                 continue
 

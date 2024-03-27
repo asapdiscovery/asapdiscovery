@@ -120,7 +120,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
     @staticmethod
     def _sort_similar_molecules(
         reference_ligand: Ligand, experimental_ligands: list[Ligand]
-    ) -> Ligand:
+    ) -> list[Ligand]:
         """
         Sort the list of experimental ligands by MCS overlap with the reference crystal ligand to determine the order
         in which the structures should be generated.
@@ -130,7 +130,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             experimental_ligands: The list experimental ligands we would like to add to this dataset.
 
         Returns:
-
+            The experimental_ligands in order of MCS overlap with the reference ligand
         """
         import numpy as np
         from asapdiscovery.data.operators.selectors.mcs_selector import sort_by_mcs
