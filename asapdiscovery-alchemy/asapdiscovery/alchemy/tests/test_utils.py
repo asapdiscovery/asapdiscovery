@@ -9,7 +9,6 @@ from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
-from asapdiscovery.data.schema.ligand import Ligand
 from gufe.protocols import ProtocolDAGResult, ProtocolUnitResult
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
