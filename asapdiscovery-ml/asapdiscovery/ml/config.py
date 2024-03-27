@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import pickle as pkl
 from collections.abc import Iterator
@@ -21,6 +23,29 @@ from asapdiscovery.ml.es import (
 from pydantic import BaseModel, Field, root_validator
 
 
+class ConfigBase(BaseModel):
+    """
+    Base class to provide update functionality.
+    """
+
+    def update(self, config_updates={}) -> ConfigBase:
+        return self._update(config_updates)
+
+    def _update(self, config_updates={}) -> ConfigBase:
+        """
+        Default version of this function. Just update original config with new options,
+        and generate new object. Designed to be overloaded if there are specific things
+        that a class needs to handle (see GATModelConfig as an example).
+        """
+
+        orig_config = self.dict()
+
+        # Get new config by overwriting old stuff with any new stuff
+        new_config = orig_config | config_updates
+
+        return type(self)(**new_config)
+
+
 class OptimizerType(StringEnum):
     """
     Enum for training optimizers.
@@ -32,7 +57,7 @@ class OptimizerType(StringEnum):
     adamw = "adamw"
 
 
-class OptimizerConfig(BaseModel):
+class OptimizerConfig(ConfigBase):
     """
     Class for constructing an ML optimizer. All parameter defaults are their defaults in
     pytorch.
@@ -131,7 +156,7 @@ class EarlyStoppingType(StringEnum):
     patient_converged = "patient_converged"
 
 
-class EarlyStoppingConfig(BaseModel):
+class EarlyStoppingConfig(ConfigBase):
     """
     Class for constructing an early stopping class.
     """
@@ -221,7 +246,7 @@ class DatasetType(StringEnum):
     structural = "structural"
 
 
-class DatasetConfig(BaseModel):
+class DatasetConfig(ConfigBase):
     """
     Class for constructing an ML Dataset class.
     """
@@ -501,7 +526,7 @@ class DatasetSplitterType(StringEnum):
     temporal = "temporal"
 
 
-class DatasetSplitterConfig(BaseModel):
+class DatasetSplitterConfig(ConfigBase):
     """
     Class for splitting an ML Dataset class.
     """
@@ -779,7 +804,7 @@ class LossFunctionType(StringEnum):
     gaussian_sq = "gaussian_sq"
 
 
-class LossFunctionConfig(BaseModel):
+class LossFunctionConfig(ConfigBase):
     """
     Class for splitting an ML Dataset class.
     """
