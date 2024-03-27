@@ -45,6 +45,7 @@ from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyCo
 def sweep():
     pass
 
+
 @sweep.command(name="gat")
 @output_dir
 @weights_path

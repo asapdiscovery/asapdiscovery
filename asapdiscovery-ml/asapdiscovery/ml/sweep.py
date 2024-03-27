@@ -1,10 +1,10 @@
 from functools import partial
 from pathlib import Path
 
-from asapdiscovery.ml.trainer import Trainer
-from pydantic import Field, validator
 import wandb
 import yaml
+from asapdiscovery.ml.trainer import Trainer
+from pydantic import Field, validator
 
 
 class Sweeper(Trainer):
