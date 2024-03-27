@@ -30,6 +30,7 @@ from asapdiscovery.ml.cli_args import (
     wandb_args,
     weights_path,
 )
+from asapdiscovery.ml.cli_sweep import sweep
 from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterType,
@@ -73,6 +74,7 @@ def build_ds():
 cli.add_command(build)
 cli.add_command(build_and_train)
 cli.add_command(build_ds)
+cli.add_command(sweep)
 
 
 @build.command(name="gat")
