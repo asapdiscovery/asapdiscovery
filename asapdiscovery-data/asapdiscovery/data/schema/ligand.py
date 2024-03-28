@@ -428,31 +428,14 @@ class Ligand(DataModelAbstractBase):
             else:
                 new_data[k] = v
 
-        # first update the conformer tags, which is simple if the data is a dict of lists
-        if all([isinstance(v, list) for v in new_data.values()]):
-            # don't need to do anything
-            pass
-        elif all([isinstance(v, str) for v in new_data.values()]):
-            # convert to dict of lists of strings
-            new_data = {
-                key: [str(value) for _ in range(self.num_poses)]
-                for key, value in new_data.items()
-            }
-
-        else:
-            try:
-                # try converting to list of strings
-                new_data = {
-                    key: [str(value) for _ in range(self.num_poses)]
-                    for key, value in new_data.items()
-                }
-            except TypeError:
-                raise ValueError("Data must be a dict of lists or strings")
-        # now update the conformer tags
-        self.conf_tags.update(new_data)
-
-        # now update the tags to be the first conformer
-        self.tags.update({k: v[0] for k, v in new_data.items()})
+        # use logic from openeye backend to set the tags and return them
+        from asapdiscovery.data.backend.openeye import set_SD_data, get_SD_data
+        from asapdiscovery.data.util.data_conversion import get_first_value_of_dict_of_lists
+        mol = self.to_oemol()
+        set_SD_data(mol, new_data)
+        new_sd_data = get_SD_data(mol)
+        self.conf_tags.update(new_sd_data)
+        self.tags.update(get_first_value_of_dict_of_lists(new_data))
 
     def to_sdf_str(self) -> str:
         """
