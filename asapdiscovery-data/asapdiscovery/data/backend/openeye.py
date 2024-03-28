@@ -275,8 +275,9 @@ def load_openeye_cif(
 
 def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEMol:
     """
-    Load an OpenEye SDF file containing a single molecule and return it as an
-    OpenEye OEMol object.
+    Load an OpenEye SDF file and return it as an OpenEye OEMol object.
+    Reads multiple conformers into the OEMol object but if the sdf file contains
+    multiple molecules, it will only return the first one.
 
     Parameters
     ----------
@@ -293,7 +294,7 @@ def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEMol:
     FileNotFoundError
         If the specified file does not exist.
     oechem.OEError
-        If the CIF file cannot be opened.
+        If the SDF file cannot be opened.
 
     Notes
     -----
@@ -640,7 +641,8 @@ def oemol_to_sdf_string(mol: oechem.OEMol) -> str:
 
 def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     """
-    Loads an SDF string into an openeye molecule
+    Loads an SDF string into an openeye molecule.
+    Enables multiple conformers but only returns the first molecule in a multi molecule sdf
 
     Parameters
     ----------
@@ -809,6 +811,9 @@ def _set_SD_data(mol: oechem.OEMolBase, data: dict[str, str]) -> oechem.OEMolBas
 def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
+    If a str or a single-length list is passed as the values of the dictionary, the data will be set to all conformers.
+    If a list is provided, the data will be set to the conformers in the order provided.
+    If the list is not the same length as the number of conformers, an error will be raised.
 
     Parameters
     ----------
@@ -817,9 +822,7 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
 
     data: dict[str, str | list]
         Dictionary of SD data to set.
-        If a str or a single-length list is passed, the data will be set to all conformers.
-        If a list is provided, the data will be set to the conformers in the order provided.
-        If the list is not the same length as the number of conformers, an error will be raised.
+        
 
     Returns
     -------
@@ -857,7 +860,7 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
 
 def _get_SD_data(mol: oechem.OEMolBase) -> dict[str, str]:
     """
-    Get SD data on an OpenEye OEMolBase object.
+    Get SD data from an OpenEye OEMolBase object.
     Since this function works on OEMol, OEGraphMol, OEConfBase objects, it is worth repurposing.
     But it is not recommended to use this function directly for multi-conformer molecules.
 
