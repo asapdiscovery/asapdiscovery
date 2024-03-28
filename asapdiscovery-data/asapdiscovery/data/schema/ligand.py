@@ -457,7 +457,7 @@ class Ligand(DataModelAbstractBase):
         ----------
         i: int
             Return the ith conformer. Defaults to the first one (i=0).
-        
+
         Returns
         -------
         dict[str, str]
