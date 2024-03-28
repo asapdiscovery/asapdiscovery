@@ -445,9 +445,20 @@ class Ligand(DataModelAbstractBase):
         mol = self.to_oemol()
         return oemol_to_sdf_string(mol)
 
-    def get_SD_data(self, i: int = 0) -> dict[str, str]:
+    def get_single_conf_SD_data(self, i: int = 0) -> dict[str, str]:
         """
-        Get the SD data for the ligand for a particular conformer
+        Get the SD data for the ligand for a particular conformer. Defaults to the first one.
+        If you'd like to get SD data for all the conformers, those are saved in Ligand.conf_tags
+
+        Parameters
+        ----------
+        i: int
+            Return the ith conformer. Defaults to the first one (i=0).
+        
+        Returns
+        -------
+        dict[str, str]
+            A dictionary of key: value pairs for the SD tags.
         """
         data = {tag: values[i] for tag, values in self.conf_tags.items()}
         return data
