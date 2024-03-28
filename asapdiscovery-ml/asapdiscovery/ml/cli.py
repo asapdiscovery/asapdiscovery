@@ -424,151 +424,165 @@ def build_schnet(
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
 ):
-    # First check if Trainer cache exists and skip everything else if so
-    if (
-        trainer_config_cache
-        and trainer_config_cache.exists()
-        and (not overwrite_trainer_config_cache)
-    ):
-        print("loaded trainer from cache", flush=True)
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.schnet,
+        "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "hidden_channels": hidden_channels,
+        "num_filters": num_filters,
+        "num_interactions": num_interactions,
+        "num_gaussians": num_gaussians,
+        "cutoff": cutoff,
+        "max_num_neighbors": max_num_neighbors,
+        "readout": readout,
+        "dipole": dipole,
+        "mean": mean,
+        "std": std,
+    }
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
     else:
-        # Build each dict and pass to Trainer
-        optim_config = {
-            "cache": optimizer_config_cache,
-            "overwrite_cache": overwrite_optimizer_config_cache,
-            "optimizer_type": optimizer_type,
-            "lr": lr,
-            "weight_decay": weight_decay,
-            "momentum": momentum,
-            "dampening": dampening,
-            "b1": b1,
-            "b2": b2,
-            "eps": eps,
-            "rho": rho,
-        }
-        model_config = {
-            "cache": model_config_cache,
-            "overwrite_cache": overwrite_model_config_cache,
-            "model_type": ModelType.schnet,
-            "rand_seed": model_rand_seed,
-            "weights_path": weights_path,
-            "grouped": grouped,
-            "strategy": strategy,
-            "pred_readout": pred_readout,
-            "combination": combination,
-            "comb_readout": comb_readout,
-            "max_comb_neg": max_comb_neg,
-            "max_comb_scale": max_comb_scale,
-            "pred_substrate": pred_substrate,
-            "pred_km": pred_km,
-            "comb_substrate": comb_substrate,
-            "comb_km": comb_km,
-            "hidden_channels": hidden_channels,
-            "num_filters": num_filters,
-            "num_interactions": num_interactions,
-            "num_gaussians": num_gaussians,
-            "cutoff": cutoff,
-            "max_num_neighbors": max_num_neighbors,
-            "readout": readout,
-            "dipole": dipole,
-            "mean": mean,
-            "std": std,
-        }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
-        ds_config = {
-            "cache": ds_config_cache,
-            "overwrite_cache": overwrite_ds_config_cache,
-            "exp_file": exp_file,
-            "is_structural": True,
-            "structures": structures,
-            "xtal_regex": xtal_regex,
-            "cpd_regex": cpd_regex,
-            "cache_file": ds_cache,
-            "overwrite": overwrite_ds_cache,
-            "grouped": grouped,
-            "for_e3nn": False,
-        }
+        es_config = None
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": True,
+        "structures": structures,
+        "xtal_regex": xtal_regex,
+        "cpd_regex": cpd_regex,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+        "grouped": grouped,
+        "for_e3nn": False,
+    }
 
-        ds_splitter_config = {
-            "cache": ds_split_config_cache,
-            "overwrite_cache": overwrite_ds_split_config_cache,
-            "split_type": ds_split_type,
-            "grouped": grouped,
-            "train_frac": train_frac,
-            "val_frac": val_frac,
-            "test_frac": test_frac,
-            "enforce_one": enforce_one,
-            "rand_seed": ds_rand_seed,
-        }
-        loss_config = {
-            "cache": loss_config_cache,
-            "overwrite_cache": overwrite_loss_config_cache,
-            "loss_type": loss_type,
-            "semiquant_fill": semiquant_fill,
-        }
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "grouped": grouped,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
 
-        # Parse loss_dict
-        if loss_dict:
-            loss_dict = json.loads(loss_dict.read_text())
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
 
-        # Filter out None Trainer kwargs
-        trainer_kwargs = {
-            "optimizer_config": optim_config,
-            "model_config": model_config,
-            "es_config": es_config,
-            "ds_config": ds_config,
-            "ds_splitter_config": ds_splitter_config,
-            "loss_config": loss_config,
-            "auto_init": auto_init,
-            "start_epoch": start_epoch,
-            "n_epochs": n_epochs,
-            "batch_size": batch_size,
-            "target_prop": target_prop,
-            "cont": cont,
-            "loss_dict": loss_dict,
-            "device": device,
-            "output_dir": output_dir,
-            "use_wandb": use_wandb,
-            "sweep": sweep,
-            "wandb_project": wandb_project,
-            "wandb_name": wandb_name,
-            "extra_config": extra_config,
-        }
-        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+    # Filter out None Trainer kwargs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "use_wandb": use_wandb,
+        "sweep": sweep,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": extra_config,
+    }
+    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        try:
-            t = Trainer(**trainer_kwargs)
-        except pydantic.ValidationError as exc:
-            # Only want to handle missing values, so if anything else went wrong just raise
-            #  the pydantic error
-            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-                raise exc
+    # If we got a config for the Trainer, load those args and merge with CLI args
+    if trainer_config_cache and trainer_config_cache.exists():
+        print("loading trainer args from cache", flush=True)
+        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
 
-            # Gather all missing values
-            missing_vals = [err["loc"][0] for err in exc.errors()]
+        for config_name, config_val in config_trainer_kwargs.items():
+            # Arg wasn't passed at all, so got filtered out before
+            if config_name not in trainer_kwargs:
+                continue
 
-            raise ValueError(
-                "Tried to build Trainer but missing required values: ["
-                + ", ".join(missing_vals)
-                + "]"
-            )
+            if isinstance(config_val, dict):
+                config_val.update(
+                    {
+                        k: v
+                        for k, v in trainer_kwargs[config_name].items()
+                        if v is not None
+                    }
+                )
+            else:
+                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 
-        # Save Trainer
-        if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-        ):
-            trainer_config_cache.write_text(t.json())
+        trainer_kwargs = config_trainer_kwargs
+
+    try:
+        t = Trainer(**trainer_kwargs)
+    except pydantic.ValidationError as exc:
+        # Only want to handle missing values, so if anything else went wrong just raise
+        #  the pydantic error
+        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+            raise exc
+
+        # Gather all missing values
+        missing_vals = [err["loc"][0] for err in exc.errors()]
+
+        raise ValueError(
+            "Tried to build Trainer but missing required values: ["
+            + ", ".join(missing_vals)
+            + "]"
+        )
+
+    # Save Trainer
+    if trainer_config_cache and (
+        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+    ):
+        trainer_config_cache.write_text(t.json())
 
 
 @build.command(name="e3nn")
@@ -669,152 +683,166 @@ def build_e3nn(
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
 ):
-    # First check if Trainer cache exists and skip everything else if so
-    if (
-        trainer_config_cache
-        and trainer_config_cache.exists()
-        and (not overwrite_trainer_config_cache)
-    ):
-        print("loaded trainer from cache", flush=True)
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.e3nn,
+        "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "num_atom_types": num_atom_types,
+        "irreps_hidden": irreps_hidden,
+        "lig": lig,
+        "irreps_edge_attr": irreps_edge_attr,
+        "num_layers": num_layers,
+        "neighbor_dist": neighbor_dist,
+        "num_basis": num_basis,
+        "num_radial_layers": num_radial_layers,
+        "num_radial_neurons": num_radial_neurons,
+        "num_neighbors": num_neighbors,
+        "num_nodes": num_nodes,
+    }
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
     else:
-        # Build each dict and pass to Trainer
-        optim_config = {
-            "cache": optimizer_config_cache,
-            "overwrite_cache": overwrite_optimizer_config_cache,
-            "optimizer_type": optimizer_type,
-            "lr": lr,
-            "weight_decay": weight_decay,
-            "momentum": momentum,
-            "dampening": dampening,
-            "b1": b1,
-            "b2": b2,
-            "eps": eps,
-            "rho": rho,
-        }
-        model_config = {
-            "cache": model_config_cache,
-            "overwrite_cache": overwrite_model_config_cache,
-            "model_type": ModelType.e3nn,
-            "rand_seed": model_rand_seed,
-            "weights_path": weights_path,
-            "grouped": grouped,
-            "strategy": strategy,
-            "pred_readout": pred_readout,
-            "combination": combination,
-            "comb_readout": comb_readout,
-            "max_comb_neg": max_comb_neg,
-            "max_comb_scale": max_comb_scale,
-            "pred_substrate": pred_substrate,
-            "pred_km": pred_km,
-            "comb_substrate": comb_substrate,
-            "comb_km": comb_km,
-            "num_atom_types": num_atom_types,
-            "irreps_hidden": irreps_hidden,
-            "lig": lig,
-            "irreps_edge_attr": irreps_edge_attr,
-            "num_layers": num_layers,
-            "neighbor_dist": neighbor_dist,
-            "num_basis": num_basis,
-            "num_radial_layers": num_radial_layers,
-            "num_radial_neurons": num_radial_neurons,
-            "num_neighbors": num_neighbors,
-            "num_nodes": num_nodes,
-        }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
-        ds_config = {
-            "cache": ds_config_cache,
-            "overwrite_cache": overwrite_ds_config_cache,
-            "exp_file": exp_file,
-            "is_structural": True,
-            "structures": structures,
-            "xtal_regex": xtal_regex,
-            "cpd_regex": cpd_regex,
-            "cache_file": ds_cache,
-            "overwrite": overwrite_ds_cache,
-            "grouped": grouped,
-            "for_e3nn": True,
-        }
+        es_config = None
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": True,
+        "structures": structures,
+        "xtal_regex": xtal_regex,
+        "cpd_regex": cpd_regex,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+        "grouped": grouped,
+        "for_e3nn": True,
+    }
 
-        ds_splitter_config = {
-            "cache": ds_split_config_cache,
-            "overwrite_cache": overwrite_ds_split_config_cache,
-            "split_type": ds_split_type,
-            "grouped": grouped,
-            "train_frac": train_frac,
-            "val_frac": val_frac,
-            "test_frac": test_frac,
-            "enforce_one": enforce_one,
-            "rand_seed": ds_rand_seed,
-        }
-        loss_config = {
-            "cache": loss_config_cache,
-            "overwrite_cache": overwrite_loss_config_cache,
-            "loss_type": loss_type,
-            "semiquant_fill": semiquant_fill,
-        }
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "grouped": grouped,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
 
-        # Parse loss_dict
-        if loss_dict:
-            loss_dict = json.loads(loss_dict.read_text())
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
 
-        # Filter out None Trainer kwargs
-        trainer_kwargs = {
-            "optimizer_config": optim_config,
-            "model_config": model_config,
-            "es_config": es_config,
-            "ds_config": ds_config,
-            "ds_splitter_config": ds_splitter_config,
-            "loss_config": loss_config,
-            "auto_init": auto_init,
-            "start_epoch": start_epoch,
-            "n_epochs": n_epochs,
-            "batch_size": batch_size,
-            "target_prop": target_prop,
-            "cont": cont,
-            "loss_dict": loss_dict,
-            "device": device,
-            "output_dir": output_dir,
-            "use_wandb": use_wandb,
-            "sweep": sweep,
-            "wandb_project": wandb_project,
-            "wandb_name": wandb_name,
-            "extra_config": extra_config,
-        }
-        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+    # Filter out None Trainer kwargs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "use_wandb": use_wandb,
+        "sweep": sweep,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": extra_config,
+    }
+    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        try:
-            t = Trainer(**trainer_kwargs)
-        except pydantic.ValidationError as exc:
-            # Only want to handle missing values, so if anything else went wrong just raise
-            #  the pydantic error
-            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-                raise exc
+    # If we got a config for the Trainer, load those args and merge with CLI args
+    if trainer_config_cache and trainer_config_cache.exists():
+        print("loading trainer args from cache", flush=True)
+        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
 
-            # Gather all missing values
-            missing_vals = [err["loc"][0] for err in exc.errors()]
+        for config_name, config_val in config_trainer_kwargs.items():
+            # Arg wasn't passed at all, so got filtered out before
+            if config_name not in trainer_kwargs:
+                continue
 
-            raise ValueError(
-                "Tried to build Trainer but missing required values: ["
-                + ", ".join(missing_vals)
-                + "]"
-            )
+            if isinstance(config_val, dict):
+                config_val.update(
+                    {
+                        k: v
+                        for k, v in trainer_kwargs[config_name].items()
+                        if v is not None
+                    }
+                )
+            else:
+                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 
-        # Save Trainer
-        if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-        ):
-            trainer_config_cache.write_text(t.json())
+        trainer_kwargs = config_trainer_kwargs
+
+    try:
+        t = Trainer(**trainer_kwargs)
+    except pydantic.ValidationError as exc:
+        # Only want to handle missing values, so if anything else went wrong just raise
+        #  the pydantic error
+        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+            raise exc
+
+        # Gather all missing values
+        missing_vals = [err["loc"][0] for err in exc.errors()]
+
+        raise ValueError(
+            "Tried to build Trainer but missing required values: ["
+            + ", ".join(missing_vals)
+            + "]"
+        )
+
+    # Save Trainer
+    if trainer_config_cache and (
+        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+    ):
+        trainer_config_cache.write_text(t.json())
 
 
 @build.command(name="visnet")
@@ -918,155 +946,169 @@ def build_visnet(
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
 ):
-    # First check if Trainer cache exists and skip everything else if so
-    if (
-        trainer_config_cache
-        and trainer_config_cache.exists()
-        and (not overwrite_trainer_config_cache)
-    ):
-        print("loaded trainer from cache", flush=True)
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.visnet,
+        "rand_seed": model_rand_seed,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "lmax": lmax,
+        "vecnorm_type": vecnorm_type,
+        "trainable_vecnorm": trainable_vecnorm,
+        "num_heads": num_heads,
+        "num_layers": num_layers,
+        "hidden_channels": hidden_channels,
+        "num_rbf": num_rbf,
+        "trainable_rbf": trainable_rbf,
+        "max_z": max_z,
+        "cutoff": cutoff,
+        "max_num_neighbors": max_num_neighbors,
+        "vertex": vertex,
+        "reduce_op": reduce_op,
+        "mean": mean,
+        "std": std,
+        "derivative": derivative,
+    }
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
     else:
-        # Build each dict and pass to Trainer
-        optim_config = {
-            "cache": optimizer_config_cache,
-            "overwrite_cache": overwrite_optimizer_config_cache,
-            "optimizer_type": optimizer_type,
-            "lr": lr,
-            "weight_decay": weight_decay,
-            "momentum": momentum,
-            "dampening": dampening,
-            "b1": b1,
-            "b2": b2,
-            "eps": eps,
-            "rho": rho,
-        }
-        model_config = {
-            "cache": model_config_cache,
-            "overwrite_cache": overwrite_model_config_cache,
-            "model_type": ModelType.visnet,
-            "rand_seed": model_rand_seed,
-            "grouped": grouped,
-            "strategy": strategy,
-            "pred_readout": pred_readout,
-            "combination": combination,
-            "comb_readout": comb_readout,
-            "max_comb_neg": max_comb_neg,
-            "max_comb_scale": max_comb_scale,
-            "pred_substrate": pred_substrate,
-            "pred_km": pred_km,
-            "comb_substrate": comb_substrate,
-            "comb_km": comb_km,
-            "lmax": lmax,
-            "vecnorm_type": vecnorm_type,
-            "trainable_vecnorm": trainable_vecnorm,
-            "num_heads": num_heads,
-            "num_layers": num_layers,
-            "hidden_channels": hidden_channels,
-            "num_rbf": num_rbf,
-            "trainable_rbf": trainable_rbf,
-            "max_z": max_z,
-            "cutoff": cutoff,
-            "max_num_neighbors": max_num_neighbors,
-            "vertex": vertex,
-            "reduce_op": reduce_op,
-            "mean": mean,
-            "std": std,
-            "derivative": derivative,
-        }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
-        ds_config = {
-            "cache": ds_config_cache,
-            "overwrite_cache": overwrite_ds_config_cache,
-            "exp_file": exp_file,
-            "is_structural": True,
-            "structures": structures,
-            "xtal_regex": xtal_regex,
-            "cpd_regex": cpd_regex,
-            "cache_file": ds_cache,
-            "overwrite": overwrite_ds_cache,
-            "grouped": grouped,
-            "for_e3nn": False,
-        }
+        es_config = None
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": True,
+        "structures": structures,
+        "xtal_regex": xtal_regex,
+        "cpd_regex": cpd_regex,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+        "grouped": grouped,
+        "for_e3nn": False,
+    }
 
-        ds_splitter_config = {
-            "cache": ds_split_config_cache,
-            "overwrite_cache": overwrite_ds_split_config_cache,
-            "split_type": ds_split_type,
-            "train_frac": train_frac,
-            "val_frac": val_frac,
-            "test_frac": test_frac,
-            "enforce_one": enforce_one,
-            "rand_seed": ds_rand_seed,
-        }
-        loss_config = {
-            "cache": loss_config_cache,
-            "overwrite_cache": overwrite_loss_config_cache,
-            "loss_type": loss_type,
-            "semiquant_fill": semiquant_fill,
-        }
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
 
-        # Parse loss_dict
-        if loss_dict:
-            loss_dict = json.loads(loss_dict.read_text())
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
 
-        # Filter out None Trainer kwargs
-        trainer_kwargs = {
-            "optimizer_config": optim_config,
-            "model_config": model_config,
-            "es_config": es_config,
-            "ds_config": ds_config,
-            "ds_splitter_config": ds_splitter_config,
-            "loss_config": loss_config,
-            "auto_init": auto_init,
-            "start_epoch": start_epoch,
-            "n_epochs": n_epochs,
-            "batch_size": batch_size,
-            "target_prop": target_prop,
-            "cont": cont,
-            "loss_dict": loss_dict,
-            "device": device,
-            "output_dir": output_dir,
-            "use_wandb": use_wandb,
-            "sweep": sweep,
-            "wandb_project": wandb_project,
-            "wandb_name": wandb_name,
-            "extra_config": extra_config,
-        }
-        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+    # Filter out None Trainer kwargs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "use_wandb": use_wandb,
+        "sweep": sweep,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": extra_config,
+    }
+    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        try:
-            t = Trainer(**trainer_kwargs)
-        except pydantic.ValidationError as exc:
-            # Only want to handle missing values, so if anything else went wrong just raise
-            #  the pydantic error
-            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-                raise exc
+    # If we got a config for the Trainer, load those args and merge with CLI args
+    if trainer_config_cache and trainer_config_cache.exists():
+        print("loading trainer args from cache", flush=True)
+        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
 
-            # Gather all missing values
-            missing_vals = [err["loc"][0] for err in exc.errors()]
+        for config_name, config_val in config_trainer_kwargs.items():
+            # Arg wasn't passed at all, so got filtered out before
+            if config_name not in trainer_kwargs:
+                continue
 
-            raise ValueError(
-                "Tried to build Trainer but missing required values: ["
-                + ", ".join(missing_vals)
-                + "]"
-            )
+            if isinstance(config_val, dict):
+                config_val.update(
+                    {
+                        k: v
+                        for k, v in trainer_kwargs[config_name].items()
+                        if v is not None
+                    }
+                )
+            else:
+                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 
-        # Save Trainer
-        if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-        ):
-            trainer_config_cache.write_text(t.json())
+        trainer_kwargs = config_trainer_kwargs
+
+    try:
+        t = Trainer(**trainer_kwargs)
+    except pydantic.ValidationError as exc:
+        # Only want to handle missing values, so if anything else went wrong just raise
+        #  the pydantic error
+        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+            raise exc
+
+        # Gather all missing values
+        missing_vals = [err["loc"][0] for err in exc.errors()]
+
+        raise ValueError(
+            "Tried to build Trainer but missing required values: ["
+            + ", ".join(missing_vals)
+            + "]"
+        )
+
+    # Save Trainer
+    if trainer_config_cache and (
+        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+    ):
+        trainer_config_cache.write_text(t.json())
 
 
 @build_and_train.command(name="gat")
@@ -1163,147 +1205,161 @@ def build_and_train_gat(
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
 ):
-    # First check if Trainer cache exists and skip everything else if so
-    if (
-        trainer_config_cache
-        and trainer_config_cache.exists()
-        and (not overwrite_trainer_config_cache)
-    ):
-        print("loaded trainer from cache", flush=True)
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.GAT,
+        "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "in_feats": in_feats,
+        "num_layers": num_layers,
+        "hidden_feats": hidden_feats,
+        "num_heads": num_heads,
+        "feat_drops": feat_drops,
+        "attn_drops": attn_drops,
+        "alphas": alphas,
+        "residuals": residuals,
+        "agg_modes": agg_modes,
+        "biases": biases,
+        "allow_zero_in_degree": allow_zero_in_degree,
+    }
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
     else:
-        # Build each dict and pass to Trainer
-        optim_config = {
-            "cache": optimizer_config_cache,
-            "overwrite_cache": overwrite_optimizer_config_cache,
-            "optimizer_type": optimizer_type,
-            "lr": lr,
-            "weight_decay": weight_decay,
-            "momentum": momentum,
-            "dampening": dampening,
-            "b1": b1,
-            "b2": b2,
-            "eps": eps,
-            "rho": rho,
-        }
-        model_config = {
-            "cache": model_config_cache,
-            "overwrite_cache": overwrite_model_config_cache,
-            "model_type": ModelType.GAT,
-            "rand_seed": model_rand_seed,
-            "weights_path": weights_path,
-            "grouped": grouped,
-            "strategy": strategy,
-            "pred_readout": pred_readout,
-            "combination": combination,
-            "comb_readout": comb_readout,
-            "max_comb_neg": max_comb_neg,
-            "max_comb_scale": max_comb_scale,
-            "pred_substrate": pred_substrate,
-            "pred_km": pred_km,
-            "comb_substrate": comb_substrate,
-            "comb_km": comb_km,
-            "in_feats": in_feats,
-            "num_layers": num_layers,
-            "hidden_feats": hidden_feats,
-            "num_heads": num_heads,
-            "feat_drops": feat_drops,
-            "attn_drops": attn_drops,
-            "alphas": alphas,
-            "residuals": residuals,
-            "agg_modes": agg_modes,
-            "biases": biases,
-            "allow_zero_in_degree": allow_zero_in_degree,
-        }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
-        ds_config = {
-            "cache": ds_config_cache,
-            "overwrite_cache": overwrite_ds_config_cache,
-            "exp_file": exp_file,
-            "is_structural": False,
-            "cache_file": ds_cache,
-            "overwrite": overwrite_ds_cache,
-        }
+        es_config = None
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": False,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+    }
 
-        ds_splitter_config = {
-            "cache": ds_split_config_cache,
-            "overwrite_cache": overwrite_ds_split_config_cache,
-            "split_type": ds_split_type,
-            "grouped": grouped,
-            "train_frac": train_frac,
-            "val_frac": val_frac,
-            "test_frac": test_frac,
-            "enforce_one": enforce_one,
-            "rand_seed": ds_rand_seed,
-        }
-        loss_config = {
-            "cache": loss_config_cache,
-            "overwrite_cache": overwrite_loss_config_cache,
-            "loss_type": loss_type,
-            "semiquant_fill": semiquant_fill,
-        }
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "grouped": grouped,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
 
-        # Parse loss_dict
-        if loss_dict:
-            loss_dict = json.loads(loss_dict.read_text())
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
 
-        # Filter out None Trainer kwargs
-        trainer_kwargs = {
-            "optimizer_config": optim_config,
-            "model_config": model_config,
-            "es_config": es_config,
-            "ds_config": ds_config,
-            "ds_splitter_config": ds_splitter_config,
-            "loss_config": loss_config,
-            "auto_init": auto_init,
-            "start_epoch": start_epoch,
-            "n_epochs": n_epochs,
-            "batch_size": batch_size,
-            "target_prop": target_prop,
-            "cont": cont,
-            "loss_dict": loss_dict,
-            "device": device,
-            "output_dir": output_dir,
-            "use_wandb": use_wandb,
-            "sweep": sweep,
-            "wandb_project": wandb_project,
-            "wandb_name": wandb_name,
-            "extra_config": extra_config,
-        }
-        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+    # Filter out None Trainer kwargs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "use_wandb": use_wandb,
+        "sweep": sweep,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": extra_config,
+    }
+    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        try:
-            t = Trainer(**trainer_kwargs)
-        except pydantic.ValidationError as exc:
-            # Only want to handle missing values, so if anything else went wrong just raise
-            #  the pydantic error
-            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-                raise exc
+    # If we got a config for the Trainer, load those args and merge with CLI args
+    if trainer_config_cache and trainer_config_cache.exists():
+        print("loading trainer args from cache", flush=True)
+        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
 
-            # Gather all missing values
-            missing_vals = [err["loc"][0] for err in exc.errors()]
+        for config_name, config_val in config_trainer_kwargs.items():
+            # Arg wasn't passed at all, so got filtered out before
+            if config_name not in trainer_kwargs:
+                continue
 
-            raise ValueError(
-                "Tried to build Trainer but missing required values: ["
-                + ", ".join(missing_vals)
-                + "]"
-            )
+            if isinstance(config_val, dict):
+                config_val.update(
+                    {
+                        k: v
+                        for k, v in trainer_kwargs[config_name].items()
+                        if v is not None
+                    }
+                )
+            else:
+                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 
-        # Save Trainer
-        if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-        ):
-            trainer_config_cache.write_text(t.json())
+        trainer_kwargs = config_trainer_kwargs
+
+    try:
+        t = Trainer(**trainer_kwargs)
+    except pydantic.ValidationError as exc:
+        # Only want to handle missing values, so if anything else went wrong just raise
+        #  the pydantic error
+        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+            raise exc
+
+        # Gather all missing values
+        missing_vals = [err["loc"][0] for err in exc.errors()]
+
+        raise ValueError(
+            "Tried to build Trainer but missing required values: ["
+            + ", ".join(missing_vals)
+            + "]"
+        )
+
+    # Save Trainer
+    if trainer_config_cache and (
+        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+    ):
+        trainer_config_cache.write_text(t.json())
 
     t.initialize()
     t.train()
@@ -1406,151 +1462,165 @@ def build_and_train_schnet(
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
 ):
-    # First check if Trainer cache exists and skip everything else if so
-    if (
-        trainer_config_cache
-        and trainer_config_cache.exists()
-        and (not overwrite_trainer_config_cache)
-    ):
-        print("loaded trainer from cache", flush=True)
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.schnet,
+        "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "hidden_channels": hidden_channels,
+        "num_filters": num_filters,
+        "num_interactions": num_interactions,
+        "num_gaussians": num_gaussians,
+        "cutoff": cutoff,
+        "max_num_neighbors": max_num_neighbors,
+        "readout": readout,
+        "dipole": dipole,
+        "mean": mean,
+        "std": std,
+    }
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
     else:
-        # Build each dict and pass to Trainer
-        optim_config = {
-            "cache": optimizer_config_cache,
-            "overwrite_cache": overwrite_optimizer_config_cache,
-            "optimizer_type": optimizer_type,
-            "lr": lr,
-            "weight_decay": weight_decay,
-            "momentum": momentum,
-            "dampening": dampening,
-            "b1": b1,
-            "b2": b2,
-            "eps": eps,
-            "rho": rho,
-        }
-        model_config = {
-            "cache": model_config_cache,
-            "overwrite_cache": overwrite_model_config_cache,
-            "model_type": ModelType.schnet,
-            "rand_seed": model_rand_seed,
-            "weights_path": weights_path,
-            "grouped": grouped,
-            "strategy": strategy,
-            "pred_readout": pred_readout,
-            "combination": combination,
-            "comb_readout": comb_readout,
-            "max_comb_neg": max_comb_neg,
-            "max_comb_scale": max_comb_scale,
-            "pred_substrate": pred_substrate,
-            "pred_km": pred_km,
-            "comb_substrate": comb_substrate,
-            "comb_km": comb_km,
-            "hidden_channels": hidden_channels,
-            "num_filters": num_filters,
-            "num_interactions": num_interactions,
-            "num_gaussians": num_gaussians,
-            "cutoff": cutoff,
-            "max_num_neighbors": max_num_neighbors,
-            "readout": readout,
-            "dipole": dipole,
-            "mean": mean,
-            "std": std,
-        }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
-        ds_config = {
-            "cache": ds_config_cache,
-            "overwrite_cache": overwrite_ds_config_cache,
-            "exp_file": exp_file,
-            "is_structural": True,
-            "structures": structures,
-            "xtal_regex": xtal_regex,
-            "cpd_regex": cpd_regex,
-            "cache_file": ds_cache,
-            "overwrite": overwrite_ds_cache,
-            "grouped": grouped,
-            "for_e3nn": False,
-        }
+        es_config = None
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": True,
+        "structures": structures,
+        "xtal_regex": xtal_regex,
+        "cpd_regex": cpd_regex,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+        "grouped": grouped,
+        "for_e3nn": False,
+    }
 
-        ds_splitter_config = {
-            "cache": ds_split_config_cache,
-            "overwrite_cache": overwrite_ds_split_config_cache,
-            "split_type": ds_split_type,
-            "grouped": grouped,
-            "train_frac": train_frac,
-            "val_frac": val_frac,
-            "test_frac": test_frac,
-            "enforce_one": enforce_one,
-            "rand_seed": ds_rand_seed,
-        }
-        loss_config = {
-            "cache": loss_config_cache,
-            "overwrite_cache": overwrite_loss_config_cache,
-            "loss_type": loss_type,
-            "semiquant_fill": semiquant_fill,
-        }
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "grouped": grouped,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
 
-        # Parse loss_dict
-        if loss_dict:
-            loss_dict = json.loads(loss_dict.read_text())
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
 
-        # Filter out None Trainer kwargs
-        trainer_kwargs = {
-            "optimizer_config": optim_config,
-            "model_config": model_config,
-            "es_config": es_config,
-            "ds_config": ds_config,
-            "ds_splitter_config": ds_splitter_config,
-            "loss_config": loss_config,
-            "auto_init": auto_init,
-            "start_epoch": start_epoch,
-            "n_epochs": n_epochs,
-            "batch_size": batch_size,
-            "target_prop": target_prop,
-            "cont": cont,
-            "loss_dict": loss_dict,
-            "device": device,
-            "output_dir": output_dir,
-            "use_wandb": use_wandb,
-            "sweep": sweep,
-            "wandb_project": wandb_project,
-            "wandb_name": wandb_name,
-            "extra_config": extra_config,
-        }
-        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+    # Filter out None Trainer kwargs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "use_wandb": use_wandb,
+        "sweep": sweep,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": extra_config,
+    }
+    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        try:
-            t = Trainer(**trainer_kwargs)
-        except pydantic.ValidationError as exc:
-            # Only want to handle missing values, so if anything else went wrong just raise
-            #  the pydantic error
-            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-                raise exc
+    # If we got a config for the Trainer, load those args and merge with CLI args
+    if trainer_config_cache and trainer_config_cache.exists():
+        print("loading trainer args from cache", flush=True)
+        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
 
-            # Gather all missing values
-            missing_vals = [err["loc"][0] for err in exc.errors()]
+        for config_name, config_val in config_trainer_kwargs.items():
+            # Arg wasn't passed at all, so got filtered out before
+            if config_name not in trainer_kwargs:
+                continue
 
-            raise ValueError(
-                "Tried to build Trainer but missing required values: ["
-                + ", ".join(missing_vals)
-                + "]"
-            )
+            if isinstance(config_val, dict):
+                config_val.update(
+                    {
+                        k: v
+                        for k, v in trainer_kwargs[config_name].items()
+                        if v is not None
+                    }
+                )
+            else:
+                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 
-        # Save Trainer
-        if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-        ):
-            trainer_config_cache.write_text(t.json())
+        trainer_kwargs = config_trainer_kwargs
+
+    try:
+        t = Trainer(**trainer_kwargs)
+    except pydantic.ValidationError as exc:
+        # Only want to handle missing values, so if anything else went wrong just raise
+        #  the pydantic error
+        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+            raise exc
+
+        # Gather all missing values
+        missing_vals = [err["loc"][0] for err in exc.errors()]
+
+        raise ValueError(
+            "Tried to build Trainer but missing required values: ["
+            + ", ".join(missing_vals)
+            + "]"
+        )
+
+    # Save Trainer
+    if trainer_config_cache and (
+        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+    ):
+        trainer_config_cache.write_text(t.json())
 
     t.initialize()
     t.train()
@@ -1654,152 +1724,166 @@ def build_and_train_e3nn(
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
 ):
-    # First check if Trainer cache exists and skip everything else if so
-    if (
-        trainer_config_cache
-        and trainer_config_cache.exists()
-        and (not overwrite_trainer_config_cache)
-    ):
-        print("loaded trainer from cache", flush=True)
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.e3nn,
+        "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "num_atom_types": num_atom_types,
+        "irreps_hidden": irreps_hidden,
+        "lig": lig,
+        "irreps_edge_attr": irreps_edge_attr,
+        "num_layers": num_layers,
+        "neighbor_dist": neighbor_dist,
+        "num_basis": num_basis,
+        "num_radial_layers": num_radial_layers,
+        "num_radial_neurons": num_radial_neurons,
+        "num_neighbors": num_neighbors,
+        "num_nodes": num_nodes,
+    }
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
     else:
-        # Build each dict and pass to Trainer
-        optim_config = {
-            "cache": optimizer_config_cache,
-            "overwrite_cache": overwrite_optimizer_config_cache,
-            "optimizer_type": optimizer_type,
-            "lr": lr,
-            "weight_decay": weight_decay,
-            "momentum": momentum,
-            "dampening": dampening,
-            "b1": b1,
-            "b2": b2,
-            "eps": eps,
-            "rho": rho,
-        }
-        model_config = {
-            "cache": model_config_cache,
-            "overwrite_cache": overwrite_model_config_cache,
-            "model_type": ModelType.e3nn,
-            "rand_seed": model_rand_seed,
-            "weights_path": weights_path,
-            "grouped": grouped,
-            "strategy": strategy,
-            "pred_readout": pred_readout,
-            "combination": combination,
-            "comb_readout": comb_readout,
-            "max_comb_neg": max_comb_neg,
-            "max_comb_scale": max_comb_scale,
-            "pred_substrate": pred_substrate,
-            "pred_km": pred_km,
-            "comb_substrate": comb_substrate,
-            "comb_km": comb_km,
-            "num_atom_types": num_atom_types,
-            "irreps_hidden": irreps_hidden,
-            "lig": lig,
-            "irreps_edge_attr": irreps_edge_attr,
-            "num_layers": num_layers,
-            "neighbor_dist": neighbor_dist,
-            "num_basis": num_basis,
-            "num_radial_layers": num_radial_layers,
-            "num_radial_neurons": num_radial_neurons,
-            "num_neighbors": num_neighbors,
-            "num_nodes": num_nodes,
-        }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
-        ds_config = {
-            "cache": ds_config_cache,
-            "overwrite_cache": overwrite_ds_config_cache,
-            "exp_file": exp_file,
-            "is_structural": True,
-            "structures": structures,
-            "xtal_regex": xtal_regex,
-            "cpd_regex": cpd_regex,
-            "cache_file": ds_cache,
-            "overwrite": overwrite_ds_cache,
-            "grouped": grouped,
-            "for_e3nn": True,
-        }
+        es_config = None
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": True,
+        "structures": structures,
+        "xtal_regex": xtal_regex,
+        "cpd_regex": cpd_regex,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+        "grouped": grouped,
+        "for_e3nn": True,
+    }
 
-        ds_splitter_config = {
-            "cache": ds_split_config_cache,
-            "overwrite_cache": overwrite_ds_split_config_cache,
-            "split_type": ds_split_type,
-            "grouped": grouped,
-            "train_frac": train_frac,
-            "val_frac": val_frac,
-            "test_frac": test_frac,
-            "enforce_one": enforce_one,
-            "rand_seed": ds_rand_seed,
-        }
-        loss_config = {
-            "cache": loss_config_cache,
-            "overwrite_cache": overwrite_loss_config_cache,
-            "loss_type": loss_type,
-            "semiquant_fill": semiquant_fill,
-        }
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "grouped": grouped,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
 
-        # Parse loss_dict
-        if loss_dict:
-            loss_dict = json.loads(loss_dict.read_text())
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
 
-        # Filter out None Trainer kwargs
-        trainer_kwargs = {
-            "optimizer_config": optim_config,
-            "model_config": model_config,
-            "es_config": es_config,
-            "ds_config": ds_config,
-            "ds_splitter_config": ds_splitter_config,
-            "loss_config": loss_config,
-            "auto_init": auto_init,
-            "start_epoch": start_epoch,
-            "n_epochs": n_epochs,
-            "batch_size": batch_size,
-            "target_prop": target_prop,
-            "cont": cont,
-            "loss_dict": loss_dict,
-            "device": device,
-            "output_dir": output_dir,
-            "use_wandb": use_wandb,
-            "sweep": sweep,
-            "wandb_project": wandb_project,
-            "wandb_name": wandb_name,
-            "extra_config": extra_config,
-        }
-        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+    # Filter out None Trainer kwargs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "use_wandb": use_wandb,
+        "sweep": sweep,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": extra_config,
+    }
+    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        try:
-            t = Trainer(**trainer_kwargs)
-        except pydantic.ValidationError as exc:
-            # Only want to handle missing values, so if anything else went wrong just raise
-            #  the pydantic error
-            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-                raise exc
+    # If we got a config for the Trainer, load those args and merge with CLI args
+    if trainer_config_cache and trainer_config_cache.exists():
+        print("loading trainer args from cache", flush=True)
+        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
 
-            # Gather all missing values
-            missing_vals = [err["loc"][0] for err in exc.errors()]
+        for config_name, config_val in config_trainer_kwargs.items():
+            # Arg wasn't passed at all, so got filtered out before
+            if config_name not in trainer_kwargs:
+                continue
 
-            raise ValueError(
-                "Tried to build Trainer but missing required values: ["
-                + ", ".join(missing_vals)
-                + "]"
-            )
+            if isinstance(config_val, dict):
+                config_val.update(
+                    {
+                        k: v
+                        for k, v in trainer_kwargs[config_name].items()
+                        if v is not None
+                    }
+                )
+            else:
+                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 
-        # Save Trainer
-        if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-        ):
-            trainer_config_cache.write_text(t.json())
+        trainer_kwargs = config_trainer_kwargs
+
+    try:
+        t = Trainer(**trainer_kwargs)
+    except pydantic.ValidationError as exc:
+        # Only want to handle missing values, so if anything else went wrong just raise
+        #  the pydantic error
+        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+            raise exc
+
+        # Gather all missing values
+        missing_vals = [err["loc"][0] for err in exc.errors()]
+
+        raise ValueError(
+            "Tried to build Trainer but missing required values: ["
+            + ", ".join(missing_vals)
+            + "]"
+        )
+
+    # Save Trainer
+    if trainer_config_cache and (
+        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+    ):
+        trainer_config_cache.write_text(t.json())
 
     t.initialize()
     t.train()
@@ -1906,150 +1990,164 @@ def build_and_train_visnet(
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
 ):
-    # First check if Trainer cache exists and skip everything else if so
-    if (
-        trainer_config_cache
-        and trainer_config_cache.exists()
-        and (not overwrite_trainer_config_cache)
-    ):
-        print("loaded trainer from cache", flush=True)
-        t = Trainer(**json.loads(trainer_config_cache.read_text()))
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.visnet,
+        "rand_seed": model_rand_seed,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "lmax": lmax,
+        "vecnorm_type": vecnorm_type,
+        "trainable_vecnorm": trainable_vecnorm,
+        "num_heads": num_heads,
+        "num_layers": num_layers,
+        "hidden_channels": hidden_channels,
+        "num_rbf": num_rbf,
+        "trainable_rbf": trainable_rbf,
+        "max_z": max_z,
+        "cutoff": cutoff,
+        "max_num_neighbors": max_num_neighbors,
+        "vertex": vertex,
+        "reduce_op": reduce_op,
+        "mean": mean,
+        "std": std,
+        "derivative": derivative,
+    }
+    if (es_config_cache and es_config_cache.exists()) or es_type:
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
     else:
-        # Build each dict and pass to Trainer
-        optim_config = {
-            "cache": optimizer_config_cache,
-            "overwrite_cache": overwrite_optimizer_config_cache,
-            "optimizer_type": optimizer_type,
-            "lr": lr,
-            "weight_decay": weight_decay,
-            "momentum": momentum,
-            "dampening": dampening,
-            "b1": b1,
-            "b2": b2,
-            "eps": eps,
-            "rho": rho,
-        }
+        es_config = None
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": True,
+        "structures": structures,
+        "xtal_regex": xtal_regex,
+        "cpd_regex": cpd_regex,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+        "grouped": grouped,
+        "for_e3nn": False,
+    }
 
-        model_config = {
-            "cache": model_config_cache,
-            "overwrite_cache": overwrite_model_config_cache,
-            "model_type": ModelType.visnet,
-            "rand_seed": model_rand_seed,
-            "grouped": grouped,
-            "strategy": strategy,
-            "pred_readout": pred_readout,
-            "combination": combination,
-            "comb_readout": comb_readout,
-            "max_comb_neg": max_comb_neg,
-            "max_comb_scale": max_comb_scale,
-            "pred_substrate": pred_substrate,
-            "pred_km": pred_km,
-            "comb_substrate": comb_substrate,
-            "comb_km": comb_km,
-            "lmax": lmax,
-            "vecnorm_type": vecnorm_type,
-            "trainable_vecnorm": trainable_vecnorm,
-            "num_heads": num_heads,
-            "num_layers": num_layers,
-            "hidden_channels": hidden_channels,
-            "num_rbf": num_rbf,
-            "trainable_rbf": trainable_rbf,
-            "max_z": max_z,
-            "cutoff": cutoff,
-            "max_num_neighbors": max_num_neighbors,
-            "vertex": vertex,
-            "reduce_op": reduce_op,
-            "mean": mean,
-            "std": std,
-            "derivative": derivative,
-        }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
-        ds_config = {
-            "cache": ds_config_cache,
-            "overwrite_cache": overwrite_ds_config_cache,
-            "exp_file": exp_file,
-            "is_structural": True,
-            "structures": structures,
-            "xtal_regex": xtal_regex,
-            "cpd_regex": cpd_regex,
-            "cache_file": ds_cache,
-            "overwrite": overwrite_ds_cache,
-            "grouped": grouped,
-            "for_e3nn": False,
-        }
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
 
-        ds_splitter_config = {
-            "cache": ds_split_config_cache,
-            "overwrite_cache": overwrite_ds_split_config_cache,
-            "split_type": ds_split_type,
-            "train_frac": train_frac,
-            "val_frac": val_frac,
-            "test_frac": test_frac,
-            "enforce_one": enforce_one,
-            "rand_seed": ds_rand_seed,
-        }
-        loss_config = {
-            "cache": loss_config_cache,
-            "overwrite_cache": overwrite_loss_config_cache,
-            "loss_type": loss_type,
-            "semiquant_fill": semiquant_fill,
-        }
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
 
-        # Parse loss_dict
-        if loss_dict:
-            loss_dict = json.loads(loss_dict.read_text())
+    # Filter out None Trainer kwargs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "use_wandb": use_wandb,
+        "sweep": sweep,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": extra_config,
+    }
+    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-        # Filter out None Trainer kwargs
-        trainer_kwargs = {
-            "optimizer_config": optim_config,
-            "model_config": model_config,
-            "es_config": es_config,
-            "ds_config": ds_config,
-            "ds_splitter_config": ds_splitter_config,
-            "loss_config": loss_config,
-            "auto_init": auto_init,
-            "start_epoch": start_epoch,
-            "n_epochs": n_epochs,
-            "batch_size": batch_size,
-            "target_prop": target_prop,
-            "cont": cont,
-            "loss_dict": loss_dict,
-            "device": device,
-            "output_dir": output_dir,
-            "use_wandb": use_wandb,
-            "sweep": sweep,
-            "wandb_project": wandb_project,
-            "wandb_name": wandb_name,
-            "extra_config": extra_config,
-        }
-        trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+    # If we got a config for the Trainer, load those args and merge with CLI args
+    if trainer_config_cache and trainer_config_cache.exists():
+        print("loading trainer args from cache", flush=True)
+        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
 
-        try:
-            t = Trainer(**trainer_kwargs)
-        except pydantic.ValidationError as exc:
-            # Only want to handle missing values, so if anything else went wrong just raise
-            #  the pydantic error
-            if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-                raise exc
+        for config_name, config_val in config_trainer_kwargs.items():
+            # Arg wasn't passed at all, so got filtered out before
+            if config_name not in trainer_kwargs:
+                continue
 
-            # Gather all missing values
-            missing_vals = [err["loc"][0] for err in exc.errors()]
+            if isinstance(config_val, dict):
+                config_val.update(
+                    {
+                        k: v
+                        for k, v in trainer_kwargs[config_name].items()
+                        if v is not None
+                    }
+                )
+            else:
+                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 
-            raise ValueError(
-                "Tried to build Trainer but missing required values: ["
-                + ", ".join(missing_vals)
-                + "]"
-            )
+        trainer_kwargs = config_trainer_kwargs
+
+    try:
+        t = Trainer(**trainer_kwargs)
+    except pydantic.ValidationError as exc:
+        # Only want to handle missing values, so if anything else went wrong just raise
+        #  the pydantic error
+        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+            raise exc
+
+        # Gather all missing values
+        missing_vals = [err["loc"][0] for err in exc.errors()]
+
+        raise ValueError(
+            "Tried to build Trainer but missing required values: ["
+            + ", ".join(missing_vals)
+            + "]"
+        )
 
         # Save Trainer
         if trainer_config_cache and (
