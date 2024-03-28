@@ -822,7 +822,7 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
 
     data: dict[str, str | list]
         Dictionary of SD data to set.
-        
+
 
     Returns
     -------
