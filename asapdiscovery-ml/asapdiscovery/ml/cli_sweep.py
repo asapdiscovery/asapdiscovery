@@ -23,6 +23,7 @@ from asapdiscovery.ml.cli_args import (
     struct_ds_args,
     sweep_config,
     sweep_config_cache,
+    sweep_config_cache_overwrite,
     trainer_args,
     trainer_config_cache,
     visnet_args,
@@ -62,6 +63,7 @@ def sweep():
 @trainer_args
 @sweep_config
 @force_new_sweep
+@sweep_config_cache_overwrite
 @overwrite_args
 def sweep_gat(
     output_dir: Path | None = None,
@@ -134,8 +136,8 @@ def sweep_gat(
     device: torch.device | None = None,
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
-    overwrite_trainer_config_cache: bool = False,
     overwrite_sweep_config_cache: bool = False,
+    overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
     overwrite_es_config_cache: bool = False,
@@ -313,6 +315,7 @@ def sweep_gat(
 @trainer_args
 @sweep_config
 @force_new_sweep
+@sweep_config_cache_overwrite
 @overwrite_args
 def sweep_schnet(
     output_dir: Path | None = None,
@@ -387,8 +390,8 @@ def sweep_schnet(
     device: torch.device | None = None,
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
-    overwrite_trainer_config_cache: bool = False,
     overwrite_sweep_config_cache: bool = False,
+    overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
     overwrite_es_config_cache: bool = False,
@@ -570,6 +573,7 @@ def sweep_schnet(
 @trainer_args
 @sweep_config
 @force_new_sweep
+@sweep_config_cache_overwrite
 @overwrite_args
 def sweep_e3nn(
     output_dir: Path | None = None,
@@ -645,8 +649,8 @@ def sweep_e3nn(
     device: torch.device | None = None,
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
-    overwrite_trainer_config_cache: bool = False,
     overwrite_sweep_config_cache: bool = False,
+    overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
     overwrite_es_config_cache: bool = False,
@@ -829,6 +833,7 @@ def sweep_e3nn(
 @trainer_args
 @sweep_config
 @force_new_sweep
+@sweep_config_cache_overwrite
 @overwrite_args
 def sweep_visnet(
     output_dir: Path | None = None,
@@ -909,8 +914,8 @@ def sweep_visnet(
     device: torch.device | None = None,
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
-    overwrite_trainer_config_cache: bool = False,
     overwrite_sweep_config_cache: bool = False,
+    overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
     overwrite_es_config_cache: bool = False,

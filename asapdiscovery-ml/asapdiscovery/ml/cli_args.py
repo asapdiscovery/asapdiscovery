@@ -58,7 +58,6 @@ def sweep_config_cache(func):
 def overwrite_args(func):
     for fn in [
         trainer_config_cache_overwrite,
-        sweep_config_cache_overwrite,
         optimizer_config_cache_overwrite,
         model_config_cache_overwrite,
         es_config_cache_overwrite,
