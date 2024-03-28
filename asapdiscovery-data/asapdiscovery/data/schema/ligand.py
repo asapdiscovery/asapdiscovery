@@ -429,8 +429,11 @@ class Ligand(DataModelAbstractBase):
                 new_data[k] = v
 
         # use logic from openeye backend to set the tags and return them
-        from asapdiscovery.data.backend.openeye import set_SD_data, get_SD_data
-        from asapdiscovery.data.util.data_conversion import get_first_value_of_dict_of_lists
+        from asapdiscovery.data.backend.openeye import get_SD_data, set_SD_data
+        from asapdiscovery.data.util.data_conversion import (
+            get_first_value_of_dict_of_lists,
+        )
+
         mol = self.to_oemol()
         set_SD_data(mol, new_data)
         new_sd_data = get_SD_data(mol)
