@@ -281,7 +281,7 @@ def weights_path(func):
 ################################################################################
 # W&B args
 def wandb_args(func):
-    for fn in [use_wandb, sweep, proj, name, extra_config]:
+    for fn in [use_wandb, proj, name, extra_config]:
         func = fn(func)
 
     return func
@@ -291,12 +291,6 @@ def use_wandb(func):
     return click.option(
         "--use-wandb", type=bool, help="Use W&B to log model training."
     )(func)
-
-
-def sweep(func):
-    return click.option("--sweep", type=bool, help="This run is part of a W&B sweep.")(
-        func
-    )
 
 
 def proj(func):
