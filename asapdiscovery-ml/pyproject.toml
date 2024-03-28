@@ -25,7 +25,7 @@ dependencies = []
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
-asap-ml = "asapdiscovery.ml.cli:cli"
+asap-ml = "asapdiscovery.ml.cli:ml"
 convert-ds = "asapdiscovery.ml.scripts.convert_dataset:convert"
 
 [tool.setuptools.packages.find]

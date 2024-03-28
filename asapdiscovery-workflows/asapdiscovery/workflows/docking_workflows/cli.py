@@ -41,6 +41,7 @@ from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
 
 @click.group()
 def docking():
+    """Run docking and scoring workflows for protein-ligand complexes."""
     pass
 
 
