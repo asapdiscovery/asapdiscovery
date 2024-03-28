@@ -186,7 +186,7 @@ def test_multiconf_ligand_basics(multipose_ligand):
     }
 
     for i in range(50):
-        assert ligs[i].tags == lig.get_SD_data(i)
+        assert ligs[i].tags == lig.get_single_conf_SD_data(i)
         assert Ligand.from_oemol(mols[i]) == ligs[i]
 
     lig.set_SD_data({"same_for_all": "yes"})
@@ -470,7 +470,7 @@ def test_get_set_sd_data(moonshot_sdf):
     l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
     data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
     l1.set_SD_data(data)
-    data_pulled = l1.get_SD_data()
+    data_pulled = l1.get_single_conf_SD_data()
     assert data_pulled == data
 
 
@@ -486,7 +486,7 @@ def test_clear_sd_data(moonshot_sdf):
     data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
     l1.set_SD_data(data)
     l1.clear_SD_data()
-    assert l1.get_SD_data() == {}
+    assert l1.get_single_conf_SD_data() == {}
 
 
 @pytest.mark.parametrize("tags", [{"test_key": "test_value"}, {}])
