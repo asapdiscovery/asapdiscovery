@@ -127,7 +127,9 @@ class GIFBlockData:
         "subP2": "152+83+75+81+82+72",
         "subP3": "153+154+155",
     }
-
+    pocket_dict_ZIKV_Helicase = {
+        "active_site": "268+493+543+293+537+540+542+291+292+598+489+264+272+389+388+271+536+486",
+    }
     pocket_dict_DENV_NS2B_NS3pro = {
         "subP1": "135+151+161+159+129+150+130+132+131",
         "subP1_prime": "51+52+36+38+54",
@@ -175,6 +177,9 @@ class GIFBlockData:
         "subP1_prime": "orange",
         "subP2": "blue",
         "subP3": "cyan",
+    }
+    color_dict_Helicase = {
+        "active_site": "orange",
     }
     color_dict_Capsid = {
         "hydrophic_trap": "orange",
