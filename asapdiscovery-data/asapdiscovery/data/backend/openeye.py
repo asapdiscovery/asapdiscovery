@@ -804,7 +804,7 @@ def _set_SD_data(mol: oechem.OEMolBase, data: dict[str, str]) -> oechem.OEMolBas
         OpenEye OEMolBase with SD data set
     """
     for key, value in data.items():
-        oechem.OESetSDData(mol, key, value)
+        oechem.OESetSDData(mol, key, str(value))
     return mol
 
 
@@ -847,7 +847,7 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
                     f"Expected {mol.NumConfs()} but got {len(value_list)} elements."
                 )
             for i, conf in enumerate(mol.GetConfs()):
-                oechem.OESetSDData(conf, key, value_list[i])
+                oechem.OESetSDData(conf, key, str(value_list[i]))
         return mol
     elif isinstance(mol, oechem.OEMolBase):
         return _set_SD_data(mol, get_first_value_of_dict_of_lists(data))
