@@ -40,6 +40,7 @@ virus:
     - NS2B-NS3pro
   ZIKV:
     - NS2B-NS3pro
+    - Helicase
 
 # requires both units and tools specified even if empty for clarity.
 manifold_outputs:
