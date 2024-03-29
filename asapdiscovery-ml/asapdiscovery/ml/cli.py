@@ -276,7 +276,7 @@ def build_gat(
         "sweep": sweep,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
     }
     trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
@@ -534,7 +534,7 @@ def build_schnet(
         "sweep": sweep,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
     }
     trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
@@ -794,7 +794,7 @@ def build_e3nn(
         "sweep": sweep,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
     }
     trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
@@ -1060,7 +1060,7 @@ def build_visnet(
         "sweep": sweep,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
     }
     trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
@@ -1311,7 +1311,7 @@ def build_and_train_gat(
         "sweep": sweep,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
     }
     trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
@@ -1572,7 +1572,7 @@ def build_and_train_schnet(
         "sweep": sweep,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
     }
     trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
@@ -1835,7 +1835,7 @@ def build_and_train_e3nn(
         "sweep": sweep,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
     }
     trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
@@ -2105,7 +2105,7 @@ def build_and_train_visnet(
         "sweep": sweep,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
     }
     trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
