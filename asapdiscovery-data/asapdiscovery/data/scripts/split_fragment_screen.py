@@ -7,8 +7,8 @@ directory within the directory of the original protein called output.
 The sdf file containing all the unique ligands in original file that are bound to
 different portions of the protein will be also in that directory named
 combined_ligands.sdf.
--d indicates the directory with the original pdb file.
--i indicates the file with the X-ray screen.
+-o indicates the output directory. will be overwritten if it exists.
+-i indicates the path to the original pdb file.
 If the ligand was not successfully combined with the protein, then will print
 error message stating the file that does not have any ligands.
 The name of the structure name of original conglomerate structure can be defined
@@ -50,18 +50,18 @@ def get_args():
     parser = argparse.ArgumentParser(description="")
 
     parser.add_argument(
-        "-d", required=True, help="Directory of input and output files."
+        "-o", required=True, type=Path, help="Path to output directory."
     )
-    parser.add_argument("-i", required=True, help="PDB file input.")
+    parser.add_argument("-i", required=True, type=Path, help="Path to PDB file input.")
     parser.add_argument(
         "-c",
         default="complex",
         help="Name of the original protein with multiple ligands.",
     )
     parser.add_argument(
-        "-s",
-        default="False",
-        help="Save the intermediate individual ligand pdb and sdf files as True. Otherwise False.",
+        "-s" "--save-intermediates",
+        action="store_true",
+        help="Save the intermediate individual ligand pdb and sdf files. Defaults to False.",
     )
 
     return parser.parse_args()
@@ -93,22 +93,22 @@ def save_subset_with_conect(structure_name, atom_ids, output_file):
 
 # The function to isolate ligands in original file and separate out individual ligands
 # Each ligand saved in individual pdb file
-def split_ligands(directory, input_file, structure_name, save_intermediate):
+def split_ligands(output_dir, input_file, structure_name, save_intermediate):
     # Where original file is from
-    local_path = Path(directory)
+    local_path = input_file.parent
     # Where ending strucutures will be put into
-    output_path = local_path / "output"
+    output_path = output_dir / "output"
     output_path.mkdir()
     # Where to store intermediate pdb files
-    intermediates_path = local_path / "pdb_intermediates"
+    intermediates_path = output_dir / "pdb_intermediates"
     intermediates_path.mkdir()
 
     # Load structure into pymol
-    cmd.load(local_path / input_file, structure_name)
+    cmd.load(input_file, structure_name)
     # Save all the ligands into one file
-    save_ligand_residues(structure_name, local_path / "ligand_only.pdb")
+    save_ligand_residues(structure_name, output_path / "ligand_only.pdb")
     # Make a Graph out of pdb CONECT record
-    ligands = local_path / "ligand_only.pdb"
+    ligands = output_path / "ligand_only.pdb"
     G = nx.Graph()
     with open(ligands) as f:
         for line in f:
@@ -122,8 +122,8 @@ def split_ligands(directory, input_file, structure_name, save_intermediate):
     cmd.delete(structure_name)
     # Load only ligands into Pymol
     cmd.load(ligands, "ligands")
-    # Remove this pdb since no longer in use
-    os.remove(ligands)
+    # Remove this pdb since no longer in use and keeping a pdb of ligands is silly
+    ligands.rmdir()
     # Know which atom is from which ligand based on the graph constructed
     # List of the different ligands as {} of atoms
     atom_list = list(nx.connected_components(G))
@@ -134,8 +134,8 @@ def split_ligands(directory, input_file, structure_name, save_intermediate):
         )
 
     # Load pdb files and save all singled out ligands to singular combined sdf
-    ligands_path = Path(directory) / "lig_sdfs"
-    os.mkdir(ligands_path)
+    ligands_path = output_dir / "lig_sdfs"
+    ligands_path.mkdir()
 
     ligs = []
     ligands = []
@@ -161,7 +161,7 @@ def split_ligands(directory, input_file, structure_name, save_intermediate):
 
     save_openeye_sdfs(ligs, output_path / "combined_ligs.sdf")
 
-    # Isolate protien in pymol and save to a pdb file
+    # Isolate protein in pymol and save to a pdb file
     cmd.load(local_path / input_file, structure_name)
     cmd.select("protein", structure_name + " and polymer.protein")
     cmd.save(intermediates_path / "protein.pdb", "protein")
@@ -191,7 +191,7 @@ def split_ligands(directory, input_file, structure_name, save_intermediate):
 # Add a filtering step to see if the ligand is actually in the output file
 # Try to see if all the files have a ligand in them
 def check_lig_presence(directory):
-    folder = Path(directory) / "output"
+    folder = directory / "output"
     count = 1
     for pdb_file in folder.glob("lig_*_protein.pdb"):
         # Distinguish the structures
@@ -208,12 +208,7 @@ def check_lig_presence(directory):
 def main():
     args = get_args()
 
-    # See if want to save the intermediate files
-    save_intermediate = False
-    if args.s == "True":
-        save_intermediate = True
-
-    split_ligands(args.d, args.i, args.c, save_intermediate)
+    split_ligands(args.o, args.i, args.c, args.s)
     check_lig_presence(args.d)
 
 
