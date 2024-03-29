@@ -398,6 +398,12 @@ class Trainer(BaseModel):
         else:
             run_id_fn = self.output_dir / "run_id"
 
+            # Don't serialize input_data for confidentiality/size reasons
+            ds_config = self.ds_config.dict()
+            del ds_config["input_data"]
+            config = self.dict()
+            config["ds_config"] = ds_config
+
             if self.cont:
                 # Load run_id to continue from file
                 # First make sure the file exists
@@ -415,14 +421,8 @@ class Trainer(BaseModel):
                         f"Run in run_id file ({run_id}) doesn't exist"
                     )
                 # Update run config to reflect it's been resumed
-                wandb.config.update({"continue": True}, allow_val_change=True)
+                wandb.config.update(config, allow_val_change=True)
             else:
-                # Don't serialize input_data for confidentiality/size reasons
-                ds_config = self.ds_config.dict()
-                del ds_config["input_data"]
-                config = self.dict()
-                config["ds_config"] = ds_config
-
                 # Start new run
                 run_id = wandb.init(
                     project=self.wandb_project,
@@ -460,6 +460,59 @@ class Trainer(BaseModel):
                 logfile=str(self.log_file.name),
             ).getLogger()
 
+        # Adjust output_dir and make sure it exists
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        # Start the W&B process
+        if self.sweep or self.use_wandb:
+            run_id = self.wandb_init()
+            self.output_dir = self.output_dir / run_id
+            self.output_dir.mkdir(exist_ok=True)
+
+        # Set up stuff for continuing run
+        if self.cont:
+            # Try and load loss_dict
+            loss_dict_fn = self.output_dir / "loss_dict.json"
+            if loss_dict_fn.exists():
+                self.loss_dict = json.loads(loss_dict_fn.read_text())
+                self.start_epoch = len(
+                    next(iter(self.loss_dict["train"].values()))["losses"]
+                )
+                try:
+                    weights_path = self.output_dir / f"{self.start_epoch - 1}.th"
+                    self.model_config.update(
+                        {
+                            "model_weights": torch.load(
+                                weights_path, map_location=self.device
+                            )
+                        }
+                    )
+                except FileNotFoundError:
+                    raise FileNotFoundError(
+                        f"Found {self.start_epoch} epochs of training, but didn't find "
+                        f"{self.start_epoch - 1}.th weights file."
+                    )
+            else:
+                print("No loss_dict file found.")
+                if self.log_file:
+                    self.logger.info("No loss_dict file found.")
+
+                all_weights_epochs = [
+                    int(p.stem)
+                    for p in self.output_dir.glob("*.th")
+                    if p.stem.isnumeric()
+                ]
+                if len(all_weights_epochs) == 0:
+                    raise FileNotFoundError("No weights files found from previous run.")
+
+                weights_path = self.output_dir / f"{max(all_weights_epochs)}.th"
+                self.model_config.update(
+                    {
+                        "model_weights": torch.load(
+                            weights_path, map_location=self.device
+                        )
+                    }
+                )
+
         # Build the Model
         self.model = self.model_config.build().to(self.device)
 
@@ -489,22 +542,6 @@ class Trainer(BaseModel):
         # Build loss function
         self.loss_func = self.loss_config.build()
 
-        # Adjust output_dir and make sure it exists
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        # Start the W&B process
-        if self.sweep or self.use_wandb:
-            run_id = self.wandb_init()
-            self.output_dir = self.output_dir / run_id
-        self.output_dir.mkdir(exist_ok=True)
-
-        # If sweep or continuing a run, get the optimizer and model config options from
-        #  the W&B config
-        if self.sweep or self.cont:
-            wandb_optimizer_config = wandb.config["optimizer_config"]
-            wandb_model_config = wandb.config["model_config"]
-
-            self.optimizer_config = self.optimizer_config.update(wandb_optimizer_config)
-            self.model_config = self.model_config.update(wandb_model_config)
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
