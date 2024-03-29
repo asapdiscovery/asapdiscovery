@@ -556,7 +556,8 @@ class Trainer(BaseModel):
                 raise ValueError("Trainer was not initialized before trying to train.")
 
         # Save initial model weights for debugging
-        torch.save(self.model.state_dict(), self.output_dir / "init.th")
+        if not self.cont:
+            torch.save(self.model.state_dict(), self.output_dir / "init.th")
 
         # Train for n epochs
         for epoch_idx in range(self.start_epoch, self.n_epochs):
