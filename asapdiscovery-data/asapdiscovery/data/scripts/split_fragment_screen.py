@@ -28,7 +28,6 @@ python split_fragment_screen.py \
 """
 
 import argparse
-import os
 import shutil
 from pathlib import Path
 
