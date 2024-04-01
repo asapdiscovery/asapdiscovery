@@ -9,8 +9,7 @@ from typing import Optional
 import boto3
 
 
-class S3Error(Exception):
-    ...
+class S3Error(Exception): ...
 
 
 class S3:
@@ -125,5 +124,4 @@ class S3:
 
         self.resource.Bucket(self.bucket).upload_file(path, key, ExtraArgs=extra_args)
 
-    def pull_file(self):
-        ...
+    def pull_file(self): ...

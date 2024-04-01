@@ -1,6 +1,7 @@
 """
 Script to download the data from CDD (defaults to COVID Moonshot data).
 """
+
 import argparse
 import logging
 import os
