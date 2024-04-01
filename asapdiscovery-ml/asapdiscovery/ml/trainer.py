@@ -460,6 +460,20 @@ class Trainer(BaseModel):
                 logfile=str(self.log_file.name),
             ).getLogger()
 
+        # Build dataset and split
+        self.ds = self.ds_config.build()
+        self.ds_train, self.ds_val, self.ds_test = self.ds_splitter_config.split(
+            self.ds
+        )
+
+        print(
+            "ds lengths",
+            len(self.ds_train),
+            len(self.ds_val),
+            len(self.ds_test),
+            flush=True,
+        )
+
         # Adjust output_dir and make sure it exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
         # Start the W&B process
@@ -519,25 +533,20 @@ class Trainer(BaseModel):
         # Build the Optimizer
         self.optimizer = self.optimizer_config.build(self.model.parameters())
 
+        # Load optimizer state for continuing
+        if self.cont:
+            optimizer_state_fn = self.output_dir / "optimizer.th"
+            if not optimizer_state_fn.exists():
+                raise FileNotFoundError("No optimizer state file found.")
+
+            optimizer_state = torch.load(optimizer_state_fn, map_location=self.device)
+            self.optimizer.load_state_dict(optimizer_state)
+
         # Build early stopping
         if self.es_config:
             self.es = self.es_config.build()
         else:
             self.es = None
-
-        # Build dataset and split
-        self.ds = self.ds_config.build()
-        self.ds_train, self.ds_val, self.ds_test = self.ds_splitter_config.split(
-            self.ds
-        )
-
-        print(
-            "ds lengths",
-            len(self.ds_train),
-            len(self.ds_val),
-            len(self.ds_test),
-            flush=True,
-        )
 
         # Build loss function
         self.loss_func = self.loss_config.build()
@@ -773,7 +782,13 @@ class Trainer(BaseModel):
                         "epoch_time": end_time - start_time,
                     }
                 )
+            # Save states
             torch.save(self.model.state_dict(), self.output_dir / f"{epoch_idx}.th")
+            torch.save(
+                self.optimizer.state_dict(),
+                self.output_dir / f"optimizer_{epoch_idx}.th",
+            )
+            torch.save(self.optimizer.state_dict(), self.output_dir / "optimizer.th")
             (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
             # Stop if loss has gone to infinity or is NaN
