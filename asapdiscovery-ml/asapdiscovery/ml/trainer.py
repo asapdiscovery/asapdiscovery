@@ -466,14 +466,6 @@ class Trainer(BaseModel):
             self.ds
         )
 
-        print(
-            "ds lengths",
-            len(self.ds_train),
-            len(self.ds_val),
-            len(self.ds_test),
-            flush=True,
-        )
-
         # Adjust output_dir and make sure it exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
         # Start the W&B process
@@ -482,29 +474,17 @@ class Trainer(BaseModel):
             self.output_dir = self.output_dir / run_id
             self.output_dir.mkdir(exist_ok=True)
 
-        # Set up stuff for continuing run
+        # Load info for continuing from loss_dict
         if self.cont:
+            print("Continuing run, checking for loss_dict.json", flush=True)
             # Try and load loss_dict
             loss_dict_fn = self.output_dir / "loss_dict.json"
             if loss_dict_fn.exists():
+                print("Found loss_dict.json", flush=True)
                 self.loss_dict = json.loads(loss_dict_fn.read_text())
                 self.start_epoch = len(
                     next(iter(self.loss_dict["train"].values()))["losses"]
                 )
-                try:
-                    weights_path = self.output_dir / f"{self.start_epoch - 1}.th"
-                    self.model_config.update(
-                        {
-                            "model_weights": torch.load(
-                                weights_path, map_location=self.device
-                            )
-                        }
-                    )
-                except FileNotFoundError:
-                    raise FileNotFoundError(
-                        f"Found {self.start_epoch} epochs of training, but didn't find "
-                        f"{self.start_epoch - 1}.th weights file."
-                    )
             else:
                 print("No loss_dict file found.")
                 if self.log_file:
@@ -518,14 +498,65 @@ class Trainer(BaseModel):
                 if len(all_weights_epochs) == 0:
                     raise FileNotFoundError("No weights files found from previous run.")
 
-                weights_path = self.output_dir / f"{max(all_weights_epochs)}.th"
-                self.model_config.update(
+                self.start_epoch = max(all_weights_epochs) + 1
+
+            # Get splits directly from loss_dict, if available (otherwise will fall
+            #  back to splits from self.ds_splitter_config)
+            if len(self.loss_dict) > 0:
+                subset_idxs = {"train": [], "val": [], "test": []}
+                for i, (compound, _) in enumerate(self.ds):
+                    if self.model_config.grouped:
+                        compound_id = compound
+                    else:
+                        compound_id = compound[1]
+
+                    for sp in ["train", "val", "test"]:
+                        if compound_id in self.loss_dict[sp]:
+                            print(f"putting {compound_id} in {sp}", flush=True)
+                            subset_idxs[sp].append(i)
+                            break
+                    else:
+                        print(
+                            (
+                                f"Compound {compound_id} not found in loss_dict, not "
+                                "including it."
+                            )
+                        )
+                        if self.log_file:
+                            self.logger.info(
+                                (
+                                    f"Compound {compound_id} not found in loss_dict, not "
+                                    "including it."
+                                )
+                            )
+
+                self.ds_train = torch.utils.data.Subset(self.ds, subset_idxs["train"])
+                self.ds_val = torch.utils.data.Subset(self.ds, subset_idxs["val"])
+                self.ds_test = torch.utils.data.Subset(self.ds, subset_idxs["test"])
+
+            # Load model weights
+            try:
+                weights_path = self.output_dir / f"{self.start_epoch - 1}.th"
+                self.model_config = self.model_config.update(
                     {
                         "model_weights": torch.load(
                             weights_path, map_location=self.device
                         )
                     }
                 )
+            except FileNotFoundError:
+                raise FileNotFoundError(
+                    f"Found {self.start_epoch} epochs of training, but didn't find "
+                    f"{self.start_epoch - 1}.th weights file."
+                )
+
+        print(
+            "ds lengths",
+            len(self.ds_train),
+            len(self.ds_val),
+            len(self.ds_test),
+            flush=True,
+        )
 
         # Build the Model
         self.model = self.model_config.build().to(self.device)
@@ -784,10 +815,6 @@ class Trainer(BaseModel):
                 )
             # Save states
             torch.save(self.model.state_dict(), self.output_dir / f"{epoch_idx}.th")
-            torch.save(
-                self.optimizer.state_dict(),
-                self.output_dir / f"optimizer_{epoch_idx}.th",
-            )
             torch.save(self.optimizer.state_dict(), self.output_dir / "optimizer.th")
             (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
