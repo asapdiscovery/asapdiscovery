@@ -46,8 +46,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...
 
 
 class ChemicalRelationship(Flag):
@@ -420,6 +419,10 @@ class Ligand(DataModelAbstractBase):
         Set the SD data for the ligand, uses an update to overwrite existing data in line with
         OpenEye behaviour
         """
+
+        # convert to dict of lists first
+        data = {k: v if isinstance(v, list) else [v] for k, v in data.items()}
+
         # make sure we don't overwrite any attributes
         new_data = {}
         for k, v in data.items():
