@@ -20,12 +20,10 @@ class SelectorBase(abc.ABC, BaseModel):
 
     # records what kind of selector class was used, overridden in subclasses
     @abc.abstractmethod
-    def selector_type(self) -> str:
-        ...
+    def selector_type(self) -> str: ...
 
     @abc.abstractmethod
-    def _select(self) -> list[Union[CompoundStructurePair, DockingInputPair]]:
-        ...
+    def _select(self) -> list[Union[CompoundStructurePair, DockingInputPair]]: ...
 
     def select(
         self,
@@ -56,8 +54,7 @@ class SelectorBase(abc.ABC, BaseModel):
         return outputs
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
     @staticmethod
     def _pair_type_from_complex(
