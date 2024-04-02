@@ -517,13 +517,13 @@ class Trainer(BaseModel):
                             break
                     else:
                         print(
-                                f"Compound {compound_id} not found in loss_dict, not "
-                                "including it."
+                            f"Compound {compound_id} not found in loss_dict, not "
+                            "including it."
                         )
                         if self.log_file:
                             self.logger.info(
-                                    f"Compound {compound_id} not found in loss_dict, not "
-                                    "including it."
+                                f"Compound {compound_id} not found in loss_dict, not "
+                                "including it."
                             )
 
                 self.ds_train = torch.utils.data.Subset(self.ds, subset_idxs["train"])
