@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError): ... #noqa: E701
+class InvalidLigandError(ValueError): ...  # noqa: E701
 
 
 class ChemicalRelationship(Flag):
