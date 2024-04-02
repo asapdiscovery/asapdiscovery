@@ -33,7 +33,8 @@ from .schema_base import (
 logger = logging.getLogger(__name__)
 
 
-class InvalidTargetError(ValueError): ...
+class InvalidTargetError(ValueError):
+    ...
 
 
 class Target(DataModelAbstractBase):
