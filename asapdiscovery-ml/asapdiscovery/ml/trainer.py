@@ -375,9 +375,9 @@ class Trainer(BaseModel):
         extra_config = {}
         for kvp in v:
             try:
-                key, val = kvp.split(":")
+                key, val = kvp.split(",")
             except Exception:
-                raise ValueError(f"Couldn't parse key:value pair '{kvp}'.")
+                raise ValueError(f"Couldn't parse key,value pair '{kvp}'.")
 
             extra_config[key] = val
 
