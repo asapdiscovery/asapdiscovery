@@ -2149,11 +2149,11 @@ def build_and_train_visnet(
             + "]"
         )
 
-        # Save Trainer
-        if trainer_config_cache and (
-            (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-        ):
-            trainer_config_cache.write_text(t.json())
+    # Save Trainer
+    if trainer_config_cache and (
+        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+    ):
+        trainer_config_cache.write_text(t.json())
 
     t.initialize()
     t.train()
