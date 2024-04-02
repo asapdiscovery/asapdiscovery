@@ -1,15 +1,17 @@
 from pathlib import Path
+
 import numpy as np
 from asapdiscovery.data.openeye import load_openeye_pdb, save_openeye_pdb
 from asapdiscovery.modeling.modeling import superpose_molecule
 
 
-def rmsd_alignment(target_pdb: str, 
-    ref_pdb: str,  
+def rmsd_alignment(
+    target_pdb: str,
+    ref_pdb: str,
     final_pdb: str,
     target_chain="A",
     ref_chain="A",
-    ):
+):
     """Calculate RMSD of a molecule against a reference
 
     Parameters
@@ -33,16 +35,21 @@ def rmsd_alignment(target_pdb: str,
     protein = load_openeye_pdb(target_pdb)
     ref_protein = load_openeye_pdb(ref_pdb)
 
-    aligned_protein, rmsd = superpose_molecule(ref_protein, protein, ref_chain=ref_chain, mobile_chain=target_chain)
+    aligned_protein, rmsd = superpose_molecule(
+        ref_protein, protein, ref_chain=ref_chain, mobile_chain=target_chain
+    )
     pdb_aligned = save_openeye_pdb(aligned_protein, final_pdb)
 
     return rmsd, pdb_aligned
 
-def select_best_colabfold(results_dir:str, 
-    seq_name:str, 
-    pdb_ref:str, 
-    chain="A", 
-    final_pdb="aligned_protein.pdb",):
+
+def select_best_colabfold(
+    results_dir: str,
+    seq_name: str,
+    pdb_ref: str,
+    chain="A",
+    final_pdb="aligned_protein.pdb",
+):
     """Select the best seed output (repetition) from a ColabFold run based on its RMSD wrt the reference.
 
     Parameters
@@ -60,7 +67,7 @@ def select_best_colabfold(results_dir:str,
 
     Returns
     -------
-    
+
     float, str
        RMSD after alignment, Path to saved PDB
 
@@ -76,13 +83,15 @@ def select_best_colabfold(results_dir:str,
 
     results_dir = Path(results_dir)
     if not results_dir.exists():
-        raise FileNotFoundError(f"A folder with ColbFold results {results_dir} does not exist")
+        raise FileNotFoundError(
+            f"A folder with ColbFold results {results_dir} does not exist"
+        )
 
     default_CF = "*_unrelaxed_rank_001_alphafold2_ptm_model_1_seed_*.pdb"
 
     for file_path in results_dir.glob(seq_name + default_CF):
-        pdb_to_compare = file_path 
-        seed = str(pdb_to_compare).split('_')[-1].split('.')[0]
+        pdb_to_compare = file_path
+        seed = str(pdb_to_compare).split("_")[-1].split(".")[0]
         rmsd, pdb = rmsd_alignment(pdb_to_compare, pdb_ref, final_pdb, chain, chain)
         rmsds.append(rmsd)
         seeds.append(seed)
@@ -96,14 +105,14 @@ def select_best_colabfold(results_dir:str,
     min_rmsd_file = file_seed[min_rmsd]
     print(f"Seed with less RMSD is {seeds[min_rmsd]} with RMSD {rmsds[min_rmsd]} A")
 
-    min_rmsd, final_pdb = rmsd_alignment(min_rmsd_file, pdb_ref, final_pdb, chain, chain)
+    min_rmsd, final_pdb = rmsd_alignment(
+        min_rmsd_file, pdb_ref, final_pdb, chain, chain
+    )
 
     return min_rmsd, str(final_pdb)
 
-def save_alignment_pymol(pdbs:list, 
-                         labels: list,
-                         reference:str,
-                         session_save:str):
+
+def save_alignment_pymol(pdbs: list, labels: list, reference: str, session_save: str):
     """Imports the provided PDBs into a Pymol session and saves
 
     Parameters
@@ -125,7 +134,7 @@ def save_alignment_pymol(pdbs:list,
     p.cmd.load(reference, object="reference_protein")
 
     for i, pdb in enumerate(pdbs):
-        if len(pdb) > 0: 
+        if len(pdb) > 0:
             pname = "Protein_" + labels[i]
             p.cmd.load(pdb, object=pname)
             # PDBs should be aligned but in case they are not
@@ -139,4 +148,4 @@ def save_alignment_pymol(pdbs:list,
     p.cmd.set("transparency", 0.3)
 
     p.cmd.save(session_save)
-    return 
+    return
