@@ -9,8 +9,7 @@ from typing import Optional
 import boto3
 
 
-class S3Error(Exception):
-    ...
+class S3Error(Exception): ...
 
 
 class S3:
