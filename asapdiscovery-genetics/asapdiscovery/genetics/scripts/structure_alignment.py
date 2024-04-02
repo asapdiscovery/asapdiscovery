@@ -20,22 +20,32 @@ parser.add_argument(
 parser.add_argument(
     "--save-dir",
     type=str,
-    required=True,
+    required=False,
+    default="aligned_pdbs/",
     help="Path directory to save PDB of aligned target protein",
 )
 
 parser.add_argument(
-    "--results-CF",
+    "--results-dir",
     type=str,
-    required=True,
-    help="Path to folder where ColabFold results are stored",
+    required=False,
+    default="./",
+    help="Path to folder where all ColabFold results are stored.",
+)
+
+parser.add_argument(
+    "--out-dir",
+    type=str,
+    required=False,
+    default="./",
+    help="Path to output folder given on ColabFold run.",
 )
 
 parser.add_argument(
     "--pymol-save",
     type=str,
     required=False,
-    default="pymol_alignment.pse",
+    default="aligned_proteins.pse",
     help="Path to save pymol session with aligned proteins",
 )
 
@@ -45,12 +55,13 @@ def main():
     seq_file = Path(args.seq_file)
     if not seq_file.exists():
         raise FileNotFoundError(f"Sequence file {seq_file} does not exist")
+    query_name = seq_file.stem
 
     ref_pdb = Path(args.ref_pdb)
     if not ref_pdb.exists():
         raise FileNotFoundError(f"Ref PDB file {ref_pdb} does not exist")
 
-    results_dir = Path(args.results_CF)
+    results_dir = Path(args.results_dir)
     if not results_dir.exists():
         raise FileNotFoundError(
             f"The folder with ColabFold results {results_dir} does not exist"
@@ -61,6 +72,7 @@ def main():
     pymol_save = args.pymol_save
 
     aligned_pdbs = []
+    seq_labels = []
     with open(seq_file, "r") as f:
         # Skip the first line
         next(f)
@@ -68,7 +80,7 @@ def main():
             # Remove spaces
             line = line.strip("\n").lstrip("\r")
             mol, seq = line.split(",", 1) 
-            cf_results = results_dir / args.seq_file.split(".")[0] / mol / "results"
+            cf_results = results_dir / query_name / mol / args.out_dir
             final_pdb = save_dir / f"{mol}_aligned.pdb"
 
             min_rmsd, min_file = select_best_colabfold(cf_results, 
@@ -77,8 +89,10 @@ def main():
                                                        final_pdb=final_pdb)
 
             aligned_pdbs.append(min_file)
+            seq_labels.append(mol)
 
-    save_alignment_pymol(aligned_pdbs, pymol_save)
+    session_save = save_dir / pymol_save
+    save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save)
 
     return
 

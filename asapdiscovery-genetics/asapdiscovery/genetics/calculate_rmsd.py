@@ -98,9 +98,11 @@ def select_best_colabfold(results_dir:str,
 
     min_rmsd, final_pdb = rmsd_alignment(min_rmsd_file, pdb_ref, final_pdb, chain, chain)
 
-    return min_rmsd, final_pdb
+    return min_rmsd, str(final_pdb)
 
 def save_alignment_pymol(pdbs:list, 
+                         labels: list,
+                         reference:str,
                          session_save:str):
     """Imports the provided PDBs into a Pymol session and saves
 
@@ -108,18 +110,33 @@ def save_alignment_pymol(pdbs:list,
     ----------
     pdbs : list
         List with paths to pdb file to include
+    labels : list
+        List with labels of proteins
+    reference : str
+        Path to reference PDB
     session_save : str
         Path to save the PyMOL session
     """
-    import pymol
-    pymol.finish_launching()
+    import pymol2
 
-    for pdb in pdbs:
-        pymol.cmd.load(pdb)
+    p = pymol2.PyMOL()
+    p.start()
 
-    # Save the PyMOL session
-    pymol.cmd.save(session_save)
+    p.cmd.load(reference, object="reference_protein")
 
-    pymol.cmd.quit()
+    for i, pdb in enumerate(pdbs):
+        if len(pdb) > 0: 
+            pname = "Protein_" + labels[i]
+            p.cmd.load(pdb, object=pname)
+            # PDBs should be aligned but in case they are not
+            p.cmd.align(pname, "reference_protein")
 
+    # set visualization
+    p.cmd.set("bg_rgb", "white")
+    p.cmd.bg_color("white")
+    p.cmd.hide("everything")
+    p.cmd.show("cartoon")
+    p.cmd.set("transparency", 0.3)
+
+    p.cmd.save(session_save)
     return 
