@@ -60,11 +60,6 @@ def modeling():
 @fragalysis_dir
 @structure_dir
 @click.option(
-    "--alchemy-compounds",
-    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
-    help="Path to an SDF file to find a suitable reference for and then prep it",
-)
-@click.option(
     "--cache-dir",
     help="The path to cached prepared complexes which can be used again.",
     type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
@@ -84,7 +79,6 @@ def protein_prep(
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
-    alchemy_compounds: Optional[str] = None,
     cache_dir: Optional[str] = None,
     save_to_cache: bool = True,
     use_dask: bool = False,
@@ -117,7 +111,6 @@ def protein_prep(
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
             structure_dir=structure_dir,
-            alchemy_compounds=alchemy_compounds,
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
             use_dask=use_dask,
