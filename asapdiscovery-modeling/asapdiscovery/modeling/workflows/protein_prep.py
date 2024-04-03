@@ -33,8 +33,6 @@ class ProteinPrepInputs(BaseModel):
         Path to a fragalysis dump to prep
     structure_dir : Optional[str]
         Path to a directory of structures to prep
-    alchemy_compounds : Optional[Path]
-        Path to an SDF file to find a suitable reference for and then prep it
     cache_dir : Path
         Path to a directory of cached prepped structures.
     save_to_cache: bool
@@ -77,10 +75,6 @@ class ProteinPrepInputs(BaseModel):
     structure_dir: Optional[Path] = Field(
         None,
         description="Path to a directory containing structures to dock instead of a full fragalysis database.",
-    )
-    alchemy_compounds: Optional[Path] = Field(
-        None,
-        description="Path to an SDF file to find a suitable reference for and then prep it"
     )
     cache_dir: Optional[str] = Field(
         "prepped_structure_cache",
@@ -174,12 +168,6 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         level=inputs.loglevel,
     ).getLogger()
 
-    # if we're finding a reference for a set of compounds for asap-alchemy, 
-    # check that a structures dir is defined
-    if inputs.alchemy_compounds and not inputs.structure_dir:
-        raise ValueError(
-            "If specifying alchemy_compounds, must specify structure_dir"
-        )
     logger.info(f"Running protein prep with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
@@ -239,17 +227,6 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         )
 
     logger.info(f"Loaded {len(complexes)} complexes")
-
-    if inputs.alchemy_compounds:
-        logger.info(
-            f"Finding a suitable reference for {inputs.alchemy_compounds} in folder: {inputs.structure_dir}"
-        )
-        # use a function that selects the right complex, then set `complexes` to be that complex
-        # make sure that we name the complex correctly
-
-        # function should take the largest compound in the SDF, then find the closest neighbor in complexes
-        import sys
-        sys.exit()
 
     if not inputs.seqres_yaml:
         logger.info(
