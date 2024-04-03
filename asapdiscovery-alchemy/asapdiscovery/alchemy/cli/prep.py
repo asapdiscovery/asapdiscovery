@@ -3,12 +3,12 @@ from typing import Optional
 import click
 
 
-@click.group()
+@click.group(short_help="Tools to prepare ligands for Alchemy networks via state expansion and constrained pose generation.")
 def prep():
     """Tools to prepare ligands for Alchemy networks via state expansion and constrained pose generation."""
 
 
-@prep.command()
+@prep.command(short_help="Create a new AlchemyPrepWorkflow with default settings and save it to JSON file.")
 @click.option(
     "-f",
     "--filename",
