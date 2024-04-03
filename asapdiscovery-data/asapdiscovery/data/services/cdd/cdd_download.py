@@ -165,7 +165,10 @@ def download_molecules(
 
     # Remove chiral molecules
     logging.debug("Filtering dataframe...")
-    from .utils import filter_molecules_dataframe, parse_fluorescence_data_cdd
+    from asapdiscovery.data.util.utils import (
+        filter_molecules_dataframe,
+        parse_fluorescence_data_cdd,
+    )
 
     filter_kwargs = [
         "id_fieldname",
