@@ -745,8 +745,7 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
         Only plots molecules with experimental values
     """
     # create a plotting dataframe which drops rows with nans
-    plotting_df = dataframe.dropna(axis=0, inplace=False)
-    plotting_df.reset_index(inplace=True)
+    plotting_df = dataframe.dropna(axis=0, inplace=False, ignore_index=True)
     # add drawn molecule as a column
     mols = [draw_mol(smiles) for smiles in dataframe["SMILES"]]
     dataframe["Molecule"] = mols
@@ -841,8 +840,7 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     dataframe["labels"] = titles
     dataframe["smiles"] = combined_smiles
     # create a plotting dataframe which drops rows with nans
-    plotting_df = dataframe.dropna(axis=0, inplace=False)
-    plotting_df.reset_index(inplace=True)
+    plotting_df = dataframe.dropna(axis=0, inplace=False, ignore_index=True)
     # create the DG plot
     fig = plotmol_relative(
         calculated=plotting_df["DDG (kcal/mol) (FECS)"],
