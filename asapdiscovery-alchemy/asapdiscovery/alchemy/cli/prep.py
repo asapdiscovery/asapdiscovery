@@ -1,17 +1,22 @@
+import shutil
 from typing import Optional
 
 import click
-
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
-import shutil
 
-@click.group(short_help="Tools to prepare ligands for Alchemy networks via state expansion and constrained pose generation.",
-             cls=SpecialHelpOrder, context_settings={'max_content_width': shutil.get_terminal_size().columns - 20})
+
+@click.group(
+    short_help="Tools to prepare ligands for Alchemy networks via state expansion and constrained pose generation.",
+    cls=SpecialHelpOrder,
+    context_settings={"max_content_width": shutil.get_terminal_size().columns - 20},
+)
 def prep():
     """Tools to prepare ligands for Alchemy networks via state expansion and constrained pose generation."""
 
 
-@prep.command(short_help="Create a new AlchemyPrepWorkflow with default settings and save it to JSON file.")
+@prep.command(
+    short_help="Create a new AlchemyPrepWorkflow with default settings and save it to JSON file."
+)
 @click.option(
     "-f",
     "--filename",
@@ -47,7 +52,9 @@ def create(filename: str, core_smarts: str):
     console.print(message)
 
 
-@prep.command(short_help="Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate constrained poses suitable for ASAP-Alchemy.")
+@prep.command(
+    short_help="Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate constrained poses suitable for ASAP-Alchemy."
+)
 @click.option(
     "-f",
     "--factory-file",
