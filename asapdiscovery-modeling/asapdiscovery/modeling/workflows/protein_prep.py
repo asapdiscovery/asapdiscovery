@@ -15,9 +15,9 @@ from asapdiscovery.data.util.dask_utils import (
 )
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
-# from asapdiscovery.modeling.modeling import select_reference_for_compounds
 from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator
+
 
 class ProteinPrepInputs(BaseModel):
     """
@@ -240,6 +240,17 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
 
     logger.info(f"Loaded {len(complexes)} complexes")
 
+    if inputs.alchemy_compounds:
+        logger.info(
+            f"Finding a suitable reference for {inputs.alchemy_compounds} in folder: {inputs.structure_dir}"
+        )
+        # use a function that selects the right complex, then set `complexes` to be that complex
+        # make sure that we name the complex correctly
+
+        # function should take the largest compound in the SDF, then find the closest neighbor in complexes
+        import sys
+        sys.exit()
+
     if not inputs.seqres_yaml:
         logger.info(
             f"No seqres yaml specified, selecting based on target: {inputs.target}"
@@ -270,24 +281,13 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         ref_chain=inputs.ref_chain,
         active_site_chain=inputs.active_site_chain,
     )
-    if inputs.alchemy_compounds:
-        logger.info(
-            f"Finding a suitable reference for {inputs.alchemy_compounds} in folder: {inputs.structure_dir}"
-        )
-        select_reference_for_compounds(inputs.alchemy_compounds, complexes, prepper, inputs, dask_client, logger)
-        # use a function that selects the right complex, then set `complexes` to be that complex
-        # make sure that we name the complex correctly
 
-        # function should take the largest compound in the SDF, then find the closest neighbor in complexes
-        import sys
-        sys.exit()
-    else:
-        prepped_complexes = prepper.prep(
-            inputs=complexes,
-            use_dask=inputs.use_dask,
-            dask_client=dask_client,
-            cache_dir=inputs.cache_dir,
-        )
+    prepped_complexes = prepper.prep(
+        inputs=complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        cache_dir=inputs.cache_dir,
+    )
 
     logger.info(f"Prepped {len(prepped_complexes)} complexes")
 
@@ -299,99 +299,3 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         prepper.cache(prepped_complexes, inputs.cache_dir)
 
     logger.info("Done")
-
-from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
-from rdkit import Chem
-
-#### BELOW SHOULD BE SOMEWHERE ELSE?
-import openmm
-from openff.units import Quantity, unit
-from openmm import unit as openmm_unit
-from pdbfixer import PDBFixer
-
-from openff.toolkit import ForceField, Molecule, Topology
-
-def create_protein_only_system(pdb_path):
-    # attempt to make an OpenMM system with the prepped protein.
-    # follows https://docs.openforcefield.org/en/latest/examples/openforcefield/openff-toolkit/toolkit_showcase/toolkit_showcase.html
-    top = Topology.from_pdb(pdb_path)
-    sage_ff14sb = ForceField("openff-2.1.0.offxml", "ff14sb_off_impropers_0.0.3.offxml")
-    interchange = sage_ff14sb.create_interchange(top)
-
-    # Under the hood, this creates *OpenMM* `System` and `Topology` objects, then combines them together
-    simulation = interchange.to_openmm_simulation(integrator=openmm.LangevinIntegrator(
-                                        300 * openmm_unit.kelvin,
-                                        1 / openmm_unit.picosecond,
-                                        0.002 * openmm_unit.picoseconds,
-                                    ))
-
-    return simulation
-#####
-
-def select_reference_for_compounds(input_mols, complexes, prepper, inputs, dask_client, logger):
-    """
-    From a collection of ligands and a list of `Complex`es, return the `Complex` that is the most similar to
-    the largest of the query ligands.
-
-    Parameters
-    ----------
-    input_mols : Path
-        Path to an SDF file containing molecules to query 
-    complexes : list
-        List of `Complex`es to find the most similar `Complex` in 
-    prepper: ProteinPrepper
-        Object to prep `Complex`es with
-    inputs : ProteinPrepInputs
-        ..
-    dask_client :
-        ..
-    logger : 
-        ..
-
-    Returns
-    -------
-    Schema Complex
-        `Complex` that was found to be most similar to the largest compound in `input_mol`
-    """
-    # find the largest molecule in terms of surface area
-    largest_compound = Chem.MolFromSmiles("CCO")
-    for mol in Chem.SDMolSupplier(str(input_mols)):
-        if mol.GetNumAtoms() > largest_compound.GetNumAtoms():
-            largest_compound = mol
-
-    # find that largest ligand's `n` closest reference 
-    selector = MCSSelector()
-    pairs = selector.select(
-        [Ligand.from_smiles(Chem.MolToSmiles(largest_compound), compound_name="query_compound")],
-        complexes,
-        n_select=5, # if we run out of references we can either 
-        # increase this number or start taking from e.g. the second-largest compound
-    )
-    reference_complexes = []
-    for pair in pairs:
-        target_name = pair.complex.target.target_name
-        logger.info(f"Found a match with {target_name}; attempting prep")
-        reference_complexes.append(target_name)
-        prepped_complex = prepper.prep(
-            inputs=[pair.complex],
-            use_dask=inputs.use_dask,
-            dask_client=dask_client,
-            cache_dir=inputs.cache_dir,
-        )[0]
-        logger.info(f"Checking that the prepped complex is compatible with OpenMM")
-        prepped_complex.target.to_pdb_file(f"{target_name}.pdb") # @HMO: this should be in a tmpdir?
-        try:
-            prepped_simulation = create_protein_only_system(f"{target_name}.pdb")
-        except:
-            pass # @HMO: can we do this more elegantly? I don't really like this setup with the below ValueError.
-        if prepped_simulation:
-            logger.info(f"{target_name} is compatible, writing to file")
-            return [prepped_complex]
-        else:
-            pass
-    raise ValueError( # if we reach this point then we've failed to find a reference
-        f"No references were found for query ligand {Chem.MolToSmiles(largest_compound)} in references: {reference_complexes}"
-    )
-
-        
