@@ -18,11 +18,11 @@ if TYPE_CHECKING:
 
 
 @click.group()
-def protein_prep():
+def modeling():
     pass
 
 
-@protein_prep.command()
+@modeling.command()
 @target
 @click.option(
     "--align",
@@ -102,7 +102,7 @@ def protein_prep(
     """
     Run protein prep on a set of structures.
     """
-    from asapdiscovery.workflows.prep_workflows.protein_prep import (
+    from asapdiscovery.modeling.workflows.protein_prep import (
         ProteinPrepInputs,
         protein_prep_workflow,
     )
@@ -137,4 +137,4 @@ def protein_prep(
 
 
 if __name__ == "__main__":
-    protein_prep()
+    modeling()
