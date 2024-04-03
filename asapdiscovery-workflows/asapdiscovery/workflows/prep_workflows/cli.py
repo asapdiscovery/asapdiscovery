@@ -60,12 +60,12 @@ def protein_prep():
 @fragalysis_dir
 @structure_dir
 @click.option(
-    "--alchemy-compounds_sdf",
+    "--alchemy-compounds-sdf",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="Path to an SDF file to find a suitable reference for and then prep it",
 )
 @click.option(
-    "--alchemy-compounds_postera",
+    "--alchemy-compounds-postera",
     type=str,
     help="Name of Postera MoleculeSet to find a suitable reference for and then prep it",
 )
