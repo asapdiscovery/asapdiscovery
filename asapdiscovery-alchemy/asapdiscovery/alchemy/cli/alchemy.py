@@ -6,8 +6,9 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetTags,
 )
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
+import shutil
 
-@click.group(cls=SpecialHelpOrder)
+@click.group(cls=SpecialHelpOrder, context_settings={'max_content_width': shutil.get_terminal_size().columns - 20})
 def alchemy():
     """Tools to create and execute Alchemy networks using OpenFE and alchemiscale."""
     pass
