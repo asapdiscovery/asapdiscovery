@@ -1,7 +1,8 @@
 from pathlib import Path
+import pandas as pd
 from asapdiscovery.genetics.calculate_rmsd import select_best_colabfold, save_alignment_pymol
-
 import argparse
+
 parser = argparse.ArgumentParser(description="Align PDB structures generated from ColabFold")
 
 parser.add_argument(
@@ -49,6 +50,14 @@ parser.add_argument(
     help="Path to save pymol session with aligned proteins",
 )
 
+parser.add_argument(
+    "--cf-format",
+    type=str,
+    required=False,
+    default="*_unrelaxed_rank_001_alphafold2_ptm_model_1_seed_*.pdb",
+    help="Format of pdb file saved by ColabFold. Will rarely be different than default. ",
+)
+
 def main():
     args = parser.parse_args()
     # check all the required files exist
@@ -70,26 +79,25 @@ def main():
     save_dir.mkdir(parents=True, exist_ok=True)
    
     pymol_save = args.pymol_save
+    cf_format = args.cf_format
 
     aligned_pdbs = []
     seq_labels = []
-    with open(seq_file, "r") as f:
-        # Skip the first line
-        next(f)
-        for line in f:
-            # Remove spaces
-            line = line.strip("\n").lstrip("\r")
-            mol, seq = line.split(",", 1) 
-            cf_results = results_dir / query_name / mol / args.out_dir
-            final_pdb = save_dir / f"{mol}_aligned.pdb"
+    seq_df = pd.read_csv(seq_file)
+    for index, row in seq_df.iterrows():
+        # iterate over each csv entry
+        mol = row["id"] 
+        cf_results = results_dir / query_name / mol / args.out_dir
+        final_pdb = save_dir / f"{mol}_aligned.pdb"
+        # Select best seed repetition 
+        min_rmsd, min_file = select_best_colabfold(cf_results, 
+                                                    mol, ref_pdb, 
+                                                    chain="A", 
+                                                    final_pdb=final_pdb,
+                                                    default_CF=cf_format)
 
-            min_rmsd, min_file = select_best_colabfold(cf_results, 
-                                                       mol, ref_pdb, 
-                                                       chain="A", 
-                                                       final_pdb=final_pdb)
-
-            aligned_pdbs.append(min_file)
-            seq_labels.append(mol)
+        aligned_pdbs.append(min_file)
+        seq_labels.append(mol)
 
     session_save = save_dir / pymol_save
     save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save)
