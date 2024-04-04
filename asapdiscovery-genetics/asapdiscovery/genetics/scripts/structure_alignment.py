@@ -1,15 +1,21 @@
 from pathlib import Path
 import pandas as pd
-from asapdiscovery.genetics.calculate_rmsd import select_best_colabfold, save_alignment_pymol
 import argparse
 
-parser = argparse.ArgumentParser(description="Align PDB structures generated from ColabFold")
+from asapdiscovery.genetics.calculate_rmsd import (
+    save_alignment_pymol,
+    select_best_colabfold,
+)
+
+parser = argparse.ArgumentParser(
+    description="Align PDB structures generated from ColabFold"
+)
 
 parser.add_argument(
     "--seq-file",
     type=str,
     required=True,
-    help="Path to the csv with the sequences.", 
+    help="Path to the csv with the sequences.",
 )
 parser.add_argument(
     "--ref-pdb",
@@ -74,10 +80,10 @@ def main():
     if not results_dir.exists():
         raise FileNotFoundError(
             f"The folder with ColabFold results {results_dir} does not exist"
-            )   
+        )
     save_dir = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
-   
+
     pymol_save = args.pymol_save
     cf_format = args.cf_format
 
@@ -103,6 +109,7 @@ def main():
     save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save)
 
     return
+
 
 if __name__ == "__main__":
     main()
