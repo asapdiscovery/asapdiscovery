@@ -30,6 +30,7 @@ from asapdiscovery.ml.cli_args import (
     wandb_args,
     weights_path,
 )
+from asapdiscovery.ml.cli_sweep import sweep
 from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterType,
@@ -74,6 +75,7 @@ def build_ds():
 ml.add_command(build)
 ml.add_command(build_and_train)
 ml.add_command(build_ds)
+ml.add_command(sweep)
 
 
 @build.command(name="gat")
@@ -107,7 +109,6 @@ def build_gat(
     rho: float | None = None,
     optimizer_config_cache: Path | None = None,
     use_wandb: bool | None = None,
-    sweep: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
@@ -222,17 +223,14 @@ def build_gat(
             "biases": biases,
             "allow_zero_in_degree": allow_zero_in_degree,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -282,7 +280,6 @@ def build_gat(
             "device": device,
             "output_dir": output_dir,
             "use_wandb": use_wandb,
-            "sweep": sweep,
             "wandb_project": wandb_project,
             "wandb_name": wandb_name,
             "extra_config": extra_config,
@@ -345,7 +342,6 @@ def build_schnet(
     rho: float | None = None,
     optimizer_config_cache: Path | None = None,
     use_wandb: bool | None = None,
-    sweep: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
@@ -461,17 +457,14 @@ def build_schnet(
             "mean": mean,
             "std": std,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -526,7 +519,6 @@ def build_schnet(
             "device": device,
             "output_dir": output_dir,
             "use_wandb": use_wandb,
-            "sweep": sweep,
             "wandb_project": wandb_project,
             "wandb_name": wandb_name,
             "extra_config": extra_config,
@@ -589,7 +581,6 @@ def build_e3nn(
     rho: float | None = None,
     optimizer_config_cache: Path | None = None,
     use_wandb: bool | None = None,
-    sweep: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
@@ -707,17 +698,14 @@ def build_e3nn(
             "num_neighbors": num_neighbors,
             "num_nodes": num_nodes,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -772,7 +760,6 @@ def build_e3nn(
             "device": device,
             "output_dir": output_dir,
             "use_wandb": use_wandb,
-            "sweep": sweep,
             "wandb_project": wandb_project,
             "wandb_name": wandb_name,
             "extra_config": extra_config,
@@ -833,7 +820,6 @@ def build_visnet(
     rho: float | None = None,
     optimizer_config_cache: Path | None = None,
     use_wandb: bool | None = None,
-    sweep: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
@@ -960,17 +946,14 @@ def build_visnet(
             "std": std,
             "derivative": derivative,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -1024,7 +1007,6 @@ def build_visnet(
             "device": device,
             "output_dir": output_dir,
             "use_wandb": use_wandb,
-            "sweep": sweep,
             "wandb_project": wandb_project,
             "wandb_name": wandb_name,
             "extra_config": extra_config,
@@ -1086,7 +1068,6 @@ def build_and_train_gat(
     rho: float | None = None,
     optimizer_config_cache: Path | None = None,
     use_wandb: bool | None = None,
-    sweep: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
@@ -1201,17 +1182,14 @@ def build_and_train_gat(
             "biases": biases,
             "allow_zero_in_degree": allow_zero_in_degree,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -1261,7 +1239,6 @@ def build_and_train_gat(
             "device": device,
             "output_dir": output_dir,
             "use_wandb": use_wandb,
-            "sweep": sweep,
             "wandb_project": wandb_project,
             "wandb_name": wandb_name,
             "extra_config": extra_config,
@@ -1327,7 +1304,6 @@ def build_and_train_schnet(
     rho: float | None = None,
     optimizer_config_cache: Path | None = None,
     use_wandb: bool | None = None,
-    sweep: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
@@ -1443,17 +1419,14 @@ def build_and_train_schnet(
             "mean": mean,
             "std": std,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -1508,7 +1481,6 @@ def build_and_train_schnet(
             "device": device,
             "output_dir": output_dir,
             "use_wandb": use_wandb,
-            "sweep": sweep,
             "wandb_project": wandb_project,
             "wandb_name": wandb_name,
             "extra_config": extra_config,
@@ -1574,7 +1546,6 @@ def build_and_train_e3nn(
     rho: float | None = None,
     optimizer_config_cache: Path | None = None,
     use_wandb: bool | None = None,
-    sweep: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
@@ -1692,17 +1663,14 @@ def build_and_train_e3nn(
             "num_neighbors": num_neighbors,
             "num_nodes": num_nodes,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -1757,7 +1725,6 @@ def build_and_train_e3nn(
             "device": device,
             "output_dir": output_dir,
             "use_wandb": use_wandb,
-            "sweep": sweep,
             "wandb_project": wandb_project,
             "wandb_name": wandb_name,
             "extra_config": extra_config,
@@ -1821,7 +1788,6 @@ def build_and_train_visnet(
     rho: float | None = None,
     optimizer_config_cache: Path | None = None,
     use_wandb: bool | None = None,
-    sweep: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
     extra_config: list[str] | None = None,
@@ -1949,17 +1915,14 @@ def build_and_train_visnet(
             "std": std,
             "derivative": derivative,
         }
-        if (es_config_cache and es_config_cache.exists()) or es_type:
-            es_config = {
-                "cache": es_config_cache,
-                "overwrite_cache": overwrite_es_config_cache,
-                "es_type": es_type,
-                "patience": es_patience,
-                "n_check": es_n_check,
-                "divergence": es_divergence,
-            }
-        else:
-            es_config = None
+        es_config = {
+            "cache": es_config_cache,
+            "overwrite_cache": overwrite_es_config_cache,
+            "es_type": es_type,
+            "patience": es_patience,
+            "n_check": es_n_check,
+            "divergence": es_divergence,
+        }
         ds_config = {
             "cache": ds_config_cache,
             "overwrite_cache": overwrite_ds_config_cache,
@@ -2013,7 +1976,6 @@ def build_and_train_visnet(
             "device": device,
             "output_dir": output_dir,
             "use_wandb": use_wandb,
-            "sweep": sweep,
             "wandb_project": wandb_project,
             "wandb_name": wandb_name,
             "extra_config": extra_config,

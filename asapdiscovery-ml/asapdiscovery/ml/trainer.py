@@ -38,8 +38,8 @@ class Trainer(BaseModel):
     model_config: ModelConfigBase = Field(
         ..., description="Config describing the model to train."
     )
-    es_config: EarlyStoppingConfig | None = Field(
-        None, description="Config describing the early stopping check to use."
+    es_config: EarlyStoppingConfig = Field(
+        ..., description="Config describing the early stopping check to use."
     )
     ds_config: DatasetConfig = Field(
         ..., description="Config describing the dataset object to train on."
@@ -104,7 +104,6 @@ class Trainer(BaseModel):
 
     # W&B parameters
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
-    sweep: bool = Field(False, description="This run is part of a W&B sweep.")
     wandb_project: str | None = Field(None, description="W&B project name.")
     wandb_name: str | None = Field(None, description="W&B project name.")
     extra_config: dict | None = Field(
@@ -397,56 +396,51 @@ class Trainer(BaseModel):
             The WandB run ID for the initialized run
         """
 
-        if self.sweep:
-            run_id = wandb.init().id
-        else:
-            run_id_fn = self.output_dir / "run_id"
+        run_id_fn = self.output_dir / "run_id"
 
-            if self.cont:
-                # Load run_id to continue from file
-                # First make sure the file exists
-                if run_id_fn.exists():
-                    run_id = run_id_fn.read_text().strip()
-                else:
-                    raise FileNotFoundError(
-                        "Couldn't find run_id file to continue run."
-                    )
-                # Make sure the run_id is legit
-                try:
-                    wandb.init(project=self.wandb_project, id=run_id, resume="must")
-                except wandb.errors.UsageError:
-                    raise wandb.errors.UsageError(
-                        f"Run in run_id file ({run_id}) doesn't exist"
-                    )
-                # Update run config to reflect it's been resumed
-                wandb.config.update({"continue": True}, allow_val_change=True)
+        if self.cont:
+            # Load run_id to continue from file
+            # First make sure the file exists
+            if run_id_fn.exists():
+                run_id = run_id_fn.read_text().strip()
             else:
-                # Don't serialize input_data for confidentiality/size reasons
-                ds_config = self.ds_config.dict()
-                del ds_config["input_data"]
-                config = self.dict()
-                config["ds_config"] = ds_config
+                raise FileNotFoundError("Couldn't find run_id file to continue run.")
+            # Make sure the run_id is legit
+            try:
+                wandb.init(project=self.wandb_project, id=run_id, resume="must")
+            except wandb.errors.UsageError:
+                raise wandb.errors.UsageError(
+                    f"Run in run_id file ({run_id}) doesn't exist"
+                )
+            # Update run config to reflect it's been resumed
+            wandb.config.update({"continue": True}, allow_val_change=True)
+        else:
+            # Don't serialize input_data for confidentiality/size reasons
+            ds_config = self.ds_config.dict()
+            del ds_config["input_data"]
+            config = self.dict()
+            config["ds_config"] = ds_config
 
-                # Start new run
-                run_id = wandb.init(
-                    project=self.wandb_project,
-                    config=config,
-                    name=self.wandb_name,
-                ).id
+            # Start new run
+            run_id = wandb.init(
+                project=self.wandb_project,
+                config=config,
+                name=self.wandb_name,
+            ).id
 
-                # Save run_id in case we want to continue later
-                if not self.output_dir.exists():
-                    print(
-                        "No output directory specified, not saving run_id anywhere.",
-                        flush=True,
-                    )
-                else:
-                    run_id_fn.write_text(run_id)
+            # Save run_id in case we want to continue later
+            if not self.output_dir.exists():
+                print(
+                    "No output directory specified, not saving run_id anywhere.",
+                    flush=True,
+                )
+            else:
+                run_id_fn.write_text(run_id)
 
-                for split, table in zip(
-                    ["train", "val", "test"], self._make_wandb_ds_tables()
-                ):
-                    wandb.log({f"dataset_splits/{split}": table})
+            for split, table in zip(
+                ["train", "val", "test"], self._make_wandb_ds_tables()
+            ):
+                wandb.log({f"dataset_splits/{split}": table})
 
         return run_id
 
@@ -471,10 +465,7 @@ class Trainer(BaseModel):
         self.optimizer = self.optimizer_config.build(self.model.parameters())
 
         # Build early stopping
-        if self.es_config:
-            self.es = self.es_config.build()
-        else:
-            self.es = None
+        self.es = self.es_config.build()
 
         # Build dataset and split
         self.ds = self.ds_config.build()
@@ -496,14 +487,14 @@ class Trainer(BaseModel):
         # Adjust output_dir and make sure it exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
         # Start the W&B process
-        if self.sweep or self.use_wandb:
+        if self.use_wandb:
             run_id = self.wandb_init()
             self.output_dir = self.output_dir / run_id
         self.output_dir.mkdir(exist_ok=True)
 
-        # If sweep or continuing a run, get the optimizer and model config options from
+        # If continuing a run, get the optimizer and model config options from
         #  the W&B config
-        if self.sweep or self.cont:
+        if self.cont:
             wandb_optimizer_config = wandb.config["optimizer_config"]
             wandb_model_config = wandb.config["model_config"]
 
@@ -737,7 +728,7 @@ class Trainer(BaseModel):
             epoch_test_loss = np.mean(tmp_loss)
             self.model.train()
 
-            if self.use_wandb or self.sweep:
+            if self.use_wandb:
                 wandb.log(
                     {
                         "train_loss": epoch_train_loss,
@@ -779,7 +770,7 @@ class Trainer(BaseModel):
                             f"using weights from epoch {self.es.best_epoch}"
                         )
                     self.model.load_state_dict(self.es.best_wts)
-                    if self.use_wandb or self.sweep:
+                    if self.use_wandb:
                         wandb.log(
                             {
                                 "best_epoch": self.es.best_epoch,
@@ -804,7 +795,7 @@ class Trainer(BaseModel):
                             f"using weights from epoch {self.es.converged_epoch}"
                         )
                     self.model.load_state_dict(self.es.converged_wts)
-                    if self.use_wandb or self.sweep:
+                    if self.use_wandb:
                         wandb.log(
                             {
                                 "converged_epoch": self.es.converged_epoch,
@@ -840,7 +831,7 @@ class Trainer(BaseModel):
                 for sp, sp_d in self.loss_dict.items()
             }
 
-        if self.use_wandb or self.sweep:
+        if self.use_wandb:
             wandb.finish()
 
         torch.save(self.model.state_dict(), self.output_dir / "final.th")
