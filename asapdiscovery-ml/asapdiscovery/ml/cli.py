@@ -255,7 +255,7 @@ def build_gat(
     if loss_dict:
         loss_dict = json.loads(loss_dict.read_text())
 
-    # Filter out None Trainer kwargs
+    # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
         "model_config": model_config,
@@ -278,53 +278,8 @@ def build_gat(
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
     }
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-    # If we got a config for the Trainer, load those args and merge with CLI args
-    if trainer_config_cache and trainer_config_cache.exists():
-        print("loading trainer args from cache", flush=True)
-        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
-
-        for config_name, config_val in config_trainer_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in trainer_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
-                    }
-                )
-            else:
-                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
-
-        trainer_kwargs = config_trainer_kwargs
-
-    try:
-        t = Trainer(**trainer_kwargs)
-    except pydantic.ValidationError as exc:
-        # Only want to handle missing values, so if anything else went wrong just raise
-        #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-            raise exc
-
-        # Gather all missing values
-        missing_vals = [err["loc"][0] for err in exc.errors()]
-
-        raise ValueError(
-            "Tried to build Trainer but missing required values: ["
-            + ", ".join(missing_vals)
-            + "]"
-        )
-
-    # Save Trainer
-    if trainer_config_cache and (
-        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-    ):
-        trainer_config_cache.write_text(t.json())
+    _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
 
 
 @build.command(name="schnet")
@@ -513,7 +468,7 @@ def build_schnet(
     if loss_dict:
         loss_dict = json.loads(loss_dict.read_text())
 
-    # Filter out None Trainer kwargs
+    # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
         "model_config": model_config,
@@ -536,53 +491,8 @@ def build_schnet(
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
     }
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-    # If we got a config for the Trainer, load those args and merge with CLI args
-    if trainer_config_cache and trainer_config_cache.exists():
-        print("loading trainer args from cache", flush=True)
-        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
-
-        for config_name, config_val in config_trainer_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in trainer_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
-                    }
-                )
-            else:
-                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
-
-        trainer_kwargs = config_trainer_kwargs
-
-    try:
-        t = Trainer(**trainer_kwargs)
-    except pydantic.ValidationError as exc:
-        # Only want to handle missing values, so if anything else went wrong just raise
-        #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-            raise exc
-
-        # Gather all missing values
-        missing_vals = [err["loc"][0] for err in exc.errors()]
-
-        raise ValueError(
-            "Tried to build Trainer but missing required values: ["
-            + ", ".join(missing_vals)
-            + "]"
-        )
-
-    # Save Trainer
-    if trainer_config_cache and (
-        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-    ):
-        trainer_config_cache.write_text(t.json())
+    _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
 
 
 @build.command(name="e3nn")
@@ -773,7 +683,7 @@ def build_e3nn(
     if loss_dict:
         loss_dict = json.loads(loss_dict.read_text())
 
-    # Filter out None Trainer kwargs
+    # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
         "model_config": model_config,
@@ -796,53 +706,8 @@ def build_e3nn(
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
     }
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-    # If we got a config for the Trainer, load those args and merge with CLI args
-    if trainer_config_cache and trainer_config_cache.exists():
-        print("loading trainer args from cache", flush=True)
-        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
-
-        for config_name, config_val in config_trainer_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in trainer_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
-                    }
-                )
-            else:
-                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
-
-        trainer_kwargs = config_trainer_kwargs
-
-    try:
-        t = Trainer(**trainer_kwargs)
-    except pydantic.ValidationError as exc:
-        # Only want to handle missing values, so if anything else went wrong just raise
-        #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-            raise exc
-
-        # Gather all missing values
-        missing_vals = [err["loc"][0] for err in exc.errors()]
-
-        raise ValueError(
-            "Tried to build Trainer but missing required values: ["
-            + ", ".join(missing_vals)
-            + "]"
-        )
-
-    # Save Trainer
-    if trainer_config_cache and (
-        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-    ):
-        trainer_config_cache.write_text(t.json())
+    _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
 
 
 @build.command(name="visnet")
@@ -1039,7 +904,7 @@ def build_visnet(
     if loss_dict:
         loss_dict = json.loads(loss_dict.read_text())
 
-    # Filter out None Trainer kwargs
+    # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
         "model_config": model_config,
@@ -1062,53 +927,8 @@ def build_visnet(
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
     }
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-    # If we got a config for the Trainer, load those args and merge with CLI args
-    if trainer_config_cache and trainer_config_cache.exists():
-        print("loading trainer args from cache", flush=True)
-        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
-
-        for config_name, config_val in config_trainer_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in trainer_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
-                    }
-                )
-            else:
-                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
-
-        trainer_kwargs = config_trainer_kwargs
-
-    try:
-        t = Trainer(**trainer_kwargs)
-    except pydantic.ValidationError as exc:
-        # Only want to handle missing values, so if anything else went wrong just raise
-        #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-            raise exc
-
-        # Gather all missing values
-        missing_vals = [err["loc"][0] for err in exc.errors()]
-
-        raise ValueError(
-            "Tried to build Trainer but missing required values: ["
-            + ", ".join(missing_vals)
-            + "]"
-        )
-
-    # Save Trainer
-    if trainer_config_cache and (
-        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-    ):
-        trainer_config_cache.write_text(t.json())
+    _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
 
 
 @build_and_train.command(name="gat")
@@ -1290,7 +1110,7 @@ def build_and_train_gat(
     if loss_dict:
         loss_dict = json.loads(loss_dict.read_text())
 
-    # Filter out None Trainer kwargs
+    # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
         "model_config": model_config,
@@ -1313,53 +1133,10 @@ def build_and_train_gat(
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
     }
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-    # If we got a config for the Trainer, load those args and merge with CLI args
-    if trainer_config_cache and trainer_config_cache.exists():
-        print("loading trainer args from cache", flush=True)
-        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
-
-        for config_name, config_val in config_trainer_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in trainer_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
-                    }
-                )
-            else:
-                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
-
-        trainer_kwargs = config_trainer_kwargs
-
-    try:
-        t = Trainer(**trainer_kwargs)
-    except pydantic.ValidationError as exc:
-        # Only want to handle missing values, so if anything else went wrong just raise
-        #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-            raise exc
-
-        # Gather all missing values
-        missing_vals = [err["loc"][0] for err in exc.errors()]
-
-        raise ValueError(
-            "Tried to build Trainer but missing required values: ["
-            + ", ".join(missing_vals)
-            + "]"
-        )
-
-    # Save Trainer
-    if trainer_config_cache and (
-        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-    ):
-        trainer_config_cache.write_text(t.json())
+    t = _build_trainer(
+        trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache
+    )
 
     t.initialize()
     t.train()
@@ -1551,7 +1328,7 @@ def build_and_train_schnet(
     if loss_dict:
         loss_dict = json.loads(loss_dict.read_text())
 
-    # Filter out None Trainer kwargs
+    # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
         "model_config": model_config,
@@ -1574,53 +1351,10 @@ def build_and_train_schnet(
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
     }
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-    # If we got a config for the Trainer, load those args and merge with CLI args
-    if trainer_config_cache and trainer_config_cache.exists():
-        print("loading trainer args from cache", flush=True)
-        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
-
-        for config_name, config_val in config_trainer_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in trainer_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
-                    }
-                )
-            else:
-                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
-
-        trainer_kwargs = config_trainer_kwargs
-
-    try:
-        t = Trainer(**trainer_kwargs)
-    except pydantic.ValidationError as exc:
-        # Only want to handle missing values, so if anything else went wrong just raise
-        #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-            raise exc
-
-        # Gather all missing values
-        missing_vals = [err["loc"][0] for err in exc.errors()]
-
-        raise ValueError(
-            "Tried to build Trainer but missing required values: ["
-            + ", ".join(missing_vals)
-            + "]"
-        )
-
-    # Save Trainer
-    if trainer_config_cache and (
-        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-    ):
-        trainer_config_cache.write_text(t.json())
+    t = _build_trainer(
+        trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache
+    )
 
     t.initialize()
     t.train()
@@ -1814,7 +1548,7 @@ def build_and_train_e3nn(
     if loss_dict:
         loss_dict = json.loads(loss_dict.read_text())
 
-    # Filter out None Trainer kwargs
+    # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
         "model_config": model_config,
@@ -1837,53 +1571,10 @@ def build_and_train_e3nn(
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
     }
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-    # If we got a config for the Trainer, load those args and merge with CLI args
-    if trainer_config_cache and trainer_config_cache.exists():
-        print("loading trainer args from cache", flush=True)
-        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
-
-        for config_name, config_val in config_trainer_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in trainer_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
-                    }
-                )
-            else:
-                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
-
-        trainer_kwargs = config_trainer_kwargs
-
-    try:
-        t = Trainer(**trainer_kwargs)
-    except pydantic.ValidationError as exc:
-        # Only want to handle missing values, so if anything else went wrong just raise
-        #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-            raise exc
-
-        # Gather all missing values
-        missing_vals = [err["loc"][0] for err in exc.errors()]
-
-        raise ValueError(
-            "Tried to build Trainer but missing required values: ["
-            + ", ".join(missing_vals)
-            + "]"
-        )
-
-    # Save Trainer
-    if trainer_config_cache and (
-        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-    ):
-        trainer_config_cache.write_text(t.json())
+    t = _build_trainer(
+        trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache
+    )
 
     t.initialize()
     t.train()
@@ -2084,7 +1775,7 @@ def build_and_train_visnet(
     if loss_dict:
         loss_dict = json.loads(loss_dict.read_text())
 
-    # Filter out None Trainer kwargs
+    # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
         "model_config": model_config,
@@ -2107,53 +1798,10 @@ def build_and_train_visnet(
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
     }
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
 
-    # If we got a config for the Trainer, load those args and merge with CLI args
-    if trainer_config_cache and trainer_config_cache.exists():
-        print("loading trainer args from cache", flush=True)
-        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
-
-        for config_name, config_val in config_trainer_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in trainer_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
-                    }
-                )
-            else:
-                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
-
-        trainer_kwargs = config_trainer_kwargs
-
-    try:
-        t = Trainer(**trainer_kwargs)
-    except pydantic.ValidationError as exc:
-        # Only want to handle missing values, so if anything else went wrong just raise
-        #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
-            raise exc
-
-        # Gather all missing values
-        missing_vals = [err["loc"][0] for err in exc.errors()]
-
-        raise ValueError(
-            "Tried to build Trainer but missing required values: ["
-            + ", ".join(missing_vals)
-            + "]"
-        )
-
-    # Save Trainer
-    if trainer_config_cache and (
-        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
-    ):
-        trainer_config_cache.write_text(t.json())
+    t = _build_trainer(
+        trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache
+    )
 
     t.initialize()
     t.train()
@@ -2427,3 +2075,81 @@ def _build_ds_config(
         ds_config_cache.write_text(ds_config.json())
 
     return ds_config
+
+
+def _build_trainer(
+    trainer_kwargs: dict,
+    trainer_config_cache: Path = None,
+    overwrite_trainer_config_cache: bool = False,
+):
+    """
+    Helper function to build a Trainer from kwargs and (optionally) a JSON Trainer
+    config file. If a config file is given, those args will be used as the default, to
+    be overwritten by anything in trainer_kwargs.
+
+    Parameters
+    ----------
+    trainer_kwargs : dict
+        Args to be passed to the Trainer constructor. These will supersede anything in
+        trainer_config_cache
+    trainer_config_cache : Path, optional
+        Trainer Config JSON cache file. Any other CLI args that are passed will
+        supersede anything in this file
+    overwrite_trainer_config_cache : bool, default=False
+        Overwrite any existing Trainer JSON cache file
+
+    Returns
+    -------
+    Trainer
+    """
+
+    # Filter out None Trainer kwargs
+    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+
+    # If we got a config for the Trainer, load those args and merge with CLI args
+    if trainer_config_cache and trainer_config_cache.exists():
+        print("loading trainer args from cache", flush=True)
+        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
+
+        for config_name, config_val in config_trainer_kwargs.items():
+            # Arg wasn't passed at all, so got filtered out before
+            if config_name not in trainer_kwargs:
+                continue
+
+            if isinstance(config_val, dict):
+                config_val.update(
+                    {
+                        k: v
+                        for k, v in trainer_kwargs[config_name].items()
+                        if v is not None
+                    }
+                )
+            else:
+                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
+
+        trainer_kwargs = config_trainer_kwargs
+
+    try:
+        t = Trainer(**trainer_kwargs)
+    except pydantic.ValidationError as exc:
+        # Only want to handle missing values, so if anything else went wrong just raise
+        #  the pydantic error
+        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+            raise exc
+
+        # Gather all missing values
+        missing_vals = [err["loc"][0] for err in exc.errors()]
+
+        raise ValueError(
+            "Tried to build Trainer but missing required values: ["
+            + ", ".join(missing_vals)
+            + "]"
+        )
+
+    # Save Trainer
+    if trainer_config_cache and (
+        (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
+    ):
+        trainer_config_cache.write_text(t.json())
+
+    return t
