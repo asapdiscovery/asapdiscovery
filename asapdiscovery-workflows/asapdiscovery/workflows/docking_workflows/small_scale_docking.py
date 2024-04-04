@@ -94,7 +94,7 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     )
 
     n_select: PositiveInt = Field(
-        1, description="Number of targets to dock each ligand against."
+        3, description="Number of targets to dock each ligand against."
     )
 
     ml_scorers: Optional[list[str]] = Field(
