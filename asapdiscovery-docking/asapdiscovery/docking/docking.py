@@ -30,8 +30,7 @@ class DockingInputBase(BaseModel):
     """
 
     @abc.abstractmethod
-    def to_design_units(self) -> list[oechem.OEDesignUnit]:
-        ...
+    def to_design_units(self) -> list[oechem.OEDesignUnit]: ...
 
 
 class DockingInputPair(CompoundStructurePair, DockingInputBase):
@@ -82,8 +81,7 @@ class DockingBase(BaseModel):
     @abc.abstractmethod
     def _dock(
         self, inputs: list[DockingInputPair], output_dir: Union[str, Path]
-    ) -> list["DockingResult"]:
-        ...
+    ) -> list["DockingResult"]: ...
 
     def dock(
         self,
@@ -157,8 +155,7 @@ class DockingBase(BaseModel):
             result.write_docking_files(output_dir)
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
 
 class DockingResult(BaseModel):

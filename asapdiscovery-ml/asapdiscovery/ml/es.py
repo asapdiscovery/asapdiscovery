@@ -1,6 +1,7 @@
 """
 Class for handling early stopping in training.
 """
+
 from copy import deepcopy
 
 import numpy as np
