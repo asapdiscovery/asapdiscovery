@@ -572,6 +572,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             manifold_data,
             DockingResultCols.SMILES.value,
             DockingResultCols.LIGAND_ID.value,
+            drop_no_uuid=True,
         )
 
         if made_new_molset:
