@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Tuple
+
 import numpy as np
 from asapdiscovery.data.backend.openeye import load_openeye_pdb, save_openeye_pdb
 from asapdiscovery.modeling.modeling import superpose_molecule
@@ -11,7 +12,7 @@ def rmsd_alignment(
     final_pdb: str,
     target_chain="A",
     ref_chain="A",
-    ) -> Tuple[float, Path]:
+) -> tuple[float, Path]:
     """Calculate RMSD of a molecule against a reference
 
     Parameters
@@ -49,8 +50,8 @@ def select_best_colabfold(
     pdb_ref: str,
     chain="A",
     final_pdb="aligned_protein.pdb",
-    default_CF="*_unrelaxed_rank_001_alphafold2_ptm_model_1_seed_*.pdb"
-    ) -> Tuple[float, Path]:
+    default_CF="*_unrelaxed_rank_001_alphafold2_ptm_model_1_seed_*.pdb",
+) -> tuple[float, Path]:
     """Select the best seed output (repetition) from a ColabFold run based on its RMSD wrt the reference.
 
     Parameters
@@ -112,7 +113,9 @@ def select_best_colabfold(
     return min_rmsd, str(final_pdb)
 
 
-def save_alignment_pymol(pdbs: list, labels: list, reference: str, session_save: str) -> None:
+def save_alignment_pymol(
+    pdbs: list, labels: list, reference: str, session_save: str
+) -> None:
     """Imports the provided PDBs into a Pymol session and saves
 
     Parameters
@@ -134,7 +137,7 @@ def save_alignment_pymol(pdbs: list, labels: list, reference: str, session_save:
     p.cmd.load(reference, object="ref_protein")
 
     for i, pdb in enumerate(pdbs):
-        if len(pdb) > 0: 
+        if len(pdb) > 0:
             # In case the entry is empty (when no CF output was found)
             pname = labels[i]
             p.cmd.load(pdb, object=pname)

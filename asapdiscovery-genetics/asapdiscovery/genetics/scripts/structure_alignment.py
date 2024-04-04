@@ -1,7 +1,7 @@
-from pathlib import Path
-import pandas as pd
 import argparse
+from pathlib import Path
 
+import pandas as pd
 from asapdiscovery.genetics.calculate_rmsd import (
     save_alignment_pymol,
     select_best_colabfold,
@@ -64,6 +64,7 @@ parser.add_argument(
     help="Format of pdb file saved by ColabFold. Will rarely be different than default. ",
 )
 
+
 def main():
     args = parser.parse_args()
     # check all the required files exist
@@ -92,15 +93,18 @@ def main():
     seq_df = pd.read_csv(seq_file)
     for index, row in seq_df.iterrows():
         # iterate over each csv entry
-        mol = row["id"] 
+        mol = row["id"]
         cf_results = results_dir / query_name / mol / args.out_dir
         final_pdb = save_dir / f"{mol}_aligned.pdb"
-        # Select best seed repetition 
-        min_rmsd, min_file = select_best_colabfold(cf_results, 
-                                                    mol, ref_pdb, 
-                                                    chain="A", 
-                                                    final_pdb=final_pdb,
-                                                    default_CF=cf_format)
+        # Select best seed repetition
+        min_rmsd, min_file = select_best_colabfold(
+            cf_results,
+            mol,
+            ref_pdb,
+            chain="A",
+            final_pdb=final_pdb,
+            default_CF=cf_format,
+        )
 
         aligned_pdbs.append(min_file)
         seq_labels.append(mol)
