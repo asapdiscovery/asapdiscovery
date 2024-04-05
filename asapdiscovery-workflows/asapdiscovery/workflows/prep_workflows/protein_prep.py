@@ -421,6 +421,7 @@ import openmm
 from openff.toolkit import ForceField, Topology
 from openmm import unit as openmm_unit
 
+
 ### SOMETHING GOING WRONG HERE - NO BOX?!
 def create_protein_only_system(pdb_path):
     # attempt to make an OpenMM system with the prepped protein.
