@@ -465,7 +465,7 @@ class Trainer(BaseModel):
         # Adjust output_dir and make sure it exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
         # Start the W&B process
-        if self.sweep or self.use_wandb:
+        if self.use_wandb:
             run_id = self.wandb_init()
             self.output_dir = self.output_dir / run_id
             self.output_dir.mkdir(exist_ok=True)
