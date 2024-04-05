@@ -368,7 +368,7 @@ def select_reference_for_compounds(
     pairs = selector.select(
         [Ligand.from_smiles(largest_compound, compound_name="query_compound")],
         complexes,
-        n_select=5,  # if we run out of references we can either
+        n_select=10,  # if we run out of references we can either
         # increase this number or start taking from e.g. the second-largest compound
         # we can also use this point to build multi-ref FECs if we need to
     )
@@ -405,7 +405,7 @@ def select_reference_for_compounds(
                 f"Using reference {target_name} such that\nReference compound: {smiles_reference}\nQuery compound from FECs set: {smiles_query}\nSimilarity: {similarity}"
             )
             if similarity < 0.2:
-                logger.warning(
+                logger.warn(
                     f"Low similarity with reference crystal pose ligand: {similarity}, check prep/docking results carefully"
                 )
             return [prepped_complex]
@@ -421,7 +421,7 @@ import openmm
 from openff.toolkit import ForceField, Topology
 from openmm import unit as openmm_unit
 
-
+### SOMETHING GOING WRONG HERE - NO BOX?!
 def create_protein_only_system(pdb_path):
     # attempt to make an OpenMM system with the prepped protein.
     # follows https://docs.openforcefield.org/en/latest/examples/openforcefield/openff-toolkit/toolkit_showcase/toolkit_showcase.html
