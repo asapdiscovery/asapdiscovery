@@ -80,10 +80,9 @@ class Alignment:
         else:
             print("The keyword provided didn't return any matches")
             filtered_seqs = [unique_seqs[0]]
-            filtered_descp = [unique_descp[0]] 
+            filtered_descp = [unique_descp[0]]
             filtered_ids = [unique_ids[0]]
 
-            
         self.seqs = filtered_seqs
         self.ids = filtered_ids
         self.descripts = filtered_descp
@@ -99,26 +98,31 @@ class Alignment:
         SeqIO.write(records, self.seq_records, "fasta")
 
         return selection_file
-    
+
     def select_taxonomy(self, match_string: str, selection_file: str):
         # First filter unique entries
         unique_idxs = np.unique(self.seqs, return_index=True)[1]
         ordered_idxs = np.sort(unique_idxs)
 
         # Extract info from provided match string
-        or_querys = match_string.split('OR')
+        or_querys = match_string.split("OR")
         host_str = "xxxxx"
         org_str = "xxxxx"
         for q in or_querys:
-            if 'host' in q:
-                host_str = " ".join(q.strip().split(' ')[1:])
-            elif 'organism' in q:
-                org_str = " ".join(q.strip().split(' ')[1:])
+            if "host" in q:
+                host_str = " ".join(q.strip().split(" ")[1:])
+            elif "organism" in q:
+                org_str = " ".join(q.strip().split(" ")[1:])
 
         filtered_idxs = [
             idx
             for idx in ordered_idxs
-            if any([host_str.casefold() in self.hosts[idx].casefold(), org_str.casefold() in self.organisms[idx].casefold()])
+            if any(
+                [
+                    host_str.casefold() in self.hosts[idx].casefold(),
+                    org_str.casefold() in self.organisms[idx].casefold(),
+                ]
+            )
         ]
         filtered_ids = [self.ids[i] for i in filtered_idxs]
         filtered_seqs = [self.seqs[i] for i in filtered_idxs]
@@ -131,9 +135,9 @@ class Alignment:
                 filtered_ids = [self.ids[0]] + filtered_ids
         else:
             print("The keyword provided didn't return any matches")
-            filtered_seqs = [self.seqs[0]] 
-            filtered_descp = [self.descripts[0]] 
-            filtered_ids = [self.ids[0]] 
+            filtered_seqs = [self.seqs[0]]
+            filtered_descp = [self.descripts[0]]
+            filtered_ids = [self.ids[0]]
 
         self.seqs = filtered_seqs
         self.ids = filtered_ids
@@ -170,7 +174,8 @@ class Alignment:
 
         # Shorten the description for display (string between the last [*])
         import re
-        pattern = r'\[(.*?)\]'
+
+        pattern = r"\[(.*?)\]"
         matches = lambda x: re.findall(pattern, x)[-1]
         desc = [f"{matches(rec.description)} ({rec.id})" for rec in aln]
         print(desc)

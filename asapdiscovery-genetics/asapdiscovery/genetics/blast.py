@@ -10,11 +10,9 @@ from Bio.Blast import NCBIWWW, NCBIXML
 from pydantic import BaseModel, Field
 
 
-def parse_blast(results_file: str, 
-                e_val_thresh: float, 
-                user_email: str,
-                verbose: bool = False
-                ) -> pd.DataFrame:
+def parse_blast(
+    results_file: str, e_val_thresh: float, user_email: str, verbose: bool = False
+) -> pd.DataFrame:
     """Parse data from BLAST xml file
 
     Parameters
@@ -58,8 +56,10 @@ def parse_blast(results_file: str,
                         description = " ".join(title.split(" ")[1:])
                         virus_host = ""
                         virus_organism = ""
-                        if len(user_email)>0:
-                            virus_host, virus_organism = search_host(align.hit_id.split("|")[1], user_email)
+                        if len(user_email) > 0:
+                            virus_host, virus_organism = search_host(
+                                align.hit_id.split("|")[1], user_email
+                            )
                         if verbose:
                             print(
                                 f"Record {virus_organism} of length {hsps0.identities} infecting host {virus_host}, score {pidentity}: {align.title}"
@@ -92,7 +92,7 @@ def get_blast_seqs(
     xml_file="results.xml",
     verbose=True,
     save_csv=None,
-    email=""
+    email="",
 ) -> pd.DataFrame:
     """Run a BLAST search on a protein sequence.
 
@@ -141,8 +141,7 @@ def get_blast_seqs(
     elif input_type == "pdb":
         # Input is a PDB file
         seq_source = Path(seq_source)
-        seq, fasta_out = pdb_to_seq(seq_source, 
-                                    fasta_out=f"{seq_source.stem}.fasta")
+        seq, fasta_out = pdb_to_seq(seq_source, fasta_out=f"{seq_source.stem}.fasta")
         sequence = open(fasta_out).read()
         print(f"Sequence was extracted from PDB file and saved as {fasta_out}")
 
@@ -152,8 +151,13 @@ def get_blast_seqs(
     print(f"BLAST search with {nalign} alignments and {nhits} hitlist_size")
     # Retrieve blastp results
     result_handle = NCBIWWW.qblast(
-        "blastp", database, sequence, hitlist_size=nhits, alignments=nalign, 
-        expect=e_val_thresh, descriptions=nalign, 
+        "blastp",
+        database,
+        sequence,
+        hitlist_size=nhits,
+        alignments=nalign,
+        expect=e_val_thresh,
+        descriptions=nalign,
     )
 
     save_file = save_folder / xml_file
@@ -340,9 +344,8 @@ class PDBEntry(BaseModel):
         )
         return best_pdb_record
 
-def pdb_to_seq(pdb_input=Path, 
-               chain="A",
-               fasta_out=None):
+
+def pdb_to_seq(pdb_input=Path, chain="A", fasta_out=None):
     """Given a PDB file, extract the protein sequence
 
     Parameters
@@ -352,25 +355,28 @@ def pdb_to_seq(pdb_input=Path,
     fasta_out : _type_, optional
         _description_, by default None
     """
+    from Bio import SeqIO
     from Bio.PDB import PDBParser
-    from Bio.SeqUtils import seq1
     from Bio.Seq import Seq
     from Bio.SeqRecord import SeqRecord
-    from Bio import SeqIO
+    from Bio.SeqUtils import seq1
 
     # Extract sequence from PDB
     pdbparser = PDBParser()
-    pdb_id=00000
+    pdb_id = 00000
     structure = pdbparser.get_structure(pdb_id, pdb_input)
-    chains = {chain.id:seq1(''.join(residue.resname for residue in chain)) for chain in structure.get_chains()}
+    chains = {
+        chain.id: seq1("".join(residue.resname for residue in chain))
+        for chain in structure.get_chains()
+    }
     sequence = chains[chain]
 
     # Save sequence as a SeqRecord
-    parts = pdb_input.stem.split('_')
+    parts = pdb_input.stem.split("_")
     entry_name = parts[0]
     description = "No description"
     if len(parts) > 1:
-        description = '_'.join(parts[1:])
+        description = "_".join(parts[1:])
     biop_sequence = Seq(sequence)
     seq_record = SeqRecord(biop_sequence, id=entry_name, description=description)
 
@@ -379,30 +385,32 @@ def pdb_to_seq(pdb_input=Path,
         SeqIO.write(seq_record, output_handle, "fasta")
     return seq_record, fasta_out
 
+
 def search_host(hit_id, user_email):
     from Bio import Entrez
+
     Entrez.email = user_email
     handle = Entrez.efetch(db="protein", id=hit_id, retmode="xml", rettype="gb")
     record = Entrez.read(handle)[0]
     handle.close()
 
     # The Entrez output is a very illogical list of dictionaries so we have to search through it for the host
-    # It works. Don't ask. 
-    search_key = 'host'
-    host_value_key = 'GBQualifier_value'
+    # It works. Don't ask.
+    search_key = "host"
+    host_value_key = "GBQualifier_value"
     host = "Not found"
-    for d1 in record['GBSeq_feature-table']:
-        for d2 in d1['GBFeature_quals']:
-            if d2['GBQualifier_name'] == search_key:
+    for d1 in record["GBSeq_feature-table"]:
+        for d2 in d1["GBFeature_quals"]:
+            if d2["GBQualifier_name"] == search_key:
                 host = d2[host_value_key]
                 break  # Stop if the key is found
 
     # Search Organism name
-    search_key = 'organism'
+    search_key = "organism"
     organism = "Not found"
-    for d1 in record['GBSeq_feature-table']:
-        for d2 in d1['GBFeature_quals']:
-            if d2['GBQualifier_name'] == search_key:
+    for d1 in record["GBSeq_feature-table"]:
+        for d2 in d1["GBFeature_quals"]:
+            if d2["GBQualifier_name"] == search_key:
                 organism = d2[host_value_key]
-                break 
+                break
     return host, organism

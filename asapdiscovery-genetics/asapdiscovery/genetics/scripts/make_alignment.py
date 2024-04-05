@@ -1,6 +1,6 @@
 import argparse
-from pathlib import Path
 import shlex
+from pathlib import Path
 
 from asapdiscovery.genetics.blast import PDBEntry, get_blast_seqs, pdb_to_seq
 from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
@@ -87,22 +87,27 @@ parser.add_argument(
     help="Email for Entrez search",
 )
 
+
 def main():
     args = parser.parse_args()
     # check all the required files exist
     fasta = Path(args.fasta)
     if not fasta.exists():
         raise FileNotFoundError(f"Fasta file {fasta} does not exist")
-    if args.input_type in ['fasta', 'pdb', 'pre-calc']:
+    if args.input_type in ["fasta", "pdb", "pre-calc"]:
         input_type = args.input_type
     else:
-        raise ValueError("The option input-type must be either 'fasta', 'pdb' or 'pre-calc'")
+        raise ValueError(
+            "The option input-type must be either 'fasta', 'pdb' or 'pre-calc'"
+        )
 
     if "host" in args.sel_key:
         if len(args.email) > 0:
             email = args.email
         else:
-            raise ValueError("If a host selection is requested, an email must be provided")
+            raise ValueError(
+                "If a host selection is requested, an email must be provided"
+            )
     # Create folder if doesn't already exists
     results_folder = Path(args.results_folder)
     results_folder.mkdir(parents=True, exist_ok=True)
@@ -137,12 +142,14 @@ def main():
 
         record = pdb_file_record[0]
         print(f"A PDB template for {record.label} was saved as {record.pdb_file}")
-        
+
         # The following can be added to a shell file for running ColabFold
-        file =  open(results_folder / f"{file_prefix}_command.txt", "w")
+        file = open(results_folder / f"{file_prefix}_command.txt", "w")
         file.write("# Copy template PDB for ColabFold use\n")
-        file.write('cp {} "$template_path/0001.pdb"'.format(shlex.quote(record.pdb_file)))
-        file.close()    
+        file.write(
+            f'cp {shlex.quote(record.pdb_file)} "$template_path/0001.pdb"'
+        )
+        file.close()
 
     return
 
