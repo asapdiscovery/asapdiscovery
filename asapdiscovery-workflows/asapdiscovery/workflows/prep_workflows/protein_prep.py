@@ -390,7 +390,11 @@ def select_reference_for_compounds(
         # @HMO: can we the below more elegantly? I don't really like this setup with the below ValueError.
         try:
             prepped_simulation = create_protein_only_system(f"{target_name}.pdb")
-        except:
+        except Exception as e:
+            prepped_simulation = False
+            logger.warn(
+                f"Reference {target_name} is not compatible with OpenMM:\n{e}\n\n ..trying next reference.."
+            )
             pass
         if prepped_simulation:
             logger.info(f"{target_name} is compatible")
