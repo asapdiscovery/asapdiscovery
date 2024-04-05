@@ -398,51 +398,47 @@ class Trainer(BaseModel):
 
         run_id_fn = self.output_dir / "run_id"
 
-            # Don't serialize input_data for confidentiality/size reasons
-            ds_config = self.ds_config.dict()
-            del ds_config["input_data"]
-            config = self.dict()
-            config["ds_config"] = ds_config
+        # Don't serialize input_data for confidentiality/size reasons
+        ds_config = self.ds_config.dict()
+        del ds_config["input_data"]
+        config = self.dict()
+        config["ds_config"] = ds_config
 
-            if self.cont:
-                # Load run_id to continue from file
-                # First make sure the file exists
-                if run_id_fn.exists():
-                    run_id = run_id_fn.read_text().strip()
-                else:
-                    raise FileNotFoundError(
-                        "Couldn't find run_id file to continue run."
-                    )
-                # Make sure the run_id is legit
-                try:
-                    wandb.init(project=self.wandb_project, id=run_id, resume="must")
-                except wandb.errors.UsageError:
-                    raise wandb.errors.UsageError(
-                        f"Run in run_id file ({run_id}) doesn't exist"
-                    )
-                # Update run config to reflect it's been resumed
-                wandb.config.update(config, allow_val_change=True)
+        if self.cont:
+            # Load run_id to continue from file
+            # First make sure the file exists
+            if run_id_fn.exists():
+                run_id = run_id_fn.read_text().strip()
             else:
-                # Start new run
-                run_id = wandb.init(
-                    project=self.wandb_project,
-                    config=config,
-                    name=self.wandb_name,
-                ).id
+                raise FileNotFoundError("Couldn't find run_id file to continue run.")
+            # Make sure the run_id is legit
+            try:
+                wandb.init(project=self.wandb_project, id=run_id, resume="must")
+            except wandb.errors.UsageError:
+                raise wandb.errors.UsageError(
+                    f"Run in run_id file ({run_id}) doesn't exist"
+                )
+            # Update run config to reflect it's been resumed
+            wandb.config.update(config, allow_val_change=True)
+        else:
+            # Start new run
+            run_id = wandb.init(
+                project=self.wandb_project,
+                config=config,
+                name=self.wandb_name,
+            ).id
 
-                # Save run_id in case we want to continue later
-                if not self.output_dir.exists():
-                    print(
-                        "No output directory specified, not saving run_id anywhere.",
-                        flush=True,
-                    )
-                else:
-                    run_id_fn.write_text(run_id)
+            # Save run_id in case we want to continue later
+            if not self.output_dir.exists():
+                print(
+                    "No output directory specified, not saving run_id anywhere.",
+                    flush=True,
+                )
+            else:
+                run_id_fn.write_text(run_id)
 
-            for split, table in zip(
-                ["train", "val", "test"], self._make_wandb_ds_tables()
-            ):
-                wandb.log({f"dataset_splits/{split}": table})
+        for split, table in zip(["train", "val", "test"], self._make_wandb_ds_tables()):
+            wandb.log({f"dataset_splits/{split}": table})
 
         return run_id
 

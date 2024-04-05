@@ -637,8 +637,6 @@ def build_e3nn(
         "n_check": es_n_check,
         "divergence": es_divergence,
     }
-    else:
-        es_config = None
     ds_config = {
         "cache": ds_config_cache,
         "overwrite_cache": overwrite_ds_config_cache,
