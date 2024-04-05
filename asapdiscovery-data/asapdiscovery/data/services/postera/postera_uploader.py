@@ -146,7 +146,9 @@ class PosteraUploader(BaseModel):
         return new_data, molset_name, new_molset
 
     @staticmethod
-    def join_with_manifold_data(original, molset_query_df, smiles_field, id_field):
+    def join_with_manifold_data(
+        original, molset_query_df, smiles_field, id_field, drop_no_uuid=False
+    ):
         """
         Join the original dataframe with manifold data
         that is returned from a query to the manifold API
@@ -162,6 +164,8 @@ class PosteraUploader(BaseModel):
             The name of the smiles field in the original dataframe
         id_field : str
             The name of the id field in the original dataframe
+        drop_no_uuid : bool
+            Whether to drop rows that don't have a UUID
         """
         data = original.copy()
         subset = molset_query_df[
@@ -195,6 +199,8 @@ class PosteraUploader(BaseModel):
                 columns={MoleculeSetKeys.id.value: id_field},
                 inplace=True,
             )
+        if drop_no_uuid:
+            data = data[~data[id_field].isna()]
         return data
 
     @staticmethod

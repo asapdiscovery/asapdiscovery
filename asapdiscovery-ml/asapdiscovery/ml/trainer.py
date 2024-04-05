@@ -38,8 +38,8 @@ class Trainer(BaseModel):
     model_config: ModelConfigBase = Field(
         ..., description="Config describing the model to train."
     )
-    es_config: EarlyStoppingConfig | None = Field(
-        None, description="Config describing the early stopping check to use."
+    es_config: EarlyStoppingConfig = Field(
+        ..., description="Config describing the early stopping check to use."
     )
     ds_config: DatasetConfig = Field(
         ..., description="Config describing the dataset object to train on."
@@ -76,7 +76,11 @@ class Trainer(BaseModel):
         ),
     )
     batch_size: int = Field(
-        1, description="Number of samples to predict on before performing backprop."
+        1,
+        description=(
+            "Number of samples to predict on before performing backprop."
+            "Set to -1 to use the entire training set as a batch."
+        ),
     )
     target_prop: str = Field("pIC50", description="Target property to train against.")
     cont: bool = Field(
@@ -100,7 +104,6 @@ class Trainer(BaseModel):
 
     # W&B parameters
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
-    sweep: bool = Field(False, description="This run is part of a W&B sweep.")
     wandb_project: str | None = Field(None, description="W&B project name.")
     wandb_name: str | None = Field(None, description="W&B project name.")
     extra_config: dict | None = Field(
@@ -393,10 +396,7 @@ class Trainer(BaseModel):
             The WandB run ID for the initialized run
         """
 
-        if self.sweep:
-            run_id = wandb.init().id
-        else:
-            run_id_fn = self.output_dir / "run_id"
+        run_id_fn = self.output_dir / "run_id"
 
             # Don't serialize input_data for confidentiality/size reasons
             ds_config = self.ds_config.dict()
@@ -439,10 +439,10 @@ class Trainer(BaseModel):
                 else:
                     run_id_fn.write_text(run_id)
 
-                for split, table in zip(
-                    ["train", "val", "test"], self._make_wandb_ds_tables()
-                ):
-                    wandb.log({f"dataset_splits/{split}": table})
+            for split, table in zip(
+                ["train", "val", "test"], self._make_wandb_ds_tables()
+            ):
+                wandb.log({f"dataset_splits/{split}": table})
 
         return run_id
 
@@ -675,6 +675,10 @@ class Trainer(BaseModel):
 
                 # Perform backprop if we've done all the preds for this batch
                 if batch_counter == self.batch_size:
+                    # Need to scale the gradients by batch_size to get to MSE loss
+                    for p in self.model.parameters():
+                        p.grad /= batch_counter
+
                     # Backprop
                     self.optimizer.step()
                     if any(
@@ -691,6 +695,10 @@ class Trainer(BaseModel):
                     self.optimizer.zero_grad()
 
             if batch_counter > 0:
+                # Need to scale the gradients by batch_size to get to MSE loss
+                for p in self.model.parameters():
+                    p.grad /= batch_counter
+
                 # Backprop for final incomplete batch
                 self.optimizer.step()
                 if any(
@@ -799,7 +807,7 @@ class Trainer(BaseModel):
             epoch_test_loss = np.mean(tmp_loss)
             self.model.train()
 
-            if self.use_wandb or self.sweep:
+            if self.use_wandb:
                 wandb.log(
                     {
                         "train_loss": epoch_train_loss,
@@ -843,7 +851,7 @@ class Trainer(BaseModel):
                             f"using weights from epoch {self.es.best_epoch}"
                         )
                     self.model.load_state_dict(self.es.best_wts)
-                    if self.use_wandb or self.sweep:
+                    if self.use_wandb:
                         wandb.log(
                             {
                                 "best_epoch": self.es.best_epoch,
@@ -868,7 +876,7 @@ class Trainer(BaseModel):
                             f"using weights from epoch {self.es.converged_epoch}"
                         )
                     self.model.load_state_dict(self.es.converged_wts)
-                    if self.use_wandb or self.sweep:
+                    if self.use_wandb:
                         wandb.log(
                             {
                                 "converged_epoch": self.es.converged_epoch,
@@ -904,7 +912,7 @@ class Trainer(BaseModel):
                 for sp, sp_d in self.loss_dict.items()
             }
 
-        if self.use_wandb or self.sweep:
+        if self.use_wandb:
             wandb.finish()
 
         torch.save(self.model.state_dict(), self.output_dir / "final.th")
