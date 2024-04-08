@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Iterable, Any
+from typing import Iterable, Any, Union
 from multimethod import multimethod
 
 from asapdiscovery.data.metadata.resources import master_structures
@@ -12,18 +12,21 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
 from asapdiscovery.data.util.dask_utils import dask_vmap
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
-from asapdiscovery.dataviz._gif_blocks import GIFBlockData
-from asapdiscovery.dataviz.gif_viz import add_gif_progress_bar
+from asapdiscovery.dataviz.gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.show_contacts import show_contacts
-from asapdiscovery.dataviz.viz_v2.visualizer import VisualizerBase
+from asapdiscovery.dataviz.visualizer import VisualizerBase
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.simulation.simulate import SimulationResult
+from asapdiscovery.dataviz.resources.fonts import opensans_regular
+
 from pydantic import Field, PositiveInt
+
+
 
 logger = logging.getLogger(__name__)
 
 
-class GIFVisualizerV2(VisualizerBase):
+class GIFVisualizer(VisualizerBase):
     """
     Class for generating GIF visualizations of MD simulations.
     """
@@ -336,3 +339,63 @@ class GIFVisualizerV2(VisualizerBase):
             row[DockingResultCols.GIF_PATH.value] = path
             data.append(row)
         return data
+
+
+
+def add_gif_progress_bar(
+    png_files: list[Union[Path, str]], frames_per_ns: int, start_frame: int = 1
+) -> None:
+    """
+    adds a progress bar and nanosecond counter onto PNG images. This assumes PNG
+    files are named with index in the form path/frame<INDEX>.png. Overlaying of these objects
+    happens in-place.
+
+    Parameters
+    ----------
+    png_files : List[Union[Path, str]]
+        List of PNG paths to add progress bars to.
+    frames_per_ns : int
+        Number of frames per nanosecond
+    start_frame : int
+        Frame to start from. Default is 1, which is the first frame, note indexed at 1.
+    """
+    from PIL import Image, ImageDraw, ImageFont
+
+    # global settings:
+    total_frames = len(png_files)
+
+    for filename in png_files:
+        filename = str(filename)
+        # get this file's frame number from the filename and calculate total amount of ns simulated for this frame
+        frame_num = int(filename.split("frame")[1].split(".png")[0])
+        # adjust for the fact that we may not have started at the first frame, which will still be written out  as frame0001.png
+        # note 1 indexing here.
+        frame_num_actual = frame_num + start_frame - 1
+        total_ns_this_frame = f"{frame_num_actual / frames_per_ns:.3f}"
+
+        # load the image.
+        img = Image.open(filename)
+        img2 = Image.new("RGBA", img.size, "WHITE")
+        img2.paste(img, mask=img)
+        draw = ImageDraw.Draw(img2, "RGBA")
+
+        # get its dimensions (need these for coords); calculate progress bar width at this frame.
+        width, height = img2.size
+        bar_width = frame_num / total_frames * width
+
+        # draw the progress bar for this frame (black, fully opaque).
+        draw.rectangle(((0, height - 20), (bar_width, height)), fill=(0, 0, 0, 500))
+        # draw the text that shows time progression.
+        draw.text(
+            (width - 125, height - 10),
+            f"{total_ns_this_frame} ns",
+            # need to load a local font. For some odd reason this is the only way to write text with PIL.
+            font=ImageFont.truetype(opensans_regular, 65),
+            fill=(0, 0, 0),  # make all black.
+            anchor="md",
+            stroke_width=2,
+            stroke_fill="white",
+        )  # align to RHS; this way if value increases it will grow into frame.
+
+        # save the image.
+        img2.save(filename)
