@@ -1,14 +1,17 @@
+import logging
 import base64
 import logging  # noqa: F401
 import tempfile
 import warnings
 from pathlib import Path
-from typing import Dict, Optional, Union  # noqa: F401
-
+from typing import Any, Optional
 import logomaker
 import matplotlib.pyplot as plt
+from enum import Enum
+from pathlib import Path
 import pandas as pd
 from airium import Airium
+
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -17,17 +20,21 @@ from asapdiscovery.data.backend.openeye import (
     oemol_to_sdf_string,
     openeye_perceive_residues,
 )
+
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.data.backend.openeye import oechem
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.util.dask_utils import backend_wrapper, dask_vmap
+from asapdiscovery.dataviz.visualizer import VisualizerBase
+from asapdiscovery.docking.docking import DockingResult
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.genetics.fitness import target_has_fitness_data
 from asapdiscovery.data.backend.plip import (
     get_interactions_plip,
     make_color_res_fitness,
     make_color_res_subpockets,
 )
 from asapdiscovery.data.metadata.resources import master_structures
-from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.data.services.postera.manifold_data_validation import (
-    TargetTags,
-    TargetVirusMap,
-)
 from asapdiscovery.data.util.logging import HiddenPrint
 from asapdiscovery.genetics.fitness import (
     _FITNESS_DATA_FIT_THRESHOLD,
@@ -36,154 +43,229 @@ from asapdiscovery.genetics.fitness import (
     target_has_fitness_data,
 )
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
+from asapdiscovery.dataviz._html_blocks import HTMLBlockData
 
-from ._html_blocks import HTMLBlockData
+from pydantic import Field, root_validator
+
+from multimethod import multimethod
+
 
 logger = logging.getLogger(__name__)
 
 
-class HTMLVisualizer:
+class ColorMethod(str, Enum):
+    subpockets = "subpockets"
+    fitness = "fitness"
+
+
+class HTMLVisualizer(VisualizerBase):
     """
     Class for generating HTML visualizations of poses.
     """
 
-    allowed_targets = TargetTags.get_values()
+    target: TargetTags = Field(..., description="Target to visualize poses for")
+    color_method: ColorMethod = Field(
+        ColorMethod.subpockets,
+        description="Protein surface coloring method. Can be either by `subpockets` or `fitness`",
+    )
+    debug: bool = Field(False, description="Whether to run in debug mode")
+    write_to_disk: bool = Field(
+        True, description="Whether to write the HTML files to disk"
+    )
+    output_dir: Path = Field(
+        "html", description="Output directory to write HTML files to"
+    )
+    align: bool = Field(
+        True, description="Whether to align the poses to the reference protein"
+    )
 
-    # TODO: replace input with a schema rather than paths.
-    def __init__(
-        self,
-        poses: list[Path],
-        output_paths: list[Path],
-        target: str,
-        protein: Path,
-        color_method: str = "subpockets",
-        align=True,
-        debug: bool = False,
-    ):
-        """
-        Parameters
-        ----------
-        poses : List[Path]
-            List of poses to visualize, in SDF format.
-        output_paths : List[Path]
-            List of paths to write the visualizations to.
-        target : str
-            Target to visualize poses for. Must be one of the allowed targets.
-        protein : Path
-            Path to protein PDB file.
-        color_method : str
-            Protein surface coloring method. Can be either by `subpockets` or `fitness`
-        align : bool
-            Whether or not to align the protein (and poses) to the master structure of the target. Redundant if already docked.
-        """
-        if not len(poses) == len(output_paths):
-            raise ValueError("Number of poses and paths must be equal.")
+    fitness_data: Optional[Any]
+    fitness_data_logoplots: Optional[Any]
+    reference_protein: Optional[Any]
 
-        if target not in self.allowed_targets:
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if target_has_fitness_data(self.target):
+            self.fitness_data = get_fitness_scores_bloom_by_target(self.target)
+            self.fitness_data_logoplots = parse_fitness_json(self.target)
+        self.reference_protein = load_openeye_pdb(master_structures[self.target])
+
+    @root_validator
+    @classmethod
+    def must_have_fitness_data(cls, values):
+        target = values.get("target")
+        color_method = values.get("color_method")
+        if color_method == ColorMethod.fitness and not target_has_fitness_data(target):
             raise ValueError(
-                f"Target {target} invalid, must be one of: {self.allowed_targets}"
+                f"Attempting to color by fitness and {target} does not have fitness data, use `subpockets` instead."
             )
-        self.target = target
-        self.reference_target = load_openeye_pdb(master_structures[self.target])
-        self.align = align
+        return values
 
-        self.debug = debug
-
-        self.color_method = color_method
-        if self.color_method == "subpockets":
-            pass
-        elif self.color_method == "fitness":
-            if not target_has_fitness_data(self.target):
-                raise NotImplementedError(
-                    f"No viral fitness data available for {self.target}: set `color_method` to `subpockets`."
-                )
-            self.fitness_data = parse_fitness_json(self.target)
-            self.fitness_data_logoplots = get_fitness_scores_bloom_by_target(
-                self.target
-            )
-        else:
-            raise ValueError(
-                "variable `color_method` must be either of ['subpockets', 'fitness']"
-            )
-
-        self.poses = []
-        self.output_paths = []
-        # make sure all paths exist, otherwise skip
-        for pose, path in zip(poses, output_paths):
-            if pose:
-                if isinstance(pose, oechem.OEMolBase):
-                    mol = [pose.CreateCopy()]
-                else:
-                    mol_fact = MolFileFactory(
-                        filename=str(pose)
-                    ).load()  # in this way we allow multiple ligands per protein, e.g. for viewing fragments
-                    mol = [mol.to_oemol() for mol in mol_fact]
-                    for m in mol:
-                        oechem.OESuppressHydrogens(
-                            m, True, True
-                        )  # retain polar hydrogens and hydrogens on chiral centers
-                self.poses.append(mol)
-
-                self.output_paths.append(path)
-            else:
-                pass
-
-        if isinstance(protein, oechem.OEMolBase):
-            self.protein = protein.CreateCopy()
-        else:
-            if not protein.exists():
-                raise ValueError(f"Protein {protein} does not exist.")
-            self.protein = openeye_perceive_residues(
-                load_openeye_pdb(protein), preserve_all=True
-            )
-        if target == "EV-A71-Capsid" or target == "EV-D68-Capsid":
-            # because capsid has an encapsulated ligand, we need to Z-clip.
-            self.slab = "viewer.setSlab(-11, 50)\n"
-        else:
-            self.slab = ""
-
-    @staticmethod
-    def write_html(html, path):
+    def get_tag_for_color_method(self):
         """
-        Write HTML to a file.
-
-        Parameters
-        ----------
-        html : str
-            HTML to write.
-        path : Path
-            Path to write HTML to.
+        Get the tag to use for the color method.
         """
-        with open(path, "w") as f:
-            f.write(html)
+        if self.color_method == ColorMethod.subpockets:
+            return DockingResultCols.HTML_PATH_POSE.value
+        elif self.color_method == ColorMethod.fitness:
+            return DockingResultCols.HTML_PATH_FITNESS.value
 
-    def get_color_dict(self) -> dict:
+    def get_color_dict(self, protein) -> dict:
         """
         Depending on color type, return a dict that contains residues per color.
         """
         if self.color_method == "subpockets":
-            return make_color_res_subpockets(self.protein, self.target)
+            return make_color_res_subpockets(protein, self.target)
         elif self.color_method == "fitness":
-            return make_color_res_fitness(self.protein, self.target)
+            return make_color_res_fitness(protein, self.target)
 
-    def get_html_airium(self, pose):
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
+    def _visualize(self, inputs: list[DockingResult], **kwargs) -> list[dict[str, str]]:
         """
-        Get HTML for visualizing a single pose. This uses Airium which is a handy tool to write
-        HTML using python. We can't do f-string because of all the JS curly brackets, need to do '+' instead.
+        Visualize a list of docking results.
         """
+        return self._dispatch(inputs, **kwargs)
+
+    def provenance(self):
+        return {}
+
+    @multimethod
+    def _dispatch(self, inputs: list[DockingResult], **kwargs):
+        data = []
+        viz_data = []
+        for result in inputs:
+            output_pref = result.unique_name
+            outpath = self.output_dir / output_pref / "pose.html"
+            outpath.parent.mkdir(parents=True, exist_ok=True)
+
+            viz = self.html_pose_viz(
+                poses=[result.posed_ligand.to_oemol()], protein=result.to_protein()
+            )
+            viz_data.append(viz)
+            # write to disk
+            if self.write_to_disk:
+                self.write_html(viz, outpath)
+
+            # make dataframe with ligand name, target name, and path to HTML
+            row = {}
+            row[DockingResultCols.LIGAND_ID.value] = (
+                result.input_pair.ligand.compound_name
+            )
+            row[DockingResultCols.TARGET_ID.value] = (
+                result.input_pair.complex.target.target_name
+            )
+            row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
+            row[self.get_tag_for_color_method()] = viz
+            data.append(row)
+
+        if self.write_to_disk:
+            return data
+        else:
+            return viz_data
+
+    @_dispatch.register
+    def _dispatch(self, inputs: list[Path], **kwargs):
+        data = []
+        viz_data = []
+        for i, path in enumerate(inputs):
+            complex = Complex.from_pdb(
+                path,
+                target_kwargs={"target_name": f"unknown_target_{i}"},
+                ligand_kwargs={"compound_name": f"unknown_compound_{i}"},
+            )
+            output_pref = complex.unique_name
+            outpath = self.output_dir / output_pref / "pose.html"
+            outpath.parent.mkdir(parents=True, exist_ok=True)
+
+            # make html string
+            viz = self.html_pose_viz(
+                poses=[complex.ligand.to_oemol()], protein=complex.target.to_oemol()
+            )
+            viz_data.append(viz)
+            # write to disk
+            if self.write_to_disk:
+                self.write_html(viz, outpath)
+
+            # make dataframe with ligand name, target name, and path to HTML
+            row = {}
+            row[DockingResultCols.LIGAND_ID.value] = complex.ligand.compound_name
+            row[DockingResultCols.TARGET_ID.value] = complex.target.target_name
+            row[DockingResultCols.SMILES.value] = complex.ligand.smiles
+            row[self.get_tag_for_color_method()] = viz
+            data.append(row)
+
+        if self.write_to_disk:
+            # if we are writing to disk, return the metadata
+            return data
+        else:
+            # if we are not writing to disk, return the HTML strings
+            return viz_data
+
+    @_dispatch.register
+    def _dispatch(self, inputs: list[Complex], **kwargs):
+        data = []
+        viz_data = []
+        for i, path in enumerate(inputs):
+            output_pref = complex.unique_name
+            outpath = self.output_dir / output_pref / "pose.html"
+            outpath.parent.mkdir(parents=True, exist_ok=True)
+            # make html string
+            viz = self.html_pose_viz(
+                poses=[complex.ligand.to_oemol()], protein=complex.target.to_oemol()
+            )
+            viz_data.append(viz)
+            # write to disk
+            if self.write_to_disk:
+                self.write_html(viz, outpath)
+
+            # make dataframe with ligand name, target name, and path to HTML
+            row = {}
+            row[DockingResultCols.LIGAND_ID.value] = complex.ligand.compound_name
+            row[DockingResultCols.TARGET_ID.value] = complex.target.target_name
+            row[DockingResultCols.SMILES.value] = complex.ligand.smiles
+            row[self.get_tag_for_color_method()] = viz
+            data.append(row)
+
+        if self.write_to_disk:
+            # if we are writing to disk, return the metadata
+            return data
+        else:
+            # if we are not writing to disk, return the HTML strings
+            return viz_data
+
+    def html_pose_viz(
+        self, poses: list[oechem.OEMolBase], protein: oechem.OEMolBase, **kwargs
+    ):
+        """
+        Generate HTML visualization of poses.
+        """
+
+        protein = openeye_perceive_residues(protein, preserve_all=True)
+        if self.target == "EV-A71-Capsid" or self.target == "EV-D68-Capsid":
+            # because capsid has an encapsulated ligand, we need to Z-clip.
+            slab = "viewer.setSlab(-11, 50)\n"
+        else:
+            slab = ""
+
+        for pose in poses:
+            oechem.OESuppressHydrogens(
+                pose, True, True
+            )  # retain polar hydrogens and hydrogens on chiral centers
+
         a = Airium()
 
         # first check if we need to align the protein and ligand. This already happens during docking, but not
         # during pose_to_viz.py.
         if self.align:
             # merge
-            complex = self.protein
-            for pos in pose:
-                complex = combine_protein_ligand(complex, pos)
+            complex = protein
+            for pose in poses:
+                complex = combine_protein_ligand(complex, pose)
 
             # align complex to master structure
             complex_aligned, _ = superpose_molecule(
-                self.reference_target,
+                self.reference_protein,
                 complex,
             )
 
@@ -203,10 +285,10 @@ class HTMLVisualizer:
             opts.SetMaxBindingSiteDist(1000)
 
             pose = oechem.OEGraphMol()
-            self.protein = oechem.OEGraphMol()
+            protein = oechem.OEGraphMol()
             oechem.OESplitMolComplex(
                 pose,
-                self.protein,
+                protein,
                 oechem.OEGraphMol(),
                 oechem.OEGraphMol(),
                 complex_aligned,
@@ -216,15 +298,15 @@ class HTMLVisualizer:
         else:
             # just combine into a single molecule
             _pose = oechem.OEGraphMol()
-            for pos in pose:
-                oechem.OEAddMols(_pose, pos)
+            for pose in poses:
+                oechem.OEAddMols(_pose, pose)
             pose = _pose
 
         oechem.OESuppressHydrogens(
             pose, True, True
         )  # retain polar hydrogens and hydrogens on chiral centers
         # now prep the coloring function.
-        surface_coloring = self.get_color_dict()
+        surface_coloring = self.get_color_dict(protein)
 
         residue_coloring_function_js = ""
         start = True
@@ -431,7 +513,7 @@ class HTMLVisualizer:
                 a(
                     'var viewer=$3Dmol.createViewer($("#gldiv"));\n \
                     var prot_pdb = `    '
-                    + oemol_to_pdb_string(self.protein)
+                    + oemol_to_pdb_string(protein)
                     + "\n \
                     \n \
                     `;\n \
@@ -484,7 +566,7 @@ class HTMLVisualizer:
                         var intn_dict = "
                     + str(
                         get_interactions_plip(
-                            self.protein, pose, self.color_method, self.target
+                            protein, pose, self.color_method, self.target
                         )
                     )
                     + '\n \
@@ -507,38 +589,11 @@ class HTMLVisualizer:
                     + " \
                         )\n\
                         viewer.setZoomLimits(1,250) // prevent infinite zooming\n"
-                    + self.slab
+                    + slab
                     + " viewer.render();"
                 )
 
         return str(a)
-
-    def write_pose_visualizations(self):
-        """
-        Write HTML visualisations for all poses.
-        """
-        output_paths = []
-        for pose, path in zip(self.poses, self.output_paths):
-            if not path.parent.exists():
-                path.parent.mkdir(parents=True, exist_ok=True)
-            outpath = self.write_pose_visualization(pose, path)
-            output_paths.append(outpath)
-        return output_paths
-
-    def write_pose_visualization(self, pose, path):
-        """
-        Write HTML visualisation for a single pose.
-        """
-        html = self.get_html_airium(pose)
-        self.write_html(html, path)
-        return path
-
-    def make_poses_html(self):
-        html_renders = []
-        for pose, path in zip(self.poses, self.output_paths):
-            html = self.get_html_airium(pose)
-            html_renders.append(html)
-        return html_renders
 
     def make_logoplot_input(self, resi) -> dict:
         """
@@ -631,3 +686,18 @@ class HTMLVisualizer:
                     logoplot_base64s_dict[fit_type] = base64.b64encode(f.read())
 
         return logoplot_base64s_dict
+
+    @staticmethod
+    def write_html(html, path):
+        """
+        Write HTML to a file.
+
+        Parameters
+        ----------
+        html : str
+            HTML to write.
+        path : Path
+            Path to write HTML to.
+        """
+        with open(path, "w") as f:
+            f.write(html)
