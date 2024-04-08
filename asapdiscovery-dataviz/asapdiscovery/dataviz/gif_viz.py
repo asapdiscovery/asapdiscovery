@@ -26,7 +26,7 @@ from pydantic import Field, PositiveInt
 logger = logging.getLogger(__name__)
 
 
-class GIFVisualizerV2(VisualizerBase):
+class GIFVisualizer(VisualizerBase):
     """
     Class for generating GIF visualizations of MD simulations.
     """

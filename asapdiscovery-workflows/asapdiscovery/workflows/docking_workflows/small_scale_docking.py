@@ -29,8 +29,8 @@ from asapdiscovery.data.services.services_config import (
 from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
-from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
-from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
+from asapdiscovery.dataviz.gif_viz import GIFVisualizer
+from asapdiscovery.dataviz.html_viz import ColourMethod, HTMLVisualizer
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer import (
@@ -361,7 +361,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     logger.info("Running HTML visualiser for docked poses")
     html_ouptut_dir = output_dir / "poses"
-    html_visualizer = HTMLVisualizerV2(
+    html_visualizer = HTMLVisualizer(
         colour_method=ColourMethod.subpockets,
         target=inputs.target,
         output_dir=html_ouptut_dir,
@@ -394,7 +394,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     if target_has_fitness_data(inputs.target):
         logger.info("Running fitness HTML visualiser")
         html_fitness_output_dir = output_dir / "fitness"
-        html_fitness_visualizer = HTMLVisualizerV2(
+        html_fitness_visualizer = HTMLVisualizer(
             colour_method=ColourMethod.fitness,
             target=inputs.target,
             output_dir=html_fitness_output_dir,
@@ -510,7 +510,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         start_frame = max(md_simulator.n_frames - md_simulator.frames_per_ns, 1)
 
         logger.info(f"Using start frame {start_frame} for GIFs")
-        gif_maker = GIFVisualizerV2(
+        gif_maker = GIFVisualizer(
             output_dir=gif_output_dir,
             target=inputs.target,
             frames_per_ns=md_simulator.frames_per_ns,
