@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Tuple, Any
+from typing import Iterable, Any
 from multimethod import multimethod
 
 from asapdiscovery.data.metadata.resources import master_structures
@@ -302,7 +302,7 @@ class GIFVisualizerV2(VisualizerBase):
         return data
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Tuple[Path, Path]], **kwargs):
+    def _dispatch(self, inputs: list[Iterable[Path]], **kwargs):
         data = []
         for i, tup in enumerate(inputs):
             # unpack the tuple
