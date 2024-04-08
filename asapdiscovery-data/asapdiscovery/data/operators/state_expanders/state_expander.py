@@ -11,8 +11,7 @@ class StateExpanderBase(abc.ABC, BaseModel):
     )
 
     @abc.abstractmethod
-    def _expand(self, ligands: list[Ligand], unique: bool = False) -> list[Ligand]:
-        ...
+    def _expand(self, ligands: list[Ligand], unique: bool = False) -> list[Ligand]: ...
 
     def expand(self, ligands: list[Ligand], unique: bool = True) -> list[Ligand]:
         expanded_ligands = self._expand(ligands=ligands)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import pickle as pkl
 from collections.abc import Iterator
@@ -13,8 +15,35 @@ from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.stringenum import StringEnum
 from asapdiscovery.data.util.utils import extract_compounds_from_filenames
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
-from asapdiscovery.ml.es import BestEarlyStopping, ConvergedEarlyStopping
+from asapdiscovery.ml.es import (
+    BestEarlyStopping,
+    ConvergedEarlyStopping,
+    PatientConvergedEarlyStopping,
+)
 from pydantic import BaseModel, Field, root_validator
+
+
+class ConfigBase(BaseModel):
+    """
+    Base class to provide update functionality.
+    """
+
+    def update(self, config_updates={}) -> ConfigBase:
+        return self._update(config_updates)
+
+    def _update(self, config_updates={}) -> ConfigBase:
+        """
+        Default version of this function. Just update original config with new options,
+        and generate new object. Designed to be overloaded if there are specific things
+        that a class needs to handle (see GATModelConfig as an example).
+        """
+
+        orig_config = self.dict()
+
+        # Get new config by overwriting old stuff with any new stuff
+        new_config = orig_config | config_updates
+
+        return type(self)(**new_config)
 
 
 class OptimizerType(StringEnum):
@@ -28,7 +57,7 @@ class OptimizerType(StringEnum):
     adamw = "adamw"
 
 
-class OptimizerConfig(BaseModel):
+class OptimizerConfig(ConfigBase):
     """
     Class for constructing an ML optimizer. All parameter defaults are their defaults in
     pytorch.
@@ -121,17 +150,19 @@ class EarlyStoppingType(StringEnum):
     Enum for early stopping classes.
     """
 
+    none = "none"
     best = "best"
     converged = "converged"
+    patient_converged = "patient_converged"
 
 
-class EarlyStoppingConfig(BaseModel):
+class EarlyStoppingConfig(ConfigBase):
     """
     Class for constructing an early stopping class.
     """
 
     es_type: EarlyStoppingType = Field(
-        ...,
+        EarlyStoppingType.none,
         description=(
             "Type of early stopping to use. "
             f"Options are [{', '.join(EarlyStoppingType.get_values())}]."
@@ -164,28 +195,44 @@ class EarlyStoppingConfig(BaseModel):
     @root_validator(pre=False)
     def check_args(cls, values):
         match values["es_type"]:
+            case EarlyStoppingType.none:
+                pass
             case EarlyStoppingType.best:
-                assert (
-                    values["patience"] is not None
-                ), "Value required for patience when using BestEarlyStopping."
+                if values["patience"] is None:
+                    raise ValueError(
+                        "Value required for patience when using BestEarlyStopping."
+                    )
             case EarlyStoppingType.converged:
-                assert (values["n_check"] is not None) and (
-                    values["divergence"] is not None
-                ), (
-                    "Values required for n_check and divergence when using "
-                    "ConvergedEarlyStopping."
-                )
+                if (values["n_check"] is None) or (values["divergence"] is None):
+                    raise ValueError(
+                        "Values required for n_check and divergence when using "
+                        "ConvergedEarlyStopping."
+                    )
+            case EarlyStoppingType.patient_converged:
+                if (values["n_check"] is None) or (values["divergence"] is None):
+                    raise ValueError(
+                        "Values required for n_check and divergence when using "
+                        "PatientConvergedEarlyStopping."
+                    )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
         return values
 
-    def build(self) -> BestEarlyStopping | ConvergedEarlyStopping:
+    def build(
+        self,
+    ) -> BestEarlyStopping | ConvergedEarlyStopping | PatientConvergedEarlyStopping:
         match self.es_type:
+            case EarlyStoppingType.none:
+                return None
             case EarlyStoppingType.best:
                 return BestEarlyStopping(self.patience)
             case EarlyStoppingType.converged:
                 return ConvergedEarlyStopping(self.n_check, self.divergence)
+            case EarlyStoppingType.patient_converged:
+                return PatientConvergedEarlyStopping(
+                    self.n_check, self.divergence, self.patience
+                )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
 
@@ -199,7 +246,7 @@ class DatasetType(StringEnum):
     structural = "structural"
 
 
-class DatasetConfig(BaseModel):
+class DatasetConfig(ConfigBase):
     """
     Class for constructing an ML Dataset class.
     """
@@ -254,15 +301,19 @@ class DatasetConfig(BaseModel):
         inp = values["input_data"][0]
         match values["ds_type"]:
             case DatasetType.graph:
-                assert isinstance(inp, Ligand), (
-                    "Expected Ligand input data for graph-based model, but got "
-                    f"{type(inp)}."
-                )
+                if not isinstance(inp, Ligand):
+                    raise ValueError(
+                        "Expected Ligand input data for graph-based model, but got "
+                        f"{type(inp)}."
+                    )
+
             case DatasetType.structural:
-                assert isinstance(inp, Complex), (
-                    "Expected Complex input data for structure-based model, but got "
-                    f"{type(inp)}."
-                )
+                if not isinstance(inp, Complex):
+                    raise ValueError(
+                        "Expected Complex input data for structure-based model, but got "
+                        f"{type(inp)}."
+                    )
+
             case other:
                 raise ValueError(f"Unknown dataset type {other}.")
 
@@ -460,6 +511,11 @@ class DatasetConfig(BaseModel):
     @staticmethod
     def fix_e3nn_labels(ds):
         for _, pose in ds:
+            # Check if this pose has already been adjusted
+            if pose["z"].is_floating_point():
+                # Assume it'll only be floats if we've already run this function
+                continue
+
             pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
             pose["z"] = pose["lig"].reshape((-1, 1)).float()
 
@@ -475,7 +531,7 @@ class DatasetSplitterType(StringEnum):
     temporal = "temporal"
 
 
-class DatasetSplitterConfig(BaseModel):
+class DatasetSplitterConfig(ConfigBase):
     """
     Class for splitting an ML Dataset class.
     """
@@ -753,7 +809,7 @@ class LossFunctionType(StringEnum):
     gaussian_sq = "gaussian_sq"
 
 
-class LossFunctionConfig(BaseModel):
+class LossFunctionConfig(ConfigBase):
     """
     Class for splitting an ML Dataset class.
     """

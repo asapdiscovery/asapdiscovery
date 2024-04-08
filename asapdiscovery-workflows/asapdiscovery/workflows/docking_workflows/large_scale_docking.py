@@ -8,7 +8,6 @@ from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_artifacts import (
@@ -16,7 +15,6 @@ from asapdiscovery.data.services.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import (
-    TargetProteinMap,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
@@ -26,11 +24,11 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
-from asapdiscovery.dataviz.viz_v2.gif_viz import GIFVisualizerV2
 from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer import (
@@ -39,44 +37,43 @@ from asapdiscovery.docking.scorer import (
     MetaScorer,
     MLModelScorer,
 )
-from asapdiscovery.docking.workflows.workflows import PosteraDockingWorkflowInputs
 from asapdiscovery.genetics.fitness import target_has_fitness_data
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
-from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
-from pydantic import Field, PositiveInt, root_validator, validator
+from asapdiscovery.workflows.docking_workflows.workflows import (
+    PosteraDockingWorkflowInputs,
+)
+from pydantic import Field, PositiveInt, validator
 
 
-class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
+class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
     """
-    Schema for inputs to small scale docking
+    Schema for inputs to large scale docking
 
     Parameters
     ----------
+    n_select : int, optional
+        Number of targets to dock each ligand against, sorted by MCS
+    top_n : int, optional
+        Number of docking results to return, ordered by docking score
     posit_confidence_cutoff : float, optional
         POSIT confidence cutoff used to filter docking results
     use_omega : bool
-        Whether to use omega for conformer generation prior to docking
-    allow_retries : bool
-        Whether to allow retries for docking failures
-    n_select : PositiveInt
-        Number of targets to dock each ligand against.
+        Whether to use omega confomer enumeration in docking, warning: more expensive
+    allow_posit_retries : bool
+        Whether to allow retries in docking with varying settings, warning: more expensive
     ml_scorers : ModelType, optional
         The name of the ml scorers to use.
-    md : bool, optional
-        Whether to run MD on the docked poses
-    md_steps : PositiveInt, optional
-        Number of MD steps to run
-    md_report_interval : PositiveInt, optional
-        MD report interval for writing to disk
-    md_openmm_platform : OpenMMPlatform, optional
-        OpenMM platform to use for MD
     logname : str, optional
         Name of the log file.
     """
 
+    top_n: PositiveInt = Field(
+        500, description="Number of docking results to return, ordered by docking score"
+    )
+
     posit_confidence_cutoff: float = Field(
-        0.1,
+        0.7,
         le=1.0,
         ge=0.0,
         description="POSIT confidence cutoff used to filter docking results",
@@ -84,32 +81,16 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
 
     use_omega: bool = Field(
         False,
-        description="Whether to use omega for conformer generation prior to docking",
+        description="Whether to use omega confomer enumeration in docking, warning: more expensive",
     )
 
-    allow_retries: bool = Field(
-        True, description="Whether to allow retries for docking failures"
-    )
-
-    n_select: PositiveInt = Field(
-        1, description="Number of targets to dock each ligand against."
+    allow_posit_retries: bool = Field(
+        False,
+        description="Whether to allow retries in docking with varying settings, warning: more expensive",
     )
 
     ml_scorers: Optional[list[str]] = Field(
         None, description="The name of the ml scorers to use"
-    )
-    allow_dask_cuda: bool = Field(
-        True,
-        description="Whether to allow regenerating dask cuda cluster when in local mode",
-    )
-
-    md: bool = Field(False, description="Whether to run MD on the docked poses")
-    md_steps: PositiveInt = Field(2500000, description="Number of MD steps to run")
-    md_report_interval: PositiveInt = Field(
-        1250, description="MD report interval for writing to disk"
-    )
-    md_openmm_platform: OpenMMPlatform = Field(
-        OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
 
     @classmethod
@@ -126,28 +107,15 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
                     )
         return v
 
-    @root_validator
-    @classmethod
-    def dask_type_cannot_be_lilac_cpu_and_md(cls, values):
-        """
-        Validate that the dask type is not lilac cpu if MD is requested
-        """
-        dask_type = values.get("dask_type")
-        md = values.get("md")
 
-        if dask_type == dask_type.LILAC_CPU and md:
-            raise ValueError("Cannot run MD on a CPU cluster, please use a GPU cluster")
-        return values
-
-
-def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
+def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     """
-    Run small scale docking on a set of ligands, against multiple targets
+    Run large scale docking on a set of ligands, against multiple targets
 
     Parameters
     ----------
-    inputs : SmallScaleDockingInputs
-        Inputs to small scale docking
+    inputs : LargeScaleDockingInputs
+        Inputs to large scale docking
 
     Returns
     -------
@@ -168,7 +136,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     logger = FileLogger(
         inputs.logname,  # default root logger so that dask logging is forwarded
         path=output_dir,
-        logfile="small-scale-docking.log",
+        logfile="large-scale-docking.log",
         stdout=True,
         level=inputs.loglevel,
     ).getLogger()
@@ -178,11 +146,11 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     else:
         logger.info(f"Writing to existing output directory: {output_dir}")
 
-    logger.info(f"Running small scale docking with inputs: {inputs}")
+    logger.info(f"Running large scale docking with inputs: {inputs}")
     logger.info(f"Dumping input schema to {output_dir / 'inputs.json'}")
 
     # dump config to json file
-    inputs.to_json_file(output_dir / "small_scale_docking_inputs.json")
+    inputs.to_json_file(output_dir / "large_scale_docking_inputs.json")
 
     if inputs.use_dask:
         dask_client = make_dask_client_meta(
@@ -194,6 +162,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
     else:
         dask_client = None
+
     # make a directory to store intermediate CSV results
     data_intermediates = Path(output_dir / "data_intermediates")
     data_intermediates.mkdir(exist_ok=True)
@@ -219,9 +188,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         structure_dir=inputs.structure_dir,
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
-        use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
-        dask_client=dask_client,
     )
     complexes = structure_factory.load(
         use_dask=inputs.use_dask,
@@ -231,8 +197,13 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     n_query_ligands = len(query_ligands)
     logger.info(f"Loaded {n_query_ligands} query ligands")
+
+    # deduplicate ligands
     logger.info("Deduplicating by Inchikey")
     query_ligands = LigandDeDuplicator().deduplicate(query_ligands)
+    n_query_ligands = len(query_ligands)
+    logger.info(f"Deduplicated to {n_query_ligands} query ligands")
+
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
@@ -246,7 +217,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         ligand_kwargs={"compound_name": "ref_ligand"},
     )
 
-    # prep complexes
+    # prep complexes, possibly loading in from cache
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(
         cache_dir=inputs.cache_dir,
@@ -254,12 +225,13 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         ref_chain="A",
         active_site_chain="A",
     )
+
     prepped_complexes = prepper.prep(
         complexes,
-        cache_dir=inputs.cache_dir,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         dask_failure_mode=inputs.dask_failure_mode,
+        cache_dir=inputs.cache_dir,
     )
     del complexes
 
@@ -273,6 +245,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     # define selector and select pairs
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
+    # TODO: fix, see issue 560
     logger.info("Selecting pairs for docking based on MCS")
     selector = MCSSelector()
     pairs = selector.select(
@@ -286,22 +259,38 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     del prepped_complexes
 
-    # dock pairs
+    # dock pairs, possibly reading and writing from a local cache of completed work
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries)
+    docker = POSITDocker(
+        use_omega=inputs.use_omega, allow_retries=inputs.allow_posit_retries
+    )
     results = docker.dock(
         pairs,
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         dask_failure_mode=inputs.dask_failure_mode,
+        return_for_disk_backend=True,
     )
+
+    # NOTE: We use disk based dask backend here because the docking results are large and can cause memory issues
+    # and thrashing with data transfer between workers and the scheduler, all the following operations are then marked
+    # as using disk based dask backend
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     if n_results == 0:
         raise ValueError("No docking results generated, exiting")
     del pairs
+
+    if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
+        )
 
     # add chemgauss4 scorer
     scorers = [ChemGauss4Scorer()]
@@ -314,31 +303,104 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     if inputs.ml_scorers:
         for ml_scorer in inputs.ml_scorers:
             logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorers.append(
-                MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
+            scorer = MLModelScorer.from_latest_by_target_and_type(
+                inputs.target, ml_scorer
             )
+            if scorer:
+                scorers.append(scorer)
 
-    if inputs.write_final_sdf:
-        logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
-        )
-
-    # score results with multiple scoring functions
+    # score results using multiple scoring functions
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
+
+    logger.info("Running scoring")
     scores_df = scorer.score(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         dask_failure_mode=inputs.dask_failure_mode,
         return_df=True,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
 
+    # run html visualiser to get web-ready vis of docked poses
+    logger.info("Running HTML visualiser for docked poses")
+    html_ouptut_dir = output_dir / "poses"
+    html_visualizer = HTMLVisualizerV2(
+        colour_method=ColourMethod.subpockets,
+        target=inputs.target,
+        output_dir=html_ouptut_dir,
+    )
+    pose_visualizatons = html_visualizer.visualize(
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        dask_failure_mode=inputs.dask_failure_mode,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
+    )
+    # rename visualisations target id column to POSIT structure tag so we can join
+    pose_visualizatons.rename(
+        columns={
+            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        },
+        inplace=True,
+    )
+
+    # join the two dataframes on ligand_id, target_id and smiles
+    scores_df = scores_df.merge(
+        pose_visualizatons,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="outer",  # preserves rows where there is no visualisation
+    )
+
+    # run html viz of target fitness to get web-ready vis of docked poses
+    if target_has_fitness_data(inputs.target):
+        logger.info("Running fitness HTML visualiser")
+        html_fitness_output_dir = output_dir / "fitness"
+        html_fitness_visualizer = HTMLVisualizerV2(
+            colour_method=ColourMethod.fitness,
+            target=inputs.target,
+            output_dir=html_fitness_output_dir,
+        )
+        fitness_visualizations = html_fitness_visualizer.visualize(
+            results,
+            use_dask=inputs.use_dask,
+            dask_client=dask_client,
+            dask_failure_mode=inputs.dask_failure_mode,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
+        )
+
+        # duplicate target id column so we can join
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
+            fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        )
+
+        # join the two dataframes on ligand_id, target_id and smiles
+        scores_df = scores_df.merge(
+            fitness_visualizations,
+            on=[
+                DockingResultCols.LIGAND_ID.value,
+                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+                DockingResultCols.SMILES.value,
+            ],
+            how="outer",  # preserves rows where there is no fitness visualisation
+        )
+    else:
+        logger.info(
+            f"Target {inputs.target} does not have fitness data, skipping fitness visualisation"
+        )
+
     logger.info("Filtering docking results")
-    # filter for POSIT probability
+    # filter for POSIT probability > 0.7
     scores_df = scores_df[
         scores_df[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value]
         > inputs.posit_confidence_cutoff
@@ -357,77 +419,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         message="No docking results passed the POSIT confidence cutoff",
     )
 
-    logger.info("Running HTML visualiser for docked poses")
-    html_ouptut_dir = output_dir / "poses"
-    html_visualizer = HTMLVisualizerV2(
-        colour_method=ColourMethod.subpockets,
-        target=inputs.target,
-        output_dir=html_ouptut_dir,
-    )
-    pose_visualizatons = html_visualizer.visualize(
-        results,
-        use_dask=inputs.use_dask,
-        dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
-    )
-    # rename visualisations target id column to POSIT structure tag so we can join
-    pose_visualizatons.rename(
-        columns={
-            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        },
-        inplace=True,
-    )
-
-    # join the two dataframes on ligand_id, target_id and smiles
-    combined_df = scores_df.merge(
-        pose_visualizatons,
-        on=[
-            DockingResultCols.LIGAND_ID.value,
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
-            DockingResultCols.SMILES.value,
-        ],
-        how="outer",
-    )
-
-    if target_has_fitness_data(inputs.target):
-        logger.info("Running fitness HTML visualiser")
-        html_fitness_output_dir = output_dir / "fitness"
-        html_fitness_visualizer = HTMLVisualizerV2(
-            colour_method=ColourMethod.fitness,
-            target=inputs.target,
-            output_dir=html_fitness_output_dir,
-        )
-        fitness_visualizations = html_fitness_visualizer.visualize(
-            results,
-            use_dask=inputs.use_dask,
-            dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
-        )
-
-        # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
-
-        # join the two dataframes on ligand_id, target_id and smiles
-        combined_df = combined_df.merge(
-            fitness_visualizations,
-            on=[
-                DockingResultCols.LIGAND_ID.value,
-                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
-                DockingResultCols.SMILES.value,
-            ],
-            how="outer",
-        )
-    else:
-        logger.info(
-            f"Not running fitness HTML visualiser because {inputs.target} does not have fitness data"
-        )
-
     # filter out clashes (chemgauss4 score > 0)
-    combined_df = combined_df[combined_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
+    scores_df = scores_df[scores_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
 
-    n_clash_filtered = len(combined_df)
+    n_clash_filtered = len(scores_df)
     logger.info(
         f"Filtered to {n_clash_filtered} / {n_posit_filtered} docking results by clash filter"
     )
@@ -458,110 +453,62 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
 
-    if inputs.md:
-        local_cpu_client_gpu_override = False
-        if (
-            (inputs.allow_dask_cuda)
-            and (inputs.dask_type == DaskType.LOCAL)
-            and (inputs.use_dask)
-        ):
-            logger.info(
-                "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
-            )
-            dask_client = make_dask_client_meta(
-                DaskType.LOCAL_GPU, walltime=inputs.walltime, loglevel=inputs.loglevel
-            )
-            local_cpu_client_gpu_override = True
+    # set hit flag to False
+    scores_df[DockingResultCols.DOCKING_HIT.value] = False
 
-        md_output_dir = output_dir / "md"
+    # set top n hits to True
+    scores_df.loc[
+        scores_df.index[: inputs.top_n], DockingResultCols.DOCKING_HIT.value
+    ] = True  # noqa: E712
 
-        # capsid simulations need a CA rmsd restraint to hold the capsid together
-        if TargetProteinMap[inputs.target] == "Capsid":
-            logger.info("Adding CA RMSD restraint to capsid simulation")
-            rmsd_restraint = True
-            rmsd_restraint_type = "CA"
-        else:
-            rmsd_restraint = False
-            rmsd_restraint_type = None
+    hits_df = scores_df[  # noqa: E712
+        scores_df[DockingResultCols.DOCKING_HIT.value] == True  # noqa: E712
+    ]
 
-        md_simulator = VanillaMDSimulator(
-            output_dir=md_output_dir,
-            openmm_platform=inputs.md_openmm_platform,
-            num_steps=inputs.md_steps,
-            reporting_interval=inputs.md_report_interval,
-            rmsd_restraint=rmsd_restraint,
-            rmsd_restraint_type=rmsd_restraint_type,
-        )
-        simulation_results = md_simulator.simulate(
-            results,
-            use_dask=inputs.use_dask,
-            dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
-        )
+    n_top_n_filtered = len(hits_df)
+    logger.info(
+        f"Filtered to {n_top_n_filtered} / {n_duplicate_filtered} docking results by top n filter"
+    )
 
-        if local_cpu_client_gpu_override and inputs.use_dask:
-            dask_client = make_dask_client_meta(DaskType.LOCAL)
+    check_empty_dataframe(
+        hits_df,
+        logger=logger,
+        fail="raise",
+        tag="scores",
+        message=f"No docking results passed the top {inputs.top_n} filter, no hits",
+    )
 
-        gif_output_dir = output_dir / "gifs"
-
-        # take the last ns, accounting for possible low number of frames
-        start_frame = max(md_simulator.n_frames - md_simulator.frames_per_ns, 1)
-
-        logger.info(f"Using start frame {start_frame} for GIFs")
-        gif_maker = GIFVisualizerV2(
-            output_dir=gif_output_dir,
-            target=inputs.target,
-            frames_per_ns=md_simulator.frames_per_ns,
-            start=start_frame,
-        )
-        gifs = gif_maker.visualize(
-            simulation_results,
-            use_dask=inputs.use_dask,
-            dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
-        )
-
-        # duplicate target id column so we can join
-        gifs[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = gifs[
-            DockingResultCols.TARGET_ID.value
-        ]
-
-        # join the two dataframes on ligand_id, target_id and smiles
-        combined_df = combined_df.merge(
-            gifs,
-            on=[
-                DockingResultCols.LIGAND_ID.value,
-                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
-                DockingResultCols.SMILES.value,
-            ],
-            how="outer",
-        )
+    hits_df.to_csv(
+        data_intermediates
+        / f"docking_scores_filtered_sorted_top_{inputs.top_n}_hits.csv",
+        index=False,
+    )
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
 
+    # keep everything not just hits
     result_df = rename_output_columns_for_manifold(
-        combined_df,
+        scores_df,
         inputs.target,
         [DockingResultCols],
         manifold_validate=True,
         drop_non_output=True,
         allow=[
+            DockingResultCols.LIGAND_ID.value,
             DockingResultCols.HTML_PATH_POSE.value,
             DockingResultCols.HTML_PATH_FITNESS.value,
-            DockingResultCols.GIF_PATH.value,
-            DockingResultCols.LIGAND_ID.value,
         ],
     )
 
     result_df.to_csv(output_dir / "docking_results_final.csv", index=False)
 
     if inputs.postera_upload:
-        logger.info("Uploading numerical results to Postera")
+        logger.info("Uploading results to Postera")
+
         postera_uploader = PosteraUploader(
             settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
         )
-
         # push the results to PostEra, making a new molecule set if necessary
         manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df)
 
@@ -570,6 +517,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             manifold_data,
             DockingResultCols.SMILES.value,
             DockingResultCols.LIGAND_ID.value,
+            drop_no_uuid=True,
         )
 
         if made_new_molset:
@@ -580,7 +528,6 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         logger.info("Uploading artifacts to PostEra")
 
         # make an uploader for the poses and upload them
-
         artifact_columns = [
             DockingResultCols.HTML_PATH_POSE.value,
         ]
@@ -592,10 +539,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             artifact_columns.append(DockingResultCols.HTML_PATH_FITNESS.value)
             artifact_types.append(ArtifactType.DOCKING_POSE_FITNESS_POSIT)
 
-        if inputs.md:
-            artifact_columns.append(DockingResultCols.GIF_PATH.value)
-            artifact_types.append(ArtifactType.MD_POSE)
-
+        # upload artifacts to S3 and link them to postera
         uploader = ManifoldArtifactUploader(
             target=inputs.target,
             molecule_dataframe=combined,

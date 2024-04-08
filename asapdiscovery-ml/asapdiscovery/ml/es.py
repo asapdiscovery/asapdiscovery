@@ -1,6 +1,7 @@
 """
 Class for handling early stopping in training.
 """
+
 from copy import deepcopy
 
 import numpy as np
@@ -154,3 +155,103 @@ class ConvergedEarlyStopping:
         all_abs_diff = np.abs(np.asarray(self.losses) - mean_loss)
 
         return np.mean(all_abs_diff) < self.divergence
+
+
+class PatientConvergedEarlyStopping:
+    """
+    Class for handling early stopping in training based on whether loss is still
+    changing, with patience. Check that the mean difference of the past n losses from
+    the average of those losses is within tolerance, then wait to make sure it's not a
+    temporary plateau.
+    """
+
+    def __init__(self, n_check, divergence, patience=0):
+        """
+        Parameters
+        ----------
+        n_check : int
+            Number of past epochs to keep track of when calculating divergence
+        divergence : float
+            Max allowable difference from the mean of the losses
+        patience : int, optional
+            The maximum number of epochs to wait after convergence. If not given,
+            training will be stopped as soon as the convergence criteria has been
+            reached
+        """
+        super().__init__()
+        self.n_check = n_check
+        self.divergence = divergence
+        self.patience = patience
+
+        # Variables to track early stopping
+        # Window of losses to check for convergence
+        self.losses = []
+        # Tracker for if we've reached convergence
+        self.converged = False
+        # Tracker for how many epochs it's been since we've converged
+        self.counter = 0
+        # Loss val at convergence
+        self.converged_loss = None
+        # Model weights at convergence
+        self.converged_wts = None
+        # Epoch we reached convergence
+        self.converged_epoch = 0
+
+    def check(self, epoch, loss, wts_dict):
+        """
+        Check if training should be stopped. Return True to stop, False to keep going.
+
+        Parameters
+        ----------
+        loss : float
+            Model loss from the current epoch of training
+        wts_dict : dict
+            Weights dict from Pytorch for keeping track of the best model
+
+        Returns
+        -------
+        bool
+            Whether to stop training
+        """
+        # Make sure we've got a reasonable value for loss
+        loss = _sanitize_loss(loss)
+
+        # Add most recent loss
+        self.losses += [loss]
+
+        # Don't have enough samples yet, so keep training
+        if len(self.losses) < self.n_check:
+            return False
+
+        # Full loss buffer, so get rid of earliest loss
+        if len(self.losses) > self.n_check:
+            self.losses = self.losses[1:]
+
+        # Check for early stopping
+        mean_loss = np.mean(self.losses)
+        all_abs_diff = np.abs(np.asarray(self.losses) - mean_loss)
+
+        converged = np.mean(all_abs_diff) < self.divergence
+
+        if converged:
+            if self.converged:
+                self.counter += 1
+                print("converged patience counter", self.counter, flush=True)
+                if self.counter == self.patience:
+                    return True
+            else:
+                self.converged = True
+
+                self.converged_loss = loss
+                # Need to deepcopy so it doesn't update with the model weights
+                self.converged_wts = deepcopy(wts_dict)
+                self.converged_epoch = epoch
+        elif self.converged:
+            # Reset everything
+            self.converged = False
+            self.counter = 0
+            self.converged_loss = None
+            self.converged_wts = None
+            self.converged_epoch = 0
+
+        return False

@@ -1,6 +1,7 @@
 """
 This collects all the selectors into a single enum
 """
+
 from enum import Enum
 
 from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector

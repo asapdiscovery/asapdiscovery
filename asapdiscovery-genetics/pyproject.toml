@@ -25,6 +25,7 @@ dependencies = []
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
 [project.scripts]
+make-alignment = "asapdiscovery.genetics.scripts.make_alignment:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

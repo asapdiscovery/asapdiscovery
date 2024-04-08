@@ -1,3 +1,4 @@
+#!/bin/bash
 # install asapdiscovery repo
 # run this script from the root of the repo
 pip install -e asapdiscovery-data/.
@@ -9,3 +10,4 @@ pip install -e asapdiscovery-docking/.
 pip install -e asapdiscovery-ml/.
 pip install -e asapdiscovery-alchemy/.
 pip install -e asapdiscovery-genetics/.
+pip install -e asapdiscovery-workflows/.
