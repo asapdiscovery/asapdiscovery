@@ -43,7 +43,7 @@ PARSE_ADDED_COLS = [
 ]
 
 # skip tests if no CDD token
-pytestmark = pytest.mark.skipif(not os.getenv("CDDTOKEN"), reason="No CDD token")
+# pytestmark = pytest.mark.skipif(not os.getenv("CDDTOKEN"), reason="No CDD token")
 
 
 @pytest.fixture(scope="session")
@@ -530,6 +530,7 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
                 "inchi": "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3",
                 "inchi_key": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
                 "name": "ASAP-Ethanol",
+                "cxsmiles": "CCO"
             }
         ],
     }
