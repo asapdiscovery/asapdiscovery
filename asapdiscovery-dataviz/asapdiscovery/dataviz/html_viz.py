@@ -24,6 +24,7 @@ from asapdiscovery.data.backend.openeye import (
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.dask_utils import backend_wrapper, dask_vmap
 from asapdiscovery.dataviz.visualizer import VisualizerBase
 from asapdiscovery.docking.docking import DockingResult
@@ -44,6 +45,10 @@ from asapdiscovery.genetics.fitness import (
 )
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 from asapdiscovery.dataviz._html_blocks import HTMLBlockData
+from asapdiscovery.data.services.postera.manifold_data_validation import (
+    TargetTags,
+    TargetVirusMap,
+)
 
 from pydantic import Field, root_validator
 
@@ -86,8 +91,8 @@ class HTMLVisualizer(VisualizerBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if target_has_fitness_data(self.target):
-            self.fitness_data = get_fitness_scores_bloom_by_target(self.target)
-            self.fitness_data_logoplots = parse_fitness_json(self.target)
+            self.fitness_data = parse_fitness_json(self.target)
+            self.fitness_data_logoplots = get_fitness_scores_bloom_by_target(self.target)
         self.reference_protein = load_openeye_pdb(master_structures[self.target])
 
     @root_validator
@@ -169,18 +174,18 @@ class HTMLVisualizer(VisualizerBase):
         data = []
         viz_data = []
         for i, path in enumerate(inputs):
-            complex = Complex.from_pdb(
+            cmplx = Complex.from_pdb(
                 path,
                 target_kwargs={"target_name": f"unknown_target_{i}"},
                 ligand_kwargs={"compound_name": f"unknown_compound_{i}"},
             )
-            output_pref = complex.unique_name
+            output_pref = cmplx.unique_name
             outpath = self.output_dir / output_pref / "pose.html"
             outpath.parent.mkdir(parents=True, exist_ok=True)
 
             # make html string
             viz = self.html_pose_viz(
-                poses=[complex.ligand.to_oemol()], protein=complex.target.to_oemol()
+                poses=[cmplx.ligand.to_oemol()], protein=cmplx.target.to_oemol()
             )
             viz_data.append(viz)
             # write to disk
@@ -189,9 +194,9 @@ class HTMLVisualizer(VisualizerBase):
 
             # make dataframe with ligand name, target name, and path to HTML
             row = {}
-            row[DockingResultCols.LIGAND_ID.value] = complex.ligand.compound_name
-            row[DockingResultCols.TARGET_ID.value] = complex.target.target_name
-            row[DockingResultCols.SMILES.value] = complex.ligand.smiles
+            row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
+            row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
+            row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
             row[self.get_tag_for_color_method()] = viz
             data.append(row)
 
@@ -206,13 +211,13 @@ class HTMLVisualizer(VisualizerBase):
     def _dispatch(self, inputs: list[Complex], **kwargs):
         data = []
         viz_data = []
-        for i, path in enumerate(inputs):
-            output_pref = complex.unique_name
+        for i, cmplx in enumerate(inputs):
+            output_pref = cmplx.unique_name
             outpath = self.output_dir / output_pref / "pose.html"
             outpath.parent.mkdir(parents=True, exist_ok=True)
             # make html string
             viz = self.html_pose_viz(
-                poses=[complex.ligand.to_oemol()], protein=complex.target.to_oemol()
+                poses=[cmplx.ligand.to_oemol()], protein=cmplx.target.to_oemol()
             )
             viz_data.append(viz)
             # write to disk
@@ -221,9 +226,81 @@ class HTMLVisualizer(VisualizerBase):
 
             # make dataframe with ligand name, target name, and path to HTML
             row = {}
-            row[DockingResultCols.LIGAND_ID.value] = complex.ligand.compound_name
-            row[DockingResultCols.TARGET_ID.value] = complex.target.target_name
-            row[DockingResultCols.SMILES.value] = complex.ligand.smiles
+            row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
+            row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
+            row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
+            row[self.get_tag_for_color_method()] = viz
+            data.append(row)
+
+        if self.write_to_disk:
+            # if we are writing to disk, return the metadata
+            return data
+        else:
+            # if we are not writing to disk, return the HTML strings
+            return viz_data
+        
+    @_dispatch.register
+    def _dispatch(self, inputs: list[tuple[Path, Path]], **kwargs):
+        data = []
+        viz_data = []
+        for i, paths in enumerate(inputs):
+            cpath, outpath = paths
+            cmplx = Complex.from_pdb(
+                cpath,
+                target_kwargs={"target_name": f"unknown_target_{i}"},
+                ligand_kwargs={"compound_name": f"unknown_compound_{i}"},
+            )
+            outpath.parent.mkdir(parents=True, exist_ok=True)
+
+            # make html string
+            viz = self.html_pose_viz(
+                poses=[cmplx.ligand.to_oemol()], protein=cmplx.target.to_oemol()
+            )
+            viz_data.append(viz)
+            # write to disk
+            if self.write_to_disk:
+                self.write_html(viz, outpath)
+
+            # make dataframe with ligand name, target name, and path to HTML
+            row = {}
+            row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
+            row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
+            row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
+            row[self.get_tag_for_color_method()] = viz
+            data.append(row)
+
+        if self.write_to_disk:
+            # if we are writing to disk, return the metadata
+            return data
+        else:
+            # if we are not writing to disk, return the HTML strings
+            return viz_data
+        
+
+    @_dispatch.register
+    def _dispatch(self, inputs: list[tuple[Complex, list[Ligand]]], **kwargs):
+        data = []
+        viz_data = []
+        for i, inp in enumerate(inputs):
+            cmplx, liglist = inp
+            output_pref = cmplx.unique_name
+            outpath = self.output_dir / output_pref / "pose.html"
+            outpath.parent.mkdir(parents=True, exist_ok=True)
+
+            # make html string
+            viz = self.html_pose_viz(
+                poses=liglist, protein=cmplx.target.to_oemol()
+            )
+            viz_data.append(viz)
+            # write to disk
+            if self.write_to_disk:
+                self.write_html(viz, outpath)
+
+            # make dataframe with ligand name, target name, and path to HTML
+            row = {}
+            row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
+            row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
+            row[DockingResultCols.SMILES.value] = "MANY"
             row[self.get_tag_for_color_method()] = viz
             data.append(row)
 
