@@ -1,9 +1,9 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Iterable, Any, Union
+from typing import Iterable, Any, Union, Optional
 from multimethod import multimethod
-
+from warnings import warn
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
@@ -12,7 +12,7 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
 from asapdiscovery.data.util.dask_utils import dask_vmap
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
-from asapdiscovery.dataviz.gif_blocks import GIFBlockData
+from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.show_contacts import show_contacts
 from asapdiscovery.dataviz.visualizer import VisualizerBase
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
@@ -20,7 +20,6 @@ from asapdiscovery.simulation.simulate import SimulationResult
 from asapdiscovery.dataviz.resources.fonts import opensans_regular
 
 from pydantic import Field, PositiveInt
-
 
 
 logger = logging.getLogger(__name__)
@@ -60,8 +59,14 @@ class GIFVisualizer(VisualizerBase):
         arbitrary_types_allowed = True
 
     @dask_vmap(["inputs"])
-    def _visualize(self, inputs: list[Any], **kwargs) -> list[dict[str, str]]:
-        return self._dispatch(inputs, **kwargs)
+    def _visualize(
+        self, inputs: list[Any], outpaths: Optional[list[Path]] = None, **kwargs
+    ) -> list[dict[str, str]]:
+        if outpaths:
+            if len(outpaths) != len(inputs):
+                raise ValueError("outpaths must be the same length as inputs")
+
+        return self._dispatch(inputs, outpaths=outpaths, **kwargs)
 
     def provenance(self):
         return {}
@@ -69,9 +74,9 @@ class GIFVisualizer(VisualizerBase):
     @staticmethod
     def pymol_traj_viz(
         target: str,
-        traj: Path,
+        traj: Optional[Path],
         system: Path,
-        out_dir: Path,
+        outpath: Path,
         static_view_only: bool,
         pse: bool,
         pse_share: bool,
@@ -91,7 +96,9 @@ class GIFVisualizer(VisualizerBase):
 
         p = pymol2.PyMOL()
         p.start()
+        out_dir = Path(outpath).parent
         out_dir.mkdir(parents=True, exist_ok=True)
+
         path = out_dir / "trajectory.gif"
 
         tmpdir = out_dir / "tmp"
@@ -271,15 +278,28 @@ class GIFVisualizer(VisualizerBase):
         return path
 
     @multimethod
-    def _dispatch(self, inputs: list[SimulationResult], **kwargs):
+    def _dispatch(
+        self,
+        inputs: list[SimulationResult],
+        outpaths: Optional[list[Path]] = None,
+        **kwargs,
+    ):
         data = []
-        for res in inputs:
+
+        for i, res in enumerate(inputs):
+            if not outpaths:
+                out = (
+                    self.output_dir
+                    / res.input_docking_result.posed_ligand.compound_name
+                    / "trajectory.gif"
+                )
+            else:
+                out = self.output_dir / outpaths[i]
             path = self.pymol_traj_viz(
                 target=self.target,
                 traj=res.traj_path,
                 system=res.minimized_pdb_path,
-                out_dir=self.output_dir
-                / res.input_docking_result.posed_ligand.compound_name,
+                outpath=out,
                 static_view_only=self.static_view_only,
                 pse=self.pse,
                 pse_share=self.pse_share,
@@ -305,9 +325,15 @@ class GIFVisualizer(VisualizerBase):
         return data
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Iterable[Path]], **kwargs):
+    def _dispatch(
+        self,
+        inputs: list[tuple[Optional[Path], Path]],
+        outpaths: Optional[list[Path]] = None,
+        **kwargs,
+    ):
         data = []
         for i, tup in enumerate(inputs):
+
             # unpack the tuple
             traj, top = tup
             # find with the unique identifier for the ligand would be
@@ -317,11 +343,16 @@ class GIFVisualizer(VisualizerBase):
                 ligand_kwargs={"compound_name": f"unknown_ligand_{i}"},
             )
             csp = CompoundStructurePair(complex=complex, ligand=complex.ligand)
+            if not outpaths:
+                out = self.output_dir / csp.unique_name / "trajectory.gif"
+            else:
+                out = self.output_dir / outpaths[i]
+
             path = self.pymol_traj_viz(
                 target=self.target,
                 traj=traj,
                 system=top,
-                out_dir=self.output_dir / csp.unique_name,
+                outpath=out,
                 static_view_only=self.static_view_only,
                 pse=self.pse,
                 pse_share=self.pse_share,
@@ -339,7 +370,6 @@ class GIFVisualizer(VisualizerBase):
             row[DockingResultCols.GIF_PATH.value] = path
             data.append(row)
         return data
-
 
 
 def add_gif_progress_bar(

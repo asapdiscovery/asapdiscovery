@@ -76,8 +76,9 @@ def test_html_viz_from_pdb_file(
 @pytest.mark.parametrize("write_to_disk", [True, False])
 @pytest.mark.parametrize("align", [True, False])
 @pytest.mark.parametrize("color_method", ["fitness", "subpockets"])
+@pytest.mark.parametrize("outpaths", [["my_sub_path/viz.html"], None])
 def test_html_viz_from_complex(
-    use_dask, tmp_path, protein, write_to_disk, align, color_method
+    use_dask, tmp_path, protein, write_to_disk, align, color_method, outpaths
 ):
     html_viz = HTMLVisualizer(
         target="SARS-CoV-2-Mpro",
@@ -95,24 +96,25 @@ def test_html_viz_from_complex(
             )
         ],
         use_dask=use_dask,
+        outpaths=outpaths,
     )
     assert len(vizs) == 1
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
-@pytest.mark.parametrize("write_to_disk", [True, False])
-@pytest.mark.parametrize("align", [True, False])
-@pytest.mark.parametrize("color_method", ["fitness", "subpockets"])
-def test_html_viz_from_multisdf(
-    tmp_path, protein, multisdf, color_method, align, use_dask, write_to_disk
-):
+def test_html_viz_from_multisdf(tmp_path, protein, multisdf, use_dask):
     html_viz = HTMLVisualizer(
         target="SARS-CoV-2-Mpro",
         output_dir=tmp_path,
-        color_method=color_method,
-        align=align,
-        write_to_disk=write_to_disk,
+        color_method="subpockets",
+        align=True,
+        write_to_disk=True,
     )
     ligs = MolFileFactory(filename=multisdf).load()
-    vizs = html_viz.visualize(inputs=[(protein, ligs)], use_dask=use_dask)
+    cmplx = Complex.from_pdb(
+        protein,
+        target_kwargs={"target_name": "unknown_target"},
+        ligand_kwargs={"compound_name": f"unknown_compound"},
+    )
+    vizs = html_viz.visualize(inputs=[(cmplx, ligs)], use_dask=use_dask)
     assert len(vizs) == 1

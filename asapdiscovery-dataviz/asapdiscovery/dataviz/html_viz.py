@@ -4,14 +4,14 @@ import logging  # noqa: F401
 import tempfile
 import warnings
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 import logomaker
 import matplotlib.pyplot as plt
 from enum import Enum
 from pathlib import Path
 import pandas as pd
 from airium import Airium
-
+from warnings import warn
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -92,7 +92,9 @@ class HTMLVisualizer(VisualizerBase):
         super().__init__(**kwargs)
         if target_has_fitness_data(self.target):
             self.fitness_data = parse_fitness_json(self.target)
-            self.fitness_data_logoplots = get_fitness_scores_bloom_by_target(self.target)
+            self.fitness_data_logoplots = get_fitness_scores_bloom_by_target(
+                self.target
+            )
         self.reference_protein = load_openeye_pdb(master_structures[self.target])
 
     @root_validator
@@ -126,22 +128,45 @@ class HTMLVisualizer(VisualizerBase):
 
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
-    def _visualize(self, inputs: list[DockingResult], **kwargs) -> list[dict[str, str]]:
+    def _visualize(
+        self,
+        inputs: list[DockingResult],
+        outpaths: Optional[list[Path]] = None,
+        **kwargs,
+    ) -> list[dict[str, str]]:
         """
         Visualize a list of docking results.
         """
-        return self._dispatch(inputs, **kwargs)
+        if outpaths:
+            if len(outpaths) != len(inputs):
+                raise ValueError("outpaths must be the same length as inputs")
+
+        if outpaths and not self.write_to_disk:
+            warn("outpaths provided but write_to_disk is False. Ignoring outpaths.")
+            outpaths = None
+
+        return self._dispatch(inputs, outpaths=outpaths, **kwargs)
 
     def provenance(self):
         return {}
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], **kwargs):
+    def _dispatch(
+        self,
+        inputs: list[DockingResult],
+        outpaths: Optional[list[Path]] = None,
+        **kwargs,
+    ):
         data = []
         viz_data = []
-        for result in inputs:
+
+        for i, result in enumerate(inputs):
             output_pref = result.unique_name
-            outpath = self.output_dir / output_pref / "pose.html"
+            if not outpaths:
+                outpath = self.output_dir / output_pref / "pose.html"
+            else:
+                outpath = self.output_dir / Path(outpaths[i])
+
             outpath.parent.mkdir(parents=True, exist_ok=True)
 
             viz = self.html_pose_viz(
@@ -170,7 +195,9 @@ class HTMLVisualizer(VisualizerBase):
             return viz_data
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Path], **kwargs):
+    def _dispatch(
+        self, inputs: list[Path], outpaths: Optional[list[Path]] = None, **kwargs
+    ):
         data = []
         viz_data = []
         for i, path in enumerate(inputs):
@@ -179,8 +206,12 @@ class HTMLVisualizer(VisualizerBase):
                 target_kwargs={"target_name": f"unknown_target_{i}"},
                 ligand_kwargs={"compound_name": f"unknown_compound_{i}"},
             )
-            output_pref = cmplx.unique_name
-            outpath = self.output_dir / output_pref / "pose.html"
+            if not outpaths:
+                output_pref = cmplx.unique_name
+                outpath = self.output_dir / output_pref / "pose.html"
+            else:
+                outpath = self.output_dir / Path(outpaths[i])
+
             outpath.parent.mkdir(parents=True, exist_ok=True)
 
             # make html string
@@ -208,48 +239,18 @@ class HTMLVisualizer(VisualizerBase):
             return viz_data
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Complex], **kwargs):
+    def _dispatch(
+        self, inputs: list[Complex], outpaths: Optional[list[Path]] = None, **kwargs
+    ):
         data = []
         viz_data = []
         for i, cmplx in enumerate(inputs):
-            output_pref = cmplx.unique_name
-            outpath = self.output_dir / output_pref / "pose.html"
-            outpath.parent.mkdir(parents=True, exist_ok=True)
-            # make html string
-            viz = self.html_pose_viz(
-                poses=[cmplx.ligand.to_oemol()], protein=cmplx.target.to_oemol()
-            )
-            viz_data.append(viz)
-            # write to disk
-            if self.write_to_disk:
-                self.write_html(viz, outpath)
+            if not outpaths:
+                output_pref = cmplx.unique_name
+                outpath = self.output_dir / output_pref / "pose.html"
+            else:
+                outpath = self.output_dir / Path(outpaths[i])
 
-            # make dataframe with ligand name, target name, and path to HTML
-            row = {}
-            row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
-            row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
-            row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
-            row[self.get_tag_for_color_method()] = viz
-            data.append(row)
-
-        if self.write_to_disk:
-            # if we are writing to disk, return the metadata
-            return data
-        else:
-            # if we are not writing to disk, return the HTML strings
-            return viz_data
-        
-    @_dispatch.register
-    def _dispatch(self, inputs: list[tuple[Path, Path]], **kwargs):
-        data = []
-        viz_data = []
-        for i, paths in enumerate(inputs):
-            cpath, outpath = paths
-            cmplx = Complex.from_pdb(
-                cpath,
-                target_kwargs={"target_name": f"unknown_target_{i}"},
-                ligand_kwargs={"compound_name": f"unknown_compound_{i}"},
-            )
             outpath.parent.mkdir(parents=True, exist_ok=True)
 
             # make html string
@@ -275,21 +276,28 @@ class HTMLVisualizer(VisualizerBase):
         else:
             # if we are not writing to disk, return the HTML strings
             return viz_data
-        
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[tuple[Complex, list[Ligand]]], **kwargs):
+    def _dispatch(
+        self,
+        inputs: list[Tuple[Complex, list[Ligand]]],
+        outpaths: Optional[list[Path]] = None,
+        **kwargs,
+    ):
         data = []
         viz_data = []
         for i, inp in enumerate(inputs):
             cmplx, liglist = inp
-            output_pref = cmplx.unique_name
-            outpath = self.output_dir / output_pref / "pose.html"
+            if not outpaths:
+                output_pref = cmplx.unique_name
+                outpath = self.output_dir / output_pref / "pose.html"
+            else:
+                outpath = self.output_dir / Path(outpaths[i])
             outpath.parent.mkdir(parents=True, exist_ok=True)
 
             # make html string
             viz = self.html_pose_viz(
-                poses=liglist, protein=cmplx.target.to_oemol()
+                poses=[l.to_oemol() for l in liglist], protein=cmplx.target.to_oemol()
             )
             viz_data.append(viz)
             # write to disk
@@ -300,7 +308,10 @@ class HTMLVisualizer(VisualizerBase):
             row = {}
             row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
             row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
-            row[DockingResultCols.SMILES.value] = "MANY"
+            if len(liglist) > 1:
+                row[DockingResultCols.SMILES.value] = "MANY"
+            else:
+                row[DockingResultCols.SMILES.value] = liglist[0].smiles
             row[self.get_tag_for_color_method()] = viz
             data.append(row)
 
