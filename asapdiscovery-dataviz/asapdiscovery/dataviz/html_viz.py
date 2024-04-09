@@ -1,17 +1,16 @@
-import logging
 import base64
 import logging  # noqa: F401
 import tempfile
 import warnings
-from pathlib import Path
-from typing import Any, Optional, Tuple
-import logomaker
-import matplotlib.pyplot as plt
 from enum import Enum
 from pathlib import Path
+from typing import Any, Optional, Tuple
+from warnings import warn
+
+import logomaker
+import matplotlib.pyplot as plt
 import pandas as pd
 from airium import Airium
-from warnings import warn
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -20,23 +19,24 @@ from asapdiscovery.data.backend.openeye import (
     oemol_to_sdf_string,
     openeye_perceive_residues,
 )
-
-from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.backend.openeye import oechem
-from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.util.dask_utils import backend_wrapper, dask_vmap
-from asapdiscovery.dataviz.visualizer import VisualizerBase
-from asapdiscovery.docking.docking import DockingResult
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from asapdiscovery.genetics.fitness import target_has_fitness_data
 from asapdiscovery.data.backend.plip import (
     get_interactions_plip,
     make_color_res_fitness,
     make_color_res_subpockets,
 )
 from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.services.postera.manifold_data_validation import (
+    TargetTags,
+    TargetVirusMap,
+)
+from asapdiscovery.data.util.dask_utils import backend_wrapper, dask_vmap
 from asapdiscovery.data.util.logging import HiddenPrint
+from asapdiscovery.dataviz._html_blocks import HTMLBlockData
+from asapdiscovery.dataviz.visualizer import VisualizerBase
+from asapdiscovery.docking.docking import DockingResult
+from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.genetics.fitness import (
     _FITNESS_DATA_FIT_THRESHOLD,
     get_fitness_scores_bloom_by_target,
@@ -44,16 +44,8 @@ from asapdiscovery.genetics.fitness import (
     target_has_fitness_data,
 )
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
-from asapdiscovery.dataviz._html_blocks import HTMLBlockData
-from asapdiscovery.data.services.postera.manifold_data_validation import (
-    TargetTags,
-    TargetVirusMap,
-)
-
-from pydantic import Field, root_validator
-
 from multimethod import multimethod
-
+from pydantic import Field, root_validator
 
 logger = logging.getLogger(__name__)
 
@@ -165,11 +157,11 @@ class HTMLVisualizer(VisualizerBase):
             if self.write_to_disk:
                 if not outpaths:
                     outpath = self.output_dir / output_pref / "pose.html"
-                else: 
+                else:
                     outpath = self.output_dir / Path(outpaths[i])
                 outpath.parent.mkdir(parents=True, exist_ok=True)
             else:
-                pass # we don't need to write to disk
+                pass  # we don't need to write to disk
 
             viz = self.html_pose_viz(
                 poses=[result.posed_ligand.to_oemol()], protein=result.to_protein()
@@ -217,7 +209,7 @@ class HTMLVisualizer(VisualizerBase):
 
                 outpath.parent.mkdir(parents=True, exist_ok=True)
             else:
-                pass # we don't need to write to disk
+                pass  # we don't need to write to disk
 
             # make html string
             viz = self.html_pose_viz(
@@ -288,7 +280,7 @@ class HTMLVisualizer(VisualizerBase):
     @_dispatch.register
     def _dispatch(
         self,
-        inputs: list[Tuple[Complex, list[Ligand]]],
+        inputs: list[tuple[Complex, list[Ligand]]],
         outpaths: Optional[list[Path]] = None,
         **kwargs,
     ):

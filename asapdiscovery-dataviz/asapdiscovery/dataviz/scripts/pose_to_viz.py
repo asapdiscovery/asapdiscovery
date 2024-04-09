@@ -2,11 +2,11 @@ import argparse
 import logging
 from pathlib import Path
 
+from asapdiscovery.data.readers.molfile import MolFileFactory
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
-from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.data.schema.complex import Complex
 
 parser = argparse.ArgumentParser(description="Turn a trajectory into a GIF")
 

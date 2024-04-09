@@ -1,26 +1,26 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Iterable, Any, Union, Optional
-from multimethod import multimethod
+from typing import Any, Optional, Union
+from collections.abc import Iterable
 from warnings import warn
+
 from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
     TargetTags,
 )
 from asapdiscovery.data.util.dask_utils import dask_vmap
-from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
+from asapdiscovery.dataviz.resources.fonts import opensans_regular
 from asapdiscovery.dataviz.show_contacts import show_contacts
 from asapdiscovery.dataviz.visualizer import VisualizerBase
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.simulation.simulate import SimulationResult
-from asapdiscovery.dataviz.resources.fonts import opensans_regular
-
+from multimethod import multimethod
 from pydantic import Field, PositiveInt
-
 
 logger = logging.getLogger(__name__)
 
