@@ -58,7 +58,7 @@ def main():
         start=1,  # dummy value
         pse=False,  # can set these to True to debug viz steps.
         pse_share=False,
-        output_dir="./",
+        output_dir=out.parent,
     )
     gif_visualiser.visualize(inputs=[(None, complex)], outpath=[out])
 

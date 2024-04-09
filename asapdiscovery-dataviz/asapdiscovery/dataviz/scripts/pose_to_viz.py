@@ -83,7 +83,7 @@ def main():
         target=args.target,
         align=args.align,
         write_to_disk=True,
-        output_dir="./",
+        output_dir=out.parent,
     )
     ligs = MolFileFactory(filename=pose).load()
     cmplx = Complex.from_pdb(

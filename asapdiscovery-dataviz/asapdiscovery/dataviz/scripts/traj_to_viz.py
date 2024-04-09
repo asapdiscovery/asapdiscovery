@@ -104,7 +104,7 @@ def main():
         start=start,
         pse=True,
         pse_share=True,
-        output_dir="./",
+        output_dir=out.parent,
     )
     gif_visualiser.visualize(inputs=[(traj, top)], outpaths=[out])
 

@@ -86,12 +86,17 @@ class GIFVisualizer(VisualizerBase):
         contacts: bool,
         frames_per_ns: int,
         outpath: Optional[Path] = None,
+        out_dir: Optional[Path] = None,
     ):
         view_coords = GIFBlockData.get_view_coords()
 
         pocket_dict = GIFBlockData.get_pocket_dict(target)
 
         color_dict = GIFBlockData.get_color_dict(target)
+
+        if not out_dir and not outpath:
+            raise ValueError("Either out_dir or outpath must be defined")
+
         import pymol2
 
         p = pymol2.PyMOL()
@@ -323,17 +328,18 @@ class GIFVisualizer(VisualizerBase):
                 smooth=self.smooth,
                 contacts=self.contacts,
                 frames_per_ns=self.frames_per_ns,
+                out_dir=self.output_dir,
             )
             row = {}
-            row[
-                DockingResultCols.LIGAND_ID.value
-            ] = res.input_docking_result.posed_ligand.compound_name
-            row[
-                DockingResultCols.TARGET_ID.value
-            ] = res.input_docking_result.input_pair.complex.target.target_name
-            row[
-                DockingResultCols.SMILES.value
-            ] = res.input_docking_result.posed_ligand.smiles
+            row[DockingResultCols.LIGAND_ID.value] = (
+                res.input_docking_result.posed_ligand.compound_name
+            )
+            row[DockingResultCols.TARGET_ID.value] = (
+                res.input_docking_result.input_pair.complex.target.target_name
+            )
+            row[DockingResultCols.SMILES.value] = (
+                res.input_docking_result.posed_ligand.smiles
+            )
             row[DockingResultCols.GIF_PATH.value] = path
             data.append(row)
         return data
@@ -378,6 +384,7 @@ class GIFVisualizer(VisualizerBase):
                 smooth=self.smooth,
                 contacts=self.contacts,
                 frames_per_ns=self.frames_per_ns,
+                out_dir=self.output_dir,
             )
             row = {}
             row[DockingResultCols.LIGAND_ID.value] = complex.ligand.compound_name
