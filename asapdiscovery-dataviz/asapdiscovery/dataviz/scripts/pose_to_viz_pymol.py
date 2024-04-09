@@ -51,18 +51,16 @@ def main():
     logger.info(f"Output file: {out}")
 
     gif_visualiser = GIFVisualizer(
-        [None],  # we just fill these args, they're not being used.
-        [complex],
-        [out],
-        args.target,
-        frames_per_ns=0,
+        target=args.target,
+        frames_per_ns=5,  # dummy value
         smooth=5,
         static_view_only=True,
-        start=0,
+        start=1,  # dummy value
         pse=False,  # can set these to True to debug viz steps.
         pse_share=False,
+        output_dir="./",
     )
-    gif_visualiser.write_traj_visualization(traj=None, system=complex, path=out)
+    gif_visualiser.visualize(inputs=[(None, complex)], outpath=[out])
 
     logger.info("Done")
 

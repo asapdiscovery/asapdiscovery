@@ -23,12 +23,6 @@ def top():
 
 
 @pytest.fixture(scope="session")
-def multisdf():
-    multisdf = fetch_test_file("Mpro_combined_labeled.sdf")
-    return multisdf
-
-
-@pytest.fixture(scope="session")
 def traj():
     traj = fetch_test_file("example_traj.xtc")
     return traj

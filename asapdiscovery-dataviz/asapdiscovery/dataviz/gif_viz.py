@@ -76,7 +76,6 @@ class GIFVisualizer(VisualizerBase):
         target: str,
         traj: Optional[Path],
         system: Path,
-        outpath: Path,
         static_view_only: bool,
         pse: bool,
         pse_share: bool,
@@ -86,6 +85,7 @@ class GIFVisualizer(VisualizerBase):
         smooth: int,
         contacts: bool,
         frames_per_ns: int,
+        outpath: Optional[Path] = None,
     ):
         view_coords = GIFBlockData.get_view_coords()
 
@@ -96,10 +96,15 @@ class GIFVisualizer(VisualizerBase):
 
         p = pymol2.PyMOL()
         p.start()
-        out_dir = Path(outpath).parent
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        path = out_dir / "trajectory.gif"
+        if not outpath:
+            out_dir = Path(outpath).parent
+            out_dir.mkdir(parents=True, exist_ok=True)
+            path = outpath
+        else:
+            if static_view_only:
+                path = out_dir / "view.pse"
+            else:
+                path = out_dir / "trajectory.gif"
 
         tmpdir = out_dir / "tmp"
         tmpdir.mkdir(parents=True, exist_ok=True)
@@ -202,6 +207,7 @@ class GIFVisualizer(VisualizerBase):
 
         p.cmd.set_view(view_coords)  # sets general orientation
         if static_view_only:
+            print(path)
             p.cmd.save(str(path))
             # remove tmpdir
             shutil.rmtree(tmpdir)
@@ -288,13 +294,21 @@ class GIFVisualizer(VisualizerBase):
 
         for i, res in enumerate(inputs):
             if not outpaths:
-                out = (
-                    self.output_dir
-                    / res.input_docking_result.posed_ligand.compound_name
-                    / "trajectory.gif"
-                )
+                if self.static_view_only:
+                    out = (
+                        self.output_dir
+                        / res.input_docking_result.posed_ligand.compound_name
+                        / "view.pse"
+                    )
+                else:
+                    out = (
+                        self.output_dir
+                        / res.input_docking_result.posed_ligand.compound_name
+                        / "trajectory.gif"
+                    )
             else:
                 out = self.output_dir / outpaths[i]
+
             path = self.pymol_traj_viz(
                 target=self.target,
                 traj=res.traj_path,
@@ -311,15 +325,15 @@ class GIFVisualizer(VisualizerBase):
                 frames_per_ns=self.frames_per_ns,
             )
             row = {}
-            row[DockingResultCols.LIGAND_ID.value] = (
-                res.input_docking_result.posed_ligand.compound_name
-            )
-            row[DockingResultCols.TARGET_ID.value] = (
-                res.input_docking_result.input_pair.complex.target.target_name
-            )
-            row[DockingResultCols.SMILES.value] = (
-                res.input_docking_result.posed_ligand.smiles
-            )
+            row[
+                DockingResultCols.LIGAND_ID.value
+            ] = res.input_docking_result.posed_ligand.compound_name
+            row[
+                DockingResultCols.TARGET_ID.value
+            ] = res.input_docking_result.input_pair.complex.target.target_name
+            row[
+                DockingResultCols.SMILES.value
+            ] = res.input_docking_result.posed_ligand.smiles
             row[DockingResultCols.GIF_PATH.value] = path
             data.append(row)
         return data
@@ -333,7 +347,6 @@ class GIFVisualizer(VisualizerBase):
     ):
         data = []
         for i, tup in enumerate(inputs):
-
             # unpack the tuple
             traj, top = tup
             # find with the unique identifier for the ligand would be
@@ -344,7 +357,10 @@ class GIFVisualizer(VisualizerBase):
             )
             csp = CompoundStructurePair(complex=complex, ligand=complex.ligand)
             if not outpaths:
-                out = self.output_dir / csp.unique_name / "trajectory.gif"
+                if self.static_view_only:
+                    out = self.output_dir / csp.unique_name / "view.pse"
+                else:
+                    out = self.output_dir / csp.unique_name / "trajectory.gif"
             else:
                 out = self.output_dir / outpaths[i]
 

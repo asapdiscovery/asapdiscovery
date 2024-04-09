@@ -102,7 +102,7 @@ def test_html_viz_from_complex(
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
-def test_html_viz_from_multisdf(tmp_path, protein, multisdf, use_dask):
+def test_html_viz_from_multisdf(tmp_path, protein, pose, use_dask):
     html_viz = HTMLVisualizer(
         target="SARS-CoV-2-Mpro",
         output_dir=tmp_path,
@@ -110,7 +110,7 @@ def test_html_viz_from_multisdf(tmp_path, protein, multisdf, use_dask):
         align=True,
         write_to_disk=True,
     )
-    ligs = MolFileFactory(filename=multisdf).load()
+    ligs = MolFileFactory(filename=pose).load()
     cmplx = Complex.from_pdb(
         protein,
         target_kwargs={"target_name": "unknown_target"},

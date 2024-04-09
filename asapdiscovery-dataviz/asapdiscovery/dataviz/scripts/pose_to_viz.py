@@ -82,6 +82,8 @@ def main():
         color_method=args.color_method,
         target=args.target,
         align=args.align,
+        write_to_disk=True,
+        output_dir="./",
     )
     ligs = MolFileFactory(filename=pose).load()
     cmplx = Complex.from_pdb(
@@ -90,7 +92,7 @@ def main():
         ligand_kwargs={"compound_name": f"unknown_compound"},
     )
 
-    html_visualizer.visualise(inputs=[(cmplx, ligs)])
+    html_visualizer.visualize(inputs=[(cmplx, ligs)], outpaths=[out])
 
     logger.info("Done")
 
