@@ -1,6 +1,6 @@
-import click
 from typing import TYPE_CHECKING
 
+import click
 import pandas as pd
 import rich
 

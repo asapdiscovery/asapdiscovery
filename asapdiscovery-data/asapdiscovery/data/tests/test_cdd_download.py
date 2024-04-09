@@ -530,7 +530,7 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
                 "inchi": "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3",
                 "inchi_key": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
                 "name": "ASAP-Ethanol",
-                "cxsmiles": "CCO"
+                "cxsmiles": "CCO",
             }
         ],
     }
