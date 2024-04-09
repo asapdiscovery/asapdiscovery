@@ -608,10 +608,7 @@ class Trainer(BaseModel):
             self.optimizer.load_state_dict(optimizer_state)
 
         # Build early stopping
-        if self.es_config:
-            self.es = self.es_config.build()
-        else:
-            self.es = None
+        self.es = self.es_config.build()
 
         # Build data augmentation classes
         self.data_augs = [aug.build() for aug in self.data_aug_configs]
