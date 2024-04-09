@@ -303,20 +303,24 @@ class MLModelRegistry(BaseModel):
                 base_url=model_data["base_url"],
                 weights_resource=model_data["weights"]["resource"],
                 weights_sha256hash=model_data["weights"]["sha256hash"],
-                config_resource=model_data["config"]["resource"]
-                if has_config
-                else None,
-                config_sha256hash=model_data["config"]["sha256hash"]
-                if has_config
-                else None,
+                config_resource=(
+                    model_data["config"]["resource"] if has_config else None
+                ),
+                config_sha256hash=(
+                    model_data["config"]["sha256hash"] if has_config else None
+                ),
                 last_updated=model_data["last_updated"],
                 targets=set(model_data["targets"]),
-                mtenn_lower_pin=model_data["mtenn_lower_pin"]
-                if "mtenn_lower_pin" in model_data
-                else None,
-                mtenn_upper_pin=model_data["mtenn_upper_pin"]
-                if "mtenn_upper_pin" in model_data
-                else None,
+                mtenn_lower_pin=(
+                    model_data["mtenn_lower_pin"]
+                    if "mtenn_lower_pin" in model_data
+                    else None
+                ),
+                mtenn_upper_pin=(
+                    model_data["mtenn_upper_pin"]
+                    if "mtenn_upper_pin" in model_data
+                    else None
+                ),
             )
 
         return cls(models=models)

@@ -1,11 +1,14 @@
 """
 Script to download the data from CDD (defaults to COVID Moonshot data).
 """
+
 import argparse
 import logging
 import os
 
-from asapdiscovery.data.services.cdd_download import download_molecules  # noqa: E402
+from asapdiscovery.data.services.cdd.cdd_download import (  # noqa: E402
+    download_molecules,
+)
 
 
 ################################################################################

@@ -41,6 +41,7 @@ from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
 
 @click.group()
 def docking():
+    """Run docking and scoring workflows for protein-ligand complexes."""
     pass
 
 
@@ -192,6 +193,7 @@ def large_scale(
     default=StructureSelector.LEAVE_SIMILAR_OUT,
     help="The type of structure selector to use.",
 )
+@click.option("--num-poses", type=int, default=1, help="Number of poses to generate")
 @ligands
 @pdb_file
 @fragalysis_dir
@@ -211,6 +213,7 @@ def cross_docking(
     structure_selector: StructureSelector = StructureSelector.LEAVE_SIMILAR_OUT,
     use_omega: bool = False,
     omega_dense: bool = False,
+    num_poses: int = 1,
     allow_retries: bool = False,
     allow_final_clash: bool = False,
     ligands: Optional[str] = None,
@@ -247,6 +250,7 @@ def cross_docking(
             dask_failure_mode=dask_failure_mode,
             use_omega=use_omega,
             omega_dense=omega_dense,
+            num_poses=num_poses,
             allow_retries=allow_retries,
             ligands=ligands,
             pdb_file=pdb_file,

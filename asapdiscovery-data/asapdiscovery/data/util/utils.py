@@ -938,9 +938,11 @@ def parse_fluorescence_data_cdd(
         ]
     # Based on already calculated dG values so can be the same for both
     mol_df["exp_binding_affinity_kcal_mol_stderr"] = [
-        abs(affinity_upper - affinity_lower) / 4.0
-        if ((not np.isnan(affinity_lower)) and (not np.isnan(affinity_upper)))
-        else np.nan
+        (
+            abs(affinity_upper - affinity_lower) / 4.0
+            if ((not np.isnan(affinity_lower)) and (not np.isnan(affinity_upper)))
+            else np.nan
+        )
         for _, (affinity_lower, affinity_upper) in mol_df[
             [
                 "exp_binding_affinity_kcal_mol_95ci_lower",
@@ -949,9 +951,11 @@ def parse_fluorescence_data_cdd(
         ].iterrows()
     ]
     mol_df["exp_binding_affinity_kT_stderr"] = [
-        abs(affinity_upper - affinity_lower) / 4.0
-        if ((not np.isnan(affinity_lower)) and (not np.isnan(affinity_upper)))
-        else np.nan
+        (
+            abs(affinity_upper - affinity_lower) / 4.0
+            if ((not np.isnan(affinity_lower)) and (not np.isnan(affinity_upper)))
+            else np.nan
+        )
         for _, (affinity_lower, affinity_upper) in mol_df[
             [
                 "exp_binding_affinity_kT_95ci_lower",

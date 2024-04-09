@@ -407,9 +407,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
+            fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        )
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
@@ -572,6 +572,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             manifold_data,
             DockingResultCols.SMILES.value,
             DockingResultCols.LIGAND_ID.value,
+            drop_no_uuid=True,
         )
 
         if made_new_molset:
