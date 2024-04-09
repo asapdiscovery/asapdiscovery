@@ -313,8 +313,8 @@ def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEMol:
     ifs.SetConfTest(oechem.OEOmegaConfTest())
     if ifs.open(str(sdf_fn)):
         for mol in ifs.GetOEMols():
+            ifs.close()
             return mol
-        ifs.close()
     else:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
@@ -664,8 +664,8 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     ims.SetConfTest(oechem.OEOmegaConfTest())
     if ims.openstring(sdf_str):
         for mol in ims.GetOEMols():
+            ims.close()
             return mol
-        ims.close()
 
 
 def smiles_to_oemol(smiles: str) -> oechem.OEMol:
