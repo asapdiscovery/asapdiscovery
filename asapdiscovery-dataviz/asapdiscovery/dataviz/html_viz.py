@@ -162,12 +162,14 @@ class HTMLVisualizer(VisualizerBase):
 
         for i, result in enumerate(inputs):
             output_pref = result.unique_name
-            if not outpaths:
-                outpath = self.output_dir / output_pref / "pose.html"
+            if self.write_to_disk:
+                if not outpaths:
+                    outpath = self.output_dir / output_pref / "pose.html"
+                else: 
+                    outpath = self.output_dir / Path(outpaths[i])
+                outpath.parent.mkdir(parents=True, exist_ok=True)
             else:
-                outpath = self.output_dir / Path(outpaths[i])
-
-            outpath.parent.mkdir(parents=True, exist_ok=True)
+                pass # we don't need to write to disk
 
             viz = self.html_pose_viz(
                 poses=[result.posed_ligand.to_oemol()], protein=result.to_protein()
@@ -206,13 +208,16 @@ class HTMLVisualizer(VisualizerBase):
                 target_kwargs={"target_name": f"unknown_target_{i}"},
                 ligand_kwargs={"compound_name": f"unknown_compound_{i}"},
             )
-            if not outpaths:
-                output_pref = cmplx.unique_name
-                outpath = self.output_dir / output_pref / "pose.html"
-            else:
-                outpath = self.output_dir / Path(outpaths[i])
+            if self.write_to_disk:
+                if not outpaths:
+                    output_pref = cmplx.unique_name
+                    outpath = self.output_dir / output_pref / "pose.html"
+                else:
+                    outpath = self.output_dir / Path(outpaths[i])
 
-            outpath.parent.mkdir(parents=True, exist_ok=True)
+                outpath.parent.mkdir(parents=True, exist_ok=True)
+            else:
+                pass # we don't need to write to disk
 
             # make html string
             viz = self.html_pose_viz(
@@ -245,13 +250,16 @@ class HTMLVisualizer(VisualizerBase):
         data = []
         viz_data = []
         for i, cmplx in enumerate(inputs):
-            if not outpaths:
-                output_pref = cmplx.unique_name
-                outpath = self.output_dir / output_pref / "pose.html"
-            else:
-                outpath = self.output_dir / Path(outpaths[i])
+            if self.write_to_disk:
+                if not outpaths:
+                    output_pref = cmplx.unique_name
+                    outpath = self.output_dir / output_pref / "pose.html"
+                else:
+                    outpath = self.output_dir / Path(outpaths[i])
 
-            outpath.parent.mkdir(parents=True, exist_ok=True)
+                outpath.parent.mkdir(parents=True, exist_ok=True)
+            else:
+                pass
 
             # make html string
             viz = self.html_pose_viz(
@@ -288,12 +296,15 @@ class HTMLVisualizer(VisualizerBase):
         viz_data = []
         for i, inp in enumerate(inputs):
             cmplx, liglist = inp
-            if not outpaths:
-                output_pref = cmplx.unique_name
-                outpath = self.output_dir / output_pref / "pose.html"
+            if self.write_to_disk:
+                if not outpaths:
+                    output_pref = cmplx.unique_name
+                    outpath = self.output_dir / output_pref / "pose.html"
+                else:
+                    outpath = self.output_dir / Path(outpaths[i])
+                outpath.parent.mkdir(parents=True, exist_ok=True)
             else:
-                outpath = self.output_dir / Path(outpaths[i])
-            outpath.parent.mkdir(parents=True, exist_ok=True)
+                pass
 
             # make html string
             viz = self.html_pose_viz(
