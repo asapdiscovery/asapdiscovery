@@ -854,8 +854,6 @@ class DataAugType(StringEnum):
 
     # Jitter all coordinates by a fixed amount
     jitter_fixed = "jitter_fixed"
-    # Jitter coordinates based on the pose B factor
-    jitter_b = "jitter_b"
 
 
 class DataAugConfig(BaseModel):
@@ -891,13 +889,8 @@ class DataAugConfig(BaseModel):
         None, description="Key to access the coords in pose dict."
     )
 
-    # Dict key for B factors
-    jitter_b_key: str | None = Field(
-        None, description="Key to access the B factors in pose dict."
-    )
-
     def build(self):
-        from asapdiscovery.ml.data_augmentation import JitterBFactor, JitterFixed
+        from asapdiscovery.ml.data_augmentation import JitterFixed
 
         match self.aug_type:
             case DataAugType.jitter_fixed:
@@ -907,13 +900,6 @@ class DataAugConfig(BaseModel):
                     "std": "jitter_fixed_std",
                     "rand_seed": "jitter_rand_seed",
                     "dict_key": "jitter_pos_key",
-                }
-            case DataAugType.jitter_b:
-                build_class = JitterBFactor
-                kwargs = {
-                    "rand_seed": "jitter_rand_seed",
-                    "pos_dict_key": "jitter_pos_key",
-                    "b_dict_key": "jitter_b_key",
                 }
 
         # Remove any None kwargs
