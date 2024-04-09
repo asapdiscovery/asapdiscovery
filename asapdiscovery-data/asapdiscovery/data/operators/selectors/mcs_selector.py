@@ -154,17 +154,68 @@ class MCSSelector(SelectorBase):
         # clip n_select if it is larger than length of complexes to search from
         n_select = min(n_select, len(complexes))
 
+        if self.structure_based:
+            """
+            For structure based matching
+            Options for atom matching:
+            * Aromaticity
+            * HvyDegree - # heavy atoms bonded to
+            * RingMember
+            Options for bond matching:
+            * Aromaticity
+            * BondOrder
+            * RingMember
+            """
+            atomexpr = (
+                oechem.OEExprOpts_Aromaticity
+                | oechem.OEExprOpts_HvyDegree
+                | oechem.OEExprOpts_RingMember
+            )
+            bondexpr = (
+                oechem.OEExprOpts_Aromaticity
+                | oechem.OEExprOpts_BondOrder
+                | oechem.OEExprOpts_RingMember
+            )
+        else:
+            """
+            For atom based matching
+            Options for atom matching (predefined AutomorphAtoms):
+            * AtomicNumber
+            * Aromaticity
+            * RingMember
+            * HvyDegree - # heavy atoms bonded to
+            Options for bond matching:
+            * Aromaticity
+            * BondOrder
+            * RingMember
+            """
+            atomexpr = oechem.OEExprOpts_AutomorphAtoms
+            bondexpr = (
+                oechem.OEExprOpts_Aromaticity
+                | oechem.OEExprOpts_BondOrder
+                | oechem.OEExprOpts_RingMember
+            )
+
         # Set up the search pattern and MCS objects
         pairs = []
 
-        complex_ligands = [c.ligand for c in complexes]
-
         for ligand in ligands:
-            sort_idx = sort_by_mcs(
-                reference_ligand=ligand,
-                target_ligands=complex_ligands,
-                structure_matching=self.structure_based,
-            )
+            pattern_query = oechem.OEQMol(ligand.to_oemol())
+            pattern_query.BuildExpressions(atomexpr, bondexpr)
+            mcss = oechem.OEMCSSearch(pattern_query)
+            mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
+
+            sort_args = []
+            for complex in complexes:
+                complex_mol = complex.ligand.to_oemol()
+                # MCS search
+                try:
+                    mcs = next(iter(mcss.Match(complex_mol, True)))
+                    sort_args.append((mcs.NumBonds(), mcs.NumAtoms()))
+                except StopIteration:  # no match found
+                    sort_args.append((0, 0))
+            sort_args = np.asarray(sort_args)
+            sort_idx = np.lexsort(-sort_args.T)
             complexes_sorted = np.asarray(complexes)[sort_idx]
 
             for i in range(n_select):
