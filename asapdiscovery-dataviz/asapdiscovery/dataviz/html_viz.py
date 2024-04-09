@@ -188,7 +188,7 @@ class HTMLVisualizer(VisualizerBase):
                 result.input_pair.complex.target.target_name
             )
             row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
-            row[self.get_tag_for_color_method()] = viz
+            row[self.get_tag_for_color_method()] = outpath
             data.append(row)
 
         if self.write_to_disk:
@@ -233,7 +233,7 @@ class HTMLVisualizer(VisualizerBase):
             row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
             row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
             row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
-            row[self.get_tag_for_color_method()] = viz
+            row[self.get_tag_for_color_method()] = outpath
             data.append(row)
 
         if self.write_to_disk:
@@ -275,7 +275,7 @@ class HTMLVisualizer(VisualizerBase):
             row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
             row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
             row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
-            row[self.get_tag_for_color_method()] = viz
+            row[self.get_tag_for_color_method()] = outpath
             data.append(row)
 
         if self.write_to_disk:
@@ -323,7 +323,7 @@ class HTMLVisualizer(VisualizerBase):
                 row[DockingResultCols.SMILES.value] = "MANY"
             else:
                 row[DockingResultCols.SMILES.value] = liglist[0].smiles
-            row[self.get_tag_for_color_method()] = viz
+            row[self.get_tag_for_color_method()] = outpath
             data.append(row)
 
         if self.write_to_disk:

@@ -27,7 +27,7 @@ from asapdiscovery.data.services.services_config import (
 from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
-from asapdiscovery.dataviz.html_viz import ColourMethod, HTMLVisualizer
+from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
 from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
@@ -330,7 +330,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     logger.info("Running HTML visualiser for docked poses")
     html_ouptut_dir = output_dir / "poses"
     html_visualizer = HTMLVisualizer(
-        colour_method=ColourMethod.subpockets,
+        color_method=ColorMethod.subpockets,
         target=inputs.target,
         output_dir=html_ouptut_dir,
     )
@@ -366,7 +366,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         logger.info("Running fitness HTML visualiser")
         html_fitness_output_dir = output_dir / "fitness"
         html_fitness_visualizer = HTMLVisualizer(
-            colour_method=ColourMethod.fitness,
+            color_method=ColorMethod.fitness,
             target=inputs.target,
             output_dir=html_fitness_output_dir,
         )
