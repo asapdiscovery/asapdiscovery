@@ -18,10 +18,25 @@ def test_chemgauss_scorer(results_multi, use_dask):
     assert scores[0].score < 0.0
 
 
-def test_chemgauss_scorer_df(results_multi):
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_chemgauss_scorer_df(results_multi, use_dask):
     scorer = ChemGauss4Scorer()
-    scores = scorer.score(results_multi, return_df=True)
+    scores = scorer.score(results_multi, return_df=True, use_dask=use_dask)
     assert len(scores) == 2
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_chemgauss_scorer_complex(complex_simple, use_dask):
+    scorer = ChemGauss4Scorer()
+    scores = scorer.score([complex_simple], return_df=True, use_dask=use_dask)
+    assert len(scores) == 1
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_chemgauss_scorer_path(pdb_simple, use_dask):
+    scorer = ChemGauss4Scorer()
+    scores = scorer.score([pdb_simple], return_df=True, use_dask=use_dask)
+    assert len(scores) == 1
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
@@ -33,9 +48,20 @@ def test_gat_scorer(results_multi, use_dask):
     assert scores[0].score > 0.0
 
 
-@pytest.mark.xfail(
-    reason="Schnet models returning strange values currently see issue #838"
-)
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_gat_scorer_smiles(use_dask):
+    scorer = GATScorer.from_latest_by_target("SARS-CoV-2-Mpro")
+    scores = scorer.score(["CCCC"], use_dask=use_dask)
+    assert scores[0].score > 0.0
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_gat_scorer_ligand(ligand, use_dask):
+    scorer = GATScorer.from_latest_by_target("SARS-CoV-2-Mpro")
+    scores = scorer.score([ligand], use_dask=use_dask)
+    assert scores[0].score > 0.0
+
+
 @pytest.mark.parametrize("use_dask", [True, False])
 def test_schnet_scorer(results_multi, use_dask):
     scorer = SchnetScorer.from_latest_by_target("SARS-CoV-2-Mpro")

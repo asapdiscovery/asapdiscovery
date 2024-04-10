@@ -1,6 +1,6 @@
 import pytest
 from asapdiscovery.data.backend.openeye import oechem
-from asapdiscovery.data.schema.complex import PreppedComplex
+from asapdiscovery.data.schema.complex import PreppedComplex, Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.docking import DockingInputMultiStructure, DockingInputPair
@@ -71,6 +71,20 @@ def results_simple():
             fetch_test_file("docking_results_simple.json")
         )
     ]
+
+
+@pytest.fixture()
+def complex_simple():
+    return Complex.from_pdb(
+        fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb"),
+        ligand_kwargs={"compound_name": "test"},
+        target_kwargs={"target_name": "test", "target_hash": "mock_hash"},
+    )
+
+
+@pytest.fixture()
+def pdb_simple():
+    return fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
 
 
 @pytest.fixture()
