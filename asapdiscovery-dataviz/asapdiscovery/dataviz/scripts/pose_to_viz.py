@@ -89,7 +89,7 @@ def main():
     cmplx = Complex.from_pdb(
         protein,
         target_kwargs={"target_name": "unknown_target"},
-        ligand_kwargs={"compound_name": f"unknown_compound"},
+        ligand_kwargs={"compound_name": "unknown_compound"},
     )
 
     html_visualizer.visualize(inputs=[(cmplx, ligs)], outpaths=[out])

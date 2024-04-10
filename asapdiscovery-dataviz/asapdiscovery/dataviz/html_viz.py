@@ -4,7 +4,7 @@ import tempfile
 import warnings
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 from warnings import warn
 
 import logomaker
@@ -300,7 +300,7 @@ class HTMLVisualizer(VisualizerBase):
 
             # make html string
             viz = self.html_pose_viz(
-                poses=[l.to_oemol() for l in liglist], protein=cmplx.target.to_oemol()
+                poses=[lig.to_oemol() for lig in liglist], protein=cmplx.target.to_oemol()
             )
             viz_data.append(viz)
             # write to disk

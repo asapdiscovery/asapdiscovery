@@ -92,7 +92,7 @@ def test_html_viz_from_complex(
             Complex.from_pdb(
                 protein,
                 target_kwargs={"target_name": "unknown_target"},
-                ligand_kwargs={"compound_name": f"unknown_compound"},
+                ligand_kwargs={"compound_name": "unknown_compound"},
             )
         ],
         use_dask=use_dask,
@@ -114,7 +114,7 @@ def test_html_viz_from_multisdf(tmp_path, protein, pose, use_dask):
     cmplx = Complex.from_pdb(
         protein,
         target_kwargs={"target_name": "unknown_target"},
-        ligand_kwargs={"compound_name": f"unknown_compound"},
+        ligand_kwargs={"compound_name": "unknown_compound"},
     )
     vizs = html_viz.visualize(inputs=[(cmplx, ligs)], use_dask=use_dask)
     assert len(vizs) == 1
