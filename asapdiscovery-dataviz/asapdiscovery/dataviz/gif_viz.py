@@ -1,8 +1,8 @@
 import logging
 import shutil
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, Optional, Union
-from collections.abc import Iterable
 from warnings import warn
 
 from asapdiscovery.data.metadata.resources import master_structures
