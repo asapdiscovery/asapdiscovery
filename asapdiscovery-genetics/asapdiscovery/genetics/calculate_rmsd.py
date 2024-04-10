@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 from asapdiscovery.data.backend.openeye import load_openeye_pdb, save_openeye_pdb

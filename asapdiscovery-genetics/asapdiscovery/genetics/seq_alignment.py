@@ -173,10 +173,10 @@ class Alignment:
         text = [i for s in list(seqs) for i in s]  # Al units joind on same list
 
         # Shorten the description for display (string between the last [*])
-        import re
-
-        pattern = r"\[(.*?)\]"
-        matches = lambda x: re.findall(pattern, x)[-1]
+        def matches(x):
+            import re
+            pattern = r"\[(.*?)\]"
+            return re.findall(pattern, x)[-1]
         desc = [f"{matches(rec.description)} ({rec.id})" for rec in aln]
         print(desc)
 

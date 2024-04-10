@@ -350,10 +350,12 @@ def pdb_to_seq(pdb_input=Path, chain="A", fasta_out=None):
 
     Parameters
     ----------
-    pdb_input : _type_, optional
-        _description_, by default Path
-    fasta_out : _type_, optional
-        _description_, by default None
+    pdb_input : Path, optional
+        Path to the input pdb file, by default Path
+    chaint : str, optional
+            Chain that will be extracted from the PDB, by default "A"
+    fasta_out : str, optional
+        Path to optionally save the output fasta sequence, by default None
     """
     from Bio import SeqIO
     from Bio.PDB import PDBParser

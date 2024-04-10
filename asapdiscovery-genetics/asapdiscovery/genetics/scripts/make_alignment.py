@@ -2,7 +2,7 @@ import argparse
 import shlex
 from pathlib import Path
 
-from asapdiscovery.genetics.blast import PDBEntry, get_blast_seqs, pdb_to_seq
+from asapdiscovery.genetics.blast import PDBEntry, get_blast_seqs
 from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
 
 parser = argparse.ArgumentParser(
