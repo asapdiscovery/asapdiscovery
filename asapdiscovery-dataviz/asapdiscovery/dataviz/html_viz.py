@@ -321,7 +321,8 @@ class HTMLVisualizer(VisualizerBase):
 
             # make html string
             viz = self.html_pose_viz(
-                poses=[lig.to_oemol() for lig in liglist], protein=cmplx.target.to_oemol()
+                poses=[lig.to_oemol() for lig in liglist],
+                protein=cmplx.target.to_oemol(),
             )
             viz_data.append(viz)
             # write to disk
