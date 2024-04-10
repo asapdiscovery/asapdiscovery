@@ -175,8 +175,10 @@ class Alignment:
         # Shorten the description for display (string between the last [*])
         def matches(x):
             import re
+
             pattern = r"\[(.*?)\]"
             return re.findall(pattern, x)[-1]
+
         desc = [f"{matches(rec.description)} ({rec.id})" for rec in aln]
         print(desc)
 
