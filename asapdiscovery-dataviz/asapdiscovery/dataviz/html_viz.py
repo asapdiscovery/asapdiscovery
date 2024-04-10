@@ -78,7 +78,7 @@ class HTMLVisualizer(VisualizerBase):
         Output directory to write HTML files to
     align : bool
         Whether to align the poses to the reference protein
-    
+
     """
 
     target: TargetTags = Field(..., description="Target to visualize poses for")
