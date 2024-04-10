@@ -58,6 +58,27 @@ class ColorMethod(str, Enum):
 class HTMLVisualizer(VisualizerBase):
     """
     Class for generating HTML visualizations of poses.
+
+    The main method is `visualize`, which takes a list of inputs and returns a list of HTML strings or writes them to disk, optionally a list of output paths can
+    be provided.
+
+    The `visualize` is heavily overloaded and can take a list of `DockingResult`, `Path`, `Complex`, or a tuple of `Complex` and a list of `Ligand`.
+
+    Parameters
+    ----------
+    target : TargetTags
+        Target to visualize poses for
+    color_method : ColorMethod
+        Protein surface coloring method. Can be either by `subpockets` or `fitness`
+    debug : bool
+        Whether to run in debug mode
+    write_to_disk : bool
+        Whether to write the HTML files to disk or return them as strings
+    output_dir : Path
+        Output directory to write HTML files to
+    align : bool
+        Whether to align the poses to the reference protein
+    
     """
 
     target: TargetTags = Field(..., description="Target to visualize poses for")

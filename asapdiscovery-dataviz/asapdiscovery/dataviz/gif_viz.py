@@ -26,6 +26,40 @@ logger = logging.getLogger(__name__)
 class GIFVisualizer(VisualizerBase):
     """
     Class for generating GIF visualizations of MD simulations.
+
+    The GIFVisualizer class is used to generate GIF visualizations of MD simulations.
+
+    The main method is `visualize`, which can accept a list of inputs and an optional list of output paths.
+    The `visualize` method is overloaded to accept either a list of SimulationResult objects or a list of tuples of paths to trajectory and topology files.
+    Optionally if using the `Path` overload, the trajectory member of the tuple can be `None` if generating a static view (static_view_only=True).
+
+
+    Parameters
+    ----------
+    target : TargetTags
+        Target to visualize poses for
+    debug : bool
+        Whether to run in debug mode
+    output_dir : Path
+        Output directory to write HTML files to
+    frames_per_ns : PositiveInt
+        Number of frames per ns
+    pse : bool
+        Whether to generate PSE files
+    pse_share : bool
+        Whether to generate PSE files with shared view
+    smooth : PositiveInt
+        How many frames over which to smooth the trajectory
+    contacts : bool
+        Whether to generate contact maps
+    static_view_only : bool
+        Whether to only generate static PSE for the trajectory
+    start : PositiveInt
+        Start frame - if not defined, will default to last 10% of default trajectory settings
+    stop : int
+        Stop frame
+    interval : PositiveInt
+        Interval between frames
     """
 
     target: TargetTags = Field(..., description="Target to visualize poses for")
