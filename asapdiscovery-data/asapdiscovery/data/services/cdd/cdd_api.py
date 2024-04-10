@@ -42,6 +42,7 @@ class CDDAPI(_BaseWebAPI):
         Notes:
             CDD only allows for a single structure searches via smiles, multiple molecules can be downloaded when using
             names or compound_ids.
+            If molecule ids are missing in CDD we only return the subset that can be found
 
         Args:
             smiles: The smiles of the molecule to search for.
@@ -73,6 +74,22 @@ class CDDAPI(_BaseWebAPI):
                 url=self.api_url + "molecules/", json=mol_data
             ).content.decode()
         )
+        # handle missing molecules, originally found when searching moonshot data
+        if "error" in result:
+            import re
+
+            # extract the list of missing molecule ids
+            missing_mols = []
+            for match in re.finditer("[0-9]+", result["error"]):
+                missing_mols.append(int(match.group()))
+            to_find = [mol for mol in compound_ids if mol not in missing_mols]
+            mol_data["molecules"] = to_find
+            # run the search again
+            result = json.loads(
+                self._session.get(
+                    url=self.api_url + "molecules/", json=mol_data
+                ).content.decode()
+            )
         if "async" in mol_data:
             result = self.get_async_export(job_id=result["id"])
         if result["count"] == 0:
@@ -225,11 +242,17 @@ class CDDAPI(_BaseWebAPI):
         molecule_data = self.get_molecules(compound_ids=list(compound_ids))
         compounds_by_id = {molecule["id"]: molecule for molecule in molecule_data}
         # loop over the list again and update the molecule info
+        final_data = []
         for compound_data in ic50_data:
-            mol_data = compounds_by_id[compound_data["name"]]
-            compound_data["Smiles"] = mol_data["smiles"]
-            compound_data["Inchi"] = mol_data["inchi"]
-            compound_data["Inchi Key"] = mol_data["inchi_key"]
-            compound_data["Molecule Name"] = mol_data["name"]
+            try:
+                mol_data = compounds_by_id[compound_data["name"]]
+                compound_data["Smiles"] = mol_data["smiles"]
+                compound_data["Inchi"] = mol_data["inchi"]
+                compound_data["Inchi Key"] = mol_data["inchi_key"]
+                compound_data["Molecule Name"] = mol_data["name"]
+                compound_data["CXSmiles"] = mol_data["cxsmiles"]
+                final_data.append(compound_data)
+            except KeyError:
+                continue
 
-        return pandas.DataFrame(ic50_data)
+        return pandas.DataFrame(final_data)
