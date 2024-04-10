@@ -143,7 +143,7 @@ def save_alignment_pymol(
             p.cmd.load(pdb, object=pname)
             # PDBs should be aligned but in case they are not
             p.cmd.align(pname, "ref_protein")
-            p.cmd.color("black", "ref_protein")
+    p.cmd.color("black", "ref_protein")
 
     # set visualization
     p.cmd.set("bg_rgb", "white")
@@ -152,6 +152,15 @@ def save_alignment_pymol(
     p.cmd.show("cartoon")
     p.cmd.set("transparency", 0.8)
     p.cmd.set("transparency", 0.3, "ref_protein")
+
+    # Color ligand and binding site 
+    p.cmd.select("ligand", "resn UNK or resn LIG")
+    p.cmd.select(
+        "binding_site", "name CA within 7 of resn UNK or name CA within 7 resn LIG"
+    )
+    p.cmd.show("sticks", "ligand")
+    p.cmd.color("red", "ligand")
+    p.cmd.color("gray", "binding_site")
 
     p.cmd.save(session_save)
     return
