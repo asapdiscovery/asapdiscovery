@@ -3,13 +3,15 @@ import logging
 from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Optional, Union
-
+import multimethod
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.backend.openeye import oedocking
 from asapdiscovery.data.backend.plip import compute_fint_score
 from asapdiscovery.data.schema.ligand import LigandIdentifiers
 from asapdiscovery.data.schema.target import TargetIdentifiers
+from asapdiscovery.data.schema.complex import Complex
+
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import (
     BackendType,
@@ -108,6 +110,28 @@ class Score(BaseModel):
             units=units,
         )
 
+    @classmethod
+    def from_score_and_complex(
+        cls,
+        score: float,
+        score_type: ScoreType,
+        units: ScoreUnits,
+        complex: Complex,
+    ):
+        return cls(
+            score_type=score_type,
+            score=score,
+            compound_name=complex.ligand.compound_name,
+            smiles=complex.ligand.smiles,
+            ligand_inchikey=complex.ligand.inchikey,
+            ligand_ids=complex.ligand.ids,
+            target_name=complex.target.target_name,
+            target_ids=complex.target.ids,
+            complex_ligand_smiles=complex.ligand.smiles,
+            probability=None,
+            units=units,
+        )
+
     @staticmethod
     def _combine_and_pivot_scores_df(dfs: list[pd.DataFrame]) -> pd.DataFrame:
         """ """
@@ -132,7 +156,8 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]: ...
+    def _score() -> list[DockingResult]:
+        ...
 
     def score(
         self,
@@ -198,7 +223,11 @@ class ChemGauss4Scorer(ScorerBase):
 
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
-    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+    def _score(self, inputs) -> list[Score]:
+        return self._dispatch(inputs)
+
+    @multimethod
+    def _dispatch(self, inputs: list[DockingResult]):
         results = []
         for inp in inputs:
             posed_mol = inp.posed_ligand.to_oemol()
@@ -212,6 +241,35 @@ class ChemGauss4Scorer(ScorerBase):
                 )
             )
         return results
+
+    @_dispatch.register
+    def _dispatch(self, inputs: list[Complex]):
+        results = []
+        for inp in inputs:
+            posed_mol = inp.ligand.to_oemol()
+            pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
+            du = inp.target.to_oedu()
+            pose_scorer.Initialize(du)
+            chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
+            results.append(
+                Score.from_score_and_complex(
+                    chemgauss_score, self.score_type, self.units, inp
+                )
+            )
+        return results
+
+    @_dispatch.register
+    def _dispatch(self, inputs: list[Path]):
+        # assuming reading PDB files from disk
+        complexes = [
+            Complex.from_pdb_file(
+                p,
+                ligand_kwargs={"compound_name": f"unknown_compound_{i}"},
+                target_kwargs={"target_name", f"unknown_target_{i}"},
+            )
+            for i, p in enumerate(inputs)
+        ]
+        return self._dispatch(inputs=complexes)
 
 
 class FINTScorer(ScorerBase):
@@ -235,6 +293,10 @@ class FINTScorer(ScorerBase):
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(self, inputs: list[DockingResult]) -> list[Score]:
+        return self._dispatch(inputs)
+
+    @multimethod
+    def _dispatch(self, inputs: list[DockingResult]) -> list[Score]:
         results = []
         for inp in inputs:
             _, fint_score = compute_fint_score(
@@ -247,7 +309,35 @@ class FINTScorer(ScorerBase):
             )
         return results
 
+    @_dispatch.register
+    def _dispatch(self, inputs: list[Complex]):
+        results = []
+        for inp in inputs:
+            _, fint_score = compute_fint_score(
+                inp.target.to_oemol(), inp.to_oemol(), self.target
+            )
+            results.append(
+                Score.from_score_and_complex(
+                    fint_score, self.score_type, self.units, inp
+                )
+            )
+        return results
 
+    @_dispatch.register
+    def _dispatch(self, inputs: list[Path]):
+        # assuming reading PDB files from disk
+        complexes = [
+            Complex.from_pdb_file(
+                p,
+                ligand_kwargs={"compound_name": f"unknown_compound_{i}"},
+                target_kwargs={"target_name", f"unknown_target_{i}"},
+            )
+            for i, p in enumerate(inputs)
+        ]
+        return self._dispatch(inputs=complexes)
+
+
+# keep track of all the ml scorers
 _ml_scorer_classes_meta = []
 
 
