@@ -4,7 +4,7 @@ import tempfile
 import warnings
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from warnings import warn
 
 import logomaker
@@ -148,7 +148,7 @@ class HTMLVisualizer(VisualizerBase):
         **kwargs,
     ) -> list[dict[str, str]]:
         """
-        Visualize a list of docking results.
+        Visualize a list of docking results. Calls the `_dispatch` method to handle the different input types.
         """
         if outpaths:
             if len(outpaths) != len(inputs):
@@ -169,7 +169,22 @@ class HTMLVisualizer(VisualizerBase):
         inputs: list[DockingResult],
         outpaths: Optional[list[Path]] = None,
         **kwargs,
-    ):
+    ) -> Union[list[dict[str, str]], list[str]]:
+        """
+        Implementation for a list of DockingResult objects.
+
+        Parameters
+        ----------
+        inputs : list[DockingResult]
+            List of DockingResult objects
+        outpaths : Optional[list[Path]], optional
+            List of output paths, by default None
+
+        Returns
+        -------
+        Union[list[dict[str, str]], list[str]]
+            List of metadata dictionaries or list of HTML strings if write_to_disk is False
+        """
         data = []
         viz_data = []
 
@@ -212,7 +227,23 @@ class HTMLVisualizer(VisualizerBase):
     @_dispatch.register
     def _dispatch(
         self, inputs: list[Path], outpaths: Optional[list[Path]] = None, **kwargs
-    ):
+    ) -> Union[list[dict[str, str]], list[str]]:
+        """
+        Implementation for a list of Path objects. Assumes that the Path objects are PDB files.
+        in turn calls the Complex version of the dispatch.
+
+        Parameters
+        ----------
+        inputs : list[Path]
+            List of Path objects
+        outpaths : Optional[list[Path]], optional
+            List of output paths, by default None
+
+        Returns
+        -------
+        Union[list[dict[str, str]], list[str]]
+            List of metadata dictionaries or list of HTML strings if write_to_disk is False
+        """
         complexes = [
             Complex.from_pdb(
                 p,
@@ -227,7 +258,22 @@ class HTMLVisualizer(VisualizerBase):
     @_dispatch.register
     def _dispatch(
         self, inputs: list[Complex], outpaths: Optional[list[Path]] = None, **kwargs
-    ):
+    ) -> Union[list[dict[str, str]], list[str]]:
+        """
+        Implementation for a list of Complex objects.
+
+        Parameters
+        ----------
+        inputs : list[Complex]
+            List of Complex objects
+        outpaths : Optional[list[Path]], optional
+            List of output paths, by default None
+
+        Returns
+        -------
+        Union[list[dict[str, str]], list[str]]
+            List of metadata dictionaries or list of HTML strings if write_to_disk is False
+        """
         data = []
         viz_data = []
         for i, cmplx in enumerate(inputs):
@@ -272,7 +318,23 @@ class HTMLVisualizer(VisualizerBase):
         inputs: list[tuple[Complex, list[Ligand]]],
         outpaths: Optional[list[Path]] = None,
         **kwargs,
-    ):
+    ) -> Union[list[dict[str, str]], list[str]]:
+        """
+        Implementation for a list of tuples of Complex and list of Ligand objects. Each ligand in the list is visualized, making this perfect for
+        visualizing multiple poses of a single ligand, or multiple ligands in a single complex.
+
+        Parameters
+        ----------
+        inputs : list[tuple[Complex, list[Ligand]]]
+            List of tuples of Complex and list of Ligand objects
+        outpaths : Optional[list[Path]], optional
+            List of output paths, by default None
+
+        Returns
+        -------
+        Union[list[dict[str, str]], list[str]]
+            List of metadata dictionaries or list of HTML strings if write_to_disk is False
+        """
         data = []
         viz_data = []
         for i, inp in enumerate(inputs):
@@ -317,11 +379,22 @@ class HTMLVisualizer(VisualizerBase):
 
     def html_pose_viz(
         self, poses: list[oechem.OEMolBase], protein: oechem.OEMolBase, **kwargs
-    ):
+    ) -> str:
         """
-        Generate HTML visualization of poses.
-        """
+        Generate HTML visualization of poses, called by the `_dispatch` method.
 
+        Parameters
+        ----------
+        poses : list[oechem.OEMolBase]
+            List of poses to visualize
+        protein : oechem.OEMolBase
+            Protein to visualize
+
+        Returns
+        -------
+        str
+            HTML string
+        """
         protein = openeye_perceive_residues(protein, preserve_all=True)
         if self.target == "EV-A71-Capsid" or self.target == "EV-D68-Capsid":
             # because capsid has an encapsulated ligand, we need to Z-clip.
@@ -769,7 +842,7 @@ class HTMLVisualizer(VisualizerBase):
         return logoplot_base64s_dict
 
     @staticmethod
-    def write_html(html, path):
+    def write_html(html, path) -> None:
         """
         Write HTML to a file.
 
