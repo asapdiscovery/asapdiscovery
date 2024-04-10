@@ -152,7 +152,6 @@ def run(
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from asapdiscovery.data.readers.molfile import MolFileFactory
     from asapdiscovery.data.schema.complex import PreppedComplex
-
     from rich import pretty
     from rich.padding import Padding
 
@@ -188,16 +187,20 @@ def run(
     console.print(message)
 
     if receptor_complex is None and receptor_folder is not None:
-        ref_select_status = console.status(f"Selecting best reference complex form {receptor_folder}")
+        ref_select_status = console.status(
+            f"Selecting best reference complex form {receptor_folder}"
+        )
         ref_select_status.start()
 
+        from asapdiscovery.alchemy.utils import (
+            get_similarity,
+            select_reference_for_compounds,
+        )
         from asapdiscovery.modeling.protein_prep import ProteinPrepperBase
-        from asapdiscovery.alchemy.utils import select_reference_for_compounds, get_similarity
 
         reference_complex = ProteinPrepperBase.load_cache(cache_dir=receptor_folder)
         ref_complex, largest_ligand = select_reference_for_compounds(
-            ligands=asap_ligands,
-            references=reference_complex
+            ligands=asap_ligands, references=reference_complex
         )
         ref_select_status.stop()
         # check the similarity of the ligands
@@ -205,7 +208,7 @@ def run(
         message = Padding(
             f"Selected {ref_complex.target.target_name} as the best reference structure, with similarity: {sim} to the"
             f"largest ligand in the target set.",
-            (1, 0, 1, 0)
+            (1, 0, 1, 0),
         )
         console.print(message)
 

@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from alchemiscale import Scope, ScopedKey
@@ -14,8 +14,8 @@ from .schema.fec import (
 from .schema.forcefield import ForceFieldParams
 
 if TYPE_CHECKING:
-    from asapdiscovery.data.schema.ligand import Ligand
     from asapdiscovery.data.schema.complex import PreppedComplex
+    from asapdiscovery.data.schema.ligand import Ligand
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
@@ -316,7 +316,9 @@ class AlchemiscaleHelper:
         return canceled_tasks
 
 
-def select_reference_for_compounds(ligands: list["Ligand"], references: list["PreppedComplex"]) -> tuple["PreppedComplex", "Ligand"]:
+def select_reference_for_compounds(
+    ligands: list["Ligand"], references: list["PreppedComplex"]
+) -> tuple["PreppedComplex", "Ligand"]:
     """
     From a collection of ligands and a list of `Complex`es, return the `Complex` that is the most similar to
     the largest of the query ligands and should be used to constrain the generated poses.
@@ -331,14 +333,15 @@ def select_reference_for_compounds(ligands: list["Ligand"], references: list["Pr
     from asapdiscovery.data.operators.selectors.mcs_selector import sort_by_mcs
 
     # sort the ligands by the number of atoms
-    compounds_by_size = [(ligand.to_rdkit().GetNumAtoms(), ligand) for ligand in ligands]
+    compounds_by_size = [
+        (ligand.to_rdkit().GetNumAtoms(), ligand) for ligand in ligands
+    ]
     compounds_by_size.sort(key=lambda x: x[0], reverse=True)
 
     # find that largest ligand's closest reference
     ref_ligands = [ref.ligand for ref in references]
     sorted_index = sort_by_mcs(
-        reference_ligand=compounds_by_size[0],
-        target_ligands=ref_ligands
+        reference_ligand=compounds_by_size[0], target_ligands=ref_ligands
     )
 
     sorted_complex = np.asarray(references)[sorted_index]
@@ -351,6 +354,7 @@ def get_similarity(ligand_a: "Ligand", ligand_b: "Ligand") -> float:
     """
     from rdkit import DataStructs
     from rdkit.Chem import AllChem
+
     radius = 3  # ECFP6 because of diameter instead of radius
     simi = DataStructs.FingerprintSimilarity(
         AllChem.GetMorganFingerprintAsBitVect(ligand_a.to_rdkit(), radius),
