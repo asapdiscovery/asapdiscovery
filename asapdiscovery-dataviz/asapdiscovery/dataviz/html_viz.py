@@ -78,7 +78,7 @@ class HTMLVisualizer(VisualizerBase):
         Output directory to write HTML files to
     align : bool
         Whether to align the poses to the reference protein
-    
+
     """
 
     target: TargetTags = Field(..., description="Target to visualize poses for")
@@ -182,7 +182,7 @@ class HTMLVisualizer(VisualizerBase):
                     outpath = self.output_dir / Path(outpaths[i])
                 outpath.parent.mkdir(parents=True, exist_ok=True)
             else:
-                pass  # we don't need to write to disk
+                outpath = None  # we don't need to write to disk
 
             viz = self.html_pose_viz(
                 poses=[result.posed_ligand.to_oemol()], protein=result.to_protein()
@@ -213,48 +213,16 @@ class HTMLVisualizer(VisualizerBase):
     def _dispatch(
         self, inputs: list[Path], outpaths: Optional[list[Path]] = None, **kwargs
     ):
-        data = []
-        viz_data = []
-        for i, path in enumerate(inputs):
-            cmplx = Complex.from_pdb(
-                path,
-                target_kwargs={"target_name": f"unknown_target_{i}"},
-                ligand_kwargs={"compound_name": f"unknown_compound_{i}"},
+        complexes = [
+            Complex.from_pdb(
+                p,
+                target_kwargs={"target_name": f"{p.stem}_target"},
+                ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
             )
-            if self.write_to_disk:
-                if not outpaths:
-                    output_pref = cmplx.unique_name
-                    outpath = self.output_dir / output_pref / "pose.html"
-                else:
-                    outpath = self.output_dir / Path(outpaths[i])
-
-                outpath.parent.mkdir(parents=True, exist_ok=True)
-            else:
-                pass  # we don't need to write to disk
-
-            # make html string
-            viz = self.html_pose_viz(
-                poses=[cmplx.ligand.to_oemol()], protein=cmplx.target.to_oemol()
-            )
-            viz_data.append(viz)
-            # write to disk
-            if self.write_to_disk:
-                self.write_html(viz, outpath)
-
-            # make dataframe with ligand name, target name, and path to HTML
-            row = {}
-            row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
-            row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
-            row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
-            row[self.get_tag_for_color_method()] = outpath
-            data.append(row)
-
-        if self.write_to_disk:
-            # if we are writing to disk, return the metadata
-            return data
-        else:
-            # if we are not writing to disk, return the HTML strings
-            return viz_data
+            for i, p in enumerate(inputs)
+        ]
+        # dispatch to complex version
+        return self._dispatch(complexes, outpaths=outpaths, **kwargs)
 
     @_dispatch.register
     def _dispatch(
@@ -272,7 +240,7 @@ class HTMLVisualizer(VisualizerBase):
 
                 outpath.parent.mkdir(parents=True, exist_ok=True)
             else:
-                pass
+                outpath = None
 
             # make html string
             viz = self.html_pose_viz(
@@ -317,7 +285,7 @@ class HTMLVisualizer(VisualizerBase):
                     outpath = self.output_dir / Path(outpaths[i])
                 outpath.parent.mkdir(parents=True, exist_ok=True)
             else:
-                pass
+                outpath = None
 
             # make html string
             viz = self.html_pose_viz(

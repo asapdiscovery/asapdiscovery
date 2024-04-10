@@ -390,8 +390,8 @@ class GIFVisualizer(VisualizerBase):
             # find with the unique identifier for the ligand would be
             complex = Complex.from_pdb(
                 top,
-                target_kwargs={"target_name": f"unknown_target_{i}"},
-                ligand_kwargs={"compound_name": f"unknown_ligand_{i}"},
+                target_kwargs={"target_name": f"{top.stem}_target"},
+                ligand_kwargs={"compound_name": f"{top.stem}_ligand"},
             )
             csp = CompoundStructurePair(complex=complex, ligand=complex.ligand)
             if not outpaths:
