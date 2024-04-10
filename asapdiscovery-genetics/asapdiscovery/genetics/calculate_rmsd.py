@@ -152,7 +152,7 @@ def save_alignment_pymol(
     p.cmd.set("transparency", 0.8)
     p.cmd.set("transparency", 0.3, "ref_protein")
 
-    # Color ligand and binding site 
+    # Color ligand and binding site
     p.cmd.select("ligand", "resn UNK or resn LIG")
     p.cmd.select(
         "binding_site", "name CA within 7 of resn UNK or name CA within 7 resn LIG"

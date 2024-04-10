@@ -146,9 +146,7 @@ def main():
         # The following can be added to a shell file for running ColabFold
         file = open(results_folder / f"{file_prefix}_command.txt", "w")
         file.write("# Copy template PDB for ColabFold use\n")
-        file.write(
-            f'cp {shlex.quote(record.pdb_file)} "$template_path/0001.pdb"'
-        )
+        file.write(f'cp {shlex.quote(record.pdb_file)} "$template_path/0001.pdb"')
         file.close()
 
     return
