@@ -2,16 +2,15 @@ import abc
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import ClassVar, Optional, Union, Any
-from multimethod import multimethod
+from typing import Any, ClassVar, Optional, Union
+
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.backend.openeye import oedocking, oespruce, oechem
+from asapdiscovery.data.backend.openeye import oechem, oedocking, oespruce
 from asapdiscovery.data.backend.plip import compute_fint_score
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.schema.target import TargetIdentifiers
-from asapdiscovery.data.schema.complex import Complex
-
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import (
     BackendType,
@@ -24,6 +23,7 @@ from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.genetics.fitness import target_has_fitness_data
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from mtenn.config import ModelType
+from multimethod import multimethod
 from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
@@ -200,8 +200,7 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]:
-        ...
+    def _score() -> list[DockingResult]: ...
 
     def score(
         self,
