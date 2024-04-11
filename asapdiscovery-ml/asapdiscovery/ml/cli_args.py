@@ -1269,7 +1269,9 @@ def data_aug(func):
             "they will be applied in the order they are specified on the command line. "
             "Each individual aug config should be specified as a comma separated list "
             "of <key>:<value> pairs, which will be passed directly to the "
-            "DataAugConfig class."
+            "DataAugConfig class. For example, to add positional jittering that draws "
+            "noise from a fixed Gaussian with a std of 0.05, you would pass "
+            "--data-aug aug_type:jitter_fixed,jitter_fixed_std:0.05."
         ),
     )(func)
 
