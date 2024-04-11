@@ -1,5 +1,6 @@
 import abc
 import logging
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
@@ -396,9 +397,9 @@ class LigandTransferProteinPrepper(ProteinPrepper):
 
             # For each reference complex, align and transfer the ligand to the prepped protein
             for complex in self.reference_complexes:
-                prot, _ = superpose_molecule(
+                aligned, _ = superpose_molecule(
                     complex.to_combined_oemol(),
-                    prot,
+                    spruced,
                     self.ref_chain,
                     self.active_site_chain,
                 )
@@ -408,11 +409,25 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                 from asapdiscovery.modeling.modeling import make_du_from_new_lig
 
                 success, du = make_du_from_new_lig(
-                    spruced,
+                    aligned,
                     ligand,
                 )
                 if not success:
-                    raise ValueError("Failed to make design unit.")
+                    warnings.warn(
+                        f"Failed to make design unit for target {target.target_name} and complex {complex.unique_name}."
+                    )
+                    continue
+
+                from asapdiscovery.data.backend.openeye import oedocking
+
+                success = oedocking.OEMakeReceptor(du)
+
+                if not success:
+                    warnings.warn(
+                        f"Made design unit, but failed to make receptor for target {target.target_name} "
+                        f"and complex {complex.unique_name}."
+                    )
+                    continue
 
                 prepped_target = PreppedTarget.from_oedu(
                     du,
@@ -424,7 +439,7 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                 # we need the ligand at the new translated coordinates
                 translated_oemol, _, _ = split_openeye_design_unit(du=du)
                 translated_lig = Ligand.from_oemol(
-                    translated_oemol, **ligand.dict(exclude={"data"})
+                    translated_oemol, **complex.ligand.dict(exclude={"data"})
                 )
                 pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
                 prepped_complexes.append(pc)
