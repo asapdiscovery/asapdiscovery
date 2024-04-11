@@ -905,10 +905,25 @@ def get_SD_data(mol: oechem.OEMolBase) -> dict[str, list]:
 
     # If the object is an OEMol, we have to pull from the conformers, because even if there is only one conformer
     # the data is stored at the conformer level if you generate an oemol from an sdf file
+    # However, if you've manually fiddled with the tags, the data might be stored at the molecule level.
+    # In order to resolve this, if there is data at the high level that is not repeated at the conformer level,
+    # we'll add to all the conformers and return that dict of lists.
+
     if isinstance(mol, oechem.OEMol):
-        return get_dict_of_lists_from_list_of_dicts(
+
+        # Get the data from the molecule
+        molecule_tags = _get_SD_data(mol)
+
+        # get the data from the conformers
+        conformer_tags = get_dict_of_lists_from_list_of_dicts(
             [_get_SD_data(conf) for conf in mol.GetConfs()]
         )
+
+        for k, v in molecule_tags.items():
+            if k not in conformer_tags:
+                conformer_tags[k] = [v] * mol.NumConfs()
+
+        return conformer_tags
     elif isinstance(mol, oechem.OEMolBase):
         return get_dict_of_lists_from_dict_of_str(_get_SD_data(mol))
     else:
