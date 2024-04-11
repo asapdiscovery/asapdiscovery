@@ -206,8 +206,8 @@ def run(
         # check the similarity of the ligands
         sim = get_similarity(ref_complex.ligand, largest_ligand)
         message = Padding(
-            f"Selected {ref_complex.target.target_name} as the best reference structure, with similarity: {sim} to the"
-            f"largest ligand in the target set.",
+            f"Selected {ref_complex.target.target_name} as the best reference structure. Largest ligand in the set: "
+            f"{largest_ligand.smiles} reference ligand: {ref_complex.ligand.smiles} have similarity: {sim}",
             (1, 0, 1, 0),
         )
         console.print(message)
@@ -216,11 +216,11 @@ def run(
         # always expect the JSON file
         ref_complex = PreppedComplex.parse_file(receptor_complex)
 
-    message = Padding(
-        f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
+        message = Padding(
+            f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
 
     # workout the number of processes to use if auto or all
     all_cpus = cpu_count()

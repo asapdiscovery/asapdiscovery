@@ -341,11 +341,11 @@ def select_reference_for_compounds(
     # find that largest ligand's closest reference
     ref_ligands = [ref.ligand for ref in references]
     sorted_index = sort_by_mcs(
-        reference_ligand=compounds_by_size[0], target_ligands=ref_ligands
+        reference_ligand=compounds_by_size[0][1], target_ligands=ref_ligands
     )
 
     sorted_complex = np.asarray(references)[sorted_index]
-    return sorted_complex[0], compounds_by_size[0]
+    return sorted_complex[0], compounds_by_size[0][1]
 
 
 def get_similarity(ligand_a: "Ligand", ligand_b: "Ligand") -> float:
