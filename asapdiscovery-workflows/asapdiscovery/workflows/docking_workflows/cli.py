@@ -37,6 +37,10 @@ from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
     SmallScaleDockingInputs,
     small_scale_docking_workflow,
 )
+from asapdiscovery.workflows.docking_workflows.ligand_transfer_docking import (
+    LigandTransferDockingWorkflowInputs,
+    ligand_transfer_docking_workflow,
+)
 
 
 @click.group()
@@ -363,6 +367,149 @@ def small_scale(
         )
 
     small_scale_docking_workflow(inputs)
+
+
+@docking.command()
+@click.option(
+    "--use-omega",
+    is_flag=True,
+    default=False,
+    help="Whether to use OEOmega conformer enumeration before docking (slower, more accurate)",
+)
+@click.option(
+    "--omega-dense",
+    is_flag=True,
+    default=False,
+    help="Whether to use dense conformer enumeration with OEOmega (slower, more accurate)",
+)
+@click.option(
+    "--allow-retries",
+    is_flag=True,
+    default=False,
+    help="Whether to allow POSIT to retry with relaxed parameters if docking fails (slower, more likely to succeed)",
+)
+@click.option(
+    "--allow-final-clash",
+    is_flag=True,
+    default=False,
+    help="Allow clashing poses in last stage of docking",
+)
+@click.option("--num-poses", type=int, default=1, help="Number of poses to generate")
+@click.option(
+    "--ref-pdb-file",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="Path to a pdb file containing a reference structure",
+)
+@click.option(
+    "--ref-fragalysis-dir",
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
+    help="Path to a fragalysis-formatted directory to use as reference structures.",
+)
+@click.option(
+    "--ref-structure-dir",
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
+    help="Path to a directory containing apo structures to dock to.",
+)
+@pdb_file
+@fragalysis_dir
+@structure_dir
+@save_to_cache
+@cache_dir
+@use_only_cache
+@dask_args
+@output_dir
+@overwrite
+@input_json
+@loglevel
+@walltime
+@click.option(
+    "--ref-chain",
+    type=str,
+    default="A",
+    help="Chain ID to align to",
+)
+@click.option(
+    "--active-site-chain",
+    type=str,
+    default="A",
+    help="Active site chain ID to align to",
+)
+@click.option(
+    "--seqres-yaml",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="Path to a seqres yaml file to mutate to, if not specified will use the default for the target",
+)
+@click.option(
+    "--loop-db",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="Path to a loop database to use for prepping",
+)
+def ligand_transfer_docking(
+    ref_structure_dir: Optional[str] = None,
+    ref_pdb_file: Optional[str] = None,
+    ref_fragalysis_dir: Optional[str] = None,
+    pdb_file: Optional[str] = None,
+    fragalysis_dir: Optional[str] = None,
+    structure_dir: Optional[str] = None,
+    use_omega: bool = False,
+    omega_dense: bool = False,
+    num_poses: int = 1,
+    allow_retries: bool = False,
+    allow_final_clash: bool = False,
+    use_only_cache: bool = False,
+    save_to_cache: Optional[bool] = True,
+    cache_dir: Optional[str] = None,
+    output_dir: str = "output",
+    overwrite: bool = True,
+    input_json: Optional[str] = None,
+    use_dask: bool = False,
+    dask_type: DaskType = DaskType.LOCAL,
+    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+    loglevel: Union[int, str] = logging.INFO,
+    walltime: Optional[str] = "72h",
+    ref_chain: Optional[str] = "A",
+    active_site_chain: Optional[str] = "A",
+    seqres_yaml: Optional[str] = None,
+    loop_db: Optional[str] = None,
+):
+    """
+    Run cross docking on a set of ligands, against a set of targets.
+    """
+
+    if input_json is not None:
+        print("Loading inputs from json file... Will override all other inputs.")
+        inputs = LigandTransferDockingWorkflowInputs.from_json_file(input_json)
+
+    else:
+        inputs = LigandTransferDockingWorkflowInputs(
+            reference_complex_dir=ref_structure_dir,
+            reference_pdb_file=ref_pdb_file,
+            reference_fragalysis_dir=ref_fragalysis_dir,
+            target_pdb_file=pdb_file,
+            target_fragalysis_dir=fragalysis_dir,
+            target_structure_dir=structure_dir,
+            use_dask=use_dask,
+            dask_type=dask_type,
+            dask_failure_mode=dask_failure_mode,
+            use_omega=use_omega,
+            omega_dense=omega_dense,
+            num_poses=num_poses,
+            allow_retries=allow_retries,
+            cache_dir=cache_dir,
+            use_only_cache=use_only_cache,
+            save_to_cache=save_to_cache,
+            output_dir=output_dir,
+            overwrite=overwrite,
+            allow_final_clash=allow_final_clash,
+            loglevel=loglevel,
+            walltime=walltime,
+            ref_chain=ref_chain,
+            active_site_chain=active_site_chain,
+            seqres_yaml=seqres_yaml,
+            loop_db=loop_db,
+        )
+
+    ligand_transfer_docking_workflow(inputs)
 
 
 if __name__ == "__main__":
