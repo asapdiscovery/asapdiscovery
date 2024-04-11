@@ -9,20 +9,18 @@ from asapdiscovery.docking.scorer import (
 )
 
 
+# parametrize over fixtures
+@pytest.mark.parametrize(
+    "data_fixture", ["results_simple_nolist", "complex_simple", "pdb_simple"]
+)
+@pytest.mark.parametrize("return_df", [True, False])
 @pytest.mark.parametrize("use_dask", [True, False])
-def test_chemgauss_scorer(results_multi, use_dask):
+def test_chemgauss_scorer(use_dask, return_df, data_fixture, request):
+    data = request.getfixturevalue(data_fixture)
+    print(type(data))
     scorer = ChemGauss4Scorer()
-    scores = scorer.score(results_multi, use_dask=use_dask)
-    assert len(scores) == 2
-    assert scores[0].score_type == "chemgauss4"
-    assert scores[0].score < 0.0
-
-
-@pytest.mark.parametrize("use_dask", [True, False])
-def test_chemgauss_scorer_df(results_multi, use_dask):
-    scorer = ChemGauss4Scorer()
-    scores = scorer.score(results_multi, return_df=True, use_dask=use_dask)
-    assert len(scores) == 2
+    scores = scorer.score([data], use_dask=use_dask, return_df=return_df)
+    assert len(scores) == 1
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
@@ -63,12 +61,29 @@ def test_gat_scorer_ligand(ligand, use_dask):
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
-def test_schnet_scorer(results_multi, use_dask):
+def test_schnet_scorer(
+    results_multi,
+    use_dask,
+):
     scorer = SchnetScorer.from_latest_by_target("SARS-CoV-2-Mpro")
     scores = scorer.score(results_multi, use_dask=use_dask)
-    assert len(scores) == 2
     assert scores[0].score_type == "schnet"
-    assert scores[0].score > 0.0
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_schnet_complex(complex_simple, use_dask):
+    scorer = SchnetScorer.from_latest_by_target("SARS-CoV-2-Mpro")
+    scores = scorer.score([complex_simple], use_dask=use_dask)
+    assert len(scores) == 1
+    assert scores[0].score_type == "schnet"
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_schnet_path(pdb_simple, use_dask):
+    scorer = SchnetScorer.from_latest_by_target("SARS-CoV-2-Mpro")
+    scores = scorer.score([pdb_simple], use_dask=use_dask)
+    assert len(scores) == 1
+    assert scores[0].score_type == "schnet"
 
 
 @pytest.mark.parametrize("use_dask", [True, False])

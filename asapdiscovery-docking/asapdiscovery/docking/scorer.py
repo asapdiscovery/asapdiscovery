@@ -2,7 +2,7 @@ import abc
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import ClassVar, Optional, Union
+from typing import ClassVar, Optional, Union, Any
 from multimethod import multimethod
 import numpy as np
 import pandas as pd
@@ -291,12 +291,8 @@ class ChemGauss4Scorer(ScorerBase):
         for inp in inputs:
             posed_mol = inp.ligand.to_oemol()
             pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
-            oemol = inp.target.to_oemol()
-            metadata = oespruce.OEStructureMetadata()
-            opts = oespruce.OEMakeDesignUnitOptions()
-            dus = list(oespruce.OEMakeDesignUnits(oemol, metadata, opts))
-            du = dus[0]
-            pose_scorer.Initialize(du)
+            receptor = inp.target.to_oemol()
+            pose_scorer.Initialize(receptor)
             chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
             results.append(
                 Score.from_score_and_complex(
@@ -312,7 +308,7 @@ class ChemGauss4Scorer(ScorerBase):
             Complex.from_pdb(
                 p,
                 ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
-                target_kwargs={"target_name", f"{p.stem}_target"},
+                target_kwargs={"target_name": f"{p.stem}_target"},
             )
             for p in inputs
         ]
@@ -361,7 +357,7 @@ class FINTScorer(ScorerBase):
         results = []
         for inp in inputs:
             _, fint_score = compute_fint_score(
-                inp.target.to_oemol(), inp.to_oemol(), self.target
+                inp.target.to_oemol(), inp.ligand.to_oemol(), self.target
             )
             results.append(
                 Score.from_score_and_complex(
@@ -539,20 +535,20 @@ class E3MLModelScorer(MLModelScorer):
     def _dispatch(self, inputs: list[Complex]) -> list[Score]:
         results = []
         for inp in inputs:
-            score = self.inference_cls.predict_from_oemol(inp.to_oemol())
+            score = self.inference_cls.predict_from_oemol(inp.to_combined_oemol())
             results.append(
                 Score.from_score_and_complex(score, self.score_type, self.units, inp)
             )
         return results
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Path]) -> list[Score]:
+    def _dispatch(self, inputs: Union[list[Path], list[str]]) -> list[Score]:
         # assuming reading PDB files from disk
         complexes = [
-            Complex.from_pdb_file(
+            Complex.from_pdb(
                 p,
                 ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
-                target_kwargs={"target_name", f"{p.stem}_target"},
+                target_kwargs={"target_name": f"{p.stem}_target"},
             )
             for i, p in enumerate(inputs)
         ]
@@ -600,7 +596,7 @@ class MetaScorer(BaseModel):
 
     def score(
         self,
-        inputs: list[DockingResult],
+        inputs: list[Any],
         use_dask: bool = False,
         dask_client=None,
         dask_failure_mode=DaskFailureMode.SKIP,

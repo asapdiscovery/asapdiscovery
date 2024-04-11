@@ -74,6 +74,11 @@ def results_simple():
 
 
 @pytest.fixture()
+def results_simple_nolist(results_simple):
+    return results_simple[0]
+
+
+@pytest.fixture()
 def complex_simple():
     return Complex.from_pdb(
         fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb"),
