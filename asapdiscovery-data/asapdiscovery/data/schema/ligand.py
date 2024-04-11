@@ -251,6 +251,9 @@ class Ligand(DataModelAbstractBase):
         # dump the enum using value to get the str repr
         data["data_format"] = self.data_format.value
 
+        # add high level tags to data
+        data.update(self.tags)
+
         # update conf tags to data
         data.update(self.conf_tags)
 
