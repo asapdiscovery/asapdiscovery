@@ -2,6 +2,8 @@ import argparse
 import logging
 from pathlib import Path
 
+from asapdiscovery.data.readers.molfile import MolFileFactory
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
@@ -20,7 +22,7 @@ parser.add_argument(
     "--pose",
     type=str,
     required=True,
-    help="Path to the pose SDF file",
+    help="Path to the pose file, can be an SDF or MOL2 file",
 )
 
 parser.add_argument(
@@ -39,11 +41,18 @@ parser.add_argument(
     help="Whether to show subpocket color mapping (default) or fitness color mapping",
 )
 
+
 parser.add_argument(
     "--out",
     type=str,
     required=True,
     help="Path to the output HTML file",
+)
+
+parser.add_argument(
+    "--align",
+    action="store_true",
+    help="Align the protein to canoncical target view",
 )
 
 
@@ -70,14 +79,20 @@ def main():
     logger.info(f"Output file: {out}")
 
     html_visualizer = HTMLVisualizer(
-        poses=[str(pose)],
-        output_paths=[out],
         color_method=args.color_method,
         target=args.target,
-        protein=protein,
-        align=True,
+        align=args.align,
+        write_to_disk=True,
+        output_dir=out.parent,
     )
-    html_visualizer.write_pose_visualizations()
+    ligs = MolFileFactory(filename=pose).load()
+    cmplx = Complex.from_pdb(
+        protein,
+        target_kwargs={"target_name": "unknown_target"},
+        ligand_kwargs={"compound_name": "unknown_compound"},
+    )
+
+    html_visualizer.visualize(inputs=[(cmplx, ligs)], outpaths=[out])
 
     logger.info("Done")
 

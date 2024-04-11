@@ -77,8 +77,7 @@ class SimulatorBase(BaseModel):
     debug: bool = Field(False, description="Debug mode of the simulation")
 
     @abc.abstractmethod
-    def _simulate(self) -> list["SimulationResult"]:
-        ...
+    def _simulate(self) -> list["SimulationResult"]: ...
 
     def simulate(
         self,
@@ -103,8 +102,7 @@ class SimulatorBase(BaseModel):
         return outputs
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
 
 class SimulationResult(BaseModel):

@@ -524,7 +524,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             [target_ligand, reference_ligand],
             ringMatchesRingOnly=True,
             completeRingsOnly=True,
-            atomCompare=rdFMCS.AtomCompare.CompareAny,
+            atomCompare=rdFMCS.AtomCompare.CompareAnyHeavyAtom,
             bondCompare=rdFMCS.BondCompare.CompareAny,
             maximizeBonds=False,
             timeout=self.mcs_timeout,

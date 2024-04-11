@@ -12,8 +12,7 @@ class _BaseAtomMapper(_SchemaBase):
     """
 
     @abc.abstractmethod
-    def _get_mapper(self):
-        ...
+    def _get_mapper(self): ...
 
     def get_mapper(self):
         return self._get_mapper()
@@ -135,11 +134,11 @@ class KartografAtomMapper(_BaseAtomMapper):
     map_hydrogens_on_hydrogens_only: bool = Field(
         False, description="If hydrogens should only be matched to other hydrogens."
     )
-    mapping_algorithm: Literal[
-        "linear_sum_assignment", "minimal_spanning_tree"
-    ] = Field(
-        "linear_sum_assignment",
-        description="The mapping algorithm that should be used.",
+    mapping_algorithm: Literal["linear_sum_assignment", "minimal_spanning_tree"] = (
+        Field(
+            "linear_sum_assignment",
+            description="The mapping algorithm that should be used.",
+        )
     )
 
     def _get_mapper(self):
