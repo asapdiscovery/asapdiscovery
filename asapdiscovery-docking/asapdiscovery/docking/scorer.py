@@ -2,7 +2,7 @@ import abc
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, ClassVar, Optional, Union
+from typing import ClassVar, Optional, Union
 
 import numpy as np
 import pandas as pd
