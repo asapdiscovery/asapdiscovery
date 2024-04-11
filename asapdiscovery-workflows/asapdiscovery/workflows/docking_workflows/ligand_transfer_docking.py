@@ -12,6 +12,7 @@ The workflow is as follows:
 
 from pathlib import Path
 from shutil import rmtree
+from typing import Optional, Union
 
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
@@ -26,12 +27,9 @@ from asapdiscovery.docking.docking import DockingInputMultiStructure
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer import ChemGauss4Scorer, MetaScorer
-from asapdiscovery.modeling.protein_prep import (
-    LigandTransferProteinPrepper,
-)
+from asapdiscovery.modeling.protein_prep import LigandTransferProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import WorkflowInputsBase
 from pydantic import Field, PositiveInt, root_validator
-from typing import Optional, Union
 
 
 class LigandTransferDockingWorkflowInputs(WorkflowInputsBase):
