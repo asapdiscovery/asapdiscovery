@@ -362,14 +362,14 @@ class LigandTransferProteinPrepper(ProteinPrepper):
         None, description="Path to loop database to use for prepping"
     )
 
-    def _prep(self, inputs: list[Target]) -> list[PreppedComplex]:
+    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]:
         """
         Prepares a series of proteins for docking using OESpruce.
         """
         prepped_complexes = []
-        for target in inputs:
+        for complex in inputs:
             # load protein
-            prot = target.to_oemol()
+            prot = complex.target.to_oemol()
 
             # mutate residues
             if self.seqres_yaml:
@@ -414,7 +414,7 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                 )
                 if not success:
                     warnings.warn(
-                        f"Failed to make design unit for target {target.target_name} and complex {complex.unique_name}."
+                        f"Failed to make design unit for target {complex.target.target_name} and complex {complex.unique_name}."
                     )
                     continue
 
@@ -424,17 +424,17 @@ class LigandTransferProteinPrepper(ProteinPrepper):
 
                 if not success:
                     warnings.warn(
-                        f"Made design unit, but failed to make receptor for target {target.target_name} "
+                        f"Made design unit, but failed to make receptor for target {complex.target.target_name} "
                         f"and complex {complex.unique_name}."
                     )
                     continue
 
                 prepped_target = PreppedTarget.from_oedu(
                     du,
-                    ids=target.ids,
-                    target_name=target.target_name,
+                    ids=complex.target.ids,
+                    target_name=complex.target.target_name,
                     ligand_chain=self.active_site_chain,
-                    target_hash=target.hash,
+                    target_hash=complex.hash,
                 )
                 # we need the ligand at the new translated coordinates
                 translated_oemol, _, _ = split_openeye_design_unit(du=du)

@@ -11,7 +11,54 @@ from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
-class DockingWorkflowInputsBase(BaseModel):
+class WorkflowInputsBase(BaseModel):
+    use_dask: bool = Field(True, description="Whether to use dask for parallelism.")
+
+    dask_type: DaskType = Field(
+        DaskType.LOCAL, description="Dask client to use for parallelism."
+    )
+
+    dask_failure_mode: DaskFailureMode = Field(
+        DaskFailureMode.SKIP, description="Dask failure mode."
+    )
+
+    dask_cluster_n_workers: PositiveInt = Field(
+        10,
+        description="Number of workers to use as inital guess for Lilac dask cluster",
+    )
+
+    dask_cluster_max_workers: PositiveInt = Field(
+        200, description="Maximum number of workers to use for Lilac dask cluster"
+    )
+
+    logname: str = Field(
+        "", description="Name of the log file."
+    )  # use root logger for proper forwarding of logs from dask
+
+    loglevel: Union[int, str] = Field(logging.INFO, description="Logging level")
+
+    output_dir: Path = Field(Path("output"), description="Output directory")
+
+    overwrite: bool = Field(
+        False, description="Whether to overwrite existing output directory."
+    )
+    walltime: str = Field(
+        "72h", description="Walltime for the workflow, used for dask-jobqueue"
+    )
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @classmethod
+    def from_json_file(cls, file: str | Path):
+        return cls.parse_file(str(file))
+
+    def to_json_file(self, file: str | Path):
+        with open(file, "w") as f:
+            f.write(self.json(indent=2))
+
+
+class DockingWorkflowInputsBase(WorkflowInputsBase):
     ligands: Optional[str] = Field(
         None, description="Path to a molecule file containing query ligands."
     )
@@ -48,53 +95,9 @@ class DockingWorkflowInputsBase(BaseModel):
         default=True,
         description="Whether to write the final docked poses to an SDF file.",
     )
-    use_dask: bool = Field(True, description="Whether to use dask for parallelism.")
-
-    dask_type: DaskType = Field(
-        DaskType.LOCAL, description="Dask client to use for parallelism."
-    )
-
-    dask_failure_mode: DaskFailureMode = Field(
-        DaskFailureMode.SKIP, description="Dask failure mode."
-    )
-
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        200, description="Maximum number of workers to use for Lilac dask cluster"
-    )
-
     n_select: PositiveInt = Field(
         5, description="Number of targets to dock each ligand against."
     )
-    logname: str = Field(
-        "", description="Name of the log file."
-    )  # use root logger for proper forwarding of logs from dask
-
-    loglevel: Union[int, str] = Field(logging.INFO, description="Logging level")
-
-    output_dir: Path = Field(Path("output"), description="Output directory")
-
-    overwrite: bool = Field(
-        False, description="Whether to overwrite existing output directory."
-    )
-    walltime: str = Field(
-        "72h", description="Walltime for the workflow, used for dask-jobqueue"
-    )
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @classmethod
-    def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
-
-    def to_json_file(self, file: str | Path):
-        with open(file, "w") as f:
-            f.write(self.json(indent=2))
 
     @root_validator
     @classmethod
