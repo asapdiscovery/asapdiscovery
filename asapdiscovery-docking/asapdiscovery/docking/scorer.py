@@ -200,8 +200,7 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]:
-        ...
+    def _score() -> list[DockingResult]: ...
 
     def score(
         self,
