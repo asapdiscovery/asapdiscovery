@@ -26,6 +26,7 @@ dependencies = []
 
 [project.scripts]
 make-alignment = "asapdiscovery.genetics.scripts.make_alignment:main"
+cfold-alignment = "asapdiscovery.genetics.scripts.structure_alignment:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
