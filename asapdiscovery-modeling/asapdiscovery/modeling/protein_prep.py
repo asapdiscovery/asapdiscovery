@@ -9,7 +9,7 @@ import yaml
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.schema.target import Target, PreppedTarget
+from asapdiscovery.data.schema.target import PreppedTarget, Target
 from asapdiscovery.data.util.dask_utils import (
     DaskFailureMode,
     actualise_dask_delayed_iterable,
