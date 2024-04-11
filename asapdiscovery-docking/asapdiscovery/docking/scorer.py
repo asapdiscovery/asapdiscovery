@@ -200,7 +200,8 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]: ...
+    def _score() -> list[DockingResult]:
+        ...
 
     def score(
         self,
@@ -270,7 +271,7 @@ class ChemGauss4Scorer(ScorerBase):
         return self._dispatch(inputs)
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult]):
+    def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
         results = []
         for inp in inputs:
             posed_mol = inp.posed_ligand.to_oemol()
@@ -286,7 +287,7 @@ class ChemGauss4Scorer(ScorerBase):
         return results
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Complex]):
+    def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
         results = []
         for inp in inputs:
             posed_mol = inp.ligand.to_oemol()
@@ -302,7 +303,7 @@ class ChemGauss4Scorer(ScorerBase):
         return results
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Path]):
+    def _dispatch(self, inputs: list[Path], **kwargs) -> list[Score]:
         # assuming reading PDB files from disk
         complexes = [
             Complex.from_pdb(
@@ -312,7 +313,7 @@ class ChemGauss4Scorer(ScorerBase):
             )
             for p in inputs
         ]
-        return self._dispatch(inputs=complexes)
+        return self._dispatch(complexes)
 
 
 class FINTScorer(ScorerBase):
@@ -339,7 +340,7 @@ class FINTScorer(ScorerBase):
         return self._dispatch(inputs)
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult]) -> list[Score]:
+    def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
         results = []
         for inp in inputs:
             _, fint_score = compute_fint_score(
@@ -353,7 +354,7 @@ class FINTScorer(ScorerBase):
         return results
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Complex]):
+    def _dispatch(self, inputs: list[Complex], **kwargs):
         results = []
         for inp in inputs:
             _, fint_score = compute_fint_score(
@@ -367,17 +368,18 @@ class FINTScorer(ScorerBase):
         return results
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Path]):
+    def _dispatch(self, inputs: list[Path], **kwargs):
         # assuming reading PDB files from disk
         complexes = [
-            Complex.from_pdb_file(
+            Complex.from_pdb(
                 p,
                 ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
-                target_kwargs={"target_name", f"{p.stem}_target"},
+                target_kwargs={"target_name": f"{p.stem}_target"},
             )
-            for i, p in enumerate(inputs)
+            for p in inputs
         ]
-        return self._dispatch(inputs=complexes)
+
+        return self._dispatch(complexes)
 
 
 # keep track of all the ml scorers
@@ -461,7 +463,7 @@ class GATScorer(MLModelScorer):
         return self._dispatch(inputs)
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult]) -> list[Score]:
+    def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
@@ -473,7 +475,7 @@ class GATScorer(MLModelScorer):
         return results
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[str]) -> list[Score]:
+    def _dispatch(self, inputs: list[str], **kwargs) -> list[Score]:
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp)
@@ -488,7 +490,7 @@ class GATScorer(MLModelScorer):
         return results
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Ligand]) -> list[Score]:
+    def _dispatch(self, inputs: list[Ligand], **kwargs) -> list[Score]:
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.smiles)
@@ -520,7 +522,7 @@ class E3MLModelScorer(MLModelScorer):
         return self._dispatch(inputs)
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult]) -> list[Score]:
+    def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
         results = []
         for inp in inputs:
             score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
@@ -532,7 +534,7 @@ class E3MLModelScorer(MLModelScorer):
         return results
 
     @_dispatch.register
-    def _dispatch(self, inputs: list[Complex]) -> list[Score]:
+    def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
         results = []
         for inp in inputs:
             score = self.inference_cls.predict_from_oemol(inp.to_combined_oemol())
@@ -542,7 +544,7 @@ class E3MLModelScorer(MLModelScorer):
         return results
 
     @_dispatch.register
-    def _dispatch(self, inputs: Union[list[Path], list[str]]) -> list[Score]:
+    def _dispatch(self, inputs: list[Path], **kwargs) -> list[Score]:
         # assuming reading PDB files from disk
         complexes = [
             Complex.from_pdb(
@@ -552,7 +554,7 @@ class E3MLModelScorer(MLModelScorer):
             )
             for i, p in enumerate(inputs)
         ]
-        return self._dispatch(inputs=complexes)
+        return self._dispatch(complexes)
 
 
 @register_ml_scorer

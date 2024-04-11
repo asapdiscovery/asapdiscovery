@@ -93,6 +93,11 @@ def pdb_simple():
 
 
 @pytest.fixture()
+def smiles():
+    return "CCCOCO"
+
+
+@pytest.fixture()
 def results_multi(results, results_simple):
     return results + results_simple
 
