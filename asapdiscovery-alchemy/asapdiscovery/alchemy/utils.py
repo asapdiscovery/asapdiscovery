@@ -7,10 +7,10 @@ from openmm.app import ForceField, Modeller, PDBFile
 from .schema.fec import (
     AlchemiscaleFailure,
     AlchemiscaleResults,
-    AlchemiscaleSettings,
     FreeEnergyCalculationNetwork,
     TransformationResult,
 )
+from .interfaces import AlchemiscaleSettings
 from .schema.forcefield import ForceFieldParams
 
 
@@ -39,7 +39,7 @@ class AlchemiscaleHelper:
     A convenience class to handle alchemiscale submissions restarts and results gathering.
     """
 
-    def __init__(self, api_url: str = "https://api.alchemiscale.org"):
+    def __init__(self, api_url: Optional[str] = None):
         """
         Create the client which will be used for the rest of the queries
         """
@@ -49,7 +49,7 @@ class AlchemiscaleHelper:
         settings = AlchemiscaleSettings()
         # connect to the client
         self._client = AlchemiscaleClient(
-            api_url=api_url,
+            api_url=api_url or settings.ALCHEMISCALE_ADDRESS,
             identifier=settings.ALCHEMISCALE_ID,
             key=settings.ALCHEMISCALE_KEY,
         )
