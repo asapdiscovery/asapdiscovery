@@ -162,6 +162,7 @@ def build_gat(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -248,6 +249,10 @@ def build_gat(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -261,6 +266,7 @@ def build_gat(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -366,6 +372,7 @@ def build_schnet(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -456,6 +463,10 @@ def build_schnet(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -469,6 +480,7 @@ def build_schnet(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -575,6 +587,7 @@ def build_e3nn(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -666,6 +679,10 @@ def build_e3nn(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -679,6 +696,7 @@ def build_e3nn(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -788,6 +806,7 @@ def build_visnet(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -882,6 +901,10 @@ def build_visnet(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -895,6 +918,7 @@ def build_visnet(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -997,6 +1021,7 @@ def build_and_train_gat(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -1083,6 +1108,10 @@ def build_and_train_gat(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -1096,6 +1125,7 @@ def build_and_train_gat(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -1206,6 +1236,7 @@ def build_and_train_schnet(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -1296,6 +1327,10 @@ def build_and_train_schnet(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -1309,6 +1344,7 @@ def build_and_train_schnet(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -1420,6 +1456,7 @@ def build_and_train_e3nn(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -1511,6 +1548,10 @@ def build_and_train_e3nn(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -1524,6 +1565,7 @@ def build_and_train_e3nn(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -1638,6 +1680,7 @@ def build_and_train_visnet(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -1733,6 +1776,10 @@ def build_and_train_visnet(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -1746,6 +1793,7 @@ def build_and_train_visnet(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
