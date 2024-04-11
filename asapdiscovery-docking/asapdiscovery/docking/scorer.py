@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Optional, Union
 
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.backend.openeye import oechem, oedocking, oespruce
+from asapdiscovery.data.backend.openeye import oedocking
 from asapdiscovery.data.backend.plip import compute_fint_score
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
