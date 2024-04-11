@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 import click
 import pandas as pd
 import rich
+
+if TYPE_CHECKING:
+    from asapdiscovery.data.schema.ligand import Ligand
 
 
 def print_header(console: "rich.Console"):
@@ -79,6 +84,70 @@ def upload_to_postera(
     )
 
     _, _, _ = postera_uploader.push(df=result_df)
+
+
+def get_cdd_molecules(
+    protocol_name: str, defined_stereo_only: bool = True
+) -> list["Ligand"]:
+    """
+    Search the CDD protocol for molecules with experimental values and return a list of asapdiscovery ligands.
+
+    Notes:
+        The ligands will contain a tag which can be used to identify them as experimental compounds later.
+
+    Args:
+        protocol_name: The name of the experimental protocol in CDD we should extract molecules from.
+        defined_stereo_only: Only return ligands which have fully defined stereochemistry
+
+    Returns:
+        A list of molecules with experimental data.
+    """
+    from asapdiscovery.alchemy.predict import download_cdd_data
+    from asapdiscovery.data.schema.ligand import Ligand
+
+    # get all molecules with data for the protocol
+    cdd_data = download_cdd_data(protocol_name=protocol_name)
+
+    ref_ligands = []
+    for _, row in cdd_data.iterrows():
+        asap_mol = Ligand.from_smiles(
+            smiles=row["Smiles"],
+            compound_name=row["Molecule Name"],
+            cxsmiles=row["CXSmiles"],
+        )
+        asap_mol.tags["cdd_protocol"] = protocol_name
+        asap_mol.tags["experimental"] = "True"
+        ref_ligands.append(asap_mol)
+
+    if defined_stereo_only:
+        # remove ligands with undefined or non-absolute stereochemistry
+        defined_ligands = []
+        from openff.toolkit import Molecule
+        from openff.toolkit.utils.exceptions import UndefinedStereochemistryError
+        from rdkit import Chem
+
+        for mol in ref_ligands:
+            try:
+                # this checks for any undefined stereo centers
+                _ = Molecule.from_smiles(mol.smiles)
+                # check for non-absolute centers using the enhanced stereo smiles
+                rdmol = Chem.MolFromSmiles(mol.tags["cxsmiles"])
+                groups = rdmol.GetStereoGroups()
+                for stereo_group in groups:
+                    if (
+                        stereo_group.GetGroupType()
+                        != Chem.StereoGroupType.STEREO_ABSOLUTE
+                    ):
+                        raise UndefinedStereochemistryError("missing absolute stereo")
+                # if we make it through all checks add the molecule
+                defined_ligands.append(mol)
+
+            except UndefinedStereochemistryError:
+                continue
+
+        ref_ligands = defined_ligands
+
+    return ref_ligands
 
 
 class SpecialHelpOrder(click.Group):

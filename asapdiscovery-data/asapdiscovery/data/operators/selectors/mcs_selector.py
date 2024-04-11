@@ -13,6 +13,88 @@ from pydantic import Field
 logger = logging.getLogger(__name__)
 
 
+def sort_by_mcs(
+    reference_ligand: Ligand,
+    target_ligands: list[Ligand],
+    structure_matching: bool = False,
+) -> np.array:
+    """
+    Get the sorted order of the target ligands by the MCS overlap with the reference ligand.
+
+    Args:
+        reference_ligand: The ligand the targets should be matched to.
+        target_ligands: The list of target ligands which should be ordered.
+        structure_matching: If structure-based matching `True` should be used or element-based `False`.
+
+    Returns:
+        An array of the target ligand indices ordered by MCS overlap.
+    """
+
+    # generate the matching expressions
+    if structure_matching is True:
+        """
+        For structure based matching
+        Options for atom matching:
+        * Aromaticity
+        * HvyDegree - # heavy atoms bonded to
+        * RingMember
+        Options for bond matching:
+        * Aromaticity
+        * BondOrder
+        * RingMember
+        """
+        atomexpr = (
+            oechem.OEExprOpts_Aromaticity
+            | oechem.OEExprOpts_HvyDegree
+            | oechem.OEExprOpts_RingMember
+        )
+        bondexpr = (
+            oechem.OEExprOpts_Aromaticity
+            | oechem.OEExprOpts_BondOrder
+            | oechem.OEExprOpts_RingMember
+        )
+    else:
+        """
+        For atom based matching
+        Options for atom matching (predefined AutomorphAtoms):
+        * AtomicNumber
+        * Aromaticity
+        * RingMember
+        * HvyDegree - # heavy atoms bonded to
+        Options for bond matching:
+        * Aromaticity
+        * BondOrder
+        * RingMember
+        """
+        atomexpr = oechem.OEExprOpts_AutomorphAtoms
+        bondexpr = (
+            oechem.OEExprOpts_Aromaticity
+            | oechem.OEExprOpts_BondOrder
+            | oechem.OEExprOpts_RingMember
+        )
+
+    # use the ref mol as the pattern
+    pattern_query = oechem.OEQMol(reference_ligand.to_oemol())
+    pattern_query.BuildExpressions(atomexpr, bondexpr)
+    mcss = oechem.OEMCSSearch(pattern_query)
+    mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
+
+    mcs_matches = []
+
+    for ligand in target_ligands:
+        # MCS search on each ligand
+        try:
+            mcs = next(iter(mcss.Match(ligand.to_oemol(), True)))
+            mcs_matches.append((mcs.NumBonds(), mcs.NumAtoms()))
+        except StopIteration:  # no match found
+            mcs_matches.append((0, 0))
+
+    # sort by the size of the MCS match
+    sort_args = np.asarray(mcs_matches)
+    sort_idx = np.lexsort(-sort_args.T)
+    return sort_idx
+
+
 class MCSSelector(SelectorBase):
     """
     Selects ligand and complex pairs based on a maximum common substructure
