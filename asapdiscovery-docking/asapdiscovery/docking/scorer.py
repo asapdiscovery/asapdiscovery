@@ -193,18 +193,19 @@ class Score(BaseModel):
 
 class ScorerBase(BaseModel):
     """
-    Base class for docking.
+    Base class for scoring functions.
     """
 
     score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]: ...
+    def _score() -> list[DockingResult]:
+        ...
 
     def score(
         self,
-        inputs: Union[list[DockingResult], list[Path]],
+        inputs: list[Any],
         use_dask: bool = False,
         dask_client=None,
         dask_failure_mode=DaskFailureMode.SKIP,
@@ -212,6 +213,28 @@ class ScorerBase(BaseModel):
         reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
+        """
+        Score the inputs. Most of the work is done in the _score method, this method is in turn dispatched based on type to various methods.
+
+
+        Parameters
+        ----------
+        inputs : list[Any]
+            List of inputs to score
+        use_dask : bool, optional
+            Whether to use dask, by default False
+        dask_client : dask.distributed.Client, optional
+            Dask client to use, by default None
+        dask_failure_mode : DaskFailureMode, optional
+            How to handle dask failures, by default DaskFailureMode.SKIP
+        backend : BackendType, optional
+            Backend to use, by default BackendType.IN_MEMORY
+        reconstruct_cls : Optional[Callable], optional
+            Function to use to reconstruct the inputs, by default None
+        return_df : bool, optional
+            Whether to return a dataframe, by default False
+
+        """
         outputs = self._score(
             inputs=inputs,
             use_dask=use_dask,
@@ -259,6 +282,9 @@ class ScorerBase(BaseModel):
 class ChemGauss4Scorer(ScorerBase):
     """
     Scoring using ChemGauss.
+
+    Overloaded to accept DockingResults, Complexes, or Paths to PDB files.
+
     """
 
     score_type: ClassVar[ScoreType.chemgauss4] = ScoreType.chemgauss4
@@ -267,10 +293,16 @@ class ChemGauss4Scorer(ScorerBase):
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(self, inputs) -> list[Score]:
+        """
+        Score the inputs, dispatching based on type.
+        """
         return self._dispatch(inputs)
 
     @multimethod
     def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
+        """
+        Dispatch for DockingResults
+        """
         results = []
         for inp in inputs:
             posed_mol = inp.posed_ligand.to_oemol()
@@ -287,6 +319,9 @@ class ChemGauss4Scorer(ScorerBase):
 
     @_dispatch.register
     def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
+        """
+        Dispatch for Complexes
+        """
         results = []
         for inp in inputs:
             posed_mol = inp.ligand.to_oemol()
@@ -303,6 +338,9 @@ class ChemGauss4Scorer(ScorerBase):
 
     @_dispatch.register
     def _dispatch(self, inputs: list[Path], **kwargs) -> list[Score]:
+        """
+        Dispatch for PDB files from disk
+        """
         # assuming reading PDB files from disk
         complexes = [
             Complex.from_pdb(
@@ -318,6 +356,8 @@ class ChemGauss4Scorer(ScorerBase):
 class FINTScorer(ScorerBase):
     """
     Score using Fitness Interaction Score
+
+    Overloaded to accept DockingResults, Complexes, or Paths to PDB files.
     """
 
     score_type: ClassVar[ScoreType.FINT] = ScoreType.FINT
@@ -335,11 +375,17 @@ class FINTScorer(ScorerBase):
 
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
-    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+    def _score(self, inputs: list[Any]) -> list[Score]:
+        """
+        Score the inputs, dispatching based on type.
+        """
         return self._dispatch(inputs)
 
     @multimethod
     def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
+        """
+        Dispatch for DockingResults
+        """
         results = []
         for inp in inputs:
             _, fint_score = compute_fint_score(
@@ -354,6 +400,9 @@ class FINTScorer(ScorerBase):
 
     @_dispatch.register
     def _dispatch(self, inputs: list[Complex], **kwargs):
+        """
+        Dispatch for Complexes
+        """
         results = []
         for inp in inputs:
             _, fint_score = compute_fint_score(
@@ -368,6 +417,9 @@ class FINTScorer(ScorerBase):
 
     @_dispatch.register
     def _dispatch(self, inputs: list[Path], **kwargs):
+        """
+        Dispatch for PDB files from disk
+        """
         # assuming reading PDB files from disk
         complexes = [
             Complex.from_pdb(
@@ -393,7 +445,7 @@ def register_ml_scorer(cls):
 
 class MLModelScorer(ScorerBase):
     """
-    Score from some kind of ML model
+    Baseclass to score from some kind of ML model, including 2D or 3D models
     """
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
@@ -426,6 +478,16 @@ class MLModelScorer(ScorerBase):
 
     @staticmethod
     def from_latest_by_target_and_type(target: TargetTags, type: ModelType):
+        """
+        Get the latest ML Scorer by target and type.
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get the scorer for
+        type : ModelType
+            Type of model to get the scorer for
+        """
         if type == ModelType.INVALID:
             raise Exception("trying to instantiate some kind a baseclass")
         scorer_class = get_ml_scorer_cls_from_model_type(type)
@@ -459,10 +521,16 @@ class GATScorer(MLModelScorer):
     def _score(
         self, inputs: Union[list[DockingResult], list[str], list[Ligand]]
     ) -> list[Score]:
+        """
+        Score the inputs, dispatching based on type.
+        """
         return self._dispatch(inputs)
 
     @multimethod
     def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
+        """
+        Dispatch for DockingResults
+        """
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
@@ -475,6 +543,9 @@ class GATScorer(MLModelScorer):
 
     @_dispatch.register
     def _dispatch(self, inputs: list[str], **kwargs) -> list[Score]:
+        """
+        Dispatch for SMILES strings
+        """
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp)
@@ -490,6 +561,9 @@ class GATScorer(MLModelScorer):
 
     @_dispatch.register
     def _dispatch(self, inputs: list[Ligand], **kwargs) -> list[Score]:
+        """
+        Dispatch for Ligands
+        """
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.smiles)
@@ -590,7 +664,7 @@ def get_ml_scorer_cls_from_model_type(model_type: ModelType):
 
 class MetaScorer(BaseModel):
     """
-    Score from a combination of other scorers
+    Score from a combination of other scorers, the scorers must share an input type,
     """
 
     scorers: list[ScorerBase] = Field(..., description="Scorers to score with")
@@ -605,6 +679,9 @@ class MetaScorer(BaseModel):
         reconstruct_cls=None,
         return_df: bool = False,
     ) -> list[Score]:
+        """
+        Score the inputs using all the scorers provided in the constructor
+        """
         results = []
         for scorer in self.scorers:
             vals = scorer.score(
