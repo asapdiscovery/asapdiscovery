@@ -200,11 +200,14 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]: ...
+    def _score() -> list[DockingResult]:
+        ...
 
     def score(
         self,
-        inputs: list[Any],
+        inputs: Union[
+            list[DockingResult], list[Complex], list[Path], list[str], list[Ligand]
+        ],
         use_dask: bool = False,
         dask_client=None,
         dask_failure_mode=DaskFailureMode.SKIP,
@@ -218,7 +221,7 @@ class ScorerBase(BaseModel):
 
         Parameters
         ----------
-        inputs : list[Any]
+        inputs : Union[list[DockingResult], list[Complex], list[Path], list[str], list[Ligand]],
             List of inputs to score
         use_dask : bool, optional
             Whether to use dask, by default False
@@ -374,7 +377,9 @@ class FINTScorer(ScorerBase):
 
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
-    def _score(self, inputs: list[Any]) -> list[Score]:
+    def _score(
+        self, inputs: Union[list[DockingResult], list[Complex], list[Path]]
+    ) -> list[Score]:
         """
         Score the inputs, dispatching based on type.
         """
@@ -590,7 +595,9 @@ class E3MLModelScorer(MLModelScorer):
 
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
-    def _score(self, inputs: list[DockingResult]) -> list[Score]:
+    def _score(
+        self, inputs: Union[list[DockingResult], list[Complex], list[Path]]
+    ) -> list[Score]:
         return self._dispatch(inputs)
 
     @multimethod
@@ -670,7 +677,7 @@ class MetaScorer(BaseModel):
 
     def score(
         self,
-        inputs: list[Any],
+        inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
         dask_failure_mode=DaskFailureMode.SKIP,
