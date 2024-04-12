@@ -43,7 +43,7 @@ PARSE_ADDED_COLS = [
 ]
 
 # skip tests if no CDD token
-pytestmark = pytest.mark.skipif(not os.getenv("CDDTOKEN"), reason="No CDD token")
+# pytestmark = pytest.mark.skipif(not os.getenv("CDDTOKEN"), reason="No CDD token")
 
 
 @pytest.fixture(scope="session")
@@ -435,6 +435,30 @@ def test_cdd_api_get_molecules(mocked_cdd_api, search, expected_result):
         assert result == expected_result
 
 
+def test_cdd_api_get_molecules_missing(mocked_cdd_api):
+    """Test getting molecules by ID and handling the case with missing molecules"""
+
+    def get_mols(request, *args):
+        "mock the molecule request to give an error for missing mols"
+        data = request.json()
+        if 2 in data["molecules"]:
+            return {"error": "2, and 3 not found", "code": 404}
+        elif data["molecules"] == [1]:
+            return {"id": "1"}
+
+    with requests_mock.Mocker() as m:
+        m.get(mocked_cdd_api.api_url + "molecules/", json=get_mols)
+        m.get(
+            mocked_cdd_api.api_url + "exports/1",
+            json={
+                "count": 1,
+                "objects": [{"name": "ethanol", "smiles": "CCO", "id": 1}],
+            },
+        )
+        result = mocked_cdd_api.get_molecules(compound_ids=[1, 2, 3])
+        assert result == [{"name": "ethanol", "smiles": "CCO", "id": 1}]
+
+
 @pytest.mark.parametrize(
     "protocol_names",
     [pytest.param(None, id="No names"), pytest.param(["p1", "p2"], id="Names")],
@@ -506,6 +530,7 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
                 "inchi": "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3",
                 "inchi_key": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
                 "name": "ASAP-Ethanol",
+                "cxsmiles": "CCO",
             }
         ],
     }

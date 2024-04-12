@@ -33,7 +33,18 @@ def trainer_config_cache(func):
         "--trainer-config-cache",
         type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
         help=(
-            "Trainer Config JSON cache file. If this file exists, no other CLI args "
+            "Trainer Config JSON cache file. Any other CLI args that are passed will "
+            "supersede anything in this file."
+        ),
+    )(func)
+
+
+def sweep_config_cache(func):
+    return click.option(
+        "--sweep-config-cache",
+        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "Sweeper Config JSON cache file. If this file exists, no other CLI args "
             "will be parsed."
         ),
     )(func)
@@ -65,6 +76,14 @@ def trainer_config_cache_overwrite(func):
         "--overwrite-trainer-config-cache",
         is_flag=True,
         help="Overwrite any existing Trainer JSON cache file.",
+    )(func)
+
+
+def sweep_config_cache_overwrite(func):
+    return click.option(
+        "--overwrite-sweep-config-cache",
+        is_flag=True,
+        help="Overwrite any existing Sweeper JSON cache file.",
     )(func)
 
 
@@ -261,7 +280,7 @@ def weights_path(func):
 ################################################################################
 # W&B args
 def wandb_args(func):
-    for fn in [use_wandb, sweep, proj, name, extra_config]:
+    for fn in [use_wandb, proj, name, extra_config]:
         func = fn(func)
 
     return func
@@ -271,12 +290,6 @@ def use_wandb(func):
     return click.option(
         "--use-wandb", type=bool, help="Use W&B to log model training."
     )(func)
-
-
-def sweep(func):
-    return click.option("--sweep", type=bool, help="This run is part of a W&B sweep.")(
-        func
-    )
 
 
 def proj(func):
@@ -1175,7 +1188,16 @@ def loss_config_cache(func):
 ################################################################################
 # Training args
 def trainer_args(func):
-    for fn in [start_epoch, n_epochs, batch_size, target_prop, cont, loss_dict, device]:
+    for fn in [
+        start_epoch,
+        n_epochs,
+        batch_size,
+        target_prop,
+        cont,
+        loss_dict,
+        device,
+        data_aug,
+    ]:
         func = fn(func)
     return func
 
@@ -1235,6 +1257,44 @@ def loss_dict(func):
 
 def device(func):
     return click.option("--device", type=torch.device, help="Device to train on.")(func)
+
+
+def data_aug(func):
+    return click.option(
+        "--data-aug",
+        type=str,
+        multiple=True,
+        help=(
+            "Specifications for data augmentations to do. Multiple can be passed, and "
+            "they will be applied in the order they are specified on the command line. "
+            "Each individual aug config should be specified as a comma separated list "
+            "of <key>:<value> pairs, which will be passed directly to the "
+            "DataAugConfig class. For example, to add positional jittering that draws "
+            "noise from a fixed Gaussian with a std of 0.05, you would pass "
+            "--data-aug aug_type:jitter_fixed,jitter_fixed_std:0.05."
+        ),
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
+# Sweep args
+def sweep_config(func):
+    return click.option(
+        "--sweep-config",
+        type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+        help="YAML file giving the config for a sweep.",
+    )(func)
+
+
+def force_new_sweep(func):
+    return click.option(
+        "--force-new-sweep",
+        type=bool,
+        help="Start a new sweep even if an existing sweep_id is present.",
+    )(func)
 
 
 ################################################################################

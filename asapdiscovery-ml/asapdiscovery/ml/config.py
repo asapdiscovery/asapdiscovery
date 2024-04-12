@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import pickle as pkl
 from collections.abc import Iterator
@@ -21,6 +23,29 @@ from asapdiscovery.ml.es import (
 from pydantic import BaseModel, Field, root_validator
 
 
+class ConfigBase(BaseModel):
+    """
+    Base class to provide update functionality.
+    """
+
+    def update(self, config_updates={}) -> ConfigBase:
+        return self._update(config_updates)
+
+    def _update(self, config_updates={}) -> ConfigBase:
+        """
+        Default version of this function. Just update original config with new options,
+        and generate new object. Designed to be overloaded if there are specific things
+        that a class needs to handle (see GATModelConfig as an example).
+        """
+
+        orig_config = self.dict()
+
+        # Get new config by overwriting old stuff with any new stuff
+        new_config = orig_config | config_updates
+
+        return type(self)(**new_config)
+
+
 class OptimizerType(StringEnum):
     """
     Enum for training optimizers.
@@ -32,7 +57,7 @@ class OptimizerType(StringEnum):
     adamw = "adamw"
 
 
-class OptimizerConfig(BaseModel):
+class OptimizerConfig(ConfigBase):
     """
     Class for constructing an ML optimizer. All parameter defaults are their defaults in
     pytorch.
@@ -125,18 +150,19 @@ class EarlyStoppingType(StringEnum):
     Enum for early stopping classes.
     """
 
+    none = "none"
     best = "best"
     converged = "converged"
     patient_converged = "patient_converged"
 
 
-class EarlyStoppingConfig(BaseModel):
+class EarlyStoppingConfig(ConfigBase):
     """
     Class for constructing an early stopping class.
     """
 
     es_type: EarlyStoppingType = Field(
-        ...,
+        EarlyStoppingType.none,
         description=(
             "Type of early stopping to use. "
             f"Options are [{', '.join(EarlyStoppingType.get_values())}]."
@@ -169,6 +195,8 @@ class EarlyStoppingConfig(BaseModel):
     @root_validator(pre=False)
     def check_args(cls, values):
         match values["es_type"]:
+            case EarlyStoppingType.none:
+                pass
             case EarlyStoppingType.best:
                 if values["patience"] is None:
                     raise ValueError(
@@ -195,6 +223,8 @@ class EarlyStoppingConfig(BaseModel):
         self,
     ) -> BestEarlyStopping | ConvergedEarlyStopping | PatientConvergedEarlyStopping:
         match self.es_type:
+            case EarlyStoppingType.none:
+                return None
             case EarlyStoppingType.best:
                 return BestEarlyStopping(self.patience)
             case EarlyStoppingType.converged:
@@ -216,7 +246,7 @@ class DatasetType(StringEnum):
     structural = "structural"
 
 
-class DatasetConfig(BaseModel):
+class DatasetConfig(ConfigBase):
     """
     Class for constructing an ML Dataset class.
     """
@@ -481,6 +511,11 @@ class DatasetConfig(BaseModel):
     @staticmethod
     def fix_e3nn_labels(ds):
         for _, pose in ds:
+            # Check if this pose has already been adjusted
+            if pose["z"].is_floating_point():
+                # Assume it'll only be floats if we've already run this function
+                continue
+
             pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
             pose["z"] = pose["lig"].reshape((-1, 1)).float()
 
@@ -496,7 +531,7 @@ class DatasetSplitterType(StringEnum):
     temporal = "temporal"
 
 
-class DatasetSplitterConfig(BaseModel):
+class DatasetSplitterConfig(ConfigBase):
     """
     Class for splitting an ML Dataset class.
     """
@@ -774,12 +809,12 @@ class LossFunctionType(StringEnum):
     gaussian_sq = "gaussian_sq"
 
 
-class LossFunctionConfig(BaseModel):
+class LossFunctionConfig(ConfigBase):
     """
-    Class for splitting an ML Dataset class.
+    Class for building a loss function.
     """
 
-    # Parameter for splitting
+    # Parameter for loss type
     loss_type: LossFunctionType = Field(
         ...,
         description=(
@@ -810,3 +845,67 @@ class LossFunctionConfig(BaseModel):
                 return GaussianNLLLoss(keep_sq=True, semiquant_fill=self.semiquant_fill)
             case other:
                 raise ValueError(f"Unknown LossFunctionType {other}.")
+
+
+class DataAugType(StringEnum):
+    """
+    Enum for different methods of data augmentation.
+    """
+
+    # Jitter all coordinates by a fixed amount
+    jitter_fixed = "jitter_fixed"
+
+
+class DataAugConfig(BaseModel):
+    """
+    Class for building a data augmentation module.
+    """
+
+    # Parameter for augmentation type
+    aug_type: DataAugType = Field(
+        ...,
+        description=(
+            "Type of augmentation."
+            f"Options are [{', '.join(DataAugType.get_values())}]."
+        ),
+    )
+
+    # Define the distribution of random noise to jitter with
+    jitter_fixed_mean: float | None = Field(
+        None, description="Mean of gaussian distribution to draw noise from."
+    )
+    jitter_fixed_std: float | None = Field(
+        None,
+        description="Standard deviation of gaussian distribution to draw noise from.",
+    )
+
+    # Seed for randomly jittering
+    jitter_rand_seed: int | None = Field(
+        None, description="Random seed to use for reproducbility, if desired."
+    )
+
+    # Dict key for the positions
+    jitter_pos_key: str | None = Field(
+        None, description="Key to access the coords in pose dict."
+    )
+
+    def build(self):
+        from asapdiscovery.ml.data_augmentation import JitterFixed
+
+        match self.aug_type:
+            case DataAugType.jitter_fixed:
+                build_class = JitterFixed
+                kwargs = {
+                    "mean": "jitter_fixed_mean",
+                    "std": "jitter_fixed_std",
+                    "rand_seed": "jitter_rand_seed",
+                    "dict_key": "jitter_pos_key",
+                }
+
+        # Remove any None kwargs
+        kwargs = {
+            k: getattr(self, v)
+            for k, v in kwargs.items()
+            if getattr(self, v) is not None
+        }
+        return build_class(**kwargs)

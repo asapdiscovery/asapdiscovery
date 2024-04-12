@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0", "versioningit"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asapdiscovery-workflows"
+#version = "0.0.1"
+dynamic = ["version"]
+authors = [
+  { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
+]
+description = "API and scripts related to running docking and preparing the input structures"
+readme = "README.md"
+requires-python = ">=3.9,<3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
+dependencies = []
+
+[project.urls]
+"Homepage" = "https://github.com/choderalab/asapdiscovery"
+"Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
+
+[project.scripts]
+asap-docking = "asapdiscovery.workflows.docking_workflows.cli:docking"
+asap-prep = "asapdiscovery.workflows.prep_workflows.cli:protein_prep"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.versioningit]
+
+
+[tool.versioningit.vcs]
+default-tag = "0.0.99" # useful for CI/shallow clones

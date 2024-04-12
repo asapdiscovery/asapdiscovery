@@ -1,5 +1,6 @@
 import json
 import pickle as pkl
+from copy import deepcopy
 from glob import glob
 from pathlib import Path
 from time import time
@@ -9,6 +10,7 @@ import torch
 import wandb
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.ml.config import (
+    DataAugConfig,
     DatasetConfig,
     DatasetSplitterConfig,
     EarlyStoppingConfig,
@@ -38,8 +40,8 @@ class Trainer(BaseModel):
     model_config: ModelConfigBase = Field(
         ..., description="Config describing the model to train."
     )
-    es_config: EarlyStoppingConfig | None = Field(
-        None, description="Config describing the early stopping check to use."
+    es_config: EarlyStoppingConfig = Field(
+        ..., description="Config describing the early stopping check to use."
     )
     ds_config: DatasetConfig = Field(
         ..., description="Config describing the dataset object to train on."
@@ -54,6 +56,10 @@ class Trainer(BaseModel):
     loss_config: LossFunctionConfig = Field(
         ...,
         description="Config describing the loss function for training.",
+    )
+    data_aug_configs: list[DataAugConfig] = Field(
+        [],
+        description="List of data augmentations to be applied in order to each pose.",
     )
 
     # Options for the training process
@@ -76,7 +82,11 @@ class Trainer(BaseModel):
         ),
     )
     batch_size: int = Field(
-        1, description="Number of samples to predict on before performing backprop."
+        1,
+        description=(
+            "Number of samples to predict on before performing backprop."
+            "Set to -1 to use the entire training set as a batch."
+        ),
     )
     target_prop: str = Field("pIC50", description="Target property to train against.")
     cont: bool = Field(
@@ -100,15 +110,10 @@ class Trainer(BaseModel):
 
     # W&B parameters
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
-    sweep: bool = Field(False, description="This run is part of a W&B sweep.")
     wandb_project: str | None = Field(None, description="W&B project name.")
     wandb_name: str | None = Field(None, description="W&B project name.")
-    extra_config: list[str] | None = Field(
-        None,
-        description=(
-            "Any extra config options to log to W&B, as a list of "
-            "comma-separated key:value pairs."
-        ),
+    extra_config: dict | None = Field(
+        None, description="Any extra config options to log to W&B."
     )
 
     # Tracker to make sure the optimizer and ML model are built before trying to train
@@ -205,6 +210,42 @@ class Trainer(BaseModel):
             overwrite=overwrite,
             **config_kwargs,
         )
+
+    @validator("data_aug_configs", pre=True)
+    def load_cache_files_lists(cls, kwargs_list, field):
+        """
+        This validator performs the same functionality as the above function, but for
+        Fields that contain a list of some type.
+        """
+        config_cls = field.type_
+
+        configs = []
+        for config_kwargs in kwargs_list:
+            # If an instance of the actual config class is passed, there's no cache file so
+            #  just return
+            if isinstance(config_kwargs, config_cls):
+                configs.append(config_kwargs)
+                continue
+
+            # Just skip any Nones
+            if config_kwargs is None:
+                continue
+
+            # Get config cache file and overwrite option (if given). Defaults to no cache
+            #  file and not overwriting
+            config_file = config_kwargs.pop("cache", None)
+            overwrite = config_kwargs.pop("overwrite_cache", False)
+
+            configs.append(
+                Trainer._build_arbitrary_config(
+                    config_cls=config_cls,
+                    config_file=config_file,
+                    overwrite=overwrite,
+                    **config_kwargs,
+                )
+            )
+
+        return configs
 
     @validator("ds_config", pre=True)
     def check_and_build_ds(cls, config_kwargs):
@@ -365,6 +406,28 @@ class Trainer(BaseModel):
         """
         return torch.device(v)
 
+    @validator("extra_config", pre=True)
+    def parse_extra_config(cls, v):
+        """
+        This is for compatibility with the CLI, in which these config args will be
+        passed as key:value strings. Here we split them up and parse into a dict.
+        """
+
+        # Just use the dict that's passed if we're not coming from the CLI
+        if isinstance(v, dict):
+            return v
+
+        extra_config = {}
+        for kvp in v:
+            try:
+                key, val = kvp.split(",")
+            except Exception:
+                raise ValueError(f"Couldn't parse key,value pair '{kvp}'.")
+
+            extra_config[key] = val
+
+        return extra_config
+
     def wandb_init(self):
         """
         Initialize WandB, handling saving the run ID (for continuing the run later).
@@ -375,56 +438,49 @@ class Trainer(BaseModel):
             The WandB run ID for the initialized run
         """
 
-        if self.sweep:
-            run_id = wandb.init().id
-        else:
-            run_id_fn = self.output_dir / "run_id"
+        run_id_fn = self.output_dir / "run_id"
 
-            if self.cont:
-                # Load run_id to continue from file
-                # First make sure the file exists
-                if run_id_fn.exists():
-                    run_id = run_id_fn.read_text().strip()
-                else:
-                    raise FileNotFoundError(
-                        "Couldn't find run_id file to continue run."
-                    )
-                # Make sure the run_id is legit
-                try:
-                    wandb.init(project=self.wandb_project, id=run_id, resume="must")
-                except wandb.errors.UsageError:
-                    raise wandb.errors.UsageError(
-                        f"Run in run_id file ({run_id}) doesn't exist"
-                    )
-                # Update run config to reflect it's been resumed
-                wandb.config.update({"continue": True}, allow_val_change=True)
+        # Don't serialize input_data for confidentiality/size reasons
+        ds_config = self.ds_config.dict()
+        del ds_config["input_data"]
+        config = self.dict()
+        config["ds_config"] = ds_config
+
+        if self.cont:
+            # Load run_id to continue from file
+            # First make sure the file exists
+            if run_id_fn.exists():
+                run_id = run_id_fn.read_text().strip()
             else:
-                # Don't serialize input_data for confidentiality/size reasons
-                ds_config = self.ds_config.dict()
-                del ds_config["input_data"]
-                config = self.dict()
-                config["ds_config"] = ds_config
+                raise FileNotFoundError("Couldn't find run_id file to continue run.")
+            # Make sure the run_id is legit
+            try:
+                wandb.init(project=self.wandb_project, id=run_id, resume="must")
+            except wandb.errors.UsageError:
+                raise wandb.errors.UsageError(
+                    f"Run in run_id file ({run_id}) doesn't exist"
+                )
+            # Update run config to reflect it's been resumed
+            wandb.config.update(config, allow_val_change=True)
+        else:
+            # Start new run
+            run_id = wandb.init(
+                project=self.wandb_project,
+                config=config,
+                name=self.wandb_name,
+            ).id
 
-                # Start new run
-                run_id = wandb.init(
-                    project=self.wandb_project,
-                    config=config,
-                    name=self.wandb_name,
-                ).id
+            # Save run_id in case we want to continue later
+            if not self.output_dir.exists():
+                print(
+                    "No output directory specified, not saving run_id anywhere.",
+                    flush=True,
+                )
+            else:
+                run_id_fn.write_text(run_id)
 
-                # Save run_id in case we want to continue later
-                if not self.output_dir.exists():
-                    print(
-                        "No output directory specified, not saving run_id anywhere.",
-                        flush=True,
-                    )
-                else:
-                    run_id_fn.write_text(run_id)
-
-                for split, table in zip(
-                    ["train", "val", "test"], self._make_wandb_ds_tables()
-                ):
-                    wandb.log({f"dataset_splits/{split}": table})
+        for split, table in zip(["train", "val", "test"], self._make_wandb_ds_tables()):
+            wandb.log({f"dataset_splits/{split}": table})
 
         return run_id
 
@@ -442,23 +498,91 @@ class Trainer(BaseModel):
                 logfile=str(self.log_file.name),
             ).getLogger()
 
-        # Build the Model
-        self.model = self.model_config.build().to(self.device)
-
-        # Build the Optimizer
-        self.optimizer = self.optimizer_config.build(self.model.parameters())
-
-        # Build early stopping
-        if self.es_config:
-            self.es = self.es_config.build()
-        else:
-            self.es = None
-
         # Build dataset and split
         self.ds = self.ds_config.build()
         self.ds_train, self.ds_val, self.ds_test = self.ds_splitter_config.split(
             self.ds
         )
+
+        # Adjust output_dir and make sure it exists
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        # Start the W&B process
+        if self.use_wandb:
+            run_id = self.wandb_init()
+            self.output_dir = self.output_dir / run_id
+            self.output_dir.mkdir(exist_ok=True)
+
+        # Load info for continuing from loss_dict
+        if self.cont:
+            print("Continuing run, checking for loss_dict.json", flush=True)
+            # Try and load loss_dict
+            loss_dict_fn = self.output_dir / "loss_dict.json"
+            if loss_dict_fn.exists():
+                print("Found loss_dict.json", flush=True)
+                self.loss_dict = json.loads(loss_dict_fn.read_text())
+                self.start_epoch = len(
+                    next(iter(self.loss_dict["train"].values()))["losses"]
+                )
+            else:
+                print("No loss_dict file found.")
+                if self.log_file:
+                    self.logger.info("No loss_dict file found.")
+
+                all_weights_epochs = [
+                    int(p.stem)
+                    for p in self.output_dir.glob("*.th")
+                    if p.stem.isnumeric()
+                ]
+                if len(all_weights_epochs) == 0:
+                    raise FileNotFoundError("No weights files found from previous run.")
+
+                self.start_epoch = max(all_weights_epochs) + 1
+
+            # Get splits directly from loss_dict, if available (otherwise will fall
+            #  back to splits from self.ds_splitter_config)
+            if len(self.loss_dict) > 0:
+                subset_idxs = {"train": [], "val": [], "test": []}
+                for i, (compound, _) in enumerate(self.ds):
+                    if self.model_config.grouped:
+                        compound_id = compound
+                    else:
+                        compound_id = compound[1]
+
+                    for sp in ["train", "val", "test"]:
+                        if compound_id in self.loss_dict[sp]:
+                            print(f"putting {compound_id} in {sp}", flush=True)
+                            subset_idxs[sp].append(i)
+                            break
+                    else:
+                        print(
+                            f"Compound {compound_id} not found in loss_dict, not "
+                            "including it."
+                        )
+                        if self.log_file:
+                            self.logger.info(
+                                f"Compound {compound_id} not found in loss_dict, not "
+                                "including it."
+                            )
+
+                self.ds_train = torch.utils.data.Subset(self.ds, subset_idxs["train"])
+                self.ds_val = torch.utils.data.Subset(self.ds, subset_idxs["val"])
+                self.ds_test = torch.utils.data.Subset(self.ds, subset_idxs["test"])
+
+            # Load model weights
+            try:
+                weights_path = self.output_dir / f"{self.start_epoch - 1}.th"
+                self.model_config = self.model_config.update(
+                    {
+                        "model_weights": torch.load(
+                            weights_path, map_location=self.device
+                        )
+                    }
+                )
+            except FileNotFoundError:
+                raise FileNotFoundError(
+                    f"Found {self.start_epoch} epochs of training, but didn't find "
+                    f"{self.start_epoch - 1}.th weights file."
+                )
 
         print(
             "ds lengths",
@@ -468,25 +592,30 @@ class Trainer(BaseModel):
             flush=True,
         )
 
+        # Build the Model
+        self.model = self.model_config.build().to(self.device)
+
+        # Build the Optimizer
+        self.optimizer = self.optimizer_config.build(self.model.parameters())
+
+        # Load optimizer state for continuing
+        if self.cont:
+            optimizer_state_fn = self.output_dir / "optimizer.th"
+            if not optimizer_state_fn.exists():
+                raise FileNotFoundError("No optimizer state file found.")
+
+            optimizer_state = torch.load(optimizer_state_fn, map_location=self.device)
+            self.optimizer.load_state_dict(optimizer_state)
+
+        # Build early stopping
+        self.es = self.es_config.build()
+
+        # Build data augmentation classes
+        self.data_augs = [aug.build() for aug in self.data_aug_configs]
+
         # Build loss function
         self.loss_func = self.loss_config.build()
 
-        # Adjust output_dir and make sure it exists
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        # Start the W&B process
-        if self.sweep or self.use_wandb:
-            run_id = self.wandb_init()
-            self.output_dir = self.output_dir / run_id
-        self.output_dir.mkdir(exist_ok=True)
-
-        # If sweep or continuing a run, get the optimizer and model config options from
-        #  the W&B config
-        if self.sweep or self.cont:
-            wandb_optimizer_config = wandb.config["optimizer_config"]
-            wandb_model_config = wandb.config["model_config"]
-
-            self.optimizer_config = self.optimizer_config.update(wandb_optimizer_config)
-            self.model_config = self.model_config.update(wandb_model_config)
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
@@ -501,7 +630,8 @@ class Trainer(BaseModel):
                 raise ValueError("Trainer was not initialized before trying to train.")
 
         # Save initial model weights for debugging
-        torch.save(self.model.state_dict(), self.output_dir / "init.th")
+        if not self.cont:
+            torch.save(self.model.state_dict(), self.output_dir / "init.th")
 
         # Train for n epochs
         for epoch_idx in range(self.start_epoch, self.n_epochs):
@@ -551,9 +681,22 @@ class Trainer(BaseModel):
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
-                    model_inp = pose["poses"]
+                    model_inp = []
+                    for single_pose in pose["poses"]:
+                        # Apply all data augmentations
+                        aug_pose = deepcopy(single_pose)
+                        for aug in self.data_augs:
+                            aug_pose = aug(aug_pose)
+
+                        model_inp.append(aug_pose)
+
                 else:
-                    model_inp = pose
+                    # Apply all data augmentations
+                    aug_pose = deepcopy(pose)
+                    for aug in self.data_augs:
+                        aug_pose = aug(aug_pose)
+
+                    model_inp = aug_pose
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
@@ -583,6 +726,10 @@ class Trainer(BaseModel):
 
                 # Perform backprop if we've done all the preds for this batch
                 if batch_counter == self.batch_size:
+                    # Need to scale the gradients by batch_size to get to MSE loss
+                    for p in self.model.parameters():
+                        p.grad /= batch_counter
+
                     # Backprop
                     self.optimizer.step()
                     if any(
@@ -599,6 +746,10 @@ class Trainer(BaseModel):
                     self.optimizer.zero_grad()
 
             if batch_counter > 0:
+                # Need to scale the gradients by batch_size to get to MSE loss
+                for p in self.model.parameters():
+                    p.grad /= batch_counter
+
                 # Backprop for final incomplete batch
                 self.optimizer.step()
                 if any(
@@ -707,7 +858,7 @@ class Trainer(BaseModel):
             epoch_test_loss = np.mean(tmp_loss)
             self.model.train()
 
-            if self.use_wandb or self.sweep:
+            if self.use_wandb:
                 wandb.log(
                     {
                         "train_loss": epoch_train_loss,
@@ -717,7 +868,9 @@ class Trainer(BaseModel):
                         "epoch_time": end_time - start_time,
                     }
                 )
+            # Save states
             torch.save(self.model.state_dict(), self.output_dir / f"{epoch_idx}.th")
+            torch.save(self.optimizer.state_dict(), self.output_dir / "optimizer.th")
             (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
             # Stop if loss has gone to infinity or is NaN
@@ -749,7 +902,7 @@ class Trainer(BaseModel):
                             f"using weights from epoch {self.es.best_epoch}"
                         )
                     self.model.load_state_dict(self.es.best_wts)
-                    if self.use_wandb or self.sweep:
+                    if self.use_wandb:
                         wandb.log(
                             {
                                 "best_epoch": self.es.best_epoch,
@@ -774,7 +927,7 @@ class Trainer(BaseModel):
                             f"using weights from epoch {self.es.converged_epoch}"
                         )
                     self.model.load_state_dict(self.es.converged_wts)
-                    if self.use_wandb or self.sweep:
+                    if self.use_wandb:
                         wandb.log(
                             {
                                 "converged_epoch": self.es.converged_epoch,
@@ -810,7 +963,7 @@ class Trainer(BaseModel):
                 for sp, sp_d in self.loss_dict.items()
             }
 
-        if self.use_wandb or self.sweep:
+        if self.use_wandb:
             wandb.finish()
 
         torch.save(self.model.state_dict(), self.output_dir / "final.th")

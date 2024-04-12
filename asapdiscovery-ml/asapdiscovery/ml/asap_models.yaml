@@ -21,7 +21,11 @@ gat_test:
     # sha256hash is the sha256 hash of the file
     sha256hash: d26f278c189eb897607b9b3a2c61ed6c82fbcd7590683631dc9afd7fa010f256
   # The last_updated key is the date the model was last updated. in the format YYYY-MM-DD
+<<<<<<< HEAD
   last_updated: 1995-01-01 # stop the test model being pulled in production
+=======
+  last_updated: 1995-02-06 # actually updated 2024-02-06, but keep old to stop inteferring with prod models
+>>>>>>> upstream/main
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
