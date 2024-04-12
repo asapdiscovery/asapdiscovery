@@ -97,7 +97,7 @@ class BestEarlyStopping:
 
         # Increment counter and check for stopping
         self.counter += 1
-        if (self.counter == self.patience) and (epoch >= self.burnin):
+        if (self.counter >= self.patience) and (epoch >= self.burnin):
             return True
 
         return False
@@ -247,7 +247,7 @@ class PatientConvergedEarlyStopping:
             if self.converged:
                 self.counter += 1
                 print("converged patience counter", self.counter, flush=True)
-                if (self.counter == self.patience) and (epoch >= self.burnin):
+                if (self.counter >= self.patience) and (epoch >= self.burnin):
                     return True
             else:
                 self.converged = True
