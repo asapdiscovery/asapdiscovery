@@ -921,7 +921,14 @@ def derivative(func):
 ################################################################################
 # Early stopping args
 def es_args(func):
-    for fn in [es_type, es_patience, es_n_check, es_divergence, es_config_cache]:
+    for fn in [
+        es_type,
+        es_patience,
+        es_n_check,
+        es_divergence,
+        es_burnin,
+        es_config_cache,
+    ]:
         func = fn(func)
 
     return func
@@ -944,7 +951,7 @@ def es_patience(func):
         type=int,
         help=(
             "Number of training epochs to allow with no improvement in val loss. "
-            "Used if --es_type is best."
+            "Used if --es_type is best or patient_converged."
         ),
     )(func)
 
@@ -955,7 +962,7 @@ def es_n_check(func):
         type=int,
         help=(
             "Number of past epoch losses to keep track of when determining "
-            "convergence. Used if --es_type is converged."
+            "convergence. Used if --es_type is converged or patient_converged."
         ),
     )(func)
 
@@ -966,7 +973,18 @@ def es_divergence(func):
         type=float,
         help=(
             "Max allowable difference from the mean of the losses as a fraction of the "
-            "average loss. Used if --es_type is converged."
+            "average loss. Used if --es_type is converged or patient_converged."
+        ),
+    )(func)
+
+
+def es_burnin(func):
+    return click.option(
+        "--es-burnin",
+        type=int,
+        help=(
+            "Minimum number of epochs to train for regardless of early "
+            "stopping criteria."
         ),
     )(func)
 

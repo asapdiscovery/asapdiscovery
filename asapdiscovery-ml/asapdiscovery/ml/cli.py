@@ -140,6 +140,7 @@ def build_gat(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -222,6 +223,7 @@ def build_gat(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -347,6 +349,7 @@ def build_schnet(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -431,6 +434,7 @@ def build_schnet(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -562,6 +566,7 @@ def build_e3nn(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -647,6 +652,7 @@ def build_e3nn(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -781,6 +787,7 @@ def build_visnet(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -870,6 +877,7 @@ def build_visnet(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -999,6 +1007,7 @@ def build_and_train_gat(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -1081,6 +1090,7 @@ def build_and_train_gat(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -1211,6 +1221,7 @@ def build_and_train_schnet(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -1295,6 +1306,7 @@ def build_and_train_schnet(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -1431,6 +1443,7 @@ def build_and_train_e3nn(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -1516,6 +1529,7 @@ def build_and_train_e3nn(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -1655,6 +1669,7 @@ def build_and_train_visnet(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -1745,6 +1760,7 @@ def build_and_train_visnet(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
