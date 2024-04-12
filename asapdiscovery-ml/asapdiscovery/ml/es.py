@@ -173,7 +173,7 @@ class PatientConvergedEarlyStopping:
     temporary plateau.
     """
 
-    def __init__(self, n_check, divergence, patience=0, burnin=0):
+    def __init__(self, n_check, divergence, patience, burnin=0):
         """
         Parameters
         ----------
@@ -181,10 +181,8 @@ class PatientConvergedEarlyStopping:
             Number of past epochs to keep track of when calculating divergence
         divergence : float
             Max allowable difference from the mean of the losses
-        patience : int, optional
-            The maximum number of epochs to wait after convergence. If not given,
-            training will be stopped as soon as the convergence criteria has been
-            reached
+        patience : int
+            The maximum number of epochs to wait after convergence
         burnin : int, optional
             If given, ensure that at least this many epochs of training have been done
             before we stop
