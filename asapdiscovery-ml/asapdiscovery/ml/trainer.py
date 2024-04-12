@@ -937,7 +937,7 @@ class Trainer(BaseModel):
                     use_epoch = self.es.converged_epoch
                     break
                 elif self.es_config.es_type == "converged" and self.es.check(
-                    epoch_val_loss
+                    epoch_idx, epoch_val_loss
                 ):
                     print(f"Stopping training after epoch {epoch_idx}", flush=True)
                     if self.log_file:
