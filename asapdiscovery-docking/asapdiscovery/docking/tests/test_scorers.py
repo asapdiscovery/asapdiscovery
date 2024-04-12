@@ -100,4 +100,3 @@ def test_auto_ml_scorers():
     scorers = MLModelScorer.autoselect_by_target("SARS-CoV-2-Mpro")
     assert len(scorers) == 3
     # currently 3 model types for SARS-CoV-2-Mpro, adjust as needed
-
