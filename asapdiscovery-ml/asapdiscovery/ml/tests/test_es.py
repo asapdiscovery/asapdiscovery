@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from asapdiscovery.ml.es import (
     BestEarlyStopping,
     ConvergedEarlyStopping,
@@ -75,6 +74,7 @@ def test_patient_converged_es_no_burnin(converged_losses):
     assert i == 59
     assert es.converged_epoch == 39
     assert es.converged_wts == {"epoch": 39}
+
 
 def test_patient_converged_es_burnin(converged_losses):
     es = PatientConvergedEarlyStopping(20, 0.1, 20, 70)
