@@ -41,6 +41,6 @@ dirty = "{base_version}+{distance}.{vcs}{rev}.dirty"
 distance-dirty = "{base_version}+{distance}.{vcs}{rev}.dirty"
 
 [tool.versioningit.vcs]
-method = "git" 
+method = "git"
 match = ["*"]
 default-tag = "0.0.0"
