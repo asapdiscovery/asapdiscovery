@@ -191,6 +191,13 @@ class EarlyStoppingConfig(ConfigBase):
             "Used only in ConvergedEarlyStopping."
         ),
     )
+    burnin: int = Field(
+        0,
+        description=(
+            "Minimum number of epochs to train for regardless of early "
+            "stopping criteria."
+        ),
+    )
 
     @root_validator(pre=False)
     def check_args(cls, values):
@@ -209,10 +216,14 @@ class EarlyStoppingConfig(ConfigBase):
                         "ConvergedEarlyStopping."
                     )
             case EarlyStoppingType.patient_converged:
-                if (values["n_check"] is None) or (values["divergence"] is None):
+                if (
+                    (values["n_check"] is None)
+                    or (values["divergence"] is None)
+                    or (values["patience"] is None)
+                ):
                     raise ValueError(
-                        "Values required for n_check and divergence when using "
-                        "PatientConvergedEarlyStopping."
+                        "Values required for n_check, divergence, and patience when "
+                        "using PatientConvergedEarlyStopping."
                     )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
@@ -226,12 +237,14 @@ class EarlyStoppingConfig(ConfigBase):
             case EarlyStoppingType.none:
                 return None
             case EarlyStoppingType.best:
-                return BestEarlyStopping(self.patience)
+                return BestEarlyStopping(self.patience, self.burnin)
             case EarlyStoppingType.converged:
-                return ConvergedEarlyStopping(self.n_check, self.divergence)
+                return ConvergedEarlyStopping(
+                    self.n_check, self.divergence, self.burnin
+                )
             case EarlyStoppingType.patient_converged:
                 return PatientConvergedEarlyStopping(
-                    self.n_check, self.divergence, self.patience
+                    self.n_check, self.divergence, self.patience, self.burnin
                 )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
