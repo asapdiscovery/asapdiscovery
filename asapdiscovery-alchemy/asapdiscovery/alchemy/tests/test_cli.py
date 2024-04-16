@@ -652,26 +652,6 @@ def test_alchemy_predict_ccd_data(
         )
 
 
-def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
-    """Make sure an error is raised if the units can not be found in the csv headings"""
-
-    runner = CliRunner()
-
-    with tmpdir.as_cwd():
-        # write the results file to local
-        tyk2_result_network.to_file("result_network.json")
-        with pytest.raises(
-            RuntimeError,
-            match="Could not determine the assay tag from the provided units pIC50",
-        ):
-            # use the wrong unit heading
-            runner.invoke(
-                alchemy,
-                ["predict", "-rd", tyk2_reference_data, "-ru", "pIC50"],
-                catch_exceptions=False,  # let the exception buble up so pytest can check it
-            )
-
-
 def test_predict_missing_all_exp_data(
     tyk2_reference_data, tyk2_result_network, tmpdir, monkeypatch
 ):
@@ -754,3 +734,23 @@ def test_predict_missing_all_exp_data(
         assert relative_mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
             0.1497, abs=1e-4
         )
+
+
+def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
+    """Make sure an error is raised if the units can not be found in the csv headings"""
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network.to_file("result_network.json")
+        with pytest.raises(
+            RuntimeError,
+            match="Could not determine the assay tag from the provided units pIC50",
+        ):
+            # use the wrong unit heading
+            runner.invoke(
+                alchemy,
+                ["predict", "-rd", tyk2_reference_data, "-ru", "pIC50"],
+                catch_exceptions=False,  # let the exception buble up so pytest can check it
+            )
