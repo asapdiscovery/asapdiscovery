@@ -96,7 +96,7 @@ def test_select_best_chemgauss(
     pose_generator = OpenEyeConstrainedPoseGenerator(selector=chemgauss)
     # make sure all conformers are present
     assert 187 == mol_with_constrained_confs.NumConfs()
-    current_active = mol_with_constrained_confs.GetActive()
+
     oedu_receptor = mac1_complex.target.to_oedu()
     oe_receptor = oechem.OEGraphMol()
     oedu_receptor.GetProtein(oe_receptor)
@@ -107,9 +107,9 @@ def test_select_best_chemgauss(
     assert isinstance(
         single_conf_ligands[0], oechem.OEGraphMol
     )  # checks its a single conf mol
-    assert mol_with_constrained_confs.GetCoords() != current_active.GetCoords()
+    assert mol_with_constrained_confs.GetCoords() != single_conf_ligands[0].GetCoords()
     assert float(
-        get_SD_data(single_conf_ligands[0])[f"{chemgauss}_score"]
+        get_SD_data(single_conf_ligands[0])[f"{chemgauss}_score"][0]
     ) == pytest.approx(best_score)
 
 
@@ -127,15 +127,12 @@ def test_select_by_energy(forcefield, ff_energy, mol_with_constrained_confs):
     # make sure all conformers are present
     assert 187 == mol_with_constrained_confs.NumConfs()
 
-    current_active = mol_with_constrained_confs.GetActive()
-    # set the active conformer in place
-    pose_generator._select_by_energy(ligand=mol_with_constrained_confs)
-    assert (
-        mol_with_constrained_confs.GetActive().GetCoords() != current_active.GetCoords()
+    # select best pose by energy
+    best_pose = pose_generator._select_by_energy(ligand=mol_with_constrained_confs)
+    assert mol_with_constrained_confs.GetActive().GetCoords() != best_pose.GetCoords()
+    assert float(get_SD_data(best_pose)[f"{forcefield}_energy"][0]) == pytest.approx(
+        ff_energy
     )
-    assert float(
-        get_SD_data(mol_with_constrained_confs)[f"{forcefield}_energy"]
-    ) == pytest.approx(ff_energy)
 
 
 def test_omega_fail_codes(mac1_complex):

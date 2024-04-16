@@ -273,10 +273,11 @@ def load_openeye_cif(
         oechem.OEThrow.Fatal(f"Unable to open {cif_fn}")
 
 
-def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
+def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEMol:
     """
-    Load an OpenEye SDF file containing a single molecule and return it as an
-    OpenEye OEGraphMol object.
+    Load an OpenEye SDF file and return it as an OpenEye OEMol object.
+    Reads multiple conformers into the OEMol object but if the sdf file contains
+    multiple molecules, it will only return the first one.
 
     Parameters
     ----------
@@ -285,15 +286,15 @@ def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
 
     Returns
     -------
-    oechem.OEGraphMol
-        An OpenEye OEGraphMol object containing the molecule data from the SDF file.
+    oechem.OEMol
+        An OpenEye OEMol object containing the molecule data from the SDF file.
 
     Raises
     ------
     FileNotFoundError
         If the specified file does not exist.
     oechem.OEError
-        If the CIF file cannot be opened.
+        If the SDF file cannot be opened.
 
     Notes
     -----
@@ -309,11 +310,11 @@ def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEGraphMol:
         oechem.OEFormat_SDF,
         oechem.OEIFlavor_SDF_Default,
     )
+    ifs.SetConfTest(oechem.OEOmegaConfTest())
     if ifs.open(str(sdf_fn)):
-        coords_mol = oechem.OEGraphMol()
-        oechem.OEReadMolecule(ifs, coords_mol)
-        ifs.close()
-        return coords_mol
+        for mol in ifs.GetOEMols():
+            ifs.close()
+            return mol
     else:
         oechem.OEThrow.Fatal(f"Unable to open {sdf_fn}")
 
@@ -638,9 +639,10 @@ def oemol_to_sdf_string(mol: oechem.OEMol) -> str:
     return molstring
 
 
-def sdf_string_to_oemol(sdf_str: str) -> oechem.OEGraphMol:
+def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     """
-    Loads an SDF string into an openeye molecule
+    Loads an SDF string into an openeye molecule.
+    Enables multiple conformers but only returns the first molecule in a multi molecule sdf
 
     Parameters
     ----------
@@ -659,14 +661,14 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEGraphMol:
         oechem.OEFormat_SDF,
         oechem.OEIFlavor_SDF_Default,
     )
-    ims.openstring(sdf_str)
-    # NOTE: must use GraphMol here, not OEMol, otherwise SD data will not be read
-    mol = oechem.OEGraphMol()
-    oechem.OEReadMolecule(ims, mol)
-    return mol
+    ims.SetConfTest(oechem.OEOmegaConfTest())
+    if ims.openstring(sdf_str):
+        for mol in ims.GetOEMols():
+            ims.close()
+            return mol
 
 
-def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
+def smiles_to_oemol(smiles: str) -> oechem.OEMol:
     """
     Loads a smiles string into an openeye molecule
 
@@ -680,7 +682,7 @@ def smiles_to_oemol(smiles: str) -> oechem.OEGraphMol:
     oechem.OEGraphMol
         resulting OpenEye OEGraphMol
     """
-    mol = oechem.OEGraphMol()
+    mol = oechem.OEMol()
     oechem.OESmilesToMol(mol, smiles)
     return mol
 
@@ -785,62 +787,149 @@ def oemol_to_inchikey(mol: oechem.OEMol, fixed_hydrogens: bool = False) -> str:
     return inchi_key
 
 
-def set_SD_data(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
+def _set_SD_data(mol: oechem.OEMolBase, data: dict[str, str]) -> oechem.OEMolBase:
     """
-    Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
+    Set SD data on an OpenEye OEMolBase object.
+    Since this function works on OEMol, OEGraphMol, OEConfBase objects, it is worth repurposing.
+    But it is not recommended to use this function directly for multi-conformer molecules.
 
     Parameters
     ----------
-    mol: oechem.OEMol
-        OpenEye OEMol
+    mol: oechem.OEMolBase
+        OpenEye OEMolBase
 
     Returns
     -------
-    oechem.OEMol
-        OpenEye OEMol with SD data set
+    oechem.OEMolBase
+        OpenEye OEMolBase with SD data set
     """
     for key, value in data.items():
-        oechem.OESetSDData(mol, key, value)
+        oechem.OESetSDData(mol, key, str(value))
     return mol
 
 
-def _set_SD_data_repr(mol: oechem.OEMol, data: dict[str, str]) -> oechem.OEMol:
+def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
     """
     Set the SD data on an OpenEye OEMol, overwriting any existing data with the same tag
-    sets the SD tag to the str of the value, so that re-reading the SD data with
-    ast.literal_eval in get_SD_data_to_object  give the same value
+    If a str or a single-length list is passed as the values of the dictionary, the data will be set to all conformers.
+    If a list is provided, the data will be set to the conformers in the order provided.
+    If the list is not the same length as the number of conformers, an error will be raised.
 
     Parameters
     ----------
     mol: oechem.OEMol
         OpenEye OEMol
+
+    data: dict[str, str | list]
+        Dictionary of SD data to set.
+
 
     Returns
     -------
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
-    # NOTE: use str to ensure re-reading the SD data will give the same value
-    mol = set_SD_data(mol, {k: str(v) for k, v in data.items()})
-    return mol
+    from asapdiscovery.data.util.data_conversion import get_first_value_of_dict_of_lists
+
+    # convert to dict of lists first
+    data = {k: v if isinstance(v, list) else [v] for k, v in data.items()}
+
+    # If the object is an OEMol, we will set the SD data to all the conformers
+    if isinstance(mol, oechem.OEMol):
+        for key, value_list in data.items():
+            # if list is len 1, generate a list of len N, where N is the number of conformers
+            if len(value_list) == 1:
+                value_list = value_list * mol.NumConfs()
+
+            if not len(value_list) == mol.NumConfs():
+                raise ValueError(
+                    f"Length of data for tag '{key}' does not match number of conformers ({mol.NumConfs()}). "
+                    f"Expected {mol.NumConfs()} but got {len(value_list)} elements."
+                )
+            for i, conf in enumerate(mol.GetConfs()):
+                oechem.OESetSDData(conf, key, str(value_list[i]))
+        return mol
+    elif isinstance(mol, oechem.OEMolBase):
+        return _set_SD_data(mol, get_first_value_of_dict_of_lists(data))
+
+    else:
+        raise TypeError(
+            f"Expected an OpenEye OEMol, OEGraphMol, or OEConf, but got {type(mol)}"
+        )
 
 
-def get_SD_data(mol: oechem.OEMol) -> dict[str, str]:
+def _get_SD_data(mol: oechem.OEMolBase) -> dict[str, str]:
     """
-    Get all SD data on an OpenEye OEMol
+    Get SD data from an OpenEye OEMolBase object.
+    Since this function works on OEMol, OEGraphMol, OEConfBase objects, it is worth repurposing.
+    But it is not recommended to use this function directly for multi-conformer molecules.
 
     Parameters
     ----------
-    mol: oechem.OEMol
-        OpenEye OEMol
+    mol: oechem.OEMolBase
+        OpenEye OEMolBase
 
     Returns
     -------
     Dict[str, str]
         Dictionary of SD data
     """
-    sd_data = {dp.GetTag(): dp.GetValue() for dp in oechem.OEGetSDDataPairs(mol)}
-    return sd_data
+    return {dp.GetTag(): dp.GetValue() for dp in oechem.OEGetSDDataPairs(mol)}
+
+
+def get_SD_data(mol: oechem.OEMolBase) -> dict[str, list]:
+    """
+    Get all SD data on an OpenEye OEMol, OEGraphMol, or OEConfBase object.
+    If multiple conformers are found, the SD tags from the conformers will be used, and any properties at the highest
+    level will be ignored.
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        OpenEye OEMol
+
+    Returns
+    -------
+    dict[str, list]
+        Dictionary of SD data
+
+    Raises
+    ------
+    TypeError
+        If mol is a type that cant be converted to an OEMol, OEGraphMol, or OEConfBase
+    """
+    from asapdiscovery.data.util.data_conversion import (
+        get_dict_of_lists_from_dict_of_str,
+        get_dict_of_lists_from_list_of_dicts,
+    )
+
+    # If the object is an OEMol, we have to pull from the conformers, because even if there is only one conformer
+    # the data is stored at the conformer level if you generate an oemol from an sdf file
+    # However, if you've manually fiddled with the tags, the data might be stored at the molecule level.
+    # In order to resolve this, if there is data at the high level that is not repeated at the conformer level,
+    # we'll add to all the conformers and return that dict of lists.
+
+    if isinstance(mol, oechem.OEMol):
+
+        # Get the data from the molecule
+        molecule_tags = _get_SD_data(mol)
+
+        # get the data from the conformers
+        conformer_tags = get_dict_of_lists_from_list_of_dicts(
+            [_get_SD_data(conf) for conf in mol.GetConfs()]
+        )
+
+        for k, v in molecule_tags.items():
+            if k not in conformer_tags:
+                conformer_tags[k] = [v] * mol.NumConfs()
+
+        return conformer_tags
+    elif isinstance(mol, oechem.OEMolBase):
+        return get_dict_of_lists_from_dict_of_str(_get_SD_data(mol))
+    else:
+        raise TypeError(
+            f"Expected an OpenEye OEMol, OEGraphMol, or OEConf, but got {type(mol)}"
+        )
 
 
 def _get_SD_data_to_object(mol: oechem.OEMol) -> dict[str, Any]:
@@ -886,7 +975,8 @@ def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data cleared
     """
-    oechem.OEClearSDData(mol)
+    for conf in mol.GetConfs():
+        oechem.OEClearSDData(conf)
     return mol
 
 
