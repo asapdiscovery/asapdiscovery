@@ -626,6 +626,7 @@ def predict(
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from rich import pretty
     from rich.padding import Padding
+    import numpy as np
 
     pretty.install()
     console = rich.get_console()
@@ -713,7 +714,8 @@ def predict(
 
     # workout if any reference data was provided and if we should create the interactive reports
     has_ref_data = reference_dataset or protocol
-    if has_ref_data is not None:
+    if has_ref_data is not None and not np.isnan(absolute_df["DG (kcal/mol) (EXPT)"].mean()):
+        # check we have experimental data for a ligand in the network
         report_status = console.status("Generating interactive reports")
         report_status.start()
         # we can only make these reports currently with experimental data
