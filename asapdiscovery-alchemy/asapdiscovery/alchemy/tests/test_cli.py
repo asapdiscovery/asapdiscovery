@@ -672,7 +672,9 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
             )
 
 
-def test_predict_missing_all_exp_data(tyk2_reference_data, tyk2_result_network, tmpdir, monkeypatch):
+def test_predict_missing_all_exp_data(
+    tyk2_reference_data, tyk2_result_network, tmpdir, monkeypatch
+):
     """
     Test making a prediction when experimental data is provided but does not overlap with the ligands, this should
     stop the generation of the interactive reports.
@@ -694,7 +696,7 @@ def test_predict_missing_all_exp_data(tyk2_reference_data, tyk2_result_network, 
             "Inchi": Chem.MolToInchi(methanol),
             "Inchi Key": Chem.MolToInchiKey(methanol),
             "name": "methanol",
-            "Molecule Name": "methanol"
+            "Molecule Name": "methanol",
         }
 
         return pd.DataFrame([fake_tyk2_data])
@@ -711,12 +713,12 @@ def test_predict_missing_all_exp_data(tyk2_reference_data, tyk2_result_network, 
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
         assert (
-                "Absolute report written to predictions-absolute-tyk2-small-test.html"
-                not in result.stdout
+            "Absolute report written to predictions-absolute-tyk2-small-test.html"
+            not in result.stdout
         )
         assert (
-                "Relative report written to predictions-relative-tyk2-small-test.html"
-                not in result.stdout
+            "Relative report written to predictions-relative-tyk2-small-test.html"
+            not in result.stdout
         )
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
@@ -738,8 +740,8 @@ def test_predict_missing_all_exp_data(tyk2_reference_data, tyk2_result_network, 
         relative_mol_data = relative_dataframe.iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
-                relative_mol_data["SMILES_B"]
-                == "c1cc(c(c(c1)Cl)C(=O)Nc2ccnc(c2)NC(=O)C3CCC3)Cl"
+            relative_mol_data["SMILES_B"]
+            == "c1cc(c(c(c1)Cl)C(=O)Nc2ccnc(c2)NC(=O)C3CCC3)Cl"
         )
         assert relative_mol_data["Inchi_Key_A"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
         assert relative_mol_data["Inchi_Key_B"] == "YJMGZFGQBBEAQT-UHFFFAOYSA-N"

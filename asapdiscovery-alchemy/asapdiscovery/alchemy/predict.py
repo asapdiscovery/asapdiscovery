@@ -143,7 +143,9 @@ def shift_and_add_prediction_error(df: pd.DataFrame, point_type: str) -> pd.Data
         point_type: Whether the points are absolute or relative. Can be "DG" or "DDG", resp.
     """
     # shift if the mean is not Nan, this only happens when Nan is the only value in the column
-    if point_type == "DG" and not np.isnan(exp_mean := df[f"{point_type} (kcal/mol) (EXPT)"].mean()):
+    if point_type == "DG" and not np.isnan(
+        exp_mean := df[f"{point_type} (kcal/mol) (EXPT)"].mean()
+    ):
         # shift the FECS predicted values to the mean of the experimental values.
         df[f"{point_type} (kcal/mol) (FECS)"] = (
             df[f"{point_type} (kcal/mol) (FECS)"]
