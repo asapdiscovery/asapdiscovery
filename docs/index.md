@@ -7,6 +7,10 @@ All pandemics are global health threats. Our best defense is a healthy global an
 The toolkit in this repo is a batteries-included drug discovery pipeline being actively developed in a transparent open-source way, with a focus on computational chemistry and informatics support for medicinal chemistry. 
 Coupled with ASAP's [active data disclosures](https://asapdiscovery.org/outputs) our campaign to develop a new series of antivirals can provide insight into the drug discovery process that is normally conducted behind closed doors.
 
+```{note}
+asapdiscovery is not designed as a one size fits all solution for drug discovery, rather it is our opinionated tooling designed with our targets in mind. Your mileage will vary if not using an ASAP target. 
+```
+
 The `asapdiscovery` toolkit is focused around the following core competencies, organised into submodules:
 
  - `asapdiscovery-alchemy`: Free energy calculations using [OpenFE](https://openfree.energy/) and [Alchemiscale](https://github.com/openforcefield/alchemiscale)
