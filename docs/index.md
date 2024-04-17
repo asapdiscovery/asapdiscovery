@@ -51,15 +51,8 @@ guides/index
 modules/index
 ecosystem/index
 future/index
+API/index
 ```
    
 
 
-```{autosummary}
-
-:toctree: _autosummary
-:template: custom-module-template.rst
-:recursive:
-
-
-```
