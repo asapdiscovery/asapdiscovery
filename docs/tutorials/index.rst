@@ -2,16 +2,16 @@ Tutorials
 =========
 
 The following tutorials are available to help you get started with ASAP.
-These are designed as an introduction to the library layer of `asapdiscovery`. 
+These are designed as an introduction to the library layer of `asapdiscovery`.
 
 .. note::
-   Many of these functionalities are available in easy to use CLI tools. 
+   Many of these functionalities are available in easy to use CLI tools.
    See the Guide section and  CLI documentation for more information.
 
 Docking and scoring
 --------------------
 
-This tutorial will guide you through the process of docking a small molecule to an ASAP target and scoring its interactions with physics based scorers and E3 equivariant ML models . 
+This tutorial will guide you through the process of docking a small molecule to an ASAP target and scoring its interactions with physics based scorers and E3 equivariant ML models .
 
 
 Running alchemical free energy calculations
@@ -66,7 +66,7 @@ Tutorial Index
 
 .. toctree::
     :maxdepth: 2
-    
+
     docking_and_scoring
     running_alchemical_free_energy_calculations
     training_ml_models_on_asap_data

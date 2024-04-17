@@ -56,4 +56,3 @@ cp devtools/repo_installer.sh . && chmod +x repo_installer.sh && ./repo_installe
 ```
 
 This will install the package in editable mode, so you can make changes to the code and see the changes reflected in the package. You can also run the tests using the following command:
-
