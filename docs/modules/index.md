@@ -3,7 +3,16 @@ Modules
 
 
 ```{toctree}
-   :maxdepth: 2
-
-   alchemy
+:maxdepth: 3
+:caption: Modules:
+alchemy
+cli
+data
+dataviz
+docking
+genetics
+ml
+modeling
+simulation
+workflows
 ```

@@ -43,7 +43,7 @@ asapdiscovery is pre-alpha and is under very active development, we make no guar
 
 
 ```{toctree}
-:maxdepth: 3
+:maxdepth: 5
 :caption: Contents:
 installation
 tutorials/index
