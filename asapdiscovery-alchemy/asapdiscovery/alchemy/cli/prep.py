@@ -80,8 +80,8 @@ def create(filename: str, core_smarts: str):
     help="The name of the JSON file which contains the prepared receptor complex including the crystal ligand.",
 )
 @click.option(
-    "-rf",
-    "--receptor-folder",
+    "-sd",
+    "--structure-dir",
     type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
     help="The name of the folder file which contains the prepared receptor complexs including the crystal ligands from which we should select the best complex.",
 )
@@ -119,7 +119,7 @@ def run(
     dataset_name: str,
     ligands: Optional[str] = None,
     receptor_complex: Optional[str] = None,
-    receptor_folder: Optional[str] = None,
+    structure_dir: Optional[str] = None,
     factory_file: Optional[str] = None,
     core_smarts: Optional[str] = None,
     processors: int = 1,
@@ -135,7 +135,7 @@ def run(
     dataset_name: The name which should be given to the AlchemyDataset all results will be saved in a folder with the same name.
     ligands: The name of the local file which contains the input ligands to be prepared in the workflow.
     receptor_complex: The name of the local file which contains the prepared complex including the crystal ligand.
-    receptor_folder: The name of the folder which contains the prepared complexs and we should select the best reference from
+    structure_dir: The name of the folder which contains the prepared complexs that we should select the best reference from
     factory_file: The name of the JSON file with the configured AlchemyPrepWorkflow, if not supplied the default will be
         used but a core smarts must be provided.
     core_smarts: The SMARTS string used to identify the atoms in each ligand to be constrained. Required if the factory file is not supplied.
@@ -186,9 +186,9 @@ def run(
     )
     console.print(message)
 
-    if receptor_complex is None and receptor_folder is not None:
+    if receptor_complex is None and structure_dir is not None:
         ref_select_status = console.status(
-            f"Selecting best reference complex form {receptor_folder}"
+            f"Selecting best reference complex form {structure_dir}"
         )
         ref_select_status.start()
 
@@ -198,9 +198,9 @@ def run(
         )
         from asapdiscovery.modeling.protein_prep import ProteinPrepperBase
 
-        reference_complex = ProteinPrepperBase.load_cache(cache_dir=receptor_folder)
+        reference_complex = ProteinPrepperBase.load_cache(cache_dir=structure_dir)
         ref_complex, largest_ligand = select_reference_for_compounds(
-            ligands=asap_ligands, references=reference_complex
+            ligands=asap_ligands, references=reference_complex, check_openmm=True
         )
         ref_select_status.stop()
         # check the similarity of the ligands
