@@ -218,7 +218,7 @@ r"""
     .. nbinfo::
         This page was generated from `{{ docpath }}`__.
 
-    __ https://github.com/vidartf/nbsphinx-link/blob/
+    __ https://github.com/choderalab/asapdiscovery/tree/main/
         """ +
     r"{{ docpath }}"
 )
