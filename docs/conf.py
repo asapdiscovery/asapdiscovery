@@ -18,7 +18,9 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 import asapdiscovery
-
+import nbformat
+import nbsphinx
+import nbsphinx_link
 
 # -- Project information -----------------------------------------------------
 
@@ -54,6 +56,8 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx_rtd_theme",
     "myst_parser",
+    "nbsphinx",
+    "nbsphinx_link",
 ]
 
 autosummary_generate = True
@@ -189,3 +193,32 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+
+here = os.path.dirname(__file__)
+repo = os.path.join(here,  '..')
+
+# Ensure env.metadata[env.docname]['nbsphinx-link-target']
+# points relative to repo root:
+nbsphinx_link_target_root = repo
+
+
+nbsphinx_prolog = (
+r"""
+{% if env.metadata[env.docname]['nbsphinx-link-target'] %}
+{% set docpath = env.metadata[env.docname]['nbsphinx-link-target'] %}
+{% else %}
+{% set docpath = env.doc2path(env.docname, base='docs/source/') %}
+{% endif %}
+
+.. only:: html
+
+    .. role:: raw-html(raw)
+        :format: html
+
+    .. nbinfo::
+        This page was generated from `{{ docpath }}`__.
+
+    __ https://github.com/vidartf/nbsphinx-link/blob/
+        """ +
+    r"{{ docpath }}"
+)
