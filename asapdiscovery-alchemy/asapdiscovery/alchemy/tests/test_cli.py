@@ -302,7 +302,10 @@ def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow)
         )
         assert result.exit_code == 0
         # make sure that we are selecting a receptor
-        assert "Selected SARS2_Mac1A_A1496-ASAP-0008674-001 as the best reference " in result.stdout
+        assert (
+            "Selected SARS2_Mac1A_A1496-ASAP-0008674-001 as the best reference "
+            in result.stdout
+        )
         # make sure stereo is detected
         assert (
             "! WARNING the reference structure is chiral, check output structures carefully!"
@@ -326,7 +329,6 @@ def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow)
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 3
         assert len(prep_dataset.failed_ligands["InconsistentStereo"]) == 2
-
 
 
 def test_alchemy_prep_run_from_postera(

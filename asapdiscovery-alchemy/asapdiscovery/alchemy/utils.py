@@ -318,7 +318,9 @@ class AlchemiscaleHelper:
 
 
 def select_reference_for_compounds(
-    ligands: list["Ligand"], references: list["PreppedComplex"], check_openmm: bool = True
+    ligands: list["Ligand"],
+    references: list["PreppedComplex"],
+    check_openmm: bool = True,
 ) -> tuple["PreppedComplex", "Ligand"]:
     """
     From a collection of ligands and a list of `Complex`es, return the `Complex` that is the most similar to
@@ -384,8 +386,10 @@ def is_valid_receptor_system(target: "PreppedTarget") -> bool:
     Returns:
         `True` if a system can be build without error else `False`
     """
-    from openmm import app
     import tempfile
+
+    from openmm import app
+
     # load current standard force fields in openFE 17.04.2024
     forcefield = app.ForceField(
         *[
