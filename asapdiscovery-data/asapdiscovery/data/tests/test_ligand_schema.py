@@ -27,6 +27,11 @@ def test_ligand_from_smiles(smiles):
     lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.smiles == smiles
 
+def test_empty_ligand():
+    lig = Ligand.from_smiles(smiles, compound_name="test_empty")
+    assert lig.data == None
+    assert lig.to_oemol() == None
+
 
 def test_from_smiles_ids_made(smiles):
     """Make sure the ligand provenance is automatically generated."""
