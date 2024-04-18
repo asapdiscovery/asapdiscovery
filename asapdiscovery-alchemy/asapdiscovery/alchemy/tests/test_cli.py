@@ -264,6 +264,73 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
         assert prep_dataset.failed_ligands is None
 
 
+def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow):
+    """Test running the alchemy prep workflow and letting it select the receptor."""
+
+    # locate the ligands input file
+    ligand_file = fetch_test_file("constrained_conformer/mac1_ligands.smi")
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # store the complex in the cache folder we only have one so it should select this one
+        receptor_cache = pathlib.Path("cache")
+        receptor_cache.mkdir(exist_ok=True)
+
+        mac1_complex.to_json_file(receptor_cache.joinpath("complex.json"))
+        # create a new prep workflow with no expansion and only valid stereo
+        workflow = openeye_prep_workflow.copy(deep=True)
+        workflow.strict_stereo = True
+        workflow.stereo_expander = None
+        workflow.to_file("workflow.json")
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "prep",
+                "run",
+                "-f",
+                "workflow.json",
+                "-n",
+                "mac1-testing",
+                "-l",
+                ligand_file.as_posix(),
+                "-sd",
+                "cache",
+                "-p",
+                1,
+            ],
+        )
+        assert result.exit_code == 0
+        # make sure that we are selecting a receptor
+        assert (
+            "Selected SARS2_Mac1A_A1496-ASAP-0008674-001 as the best reference "
+            in result.stdout
+        )
+        # make sure stereo is detected
+        assert (
+            "! WARNING the reference structure is chiral, check output structures carefully!"
+            in result.stdout
+        )
+        # check all molecules have poses made
+        assert "[✓] Pose generation successful for 5/5." in result.stdout
+        # make sure stereo filtering is not run
+        assert "[✓] Stereochemistry filtering complete" in result.stdout
+        # check we can load the result
+        prep_dataset = AlchemyDataSet.from_file(
+            "mac1-testing/prepared_alchemy_dataset.json"
+        )
+        # make sure the receptor is writen to file
+        assert (
+            pathlib.Path(prep_dataset.dataset_name)
+            .joinpath(f"{prep_dataset.reference_complex.target.target_name}.pdb")
+            .exists()
+        )
+        assert prep_dataset.dataset_name == "mac1-testing"
+        assert len(prep_dataset.input_ligands) == 5
+        assert len(prep_dataset.posed_ligands) == 3
+        assert len(prep_dataset.failed_ligands["InconsistentStereo"]) == 2
+
+
 def test_alchemy_prep_run_from_postera(
     tmpdir, mac1_complex, openeye_prep_workflow, monkeypatch
 ):
