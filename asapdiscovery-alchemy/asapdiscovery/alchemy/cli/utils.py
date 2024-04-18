@@ -177,14 +177,14 @@ def has_warhead(ligand: "Ligand") -> bool:
     from rdkit import Chem
 
     covalent_warhead_smarts = {
-        'acrylamide': '[C;H2:1]=[C;H1]C(N)=O',
-        'acrylamide_adduct': 'NC(C[C:1]S)=O',
-        'chloroacetamide': 'Cl[C;H2:1]C(N)=O',
-        'chloroacetamide_adduct': 'S[C:1]C(N)=O',
-        'vinylsulfonamide': 'NS(=O)([C;H1]=[C;H2:1])=O',
-        'vinylsulfonamide_adduct': 'NS(=O)(C[C:1]S)=O',
-        'nitrile': 'N#[C:1]-[*]',
-        'nitrile_adduct': 'C-S-[C:1](=N)',
+        "acrylamide": "[C;H2:1]=[C;H1]C(N)=O",
+        "acrylamide_adduct": "NC(C[C:1]S)=O",
+        "chloroacetamide": "Cl[C;H2:1]C(N)=O",
+        "chloroacetamide_adduct": "S[C:1]C(N)=O",
+        "vinylsulfonamide": "NS(=O)([C;H1]=[C;H2:1])=O",
+        "vinylsulfonamide_adduct": "NS(=O)(C[C:1]S)=O",
+        "nitrile": "N#[C:1]-[*]",
+        "nitrile_adduct": "C-S-[C:1](=N)",
     }
     rdkit_mol = ligand.to_rdkit()
     for smarts in covalent_warhead_smarts.values():

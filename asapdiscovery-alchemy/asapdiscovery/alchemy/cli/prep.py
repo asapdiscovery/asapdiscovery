@@ -214,7 +214,7 @@ def run(
         ref_ligands = get_cdd_molecules(
             protocol_name=experimental_protocol,
             defined_stereo_only=True,
-            remove_covalent=True
+            remove_covalent=True,
         )
         cdd_status.stop()
 

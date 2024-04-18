@@ -367,7 +367,7 @@ def test_upload_to_postera(monkeypatch, tyk2_result_network):
         pytest.param(True, 1, True, id="Defined only no warhead."),
         pytest.param(False, 2, True, id="All ligands no warhead."),
         pytest.param(True, 2, False, id="Defined only with warhead"),
-        pytest.param(False, 3, False, id="All ligands with warhead.")
+        pytest.param(False, 3, False, id="All ligands with warhead."),
     ],
 )
 def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands, remove_covalent):
@@ -384,10 +384,10 @@ def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands, remove_cov
                 "CXSmiles": "NC(C)C(=O)O",
             },
             {
-                "Smiles": "CCOC1=C(NC(=O)\C=C\CN(C)C)C=C2C(NC3=CC=C(OCC4=CC=CC=N4)C(Cl)=C3)=C(C=NC2=C1)C#N",
+                "Smiles": r"CCOC1=C(NC(=O)\C=C\CN(C)C)C=C2C(NC3=CC=C(OCC4=CC=CC=N4)C(Cl)=C3)=C(C=NC2=C1)C#N",
                 "Molecule Name": "Neratinib",
-                "CXSmiles": "CCOC1=C(NC(=O)\C=C\CN(C)C)C=C2C(NC3=CC=C(OCC4=CC=CC=N4)C(Cl)=C3)=C(C=NC2=C1)C#N"
-            }
+                "CXSmiles": r"CCOC1=C(NC(=O)\C=C\CN(C)C)C=C2C(NC3=CC=C(OCC4=CC=CC=N4)C(Cl)=C3)=C(C=NC2=C1)C#N",
+            },
         ]
         return pandas.DataFrame(data)
 
@@ -396,7 +396,9 @@ def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands, remove_cov
     )
 
     molecules = get_cdd_molecules(
-        protocol_name="my-protocol", defined_stereo_only=defined_only, remove_covalent=remove_covalent
+        protocol_name="my-protocol",
+        defined_stereo_only=defined_only,
+        remove_covalent=remove_covalent,
     )
     assert len(molecules) == n_ligands
     # check they are marked as experimental
