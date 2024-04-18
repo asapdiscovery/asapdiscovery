@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from alchemiscale import Scope, ScopedKey
@@ -12,6 +12,11 @@ from .schema.fec import (
     TransformationResult,
 )
 from .schema.forcefield import ForceFieldParams
+
+if TYPE_CHECKING:
+    from asapdiscovery.data.schema.complex import PreppedComplex
+    from asapdiscovery.data.schema.ligand import Ligand
+    from asapdiscovery.data.schema.target import PreppedTarget
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
@@ -317,3 +322,96 @@ class AlchemiscaleHelper:
         else:
             canceled_tasks = []
         return canceled_tasks
+
+
+def select_reference_for_compounds(
+    ligands: list["Ligand"],
+    references: list["PreppedComplex"],
+    check_openmm: bool = True,
+) -> tuple["PreppedComplex", "Ligand"]:
+    """
+    From a collection of ligands and a list of `Complex`es, return the `Complex` that is the most similar to
+    the largest of the query ligands and should be used to constrain the generated poses.
+
+    Args:
+        ligands: The list of ligands in the alchemy network we need a reference for.
+        references: The list of prepped references we can select from.
+        check_openmm: If we should try and build an openMM system for the complex to ensure if can be simulated.
+
+    Returns:
+        The PreppedComplex most suitable for the input ligands and the largest ligand that it was selected to match.
+    """
+    from asapdiscovery.data.operators.selectors.mcs_selector import sort_by_mcs
+
+    # sort the ligands by the number of atoms
+    compounds_by_size = [
+        (ligand.to_rdkit().GetNumAtoms(), ligand) for ligand in ligands
+    ]
+    compounds_by_size.sort(key=lambda x: x[0], reverse=True)
+
+    # find that largest ligand's closest reference
+    ref_ligands = [ref.ligand for ref in references]
+    sorted_index = sort_by_mcs(
+        reference_ligand=compounds_by_size[0][1], target_ligands=ref_ligands
+    )
+
+    sorted_complexs = np.asarray(references)[sorted_index]
+    best_complex = sorted_complexs[0]
+    if check_openmm:
+        # check each complex can make a valid system in openmm and return the first success
+        for ref_complex in sorted_complexs:
+            if is_valid_receptor_system(target=ref_complex.target):
+                best_complex = ref_complex
+                break
+
+    return best_complex, compounds_by_size[0][1]
+
+
+def get_similarity(ligand_a: "Ligand", ligand_b: "Ligand") -> float:
+    """
+    Get the ECFP6 tanimoto similarity between two ligands.
+    """
+    from rdkit import DataStructs
+    from rdkit.Chem import AllChem
+
+    radius = 3  # ECFP6 because of diameter instead of radius
+    simi = DataStructs.FingerprintSimilarity(
+        AllChem.GetMorganFingerprintAsBitVect(ligand_a.to_rdkit(), radius),
+        AllChem.GetMorganFingerprintAsBitVect(ligand_b.to_rdkit(), radius),
+    )
+
+    return round(simi, 2)
+
+
+def is_valid_receptor_system(target: "PreppedTarget") -> bool:
+    """
+    Check we can build an openMM for the given target.
+
+    Args:
+        target: The prepped target for which we should try and build a system.
+
+    Returns:
+        `True` if a system can be build without error else `False`
+    """
+    import tempfile
+
+    from openmm import app
+
+    # load current standard force fields in openFE 17.04.2024
+    forcefield = app.ForceField(
+        *[
+            "amber/ff14SB.xml",  # ff14SB protein force field
+            "amber/tip3p_standard.xml",  # TIP3P and recommended monovalent ion parameters
+            "amber/tip3p_HFE_multivalent.xml",  # for divalent ions
+            "amber/phosaa10.xml",  # Handles THE TPO
+        ]
+    )
+    with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
+        target.to_pdb_file(fp.name)
+        pdb = app.PDBFile(fp.name)
+        try:
+            _ = forcefield.createSystem(pdb.topology)
+        except Exception:
+            return False
+
+    return True
