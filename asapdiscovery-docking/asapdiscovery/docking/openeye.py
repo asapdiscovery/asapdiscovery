@@ -333,7 +333,8 @@ class POSITDocker(DockingBase):
                     error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
                     if error == "skip":
                         logger.warn(error_msg)
-                        docking_results.append(None)
+                        # Need to have a result for dask to be happy
+                        # docking_results.append(None)
                     elif error == "raise":
                         raise ValueError(error_msg)
                     else:

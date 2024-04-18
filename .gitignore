@@ -99,6 +99,9 @@ ENV/
 ._*
 .DS*
 
+# VSCode files
+.vscode/
+
 # Rope project settings
 .ropeproject
 
