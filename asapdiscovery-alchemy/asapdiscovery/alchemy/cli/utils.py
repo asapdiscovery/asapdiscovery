@@ -186,7 +186,7 @@ def has_warhead(ligand: "Ligand") -> bool:
         "nitrile": "N#[C:1]-[*]",
         "nitrile_adduct": "C-S-[C:1](=N)",
         "propiolamide": "NC(=O)C#C",
-        "sulfamate": "NS(=O)(=O)O"
+        "sulfamate": "NS(=O)(=O)O",
     }
     rdkit_mol = ligand.to_rdkit()
     for smarts in covalent_warhead_smarts.values():
