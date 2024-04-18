@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
-from asapdiscovery.data.services.postera import (
+from asapdiscovery.data.services.postera.molecule_set import (
     Molecule,
     MoleculeList,
     MoleculeSetAPI,
