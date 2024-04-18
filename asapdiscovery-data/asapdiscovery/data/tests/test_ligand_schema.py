@@ -30,8 +30,8 @@ def test_ligand_from_smiles(smiles):
 
 def test_empty_ligand():
     lig = Ligand.from_smiles(smiles, compound_name="test_empty")
-    assert lig.data == None
-    assert lig.to_oemol() == None
+    assert lig.data is None
+    assert lig.to_oemol() is None
 
 
 def test_from_smiles_ids_made(smiles):
