@@ -362,13 +362,15 @@ def test_upload_to_postera(monkeypatch, tyk2_result_network):
 
 
 @pytest.mark.parametrize(
-    "defined_only, n_ligands",
+    "defined_only, n_ligands, remove_covalent",
     [
-        pytest.param(True, 1, id="Defined only."),
-        pytest.param(False, 2, id="All ligands."),
+        pytest.param(True, 1, True, id="Defined only no warhead."),
+        pytest.param(False, 2, True, id="All ligands no warhead."),
+        pytest.param(True, 2, False, id="Defined only with warhead"),
+        pytest.param(False, 3, False, id="All ligands with warhead.")
     ],
 )
-def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands):
+def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands, remove_covalent):
     """Test downloading molecules from a cdd mocked protocol and removing molecules with undefined stereo."""
 
     import asapdiscovery.alchemy.predict
@@ -381,6 +383,11 @@ def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands):
                 "Molecule Name": "alanine",
                 "CXSmiles": "NC(C)C(=O)O",
             },
+            {
+                "Smiles": "CCOC1=C(NC(=O)\C=C\CN(C)C)C=C2C(NC3=CC=C(OCC4=CC=CC=N4)C(Cl)=C3)=C(C=NC2=C1)C#N",
+                "Molecule Name": "Neratinib",
+                "CXSmiles": "CCOC1=C(NC(=O)\C=C\CN(C)C)C=C2C(NC3=CC=C(OCC4=CC=CC=N4)C(Cl)=C3)=C(C=NC2=C1)C#N"
+            }
         ]
         return pandas.DataFrame(data)
 
@@ -389,7 +396,7 @@ def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands):
     )
 
     molecules = get_cdd_molecules(
-        protocol_name="my-protocol", defined_stereo_only=defined_only
+        protocol_name="my-protocol", defined_stereo_only=defined_only, remove_covalent=remove_covalent
     )
     assert len(molecules) == n_ligands
     # check they are marked as experimental

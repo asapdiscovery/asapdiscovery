@@ -210,8 +210,12 @@ def run(
             f"Downloading experimental ligands from CDD protocol {experimental_protocol}"
         )
         cdd_status.start()
-        # get all molecules with data for the given protocol
-        ref_ligands = get_cdd_molecules(protocol_name=experimental_protocol)
+        # get all molecules with data for the given protocol, removing stereo issues and possible warheads
+        ref_ligands = get_cdd_molecules(
+            protocol_name=experimental_protocol,
+            defined_stereo_only=True,
+            remove_covalent=True
+        )
         cdd_status.stop()
 
         message = Padding(
