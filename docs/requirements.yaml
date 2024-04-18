@@ -11,7 +11,7 @@ dependencies:
   # docs
   - sphinx
   - sphinx_rtd_theme
-  - myst_parser
+  - myst-parser
   - nbsphinx
   - nbsphinx-link
 
