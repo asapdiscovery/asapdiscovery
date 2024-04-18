@@ -829,6 +829,11 @@ def set_SD_data(mol: oechem.OEMol, data: dict[str, str | list]) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data set
     """
+
+    # Don't both if the ligand doesn't actually have any data
+    if not mol:
+        return
+
     from asapdiscovery.data.util.data_conversion import get_first_value_of_dict_of_lists
 
     # convert to dict of lists first
