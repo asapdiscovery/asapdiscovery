@@ -125,7 +125,10 @@ def get_cdd_molecules(
         # remove ligands with undefined or non-absolute stereochemistry
         defined_ligands = []
         from openff.toolkit import Molecule
-        from openff.toolkit.utils.exceptions import UndefinedStereochemistryError, RadicalsNotSupportedError
+        from openff.toolkit.utils.exceptions import (
+            RadicalsNotSupportedError,
+            UndefinedStereochemistryError,
+        )
         from rdkit import Chem
 
         for mol in ref_ligands:
