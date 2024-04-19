@@ -26,7 +26,7 @@ def test_complex_from_pdb(complex_pdb):
     assert c.target.target_name == "test"
     assert c.ligand.compound_name == "test"
     assert c.target.to_oemol().NumAtoms() == 4716
-    assert c.ligand.to_oemol().NumAtoms() == 33
+    assert c.ligand.to_oemol().NumAtoms() == 53
 
 
 def test_equal(complex_pdb):

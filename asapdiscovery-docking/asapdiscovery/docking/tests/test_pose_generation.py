@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.backend.openeye import get_SD_data, oechem, oemol_to_inchikey
+from asapdiscovery.data.backend.openeye import get_SD_data, oechem, oemol_to_inchikey, oemol_to_smiles
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
