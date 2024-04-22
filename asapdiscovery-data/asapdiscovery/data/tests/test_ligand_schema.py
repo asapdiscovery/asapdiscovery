@@ -32,6 +32,9 @@ def test_from_smiles_ids_made(smiles):
     """Make sure the ligand provenance is automatically generated."""
     lig = Ligand.from_smiles(smiles, compound_name="test_name")
     assert lig.provenance.isomeric_smiles == smiles
+    # make sure hydrogens are added to the molecule
+    oemol = lig.to_oemol()
+    assert oemol.NumAtoms() == 23
 
 
 def test_from_oemol_sd_tags_left(moonshot_sdf):
