@@ -667,9 +667,8 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
 
         for mol in ims.GetOEMols():
             rmol = mol.CreateCopy()
-            break # only return the first molecule
+            break  # only return the first molecule
     return rmol
-
 
 
 def smiles_to_oemol(smiles: str) -> oechem.OEMol:
