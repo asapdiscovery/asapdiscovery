@@ -163,7 +163,8 @@ def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):
                 source_key=key,
                 inputs={"stateA": edge.stateA, "stateB": edge.stateB},
                 outputs={
-                    "unit_estimate": estimate * OFFUnit.kilocalorie / OFFUnit.mole
+                    "unit_estimate": estimate * OFFUnit.kilocalorie / OFFUnit.mole,
+                    "unit_estimate_error": 0.1 * OFFUnit.kilocalorie / OFFUnit.mole,
                 },
             )
             results[key] = RelativeHybridTopologyProtocolResult(
