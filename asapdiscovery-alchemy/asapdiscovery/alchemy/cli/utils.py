@@ -136,10 +136,7 @@ def get_cdd_molecules(
             rdmol = Chem.MolFromSmiles(mol.tags["cxsmiles"])
             groups = rdmol.GetStereoGroups()
             for stereo_group in groups:
-                if (
-                    stereo_group.GetGroupType()
-                    != Chem.StereoGroupType.STEREO_ABSOLUTE
-                ):
+                if stereo_group.GetGroupType() != Chem.StereoGroupType.STEREO_ABSOLUTE:
                     raise UndefinedStereochemistryError("missing absolute stereo")
             # if we make it through all checks add the molecule
             defined_ligands.append(mol)
