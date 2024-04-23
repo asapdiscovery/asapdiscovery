@@ -407,9 +407,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
-            fitness_visualizations[DockingResultCols.TARGET_ID.value]
-        )
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
@@ -454,6 +454,28 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     scores_df = scores_df.drop_duplicates(
         subset=[DockingResultCols.SMILES.value], keep="first"
     )
+
+    def filter_docking_results(results, scores_df):
+        """
+        Filter docking results by the scores dataframe
+        """
+        keep = []
+        for result in results:
+            for _, row in scores_df.iterrows():
+                if (
+                    result.input_pair.ligand.compound_name
+                    == row[DockingResultCols.LIGAND_ID.value]
+                    and result.input_pair.complex.target.target_name
+                    == row[DockingResultCols.DOCKING_STRUCTURE_POSIT.value]
+                    and result.input_pair.ligand.smiles
+                    == row[DockingResultCols.SMILES.value]
+                ):
+                    keep.append(result)
+
+        return keep
+
+    results = filter_docking_results(results, scores_df)
+    logger.info("Filtered docking results by scores dataframe")
 
     n_duplicate_filtered = len(scores_df)
     logger.info(
