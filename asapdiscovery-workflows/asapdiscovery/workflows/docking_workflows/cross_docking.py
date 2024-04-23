@@ -224,9 +224,9 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
         write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
+            output_dir / "docking_results.sdf",
+            [r.posed_ligand for r in results if r is not None],
         )
-
     scores_df = scorer.score(
         results,
         use_dask=inputs.use_dask,
