@@ -290,6 +290,36 @@ class DockingResult(BaseModel):
         return not self.__eq__(other)
 
 
+class MultiPoseDockingResult(BaseModel):
+    """
+    Schema for a MultiPoseDockingResult, containing both a DockingInputPair used as input to the workflow
+    and a Ligand object containing the docked poses.
+
+    Parameters
+    ----------
+    input_pair : DockingInputPair
+        Input pair
+    ligand : Ligand
+        Ligand object with multiple docked poses
+    provenance : dict[str, str]
+        Provenance information
+    """
+
+    type: Literal["DockingResult"] = "MultiPoseDockingResult"
+    input_pair: DockingInputPair = Field(description="Input pair")
+    posed_ligand: Ligand = Field(description="Posed ligand")
+    provenance: dict[str, str] = Field(description="Provenance")
+
+    def to_json_file(self, file: str | Path):
+        with open(file, "w") as f:
+            f.write(self.json(indent=2))
+
+    @classmethod
+    def from_json_file(cls, file: str | Path) -> "MultiPoseDockingResult":
+        with open(file) as f:
+            return cls.parse_raw(f.read())
+
+
 def write_results_to_multi_sdf(
     sdf_file: Union[str, Path],
     results: Union[list[DockingResult], list[Path]],

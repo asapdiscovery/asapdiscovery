@@ -261,6 +261,32 @@ class Ligand(DataModelAbstractBase):
 
         return mol
 
+    @classmethod
+    def from_single_conformers(cls, confs: list["Ligand"]) -> ["Ligand"]:
+        """
+        Create a Ligand object from a list of Ligand objects, each representing a single conformer.
+
+        This is a bit complicated because we want to ensure that the resulting Ligand object
+        has the same data as all the original conformers.
+        """
+        # check that all the conformers are the same
+        if not all([confs[0].is_chemically_equal(conf) for conf in confs]):
+            raise InvalidLigandError(
+                "All conformers must have the same chemical structure data"
+            )
+
+        # get the data from the first conformer
+        data = confs[0].data
+        # get the tags from all the conformers
+        tags = {}
+        conf_tags = {}
+        for conf in confs:
+            tags.update(conf.tags)
+            conf_tags.update(conf.conf_tags)
+
+        # create a new Ligand object with the data from the first conformer
+        return cls(data=data, tags=tags, conf_tags=conf_tags)
+
     def to_single_conformers(self) -> ["Ligand"]:
         """
         Return a Ligand object for each conformer.
