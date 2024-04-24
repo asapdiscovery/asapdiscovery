@@ -142,12 +142,15 @@ def shift_and_add_prediction_error(df: pd.DataFrame, point_type: str) -> pd.Data
         df: The dataframe we want to shift and add the prediction error to.
         point_type: Whether the points are absolute or relative. Can be "DG" or "DDG", resp.
     """
-    if point_type == "DG":
+    # shift if the mean is not Nan, this only happens when Nan is the only value in the column
+    if point_type == "DG" and not np.isnan(
+        exp_mean := df[f"{point_type} (kcal/mol) (EXPT)"].mean()
+    ):
         # shift the FECS predicted values to the mean of the experimental values.
         df[f"{point_type} (kcal/mol) (FECS)"] = (
             df[f"{point_type} (kcal/mol) (FECS)"]
             - df[f"{point_type} (kcal/mol) (FECS)"].mean()
-            + df[f"{point_type} (kcal/mol) (EXPT)"].mean()
+            + exp_mean
         )
 
     # calculate the prediction error.
@@ -746,6 +749,7 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     """
     # create a plotting dataframe which drops rows with nans
     plotting_df = dataframe.dropna(axis=0, inplace=False)
+    plotting_df.reset_index(inplace=True)
     # add drawn molecule as a column
     mols = [draw_mol(smiles) for smiles in dataframe["SMILES"]]
     dataframe["Molecule"] = mols
@@ -841,6 +845,7 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     dataframe["smiles"] = combined_smiles
     # create a plotting dataframe which drops rows with nans
     plotting_df = dataframe.dropna(axis=0, inplace=False)
+    plotting_df.reset_index(inplace=True)
     # create the DG plot
     fig = plotmol_relative(
         calculated=plotting_df["DDG (kcal/mol) (FECS)"],

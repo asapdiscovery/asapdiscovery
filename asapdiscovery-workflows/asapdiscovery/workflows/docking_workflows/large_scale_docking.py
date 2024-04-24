@@ -27,7 +27,7 @@ from asapdiscovery.data.services.services_config import (
 from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
-from asapdiscovery.dataviz.viz_v2.html_viz import ColourMethod, HTMLVisualizerV2
+from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
 from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
@@ -329,8 +329,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # run html visualiser to get web-ready vis of docked poses
     logger.info("Running HTML visualiser for docked poses")
     html_ouptut_dir = output_dir / "poses"
-    html_visualizer = HTMLVisualizerV2(
-        colour_method=ColourMethod.subpockets,
+    html_visualizer = HTMLVisualizer(
+        color_method=ColorMethod.subpockets,
         target=inputs.target,
         output_dir=html_ouptut_dir,
     )
@@ -365,8 +365,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     if target_has_fitness_data(inputs.target):
         logger.info("Running fitness HTML visualiser")
         html_fitness_output_dir = output_dir / "fitness"
-        html_fitness_visualizer = HTMLVisualizerV2(
-            colour_method=ColourMethod.fitness,
+        html_fitness_visualizer = HTMLVisualizer(
+            color_method=ColorMethod.fitness,
             target=inputs.target,
             output_dir=html_fitness_output_dir,
         )
@@ -517,6 +517,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             manifold_data,
             DockingResultCols.SMILES.value,
             DockingResultCols.LIGAND_ID.value,
+            drop_no_uuid=True,
         )
 
         if made_new_molset:

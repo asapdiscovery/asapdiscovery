@@ -115,7 +115,6 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
         for fail_oemol in failed_ligands:
             result.failed_ligands.append(Ligand.from_oemol(fail_oemol))
-
         return result
 
     def _prune_clashes(self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]):
@@ -159,7 +158,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
 
     def _select_best_pose(
         self, receptor: oechem.OEDesignUnit, ligands: list[oechem.OEMol]
-    ) -> list[oechem.OEGraphMol]:
+    ) -> list[oechem.OEMol]:
         """
         Select the best pose for each ligand in place using the selected criteria.
 
@@ -189,22 +188,23 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             # this will select the lowest energy conformer
             unique_scores = {pose[0] for pose in poses}
             if len(unique_scores) == 1 and len(poses) != 1:
-                self._select_by_energy(ligand)
+                best_pose = self._select_by_energy(ligand)
 
             else:
                 # set the best score as the active conformer
                 poses = sorted(poses, key=lambda x: x[0])
-                ligand.SetActive(poses[0][1])
-                oechem.OESetSDData(
-                    ligand, f"{self.selector.value}_score", str(poses[0][0])
+                best_pose = oechem.OEGraphMol(poses[0][1])
+
+                # set SD data to whole molecule, then get all the SD data and set to all conformers
+                set_SD_data(
+                    best_pose, {f"{self.selector.value}_score": str(poses[0][0])}
                 )
 
             # turn back into a single conformer molecule
-            posed_ligands.append(oechem.OEGraphMol(ligand))
-
+            posed_ligands.append(best_pose)
         return posed_ligands
 
-    def _select_by_energy(self, ligand: oechem.OEMol):
+    def _select_by_energy(self, ligand: oechem.OEMol) -> oechem.OEGraphMol:
         """
         Calculate the internal energy of each conformer of the ligand using the backup score force field and select the lowest energy pose as active
 
@@ -229,10 +229,9 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             poses.append((ff(vec_coords), conformer))
 
         poses = sorted(poses, key=lambda x: x[0])
-        ligand.SetActive(poses[0][1])
-        oechem.OESetSDData(
-            ligand, f"{self.backup_score.value}_energy", str(poses[0][0])
-        )
+        best_pose = oechem.OEGraphMol(poses[0][1])
+        set_SD_data(best_pose, {f"{self.backup_score.value}_energy": str(poses[0][0])})
+        return best_pose
 
 
 class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
@@ -365,6 +364,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         Returns:
             The openeye molecule containing the posed conformers.
         """
+        from asapdiscovery.data.backend.openeye import get_SD_data, set_SD_data
 
         if core_smarts is not None:
             core_fragment = self._generate_core_fragment(
@@ -381,6 +381,10 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             core_fragment=core_fragment, use_mcs=use_mcs
         )
 
+        # Get SD data because the omega code will silently move it to the high level
+        # and that is inconsistent with what we do elsewhere
+        sd_data = get_SD_data(target_ligand)
+
         # run omega
         return_code = omega_generator.Build(target_ligand)
 
@@ -388,10 +392,14 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         oechem.OESuppressHydrogens(target_ligand)
         oechem.OEAddExplicitHydrogens(target_ligand)
 
+        # add SD data back
+        set_SD_data(target_ligand, sd_data)
+
         if (target_ligand.GetDimension() != 3) or (
             return_code != oeomega.OEOmegaReturnCode_Success
         ):
             # add the failure message as an SD tag, should be able to see visually if the molecule is 2D
+
             set_SD_data(
                 mol=target_ligand,
                 data={"omega_return_code": oeomega.OEGetOmegaError(return_code)},
@@ -427,7 +435,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     pool.submit(
                         self._generate_pose,
                         **{
-                            "target_ligand": oechem.OEMol(mol.to_oemol()),
+                            "target_ligand": mol.to_oemol(),
                             "core_smarts": core_smarts,
                             "reference_ligand": reference_ligand,
                         },
@@ -444,7 +452,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         else:
             for mol in ligands:
                 posed_ligand = self._generate_pose(
-                    target_ligand=oechem.OEMol(mol.to_oemol()),
+                    target_ligand=mol.to_oemol(),
                     core_smarts=core_smarts,
                     reference_ligand=reference_ligand,
                 )
@@ -464,7 +472,6 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         posed_ligands = self._select_best_pose(
             receptor=oedu_receptor, ligands=result_ligands
         )
-
         return posed_ligands, failed_ligands
 
 
@@ -517,7 +524,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             [target_ligand, reference_ligand],
             ringMatchesRingOnly=True,
             completeRingsOnly=True,
-            atomCompare=rdFMCS.AtomCompare.CompareAny,
+            atomCompare=rdFMCS.AtomCompare.CompareAnyHeavyAtom,
             bondCompare=rdFMCS.BondCompare.CompareAny,
             maximizeBonds=False,
             timeout=self.mcs_timeout,
@@ -727,6 +734,11 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     )
                     # we need to transfer the properties which would be lost
                     openeye_mol = off_mol.to_openeye()
+
+                    # make sure properties at the top level get added to the conformers
+                    sd_tags = get_SD_data(openeye_mol)
+                    set_SD_data(openeye_mol, sd_tags)
+
                     if target_ligand.GetNumConformers() > 0:
                         # save the mol with all conformers
                         result_ligands.append(openeye_mol)
@@ -742,6 +754,11 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 off_mol = Molecule.from_rdkit(posed_ligand, allow_undefined_stereo=True)
                 # we need to transfer the properties which would be lost
                 openeye_mol = off_mol.to_openeye()
+
+                # make sure properties at the top level get added to the conformers
+                sd_tags = get_SD_data(openeye_mol)
+                set_SD_data(openeye_mol, sd_tags)
+
                 if posed_ligand.GetNumConformers() > 0:
                     # save the mol with all conformers
                     result_ligands.append(openeye_mol)
@@ -758,5 +775,4 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         posed_ligands = self._select_best_pose(
             receptor=oedu_receptor, ligands=result_ligands
         )
-
         return posed_ligands, failed_ligands

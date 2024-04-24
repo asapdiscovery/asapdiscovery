@@ -38,6 +38,8 @@ class Alignment:
         self.seqs = self.query_matches["sequence"].to_numpy()
         self.ids = self.query_matches["ID"].to_numpy()
         self.descripts = self.query_matches["description"].to_numpy()
+        self.hosts = self.query_matches["host"].to_numpy()
+        self.organisms = self.query_matches["organism"].to_numpy()
         return
 
     @staticmethod
@@ -75,6 +77,67 @@ class Alignment:
                 filtered_seqs = [unique_seqs[0]] + filtered_seqs
                 filtered_descp = [unique_descp[0]] + filtered_descp
                 filtered_ids = [unique_ids[0]] + filtered_ids
+        else:
+            print("The keyword provided didn't return any matches")
+            filtered_seqs = [unique_seqs[0]]
+            filtered_descp = [unique_descp[0]]
+            filtered_ids = [unique_ids[0]]
+
+        self.seqs = filtered_seqs
+        self.ids = filtered_ids
+        self.descripts = filtered_descp
+
+        records = []
+        for r in range(len(self.ids)):
+            rec = SeqRecord(
+                Seq(self.seqs[r]), id=self.ids[r], description=self.descripts[r]
+            )
+            records.append(rec)
+
+        self.seq_records = selection_file
+        SeqIO.write(records, self.seq_records, "fasta")
+
+        return selection_file
+
+    def select_taxonomy(self, match_string: str, selection_file: str):
+        # First filter unique entries
+        unique_idxs = np.unique(self.seqs, return_index=True)[1]
+        ordered_idxs = np.sort(unique_idxs)
+
+        # Extract info from provided match string
+        or_querys = match_string.split("OR")
+        host_str = "xxxxx"
+        org_str = "xxxxx"
+        for q in or_querys:
+            if "host" in q:
+                host_str = " ".join(q.strip().split(" ")[1:])
+            elif "organism" in q:
+                org_str = " ".join(q.strip().split(" ")[1:])
+
+        filtered_idxs = [
+            idx
+            for idx in ordered_idxs
+            if any(
+                [
+                    host_str.casefold() in self.hosts[idx].casefold(),
+                    org_str.casefold() in self.organisms[idx].casefold(),
+                ]
+            )
+        ]
+        filtered_ids = [self.ids[i] for i in filtered_idxs]
+        filtered_seqs = [self.seqs[i] for i in filtered_idxs]
+        filtered_descp = [self.descripts[i] for i in filtered_idxs]
+
+        if len(filtered_seqs) > 0:
+            if self.seqs[0] != filtered_seqs[0]:
+                filtered_seqs = [self.seqs[0]] + filtered_seqs
+                filtered_descp = [self.descripts[0]] + filtered_descp
+                filtered_ids = [self.ids[0]] + filtered_ids
+        else:
+            print("The keyword provided didn't return any matches")
+            filtered_seqs = [self.seqs[0]]
+            filtered_descp = [self.descripts[0]]
+            filtered_ids = [self.ids[0]]
 
         self.seqs = filtered_seqs
         self.ids = filtered_ids
@@ -107,8 +170,18 @@ class Alignment:
         # The function takes a biopython alignment object as input.
         aln = self.align_obj
         seqs = [rec.seq for rec in (aln)]  # Each sequence input
-        ids = [rec.id for rec in aln]  # Each entry ID
         text = [i for s in list(seqs) for i in s]  # Al units joind on same list
+
+        # Shorten the description for display (string between the last [*])
+        def matches(x):
+            import re
+
+            pattern = r"\[(.*?)\]"
+            return re.findall(pattern, x)[-1]
+
+        desc = [f"{matches(rec.description)} ({rec.id})" for rec in aln]
+        print(desc)
+
         # List with ALL colors
         colors = get_colors_protein(seqs)
         N = len(seqs[0])
@@ -145,7 +218,7 @@ class Alignment:
             width=plot_width,
             height=plot_height,
             x_range=x_range,
-            y_range=(0, S),
+            y_range=desc,
             tools=tools,
             min_border=0,
             toolbar_location="below",
@@ -162,8 +235,11 @@ class Alignment:
         )
         # Source does mapping from keys in rects to values in ColumnDataSource definition
         p.add_glyph(source, rects)
-        p.yaxis.visible = False
         p.grid.visible = False
+        p.xaxis.major_label_text_font_style = "bold"
+        p.yaxis.major_label_text_font_size = "8pt"
+        p.yaxis.minor_tick_line_width = 0
+        p.yaxis.major_tick_line_width = 0
 
         # sequence text view with ability to scroll along x axis
         p1 = figure(
@@ -171,7 +247,7 @@ class Alignment:
             width=plot_width,
             height=plot_height,
             x_range=view_range,
-            y_range=ids,
+            y_range=desc,
             tools="xpan,reset",
             min_border=0,
             toolbar_location="below",
@@ -249,8 +325,11 @@ def do_MSA(alignment: Alignment, select_mode: str, file_prefix: str, plot_width:
     # Select sequeneces of interest
     if select_mode == "checkbox":
         select_file = alignment.select_checkbox()
+    elif "host" in select_mode or "organism" in select_mode:
+        select_file = alignment.select_taxonomy(select_mode, f"{save_file}.fasta")
     else:
         select_file = alignment.select_keyword(select_mode, f"{save_file}.fasta")
+
     print(f"A fasta file {select_file} have been generated with the selected sequences")
 
     # Do multisequence alignment
