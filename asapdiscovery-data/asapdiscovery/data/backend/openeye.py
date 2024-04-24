@@ -964,7 +964,7 @@ def print_SD_data(mol: oechem.OEMol) -> None:
         print(dp.GetTag(), ":", dp.GetValue())
 
 
-def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
+def clear_SD_data(mol: oechem.OEMolBase) -> oechem.OEMol:
     """
     Clear all SD data on an OpenEye OEMol
 
@@ -978,8 +978,11 @@ def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data cleared
     """
-    for conf in mol.GetConfs():
-        oechem.OEClearSDData(conf)
+    oechem.OEClearSDData(mol)
+
+    if isinstance(mol, oechem.OEMCMolBase):
+        for conf in mol.GetConfs():
+            oechem.OEClearSDData(conf)
     return mol
 
 

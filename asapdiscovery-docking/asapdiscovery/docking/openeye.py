@@ -292,9 +292,16 @@ class POSITDocker(DockingBase):
                             opts, pose_res, dus, lig_oemol, self.num_poses
                         )
                 if retcode == oedocking.OEDockingReturnCode_Success:
-                    for result in pose_res.GetSinglePoseResults():
+                    input_pairs = []
+                    posed_ligands = []
+                    for i, result in enumerate(pose_res.GetSinglePoseResults()):
                         posed_mol = result.GetPose()
                         prob = result.GetProbability()
+
+                        # clear SD data for uniformity of results
+                        from asapdiscovery.data.backend.openeye import clear_SD_data
+
+                        clear_SD_data(posed_mol)
 
                         posed_ligand = Ligand.from_oemol(posed_mol, **set.ligand.dict())
                         # set SD tags
@@ -303,30 +310,39 @@ class POSITDocker(DockingBase):
                             DockingResultCols.POSIT_METHOD.value: oedocking.OEPositMethodGetName(
                                 result.GetPositMethod()
                             ),
+                            "Pose_ID": i,
                         }
                         posed_ligand.set_SD_data(sd_data)
+                        posed_ligands.append(posed_ligand)
 
                         # Generate info about which target was actually used by multi-reference docking
                         if isinstance(set, DockingInputMultiStructure):
                             docked_target = set.complexes[result.GetReceptorIndex()]
-                            input_pair = DockingInputPair(
-                                ligand=set.ligand, complex=docked_target
+                            input_pairs.append(
+                                DockingInputPair(
+                                    ligand=set.ligand, complex=docked_target
+                                )
                             )
                         else:
-                            input_pair = set
-
-                        docking_result = POSITDockingResults(
-                            input_pair=input_pair,
-                            posed_ligand=posed_ligand,
-                            probability=prob,
-                            provenance=self.provenance(),
+                            input_pairs.append(set)
+                    if not all(
+                        input_pair == input_pairs[0] for input_pair in input_pairs
+                    ):
+                        raise NotImplementedError(
+                            "It seems like you requested multiple poses and are using multiple structures, "
+                            "and all the poses are not docked to the same structure. I didn't know this was possible."
                         )
-                        if return_for_disk_backend:
-                            docking_results.append(docked_result_json_path)
-                        else:
-                            docking_results.append(docking_result)
-                        if output_dir is not None:
-                            docking_result.write_docking_files(output_dir)
+                    docking_result = POSITDockingResults(
+                        input_pair=input_pairs[0],
+                        posed_ligand=Ligand.from_single_conformers(posed_ligands),
+                        provenance=self.provenance(),
+                    )
+                    if return_for_disk_backend:
+                        docking_results.append(docked_result_json_path)
+                    else:
+                        docking_results.append(docking_result)
+                    if output_dir is not None:
+                        docking_result.write_docking_files(output_dir)
 
                 else:
                     error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
