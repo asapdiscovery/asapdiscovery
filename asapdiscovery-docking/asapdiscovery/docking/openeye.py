@@ -361,16 +361,14 @@ class POSITDocker(DockingBase):
                             posed_ligand=Ligand.from_single_conformers(posed_ligands),
                             provenance=self.provenance(),
                             probability=(
-                                [
-                                    posed_ligands[0].tags[
-                                        DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
-                                    ]
+                                posed_ligands[0].tags[
+                                    DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
                                 ]
                                 if len(posed_ligands) == 1
                                 else None
                             ),
                             pose_id=(
-                                [posed_ligands[0].tags["Pose_ID"]]
+                                posed_ligands[0].tags["Pose_ID"]
                                 if len(posed_ligands) == 1
                                 else None
                             ),
