@@ -287,7 +287,6 @@ class Ligand(DataModelAbstractBase):
         from asapdiscovery.data.util.data_conversion import (
             get_dict_of_lists_from_list_of_dicts,
         )
-        from asapdiscovery.data.backend.openeye import get_SD_data
 
         conf_tags = get_dict_of_lists_from_list_of_dicts([tags] + sd_data)
         conf_tags = {
@@ -296,9 +295,7 @@ class Ligand(DataModelAbstractBase):
 
         # create a new Ligand object with the data from the first conformer
         new_lig = cls.from_oemol(oemol)
-        import pdb
 
-        pdb.set_trace()
         new_lig.set_SD_data(conf_tags)
         return new_lig
 
