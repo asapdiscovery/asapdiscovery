@@ -57,6 +57,22 @@ class POSITDockingResults(DockingResult):
 
     type: Literal["POSITDockingResults"] = "POSITDockingResults"
 
+    def _get_single_pose_results(self) -> list["POSITDockingResults"]:
+        """
+        Since Ligand can contain multiple poses, but our scoring methods don't (as of 2024.04.24) support
+        multiple poses, it's useful to have a method that can get single pose docking results.
+        """
+        return [
+            POSITDockingResults(
+                input_pair=self.input_pair,
+                posed_ligand=lig,
+                probability=lig.tags[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value],
+                provenance=self.provenance,
+                pose_id=lig.tags["Pose_ID"],
+            )
+            for lig in self.posed_ligand.to_single_conformers()
+        ]
+
     @staticmethod
     def make_df_from_docking_results(results: list["DockingResult"]):
         """
@@ -347,9 +363,14 @@ class POSITDocker(DockingBase):
                             probability=(
                                 [
                                     posed_ligands[0].tags[
-                                        DockingResultCols.DOCKING_CONFIDENCE_POSIT
+                                        DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
                                     ]
                                 ]
+                                if len(posed_ligands) == 1
+                                else None
+                            ),
+                            pose_id=(
+                                [posed_ligands[0].tags["Pose_ID"]]
                                 if len(posed_ligands) == 1
                                 else None
                             ),

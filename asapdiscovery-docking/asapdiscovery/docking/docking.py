@@ -195,6 +195,12 @@ class DockingResult(BaseModel):
         with open(file) as f:
             return cls.parse_raw(f.read())
 
+    @abc.abstractmethod
+    def _get_single_pose_results(self) -> list["DockingResult"]: ...
+
+    def get_single_pose_results(self) -> list["DockingResult"]:
+        return self._get_single_pose_results()
+
     def get_output(self) -> dict:
         """
         return a dictionary of some of the fields of the DockingResult

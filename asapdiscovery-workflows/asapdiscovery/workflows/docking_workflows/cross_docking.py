@@ -208,6 +208,12 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         dask_failure_mode=inputs.dask_failure_mode,
     )
 
+    results = [
+        single_pose_result
+        for multi_pose_result in results
+        for single_pose_result in multi_pose_result.get_single_pose_results()
+    ]
+
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     if n_results == 0:
