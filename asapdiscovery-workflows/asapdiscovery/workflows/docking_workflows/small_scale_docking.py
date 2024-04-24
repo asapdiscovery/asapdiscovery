@@ -335,6 +335,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         dask_client=dask_client,
         dask_failure_mode=inputs.dask_failure_mode,
         return_df=True,
+        include_input=True,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -407,9 +408,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
-            fitness_visualizations[DockingResultCols.TARGET_ID.value]
-        )
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
@@ -443,41 +444,22 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     # then order by chemgauss4 score
-    scores_df = scores_df.sort_values(
+    combined_df = combined_df.sort_values(
         DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
     )
-    scores_df.to_csv(
+    combined_df.to_csv(
         data_intermediates / "docking_scores_filtered_sorted.csv", index=False
     )
 
     # remove duplicates that are the same compound docked to different structures
-    scores_df = scores_df.drop_duplicates(
+    combined_df = combined_df.drop_duplicates(
         subset=[DockingResultCols.SMILES.value], keep="first"
     )
 
-    def filter_docking_results(results, scores_df):
-        """
-        Filter docking results by the scores dataframe
-        """
-        keep = []
-        for result in results:
-            for _, row in scores_df.iterrows():
-                if (
-                    result.input_pair.ligand.compound_name
-                    == row[DockingResultCols.LIGAND_ID.value]
-                    and result.input_pair.complex.target.target_name
-                    == row[DockingResultCols.DOCKING_STRUCTURE_POSIT.value]
-                    and result.input_pair.ligand.smiles
-                    == row[DockingResultCols.SMILES.value]
-                ):
-                    keep.append(result)
+    # re-extract the filtered input results
+    results = combined_df["input"].tolist()
 
-        return keep
-
-    results = filter_docking_results(results, scores_df)
-    logger.info("Filtered docking results by scores dataframe")
-
-    n_duplicate_filtered = len(scores_df)
+    n_duplicate_filtered = len(combined_df)
     logger.info(
         f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
@@ -544,7 +526,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             dask_client=dask_client,
             dask_failure_mode=inputs.dask_failure_mode,
         )
-
+        gifs.to_csv(data_intermediates / "md_gifs.csv", index=False)
         # duplicate target id column so we can join
         gifs[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = gifs[
             DockingResultCols.TARGET_ID.value

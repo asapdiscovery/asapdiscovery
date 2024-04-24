@@ -133,7 +133,7 @@ class GIFVisualizer(VisualizerBase):
 
         p = pymol2.PyMOL()
         p.start()
-        if not outpath:
+        if outpath:
             out_dir = Path(outpath).parent
             out_dir.mkdir(parents=True, exist_ok=True)
             path = outpath
@@ -143,6 +143,9 @@ class GIFVisualizer(VisualizerBase):
             else:
                 path = out_dir / "trajectory.gif"
 
+        # get path without filename
+        out_dir = Path(outpath).parent
+        print(out_dir)
         tmpdir = out_dir / "tmp"
         tmpdir.mkdir(parents=True, exist_ok=True)
 
@@ -334,13 +337,13 @@ class GIFVisualizer(VisualizerBase):
                 if self.static_view_only:
                     out = (
                         self.output_dir
-                        / res.input_docking_result.posed_ligand.compound_name
+                        / res.input_docking_result.unique_name
                         / "view.pse"
                     )
                 else:
                     out = (
                         self.output_dir
-                        / res.input_docking_result.posed_ligand.compound_name
+                        / res.input_docking_result.unique_name
                         / "trajectory.gif"
                     )
             else:
@@ -363,15 +366,15 @@ class GIFVisualizer(VisualizerBase):
                 out_dir=self.output_dir,
             )
             row = {}
-            row[DockingResultCols.LIGAND_ID.value] = (
-                res.input_docking_result.posed_ligand.compound_name
-            )
-            row[DockingResultCols.TARGET_ID.value] = (
-                res.input_docking_result.input_pair.complex.target.target_name
-            )
-            row[DockingResultCols.SMILES.value] = (
-                res.input_docking_result.posed_ligand.smiles
-            )
+            row[
+                DockingResultCols.LIGAND_ID.value
+            ] = res.input_docking_result.posed_ligand.compound_name
+            row[
+                DockingResultCols.TARGET_ID.value
+            ] = res.input_docking_result.input_pair.complex.target.target_name
+            row[
+                DockingResultCols.SMILES.value
+            ] = res.input_docking_result.posed_ligand.smiles
             row[DockingResultCols.GIF_PATH.value] = path
             data.append(row)
         return data

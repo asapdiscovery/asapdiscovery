@@ -6,6 +6,7 @@ import abc
 import logging
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
+import json
 
 import numpy as np
 from asapdiscovery.data.backend.openeye import (
@@ -30,7 +31,8 @@ class DockingInputBase(BaseModel):
     """
 
     @abc.abstractmethod
-    def to_design_units(self) -> list[oechem.OEDesignUnit]: ...
+    def to_design_units(self) -> list[oechem.OEDesignUnit]:
+        ...
 
 
 class DockingInputPair(CompoundStructurePair, DockingInputBase):
@@ -81,7 +83,8 @@ class DockingBase(BaseModel):
     @abc.abstractmethod
     def _dock(
         self, inputs: list[DockingInputPair], output_dir: Union[str, Path]
-    ) -> list["DockingResult"]: ...
+    ) -> list["DockingResult"]:
+        ...
 
     def dock(
         self,
@@ -155,7 +158,8 @@ class DockingBase(BaseModel):
             result.write_docking_files(output_dir)
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]: ...
+    def provenance(self) -> dict[str, str]:
+        ...
 
 
 class DockingResult(BaseModel):
@@ -203,6 +207,10 @@ class DockingResult(BaseModel):
         dct.pop("posed_ligand")
         dct.pop("type")
         return dct
+
+    @classmethod
+    def from_json(cls, json_str):
+        return cls.parse_obj(json.loads(json_str))
 
     def to_posed_oemol(self) -> oechem.OEMol:
         """
