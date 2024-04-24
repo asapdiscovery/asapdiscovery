@@ -325,24 +325,41 @@ class POSITDocker(DockingBase):
                             )
                         else:
                             input_pairs.append(set)
-                    if not all(
-                        input_pair == input_pairs[0] for input_pair in input_pairs
-                    ):
-                        raise NotImplementedError(
-                            "It seems like you requested multiple poses and are using multiple structures, "
-                            "and all the poses are not docked to the same structure. I didn't know this was possible."
+
+                    # create hashable dict of input pairs
+                    input_pair_dict = {
+                        input_pair.unique_name: input_pair for input_pair in input_pairs
+                    }
+
+                    # split results by input pair
+                    from collections import defaultdict
+
+                    results_dict = defaultdict(list)
+                    for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
+                        results_dict[input_pair.unique_name].append(posed_ligand)
+
+                    # return results split by input pair
+                    for input_pair_name, posed_ligands in results_dict.items():
+                        docking_result = POSITDockingResults(
+                            input_pair=input_pair_dict[input_pair_name],
+                            posed_ligand=Ligand.from_single_conformers(posed_ligands),
+                            provenance=self.provenance(),
+                            probability=(
+                                [
+                                    posed_ligands[0].tags[
+                                        DockingResultCols.DOCKING_CONFIDENCE_POSIT
+                                    ]
+                                ]
+                                if len(posed_ligands) == 1
+                                else None
+                            ),
                         )
-                    docking_result = POSITDockingResults(
-                        input_pair=input_pairs[0],
-                        posed_ligand=Ligand.from_single_conformers(posed_ligands),
-                        provenance=self.provenance(),
-                    )
-                    if return_for_disk_backend:
-                        docking_results.append(docked_result_json_path)
-                    else:
-                        docking_results.append(docking_result)
-                    if output_dir is not None:
-                        docking_result.write_docking_files(output_dir)
+                        if return_for_disk_backend:
+                            docking_results.append(docked_result_json_path)
+                        else:
+                            docking_results.append(docking_result)
+                        if output_dir is not None:
+                            docking_result.write_docking_files(output_dir)
 
                 else:
                     error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
