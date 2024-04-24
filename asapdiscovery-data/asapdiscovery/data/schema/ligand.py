@@ -275,17 +275,32 @@ class Ligand(DataModelAbstractBase):
                 "All conformers must have the same chemical structure data"
             )
 
-        # get the data from the first conformer
-        data = confs[0].data
-        # get the tags from all the conformers
-        tags = {}
-        conf_tags = {}
-        for conf in confs:
-            tags.update(conf.tags)
-            conf_tags.update(conf.conf_tags)
+        oemol = confs[0].to_oemol()
+
+        tags = confs[0].tags
+
+        sd_data = []
+        for conf in confs[1:]:
+            sd_data.append(conf.tags)
+            oemol.NewConf(conf.to_oemol())
+
+        from asapdiscovery.data.util.data_conversion import (
+            get_dict_of_lists_from_list_of_dicts,
+        )
+        from asapdiscovery.data.backend.openeye import get_SD_data
+
+        conf_tags = get_dict_of_lists_from_list_of_dicts([tags] + sd_data)
+        conf_tags = {
+            k: v for k, v in conf_tags.items() if k not in cls.__fields__.keys()
+        }
 
         # create a new Ligand object with the data from the first conformer
-        return cls(data=data, tags=tags, conf_tags=conf_tags)
+        new_lig = cls.from_oemol(oemol)
+        import pdb
+
+        pdb.set_trace()
+        new_lig.set_SD_data(conf_tags)
+        return new_lig
 
     def to_single_conformers(self) -> ["Ligand"]:
         """
@@ -448,28 +463,36 @@ class Ligand(DataModelAbstractBase):
         Set the SD data for the ligand, uses an update to overwrite existing data in line with
         OpenEye behaviour
         """
-
         # convert to dict of lists first
         data = {k: v if isinstance(v, list) else [v] for k, v in data.items()}
 
+        # turn values into str for sdf roundtripping
+        data = {k: [str(v) for v in values] for k, values in data.items()}
+
         # make sure we don't overwrite any attributes
+        # and ensure that the length of the data matches the number of conformers
         new_data = {}
         for k, v in data.items():
             if k in self.__fields__.keys():
                 warnings.warn(f"Tag name {k} is a reserved attribute name, skipping")
             else:
+                # if list is len 1, generate a list of len N, where N is the number of conformers
+                if len(v) == 1:
+                    v = v * self.num_poses
+
+                if not len(v) == self.num_poses:
+                    raise ValueError(
+                        f"Length of data for tag '{k}' does not match number of conformers. "
+                        f"Expected {self.num_poses} but got {len(v)} elements."
+                    )
                 new_data[k] = v
 
-        # use logic from openeye backend to set the tags and return them
-        from asapdiscovery.data.backend.openeye import get_SD_data, set_SD_data
+        # update tags and conf_tags!
         from asapdiscovery.data.util.data_conversion import (
             get_first_value_of_dict_of_lists,
         )
 
-        mol = self.to_oemol()
-        set_SD_data(mol, new_data)
-        new_sd_data = get_SD_data(mol)
-        self.conf_tags.update(new_sd_data)
+        self.conf_tags.update(new_data)
         self.tags.update(get_first_value_of_dict_of_lists(new_data))
 
     def to_sdf_str(self) -> str:

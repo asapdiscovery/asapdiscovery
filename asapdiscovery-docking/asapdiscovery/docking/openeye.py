@@ -291,7 +291,6 @@ class POSITDocker(DockingBase):
                         pose_res, retcode = self.run_oe_posit_docking(
                             opts, pose_res, dus, lig_oemol, self.num_poses
                         )
-
                 if retcode == oedocking.OEDockingReturnCode_Success:
                     for result in pose_res.GetSinglePoseResults():
                         posed_mol = result.GetPose()
