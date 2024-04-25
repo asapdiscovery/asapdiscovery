@@ -3,9 +3,14 @@ from typing import Any, Literal, Optional, Union
 
 import rich
 from asapdiscovery.alchemy.schema.base import _SchemaBase
-from asapdiscovery.data.operators.state_expanders.protomer_expander import EpikExpander, ProtomerExpander
-from asapdiscovery.data.operators.state_expanders.tautomer_expander import TautomerExpander
+from asapdiscovery.data.operators.state_expanders.protomer_expander import (
+    EpikExpander,
+    ProtomerExpander,
+)
 from asapdiscovery.data.operators.state_expanders.stereo_expander import StereoExpander
+from asapdiscovery.data.operators.state_expanders.tautomer_expander import (
+    TautomerExpander,
+)
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
@@ -29,7 +34,9 @@ class _AlchemyPrepBase(_SchemaBase):
         description="A class to expand the stereo"
         "chemistry of the ligands. This stage will be skipped if set to `None`.",
     )
-    charge_expander: Optional[Union[EpikExpander, ProtomerExpander, TautomerExpander]] = Field(
+    charge_expander: Optional[
+        Union[EpikExpander, ProtomerExpander, TautomerExpander]
+    ] = Field(
         None,
         description="The charge and tautomer expander that"
         "should be applied to the ligands. This stage will be skipped if set to `None`.",
