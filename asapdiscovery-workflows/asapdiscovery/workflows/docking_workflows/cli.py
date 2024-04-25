@@ -33,13 +33,13 @@ from asapdiscovery.workflows.docking_workflows.large_scale_docking import (
     LargeScaleDockingInputs,
     large_scale_docking_workflow,
 )
-from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
-    SmallScaleDockingInputs,
-    small_scale_docking_workflow,
-)
 from asapdiscovery.workflows.docking_workflows.ligand_transfer_docking import (
     LigandTransferDockingWorkflowInputs,
     ligand_transfer_docking_workflow,
+)
+from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
+    SmallScaleDockingInputs,
+    small_scale_docking_workflow,
 )
 
 
