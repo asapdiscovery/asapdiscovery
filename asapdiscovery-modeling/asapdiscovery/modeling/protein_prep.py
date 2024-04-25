@@ -396,15 +396,15 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                 )
 
             # For each reference complex, align and transfer the ligand to the prepped protein
-            for complex in self.reference_complexes:
+            for complex_ref in self.reference_complexes:
                 aligned, _ = superpose_molecule(
-                    complex.to_combined_oemol(),
+                    complex_ref.to_combined_oemol(),
                     spruced,
                     self.ref_chain,
                     self.active_site_chain,
                 )
 
-                ligand = complex.ligand.to_oemol()
+                ligand = complex_ref.ligand.to_oemol()
 
                 from asapdiscovery.modeling.modeling import make_du_from_new_lig
 
@@ -434,12 +434,12 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                     ids=complex.target.ids,
                     target_name=complex.target.target_name,
                     ligand_chain=self.active_site_chain,
-                    target_hash=complex.hash,
+                    target_hash=complex_ref.hash,
                 )
                 # we need the ligand at the new translated coordinates
                 translated_oemol, _, _ = split_openeye_design_unit(du=du)
                 translated_lig = Ligand.from_oemol(
-                    translated_oemol, **complex.ligand.dict(exclude={"data"})
+                    translated_oemol, **complex_ref.ligand.dict(exclude={"data"})
                 )
                 pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
                 prepped_complexes.append(pc)

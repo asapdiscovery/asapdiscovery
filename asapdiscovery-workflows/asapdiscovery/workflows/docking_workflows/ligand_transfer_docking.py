@@ -230,6 +230,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         seqres_yaml=inputs.seqres_yaml,
         loop_db=inputs.loop_db,
     )
+    logger.info("Prepping complexes")
     prepped_complexes = prepper.prep(
         targets,
         use_dask=inputs.use_dask,
@@ -242,6 +243,8 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
 
     n_prepped_complexes = len(prepped_complexes)
     logger.info(f"Prepped {n_prepped_complexes} complexes")
+    for pc in prepped_complexes:
+        logger.info(f"Complex is {pc.target.target_name}")
 
     if inputs.save_to_cache and inputs.cache_dir is not None:
         logger.info(f"Writing prepped complexes to global cache {inputs.cache_dir}")
@@ -253,7 +256,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     pairs = selector.select(ligands, prepped_complexes)
 
     n_pairs = len(pairs)
-    logger.info(f"Selected {n_pairs} pairs for docking")
+    logger.info(f"Selected {n_pairs} pairs for docking, from {len(ligands)} ligands and {n_prepped_complexes} compexes")
     del prepped_complexes
 
     # dock pairs
@@ -295,15 +298,17 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         write_ligands_to_multi_sdf(
             output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
         )
-
-    scores_df = scorer.score(
+    # NOTE: The return_df option doesn't work, the DataFrame.pivot() function fails. Fix is pending.
+    scores_list = scorer.score(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        return_df=True,
+        return_df=False,
         dask_failure_mode=inputs.dask_failure_mode,
     )
-
     del results
-
-    scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
+    import csv
+    with open(data_intermediates / "docking_scores_raw.csv", 'w', newline='') as myfile:
+        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        for item in scores_list:
+            wr.writerow([item]) 
