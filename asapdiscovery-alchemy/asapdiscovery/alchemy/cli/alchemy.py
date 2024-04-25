@@ -433,10 +433,13 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
         )
 
         networks_status = client._client.get_networks_status(running_networks)
-        networks_actioned_tasks = client._client.get_networks_actioned_tasks(running_networks)
+        networks_actioned_tasks = client._client.get_networks_actioned_tasks(
+            running_networks
+        )
 
         for key, network_status, actioned_tasks in zip(
-                running_networks, networks_status, networks_actioned_tasks):
+            running_networks, networks_status, networks_actioned_tasks
+        ):
             if (
                 "running" in network_status or "waiting" in network_status
             ) and actioned_tasks:
