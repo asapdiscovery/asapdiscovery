@@ -256,7 +256,9 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     pairs = selector.select(ligands, prepped_complexes)
 
     n_pairs = len(pairs)
-    logger.info(f"Selected {n_pairs} pairs for docking, from {len(ligands)} ligands and {n_prepped_complexes} compexes")
+    logger.info(
+        f"Selected {n_pairs} pairs for docking, from {len(ligands)} ligands and {n_prepped_complexes} compexes"
+    )
     del prepped_complexes
 
     # dock pairs
@@ -308,7 +310,8 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     )
     del results
     import csv
-    with open(data_intermediates / "docking_scores_raw.csv", 'w', newline='') as myfile:
+
+    with open(data_intermediates / "docking_scores_raw.csv", "w", newline="") as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         for item in scores_list:
-            wr.writerow([item]) 
+            wr.writerow([item])
