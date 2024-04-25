@@ -53,7 +53,7 @@ class DockingInputPair(CompoundStructurePair, DockingInputBase):
         return [self.complex.target.to_oedu()]
 
 
-class DockingInputMultiStructure(MultiStructureBase):
+class DockingInputMultiStructure(MultiStructureBase, DockingInputBase):
     """
     Schema for one ligand to many possible reference structures.
     """
