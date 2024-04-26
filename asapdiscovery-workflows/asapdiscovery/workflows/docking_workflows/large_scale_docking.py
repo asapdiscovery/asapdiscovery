@@ -38,7 +38,6 @@ from asapdiscovery.docking.scorer import (
     MLModelScorer,
 )
 from asapdiscovery.genetics.fitness import target_has_fitness_data
-from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
@@ -88,24 +87,6 @@ class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
         False,
         description="Whether to allow retries in docking with varying settings, warning: more expensive",
     )
-
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
-    )
-
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
 
 
 def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
@@ -299,15 +280,46 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         logger.info("Target has fitness data, adding FINT scorer")
         scorers.append(FINTScorer(target=inputs.target))
 
+    logger.info(f"Loaded {len(scorers)} scoring functions")
+    for scorer in scorers:
+        logger.info(f"Active scorer: {scorer.score_type}")
+
     # load ml scorers
+    ml_scorers = []
     if inputs.ml_scorers:
         for ml_scorer in inputs.ml_scorers:
             logger.info(f"Loading ml scorer: {ml_scorer}")
             scorer = MLModelScorer.from_latest_by_target_and_type(
                 inputs.target, ml_scorer
             )
-            if scorer:
-                scorers.append(scorer)
+            ml_scorers.append(scorer)
+
+    if inputs.ml_scorers_bymodel:
+        logger.info("Loading ml scorers by model name")
+        for ml_scorer in inputs.ml_scorers_bymodel:
+            scorer = MLModelScorer.from_model_name(ml_scorer)
+            ml_scorers.append(scorer)
+
+    if inputs.ml_scorers_auto:
+        logger.info("Loading all ml scorers available for target")
+        # load latest available ml scorers of each type for target
+        ml_scorers += MLModelScorer.autoselect_by_target(inputs.target)
+
+    logger.info(f"Loaded {len(ml_scorers)} ML scorers")
+    for scorer in ml_scorers:
+        logger.info(
+            f"Active ML scorer: {scorer.model_name} with type: {scorer.model_type}"
+        )
+
+    scorers += ml_scorers
+
+    logger.info(f"Loaded {len(scorers)} scorers total")
+
+    # remove None scorers
+    scorers = [scorer for scorer in scorers if scorer is not None]
+    # make sure scorers are unique, because of the three ways of adding them they may be duplicated
+    scorers = list(set(scorers))
+    logger.info(f"Loaded {len(scorers)} unique scorers total")
 
     # score results using multiple scoring functions
     logger.info("Scoring docking results")

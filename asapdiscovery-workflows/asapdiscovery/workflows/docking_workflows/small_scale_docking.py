@@ -40,7 +40,6 @@ from asapdiscovery.docking.scorer import (
     MLModelScorer,
 )
 from asapdiscovery.genetics.fitness import target_has_fitness_data
-from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
@@ -97,9 +96,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         1, description="Number of targets to dock each ligand against."
     )
 
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
-    )
     allow_dask_cuda: bool = Field(
         True,
         description="Whether to allow regenerating dask cuda cluster when in local mode",
@@ -113,20 +109,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     md_openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
-
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
 
     @root_validator
     @classmethod

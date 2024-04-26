@@ -5,6 +5,7 @@ from asapdiscovery.docking.scorer import (
     FINTScorer,
     GATScorer,
     MetaScorer,
+    MLModelScorer,
     SchnetScorer,
 )
 
@@ -93,3 +94,9 @@ def test_FINT_scorer(use_dask, return_df, data_fixture, request):
     scorer = FINTScorer(target="SARS-CoV-2-Mpro")
     scores = scorer.score([data], use_dask=use_dask, return_df=return_df)
     assert len(scores) == 1
+
+
+def test_auto_ml_scorers():
+    scorers = MLModelScorer.autoselect_by_target("SARS-CoV-2-Mpro")
+    assert len(scorers) == 3
+    # currently 3 model types for SARS-CoV-2-Mpro, adjust as needed

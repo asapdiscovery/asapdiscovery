@@ -78,6 +78,15 @@ def test_get_latest_model_for_target_and_type(type):
     assert model == other_models[0]
 
 
+def test_get_latest_models_for_target():
+    models = ASAPMLModelRegistry.get_latest_models_for_target("SARS-CoV-2-Mpro")
+    model_types = {m.type for m in models}
+    assert "GAT" in model_types
+    assert "schnet" in model_types
+    assert "e3nn" in model_types
+    assert len(models) == len(model_types)
+
+
 def test_custom_registry(weights_yaml):
     registry = MLModelRegistry.from_yaml(weights_yaml)
     assert registry.models != {}
