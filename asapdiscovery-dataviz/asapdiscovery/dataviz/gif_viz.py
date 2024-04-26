@@ -145,13 +145,10 @@ class GIFVisualizer(VisualizerBase):
 
         # get path without filename
         out_dir = Path(outpath).parent
-        print(out_dir)
         tmpdir = out_dir / "tmp"
         tmpdir.mkdir(parents=True, exist_ok=True)
-
         complex_name = "complex"
         p.cmd.load(str(system), object=complex_name)
-
         if static_view_only:
             # this may be unprepped/unaligned, so need to align to master structure before writing out.
             reference_structure = master_structures[target]
@@ -247,7 +244,6 @@ class GIFVisualizer(VisualizerBase):
 
         p.cmd.set_view(view_coords)  # sets general orientation
         if static_view_only:
-            print(path)
             p.cmd.save(str(path))
             # remove tmpdir
             shutil.rmtree(tmpdir)
