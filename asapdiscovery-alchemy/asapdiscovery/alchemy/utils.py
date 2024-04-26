@@ -219,6 +219,13 @@ class AlchemiscaleHelper:
             # format into our custom result schema and save
             estimate = raw_result.get_estimate()
             uncertainty = raw_result.get_uncertainty()
+            # if there is a single repeat the error is 0.0 so extract the mbar error
+            if uncertainty.m == 0.0:
+                uncertainty = [
+                    edge[0].outputs["unit_estimate_error"]
+                    for edge in raw_result.data.values()
+                ][0]
+
             # work out the name of the molecules and the phase of the calculation
             individual_runs = list(raw_result.data.values())
             # track the phase to correctly work out the total relative energy as complex - solvent
