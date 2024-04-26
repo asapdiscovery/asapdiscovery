@@ -362,15 +362,15 @@ class GIFVisualizer(VisualizerBase):
                 out_dir=self.output_dir,
             )
             row = {}
-            row[
-                DockingResultCols.LIGAND_ID.value
-            ] = res.input_docking_result.posed_ligand.compound_name
-            row[
-                DockingResultCols.TARGET_ID.value
-            ] = res.input_docking_result.input_pair.complex.target.target_name
-            row[
-                DockingResultCols.SMILES.value
-            ] = res.input_docking_result.posed_ligand.smiles
+            row[DockingResultCols.LIGAND_ID.value] = (
+                res.input_docking_result.posed_ligand.compound_name
+            )
+            row[DockingResultCols.TARGET_ID.value] = (
+                res.input_docking_result.input_pair.complex.target.target_name
+            )
+            row[DockingResultCols.SMILES.value] = (
+                res.input_docking_result.posed_ligand.smiles
+            )
             row[DockingResultCols.GIF_PATH.value] = path
             data.append(row)
         return data
