@@ -1,6 +1,7 @@
 """
 Class for handling early stopping in training.
 """
+
 from copy import deepcopy
 
 import numpy as np
@@ -34,16 +35,20 @@ class BestEarlyStopping:
     Class for handling early stopping in training based on improvement over best loss.
     """
 
-    def __init__(self, patience):
+    def __init__(self, patience, burnin=0):
         """
         Parameters
         ----------
-        patience : int, optional
+        patience : int
             The maximum number of epochs to continue training with no improvement in the
             val loss. If not given, no early stopping will be performed
+        burnin : int, optional
+            If given, ensure that at least this many epochs of training have been done
+            before we stop
         """
         super().__init__()
         self.patience = patience
+        self.burnin = burnin
 
         # Variables to track early stopping
         self.counter = 0
@@ -92,7 +97,7 @@ class BestEarlyStopping:
 
         # Increment counter and check for stopping
         self.counter += 1
-        if self.counter == self.patience:
+        if (self.counter >= self.patience) and (epoch >= self.burnin):
             return True
 
         return False
@@ -105,7 +110,7 @@ class ConvergedEarlyStopping:
     those losses is within tolerance.
     """
 
-    def __init__(self, n_check, divergence):
+    def __init__(self, n_check, divergence, burnin=0):
         """
         Parameters
         ----------
@@ -113,15 +118,19 @@ class ConvergedEarlyStopping:
             Number of past epochs to keep track of when calculating divergence
         divergence : float
             Max allowable difference from the mean of the losses
+        burnin : int, optional
+            If given, ensure that at least this many epochs of training have been done
+            before we stop
         """
         super().__init__()
         self.n_check = n_check
         self.divergence = divergence
+        self.burnin = burnin
 
         # Variables to track early stopping
         self.losses = []
 
-    def check(self, loss):
+    def check(self, epoch, loss):
         """
         Check if training should be stopped. Return True to stop, False to keep going.
 
@@ -153,7 +162,7 @@ class ConvergedEarlyStopping:
         mean_loss = np.mean(self.losses)
         all_abs_diff = np.abs(np.asarray(self.losses) - mean_loss)
 
-        return np.mean(all_abs_diff) < self.divergence
+        return (np.mean(all_abs_diff) < self.divergence) and (epoch >= self.burnin)
 
 
 class PatientConvergedEarlyStopping:
@@ -164,7 +173,7 @@ class PatientConvergedEarlyStopping:
     temporary plateau.
     """
 
-    def __init__(self, n_check, divergence, patience=0):
+    def __init__(self, n_check, divergence, patience, burnin=0):
         """
         Parameters
         ----------
@@ -172,15 +181,17 @@ class PatientConvergedEarlyStopping:
             Number of past epochs to keep track of when calculating divergence
         divergence : float
             Max allowable difference from the mean of the losses
-        patience : int, optional
-            The maximum number of epochs to wait after convergence. If not given,
-            training will be stopped as soon as the convergence criteria has been
-            reached
+        patience : int
+            The maximum number of epochs to wait after convergence
+        burnin : int, optional
+            If given, ensure that at least this many epochs of training have been done
+            before we stop
         """
         super().__init__()
         self.n_check = n_check
         self.divergence = divergence
         self.patience = patience
+        self.burnin = burnin
 
         # Variables to track early stopping
         # Window of losses to check for convergence
@@ -236,7 +247,7 @@ class PatientConvergedEarlyStopping:
             if self.converged:
                 self.counter += 1
                 print("converged patience counter", self.counter, flush=True)
-                if self.counter == self.patience:
+                if (self.counter >= self.patience) and (epoch >= self.burnin):
                     return True
             else:
                 self.converged = True

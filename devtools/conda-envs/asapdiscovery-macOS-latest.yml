@@ -49,6 +49,7 @@ dependencies:
   - pyyaml
   - ase
   - sigfig
+  - multimethod
 
   # ml
   - pytorch

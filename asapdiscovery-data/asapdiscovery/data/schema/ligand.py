@@ -1,6 +1,6 @@
-import copy
 import json
 import logging
+import warnings
 from enum import Flag, auto
 from pathlib import Path
 from typing import (  # noqa: F401
@@ -13,10 +13,9 @@ from typing import (  # noqa: F401
     Union,
 )
 
+import numpy as np
 from asapdiscovery.data.backend.openeye import (
-    _set_SD_data_repr,
     clear_SD_data,
-    get_SD_data,
     load_openeye_sdf,
     oechem,
     oemol_to_inchi,
@@ -25,6 +24,7 @@ from asapdiscovery.data.backend.openeye import (
     oemol_to_smiles,
     oequacpac,
     sdf_string_to_oemol,
+    set_SD_data,
     smiles_to_oemol,
 )
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
@@ -46,8 +46,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...
+class InvalidLigandError(ValueError): ...  # noqa: E701
 
 
 class ChemicalRelationship(Flag):
@@ -115,7 +114,15 @@ class Ligand(DataModelAbstractBase):
         description="Expansion tag linking this ligand to its parent in a state expansion if needed",
     )
 
-    tags: dict[str, str] = Field({}, description="Dictionary of SD tags")
+    tags: dict[str, str] = Field(
+        {},
+        description="Dictionary of SD tags. "
+        "If multiple conformers are present, these tags represent the first conformer.",
+    )
+
+    conf_tags: Optional[dict[str, list]] = Field(
+        {}, description="Dictionary of SD tags for each conformer."
+    )
 
     data: str = Field(
         ...,
@@ -173,13 +180,21 @@ class Ligand(DataModelAbstractBase):
         """
         Create a Ligand from an OEMol extracting all SD tags into the internal model
         """
+        from asapdiscovery.data.backend.openeye import get_SD_data
+        from asapdiscovery.data.util.data_conversion import (
+            get_first_value_of_dict_of_lists,
+        )
+
         # work with a copy as we change the state of the molecule
-        input_mol = copy.deepcopy(mol)
+        input_mol = oechem.OEMol(mol)
         oechem.OEClearAromaticFlags(input_mol)
         oechem.OEAssignAromaticFlags(input_mol, oechem.OEAroModel_MDL)
         oechem.OEAssignHybridization(input_mol)
         kwargs.pop("data", None)
-        sd_tags = get_SD_data(input_mol)
+
+        conf_tags = get_SD_data(mol)
+        sd_tags = get_first_value_of_dict_of_lists(conf_tags)
+
         for key, value in sd_tags.items():
             try:
                 # check to see if we have JSON of a model field
@@ -187,13 +202,18 @@ class Ligand(DataModelAbstractBase):
             except json.JSONDecodeError:
                 kwargs[key] = value
 
-        # extract all info as a tag if it has no field on the model
-        tags = {
-            (key, value)
-            for key, value in kwargs.items()
-            if key not in cls.__fields__.keys()
-        }
+        # extract all passed kwargs as a tag if it has no field in the model
+        keys_to_save = [
+            key for key in kwargs.keys() if key not in cls.__fields__.keys()
+        ]
+        tags = {(key, value) for key, value in kwargs.items() if key in keys_to_save}
         kwargs["tags"] = tags
+
+        # Do the same thing for the conformer tags, only keeping the ones in 'tags'
+        kwargs["conf_tags"] = [
+            (key, value) for key, value in conf_tags.items() if key in keys_to_save
+        ]
+
         # clean the sdf data for the internal model
         sdf_str = oemol_to_sdf_string(clear_SD_data(input_mol))
         # create a smiles which does not have nitrogen stereo
@@ -221,7 +241,7 @@ class Ligand(DataModelAbstractBase):
         mol = sdf_string_to_oemol(self.data)
         data = {}
         for key in self.__fields__.keys():
-            if key not in ["data", "tags", "data_format"]:
+            if key not in ["data", "tags", "conf_tags", "data_format"]:
                 field = getattr(self, key)
                 try:
                     data[key] = field.json()
@@ -230,22 +250,34 @@ class Ligand(DataModelAbstractBase):
                         data[key] = str(getattr(self, key))
         # dump the enum using value to get the str repr
         data["data_format"] = self.data_format.value
-        # dump tags as separate items
-        if self.tags is not None:
-            data.update({k: v for k, v in self.tags.items()})
-        mol = _set_SD_data_repr(mol, data)
+
+        # add high level tags to data
+        data.update(self.tags)
+
+        # update conf tags to data
+        data.update(self.conf_tags)
+
+        mol = set_SD_data(mol, data)
+
         return mol
+
+    def to_single_conformers(self) -> ["Ligand"]:
+        """
+        Return a Ligand object for each conformer.
+        """
+        return [self.from_oemol(conf) for conf in self.to_oemol().GetConfs()]
 
     def to_rdkit(self) -> "Chem.Mol":
         """
         Convert the current molecule state to an RDKit molecule including all fields as SD tags.
         """
+        from asapdiscovery.data.backend.rdkit import sdf_str_to_rdkit_mol, set_SD_data
         from rdkit import Chem
 
-        rdkit_mol: Chem.Mol = Chem.MolFromMolBlock(self.data, removeHs=False)
+        rdkit_mol: Chem.Mol = sdf_str_to_rdkit_mol(self.data)
         data = {}
         for key in self.__fields__.keys():
-            if key not in ["data", "tags", "data_format"]:
+            if key not in ["data", "tags", "data_format", "conf_tags"]:
                 field = getattr(self, key)
                 try:
                     data[key] = field.json()
@@ -260,8 +292,13 @@ class Ligand(DataModelAbstractBase):
         # dump tags as separate items
         if self.tags is not None:
             data.update({k: v for k, v in self.tags.items()})
-        for key, value in data.items():
-            rdkit_mol.SetProp(key, value)
+
+        # set the SD that is different for each conformer
+        # convert to str first
+        data.update(
+            {tag: [str(v) for v in values] for tag, values in self.conf_tags.items()}
+        )
+        set_SD_data(rdkit_mol, data)
         return rdkit_mol
 
     def to_openfe(self) -> "openfe.SmallMoleculeComponent":
@@ -303,7 +340,7 @@ class Ligand(DataModelAbstractBase):
         Create a Ligand from an InChI string
         """
         kwargs.pop("data", None)
-        mol = oechem.OEGraphMol()
+        mol = oechem.OEMol()
         oechem.OEInChIToMol(mol, inchi)
         return cls.from_oemol(mol=mol, **kwargs)
 
@@ -357,6 +394,7 @@ class Ligand(DataModelAbstractBase):
         sdf_file : Union[str, Path]
             Path to the SDF file
         """
+
         oemol = load_openeye_sdf(sdf_file)
         return cls.from_oemol(oemol, **kwargs)
 
@@ -379,16 +417,34 @@ class Ligand(DataModelAbstractBase):
         mol = self.to_oemol()
         write_file_directly(filename, oemol_to_sdf_string(mol), mode=fmode)
 
-    def set_SD_data(self, data: dict[str, str]) -> None:
+    def set_SD_data(self, data: dict[str, Union[str, list]]) -> None:
         """
         Set the SD data for the ligand, uses an update to overwrite existing data in line with
         OpenEye behaviour
         """
+
+        # convert to dict of lists first
+        data = {k: v if isinstance(v, list) else [v] for k, v in data.items()}
+
         # make sure we don't overwrite any attributes
-        for k in data.keys():
+        new_data = {}
+        for k, v in data.items():
             if k in self.__fields__.keys():
-                raise ValueError(f"Tag name {k} is a reserved attribute name")
-        self.tags.update(data)
+                warnings.warn(f"Tag name {k} is a reserved attribute name, skipping")
+            else:
+                new_data[k] = v
+
+        # use logic from openeye backend to set the tags and return them
+        from asapdiscovery.data.backend.openeye import get_SD_data, set_SD_data
+        from asapdiscovery.data.util.data_conversion import (
+            get_first_value_of_dict_of_lists,
+        )
+
+        mol = self.to_oemol()
+        set_SD_data(mol, new_data)
+        new_sd_data = get_SD_data(mol)
+        self.conf_tags.update(new_sd_data)
+        self.tags.update(get_first_value_of_dict_of_lists(new_data))
 
     def to_sdf_str(self) -> str:
         """
@@ -398,11 +454,23 @@ class Ligand(DataModelAbstractBase):
         mol = self.to_oemol()
         return oemol_to_sdf_string(mol)
 
-    def get_SD_data(self) -> dict[str, str]:
+    def get_single_conf_SD_data(self, i: int = 0) -> dict[str, str]:
         """
-        Get the SD data for the ligand
+        Get the SD data for the ligand for a particular conformer. Defaults to the first one.
+        If you'd like to get SD data for all the conformers, those are saved in Ligand.conf_tags
+
+        Parameters
+        ----------
+        i: int
+            Return the ith conformer. Defaults to the first one (i=0).
+
+        Returns
+        -------
+        dict[str, str]
+            A dictionary of key: value pairs for the SD tags.
         """
-        return self.tags
+        data = {tag: values[i] for tag, values in self.conf_tags.items()}
+        return data
 
     def print_SD_data(self) -> None:
         """
@@ -415,6 +483,7 @@ class Ligand(DataModelAbstractBase):
         Clear the SD data for the ligand
         """
         self.tags = {}
+        self.conf_tags = {}
 
     def set_expansion(
         self,
@@ -459,7 +528,7 @@ class Ligand(DataModelAbstractBase):
         Not necessarily the most physiologically relevant tautomer, but helpful for comparing ligands.
         """
         mol = self.to_oemol()
-        canonical_tautomer = oechem.OEGraphMol()
+        canonical_tautomer = oechem.OEMol()
         if oequacpac.OEGetUniqueProtomer(canonical_tautomer, mol):
             return Ligand.from_oemol(
                 compound_name=self.compound_name,
@@ -475,6 +544,20 @@ class Ligand(DataModelAbstractBase):
             )
         else:
             raise ValueError("Unable to generate canonical tautomer")
+
+    @property
+    def num_poses(self) -> int:
+        """
+        Get the number of poses in the ligand.
+        """
+        return self.to_oemol().NumConfs()
+
+    @property
+    def has_multiple_poses(self) -> bool:
+        """
+        Check if the ligand has multiple poses.
+        """
+        return self.num_poses > 1
 
     @property
     def neutralized(self) -> "Ligand":
@@ -616,6 +699,52 @@ class Ligand(DataModelAbstractBase):
         if relationship == ChemicalRelationship.UNKNOWN:
             relationship |= ChemicalRelationship.DISTINCT
         return relationship
+
+    def sort_confs_by_sd_tag_value(self, by: str, ascending: bool = True) -> np.ndarray:
+        """
+        Sort the conformers of the ligand by a particular sd tag.
+        Changes the Ligand object IN PLACE and returns the indices of the conformers in the sorted order.
+
+        Parameters
+        ----------
+        by: str
+            Key value of SD tag to use
+        ascending: bool
+            Whether to sort the values in ascending order, by default True.
+
+        Returns
+        -------
+        np.ndarray
+            Array of len(num_confs) returned by `np.argsort`.
+            Represents the set of indices that sorts the original conformer list into the new order.
+
+        Raises
+        ------
+        Value Error
+            If 'by' tag not found in ligand tags or if unable to sort the conformers
+        """
+        import numpy as np
+        from asapdiscovery.data.backend.openeye import get_SD_data
+
+        if self.num_poses == 1:
+            warnings.warn("Only one conformer present, no sorting will be done")
+            return np.array([0])
+
+        if not self.tags.get(by):
+            raise ValueError(f"Tag {by} not found in ligand tags: {self.tags.keys()}")
+
+        mol = self.to_oemol()
+        confs = np.array([conf for conf in mol.GetConfs()])
+        sort_array = np.argsort(np.array(self.conf_tags[by]))
+        if not ascending:
+            sort_array = np.flip(sort_array)
+        sorted_by_value = confs[sort_array]
+        if mol.OrderConfs(sorted_by_value):
+            self.set_SD_data(get_SD_data(mol))
+            self.data = oemol_to_sdf_string(mol)
+            return sort_array
+        else:
+            raise ValueError("Unable to sort conformers")
 
 
 class ReferenceLigand(Ligand):

@@ -1,14 +1,22 @@
+import shutil
 from typing import Optional
 
 import click
+from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
 
 
-@click.group()
+@click.group(
+    short_help="Tools to prepare ligands for Alchemy networks via state expansion and constrained pose generation.",
+    cls=SpecialHelpOrder,
+    context_settings={"max_content_width": shutil.get_terminal_size().columns - 20},
+)
 def prep():
     """Tools to prepare ligands for Alchemy networks via state expansion and constrained pose generation."""
 
 
-@prep.command()
+@prep.command(
+    short_help="Create a new AlchemyPrepWorkflow with default settings and save it to JSON file."
+)
 @click.option(
     "-f",
     "--filename",
@@ -44,7 +52,9 @@ def create(filename: str, core_smarts: str):
     console.print(message)
 
 
-@prep.command()
+@prep.command(
+    short_help="Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate constrained poses suitable for ASAP-Alchemy."
+)
 @click.option(
     "-f",
     "--factory-file",
@@ -70,6 +80,12 @@ def create(filename: str, core_smarts: str):
     help="The name of the JSON file which contains the prepared receptor complex including the crystal ligand.",
 )
 @click.option(
+    "-sd",
+    "--structure-dir",
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
+    help="The name of the folder file which contains the prepared receptor complexs including the crystal ligands from which we should select the best complex.",
+)
+@click.option(
     "-cs",
     "--core-smarts",
     type=click.STRING,
@@ -80,8 +96,8 @@ def create(filename: str, core_smarts: str):
     "--processors",
     default="auto",
     show_default=True,
-    help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), `all` will use all"
-    "or the exact number of cpus to use can be provided.",
+    help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), "
+    "`all` will use all or the exact number of cpus to use can be provided.",
 )
 @click.option(
     "-pm",
@@ -91,14 +107,24 @@ def create(filename: str, core_smarts: str):
     show_default=True,
     help="The name of the Postera molecule set to pull the input ligands from.",
 )
+@click.option(
+    "-ep",
+    "--experimental-protocol",
+    help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+)
 def run(
     dataset_name: str,
-    ligands: str,
-    receptor_complex: str,
+    ligands: Optional[str] = None,
+    receptor_complex: Optional[str] = None,
+    structure_dir: Optional[str] = None,
     factory_file: Optional[str] = None,
     core_smarts: Optional[str] = None,
     processors: int = 1,
     postera_molset_name: Optional[str] = None,
+    experimental_protocol: Optional[str] = None,
 ):
     """
     Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate
@@ -109,6 +135,7 @@ def run(
     dataset_name: The name which should be given to the AlchemyDataset all results will be saved in a folder with the same name.
     ligands: The name of the local file which contains the input ligands to be prepared in the workflow.
     receptor_complex: The name of the local file which contains the prepared complex including the crystal ligand.
+    structure_dir: The name of the folder which contains the prepared complexs that we should select the best reference from
     factory_file: The name of the JSON file with the configured AlchemyPrepWorkflow, if not supplied the default will be
         used but a core smarts must be provided.
     core_smarts: The SMARTS string used to identify the atoms in each ligand to be constrained. Required if the factory file is not supplied.
@@ -158,14 +185,42 @@ def run(
         (1, 0, 1, 0),
     )
     console.print(message)
-    # always expect the JSON file
-    ref_complex = PreppedComplex.parse_file(receptor_complex)
 
-    message = Padding(
-        f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
+    if receptor_complex is None and structure_dir is not None:
+        ref_select_status = console.status(
+            f"Selecting best reference complex form {structure_dir}"
+        )
+        ref_select_status.start()
+
+        from asapdiscovery.alchemy.utils import (
+            get_similarity,
+            select_reference_for_compounds,
+        )
+        from asapdiscovery.modeling.protein_prep import ProteinPrepperBase
+
+        reference_complex = ProteinPrepperBase.load_cache(cache_dir=structure_dir)
+        ref_complex, largest_ligand = select_reference_for_compounds(
+            ligands=asap_ligands, references=reference_complex, check_openmm=True
+        )
+        ref_select_status.stop()
+        # check the similarity of the ligands
+        sim = get_similarity(ref_complex.ligand, largest_ligand)
+        message = Padding(
+            f"Selected {ref_complex.target.target_name} as the best reference structure. Largest ligand in the set: "
+            f"{largest_ligand.smiles} reference ligand: {ref_complex.ligand.smiles} have similarity: {sim}",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+
+    else:
+        # always expect the JSON file
+        ref_complex = PreppedComplex.parse_file(receptor_complex)
+
+        message = Padding(
+            f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
 
     # workout the number of processes to use if auto or all
     all_cpus = cpu_count()
@@ -177,6 +232,36 @@ def run(
         # can be a string from click
         processors = int(processors)
 
+    # check if we need to add experimental ligands
+    if experimental_protocol is not None and factory.n_references > 0:
+        from asapdiscovery.alchemy.cli.utils import get_cdd_molecules
+
+        message = Padding(
+            f"Requested injection of {factory.n_references} experimental references into the network",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+
+        cdd_status = console.status(
+            f"Downloading experimental ligands from CDD protocol {experimental_protocol}"
+        )
+        cdd_status.start()
+        # get all molecules with data for the given protocol, removing stereo issues and possible warheads
+        ref_ligands = get_cdd_molecules(
+            protocol_name=experimental_protocol,
+            defined_stereo_only=True,
+            remove_covalent=True,
+        )
+        cdd_status.stop()
+
+        message = Padding(
+            f"Extracted {len(ref_ligands)} ligands from the CDD protocol {experimental_protocol}",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+    else:
+        ref_ligands = None
+
     message = Padding(
         f"Starting Alchemy-Prep workflow with {processors} processors", (1, 0, 1, 0)
     )
@@ -187,6 +272,7 @@ def run(
         ligands=asap_ligands,
         reference_complex=ref_complex,
         processors=processors,
+        reference_ligands=ref_ligands,
     )
     output_folder = pathlib.Path(dataset_name)
     output_folder.mkdir(parents=True, exist_ok=True)

@@ -19,14 +19,20 @@ python:
     - method: pip
       path: asapdiscovery-alchemy
     - method: pip
+      path: asapdiscovery-cli
+    - method: pip
       path: asapdiscovery-data
     - method: pip
       path: asapdiscovery-dataviz
     - method: pip
       path: asapdiscovery-docking
     - method: pip
+      path: asapdiscovery-genetics
+    - method: pip
       path: asapdiscovery-ml
     - method: pip
       path: asapdiscovery-modeling
     - method: pip
       path: asapdiscovery-simulation
+    - method: pip
+      path: asapdiscovery-workflows

@@ -12,8 +12,7 @@ class VisualizerBase(abc.ABC, BaseModel):
     """
 
     @abc.abstractmethod
-    def _visualize(self) -> pd.DataFrame:
-        ...
+    def _visualize(self) -> pd.DataFrame: ...
 
     def visualize(
         self,
@@ -23,6 +22,7 @@ class VisualizerBase(abc.ABC, BaseModel):
         dask_failure_mode=DaskFailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
+        **kwargs,
     ) -> pd.DataFrame:
         outputs = self._visualize(
             inputs=inputs,
@@ -31,25 +31,10 @@ class VisualizerBase(abc.ABC, BaseModel):
             dask_failure_mode=dask_failure_mode,
             backend=backend,
             reconstruct_cls=reconstruct_cls,
+            **kwargs,
         )
 
         return pd.DataFrame(outputs)
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
-
-    @staticmethod
-    def write_data(data, path):
-        """
-        Write data to a file.
-
-        Parameters
-        ----------
-        data : str
-            data to write.
-        path : Path
-            Path to write HTML to.
-        """
-        with open(path, "w") as f:
-            f.write(data)
+    def provenance(self) -> dict[str, str]: ...

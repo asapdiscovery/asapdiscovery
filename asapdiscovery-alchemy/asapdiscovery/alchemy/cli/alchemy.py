@@ -1,19 +1,27 @@
+import shutil
 from typing import Optional
 
 import click
+from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TagEnumBase,
     TargetTags,
 )
 
 
-@click.group()
+@click.group(
+    cls=SpecialHelpOrder,
+    context_settings={"max_content_width": shutil.get_terminal_size().columns - 20},
+)
 def alchemy():
     """Tools to create and execute Alchemy networks using OpenFE and alchemiscale."""
     pass
 
 
-@alchemy.command()
+@alchemy.command(
+    help_priority=1,
+    short_help="Create a new free energy perturbation factory with default settings and save it to JSON file.",
+)
 @click.argument(
     "filename",
     type=click.Path(exists=False, file_okay=True, dir_okay=False, writable=True),
@@ -31,7 +39,10 @@ def create(filename: str):
     factory.to_file(filename=filename)
 
 
-@alchemy.command()
+@alchemy.command(
+    help_priority=2,
+    short_help="Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file in a folder named after the dataset.",
+)
 @click.option(
     "-f",
     "--factory-file",
@@ -174,7 +185,10 @@ def plan(
         output.write(planned_network.network.graphml)
 
 
-@alchemy.command()
+@alchemy.command(
+    help_priority=3,
+    short_help="Submit a local FreeEnergyCalculationNetwork to alchemiscale using the provided scope details. The network object will have these details saved into it.",
+)
 @click.option(
     "-n",
     "--network",
@@ -266,7 +280,10 @@ def submit(
     )
 
 
-@alchemy.command()
+@alchemy.command(
+    help_priority=7,
+    short_help="Gather the results from alchemiscale for the given network.",
+)
 @click.option(
     "-n",
     "--network",
@@ -319,7 +336,10 @@ def gather(network: str, allow_missing: bool):
     network_with_results.to_file("result_network.json")
 
 
-@alchemy.command()
+@alchemy.command(
+    help_priority=4,
+    short_help="Get the status of the submitted network on alchemiscale.",
+)
 @click.option(
     "-n",
     "--network",
@@ -455,7 +475,9 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                 click.echo()
 
 
-@alchemy.command()
+@alchemy.command(
+    help_priority=5, short_help="Restart errored Tasks for the given FEC network."
+)
 @click.option(
     "-n",
     "--network",
@@ -496,7 +518,10 @@ def restart(network: str, verbose: bool, tasks):
         click.echo(f"Restarted {len(restarted_tasks)} Tasks")
 
 
-@alchemy.command()
+@alchemy.command(
+    help_priority=6,
+    short_help="Stop (i.e. set to 'error') a network's running and waiting tasks.",
+)
 @click.option(
     "-nk",
     "--network-key",
@@ -531,7 +556,10 @@ def stop(network_key: str):
     console.print(message)
 
 
-@alchemy.command()
+@alchemy.command(
+    help_priority=7,
+    short_help="Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the results to the relevant energy range.",
+)
 @click.option(
     "-n",
     "--network",
@@ -588,6 +616,7 @@ def predict(
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
+    import numpy as np
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header, upload_to_postera
     from asapdiscovery.alchemy.predict import (
@@ -685,7 +714,10 @@ def predict(
 
     # workout if any reference data was provided and if we should create the interactive reports
     has_ref_data = reference_dataset or protocol
-    if has_ref_data is not None:
+    if has_ref_data is not None and not np.isnan(
+        absolute_df["DG (kcal/mol) (EXPT)"].mean()
+    ):
+        # check we have experimental data for a ligand in the network
         report_status = console.status("Generating interactive reports")
         report_status.start()
         # we can only make these reports currently with experimental data
