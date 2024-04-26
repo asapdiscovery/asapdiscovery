@@ -191,6 +191,13 @@ class EarlyStoppingConfig(ConfigBase):
             "Used only in ConvergedEarlyStopping."
         ),
     )
+    burnin: int = Field(
+        0,
+        description=(
+            "Minimum number of epochs to train for regardless of early "
+            "stopping criteria."
+        ),
+    )
 
     @root_validator(pre=False)
     def check_args(cls, values):
@@ -209,10 +216,14 @@ class EarlyStoppingConfig(ConfigBase):
                         "ConvergedEarlyStopping."
                     )
             case EarlyStoppingType.patient_converged:
-                if (values["n_check"] is None) or (values["divergence"] is None):
+                if (
+                    (values["n_check"] is None)
+                    or (values["divergence"] is None)
+                    or (values["patience"] is None)
+                ):
                     raise ValueError(
-                        "Values required for n_check and divergence when using "
-                        "PatientConvergedEarlyStopping."
+                        "Values required for n_check, divergence, and patience when "
+                        "using PatientConvergedEarlyStopping."
                     )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
@@ -226,12 +237,14 @@ class EarlyStoppingConfig(ConfigBase):
             case EarlyStoppingType.none:
                 return None
             case EarlyStoppingType.best:
-                return BestEarlyStopping(self.patience)
+                return BestEarlyStopping(self.patience, self.burnin)
             case EarlyStoppingType.converged:
-                return ConvergedEarlyStopping(self.n_check, self.divergence)
+                return ConvergedEarlyStopping(
+                    self.n_check, self.divergence, self.burnin
+                )
             case EarlyStoppingType.patient_converged:
                 return PatientConvergedEarlyStopping(
-                    self.n_check, self.divergence, self.patience
+                    self.n_check, self.divergence, self.patience, self.burnin
                 )
             case other:
                 raise ValueError(f"Unknown EarlyStoppingType: {other}")
@@ -811,10 +824,10 @@ class LossFunctionType(StringEnum):
 
 class LossFunctionConfig(ConfigBase):
     """
-    Class for splitting an ML Dataset class.
+    Class for building a loss function.
     """
 
-    # Parameter for splitting
+    # Parameter for loss type
     loss_type: LossFunctionType = Field(
         ...,
         description=(
@@ -845,3 +858,67 @@ class LossFunctionConfig(ConfigBase):
                 return GaussianNLLLoss(keep_sq=True, semiquant_fill=self.semiquant_fill)
             case other:
                 raise ValueError(f"Unknown LossFunctionType {other}.")
+
+
+class DataAugType(StringEnum):
+    """
+    Enum for different methods of data augmentation.
+    """
+
+    # Jitter all coordinates by a fixed amount
+    jitter_fixed = "jitter_fixed"
+
+
+class DataAugConfig(BaseModel):
+    """
+    Class for building a data augmentation module.
+    """
+
+    # Parameter for augmentation type
+    aug_type: DataAugType = Field(
+        ...,
+        description=(
+            "Type of augmentation."
+            f"Options are [{', '.join(DataAugType.get_values())}]."
+        ),
+    )
+
+    # Define the distribution of random noise to jitter with
+    jitter_fixed_mean: float | None = Field(
+        None, description="Mean of gaussian distribution to draw noise from."
+    )
+    jitter_fixed_std: float | None = Field(
+        None,
+        description="Standard deviation of gaussian distribution to draw noise from.",
+    )
+
+    # Seed for randomly jittering
+    jitter_rand_seed: int | None = Field(
+        None, description="Random seed to use for reproducbility, if desired."
+    )
+
+    # Dict key for the positions
+    jitter_pos_key: str | None = Field(
+        None, description="Key to access the coords in pose dict."
+    )
+
+    def build(self):
+        from asapdiscovery.ml.data_augmentation import JitterFixed
+
+        match self.aug_type:
+            case DataAugType.jitter_fixed:
+                build_class = JitterFixed
+                kwargs = {
+                    "mean": "jitter_fixed_mean",
+                    "std": "jitter_fixed_std",
+                    "rand_seed": "jitter_rand_seed",
+                    "dict_key": "jitter_pos_key",
+                }
+
+        # Remove any None kwargs
+        kwargs = {
+            k: getattr(self, v)
+            for k, v in kwargs.items()
+            if getattr(self, v) is not None
+        }
+        return build_class(**kwargs)
