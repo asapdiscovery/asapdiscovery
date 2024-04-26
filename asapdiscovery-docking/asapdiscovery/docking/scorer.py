@@ -2,7 +2,7 @@ import abc
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import ClassVar, Optional, Union, Any
+from typing import Any, ClassVar, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -218,8 +218,7 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]:
-        ...
+    def _score() -> list[DockingResult]: ...
 
     def score(
         self,
