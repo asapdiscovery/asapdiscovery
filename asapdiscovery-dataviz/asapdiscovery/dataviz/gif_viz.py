@@ -133,7 +133,7 @@ class GIFVisualizer(VisualizerBase):
 
         p = pymol2.PyMOL()
         p.start()
-        if not outpath:
+        if outpath:
             out_dir = Path(outpath).parent
             out_dir.mkdir(parents=True, exist_ok=True)
             path = outpath
@@ -143,12 +143,12 @@ class GIFVisualizer(VisualizerBase):
             else:
                 path = out_dir / "trajectory.gif"
 
+        # get path without filename
+        out_dir = Path(outpath).parent
         tmpdir = out_dir / "tmp"
         tmpdir.mkdir(parents=True, exist_ok=True)
-
         complex_name = "complex"
         p.cmd.load(str(system), object=complex_name)
-
         if static_view_only:
             # this may be unprepped/unaligned, so need to align to master structure before writing out.
             reference_structure = master_structures[target]
@@ -244,7 +244,6 @@ class GIFVisualizer(VisualizerBase):
 
         p.cmd.set_view(view_coords)  # sets general orientation
         if static_view_only:
-            print(path)
             p.cmd.save(str(path))
             # remove tmpdir
             shutil.rmtree(tmpdir)
@@ -334,13 +333,13 @@ class GIFVisualizer(VisualizerBase):
                 if self.static_view_only:
                     out = (
                         self.output_dir
-                        / res.input_docking_result.posed_ligand.compound_name
+                        / res.input_docking_result.unique_name
                         / "view.pse"
                     )
                 else:
                     out = (
                         self.output_dir
-                        / res.input_docking_result.posed_ligand.compound_name
+                        / res.input_docking_result.unique_name
                         / "trajectory.gif"
                     )
             else:
