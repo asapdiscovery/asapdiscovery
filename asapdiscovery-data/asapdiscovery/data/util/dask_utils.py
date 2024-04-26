@@ -1,6 +1,5 @@
 import functools
 import logging
-import operator
 from collections.abc import Iterable
 from typing import Optional, Union
 
