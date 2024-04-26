@@ -62,3 +62,40 @@ def test_load_sdfs(sdf_file):
     assert len(oemols) == 576
     oemols = load_openeye_sdfs(str(sdf_file))
     assert len(oemols) == 576
+
+
+def test_ligand_sdf(moonshot_sdf, multipose_ligand, sdf_file):
+    single_conf = load_openeye_sdf(moonshot_sdf)
+    assert single_conf.NumConfs() == 1
+    multiconf = load_openeye_sdf(multipose_ligand)
+
+    assert multiconf.NumConfs() == 50
+
+    # right now `load_openeye_sdf` returns the first molecule in a multi-molecule sdf
+    mol = load_openeye_sdf(sdf_file)
+    assert mol.NumConfs() == 1
+
+
+def test_sd_tag_processing(moonshot_sdf, multipose_ligand):
+    from asapdiscovery.data.backend.openeye import get_SD_data, set_SD_data
+
+    single_conf = load_openeye_sdf(moonshot_sdf)
+    assert get_SD_data(single_conf) == {}
+
+    multiconf = load_openeye_sdf(multipose_ligand)
+
+    simple_data = {"test": "value"}
+    set_SD_data(single_conf, simple_data)
+    assert get_SD_data(single_conf)["test"] == ["value"]
+
+    set_SD_data(multiconf, simple_data)
+    assert get_SD_data(multiconf)["test"] == ["value"] * multiconf.NumConfs()
+
+    with pytest.raises(ValueError):
+        set_SD_data(single_conf, {"test": ["value", "value2"]})
+
+    with pytest.raises(ValueError):
+        set_SD_data(single_conf, {"test": []})
+
+    with pytest.raises(ValueError):
+        set_SD_data(multiconf, {"test": ["value", "value2"]})

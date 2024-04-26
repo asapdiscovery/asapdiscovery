@@ -277,6 +277,12 @@ def cross_docking(
     default=0.1,
     help="The confidence cutoff for POSIT results to be considered",
 )
+@click.option(
+    "--n-select",
+    type=int,
+    default=3,
+    help="The number of targets to dock each ligand against, sorted by MCS",
+)
 @click.option("--allow-dask-cuda/--no-allow-dask-cuda", default=True)
 @click.option(
     "--no-omega",
@@ -302,6 +308,7 @@ def cross_docking(
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
+    n_select: int = 3,
     allow_dask_cuda: bool = True,
     no_omega: bool = False,
     ligands: Optional[str] = None,
@@ -343,6 +350,7 @@ def small_scale(
             dask_type=dask_type,
             dask_failure_mode=dask_failure_mode,
             posit_confidence_cutoff=posit_confidence_cutoff,
+            n_select=n_select,
             allow_dask_cuda=allow_dask_cuda,
             use_omega=not no_omega,
             ligands=ligands,

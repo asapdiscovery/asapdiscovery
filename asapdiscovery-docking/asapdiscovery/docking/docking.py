@@ -3,6 +3,7 @@ Defines docking base schema.
 """
 
 import abc
+import json
 import logging
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
@@ -203,6 +204,10 @@ class DockingResult(BaseModel):
         dct.pop("posed_ligand")
         dct.pop("type")
         return dct
+
+    @classmethod
+    def from_json(cls, json_str):
+        return cls.parse_obj(json.loads(json_str))
 
     def to_posed_oemol(self) -> oechem.OEMol:
         """

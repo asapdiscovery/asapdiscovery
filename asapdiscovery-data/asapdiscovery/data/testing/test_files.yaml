@@ -145,6 +145,10 @@ files:
   - resource: Mpro-P2660_0A_bound-prepped_ligand.sdf
     sha256hash: 6224f6cba2140648498731acadbacc9772a224119c465694e132a905ff0189d8
 
+  # docked multiconf ligand
+  - resource: multiconf.sdf
+    sha256hash: 8ae697cd5c4e98bf41d7839d49068ebb781ae2a32d48e958dba25297e0015c20
+
   # prepped sars design unit
   - resource: Mpro-P2660_0A_bound-prepped_receptor.oedu
     sha256hash: 802593b2d741be258b1a1b4ee75d5c582cf56303f9a97ca9c6825d2893f14eb7

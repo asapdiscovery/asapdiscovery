@@ -47,6 +47,7 @@ dependencies:
   - validators
   - pyyaml
   - sigfig
+  - multimethod
 
   # ml
   - pytorch

@@ -1,4 +1,5 @@
 import argparse
+import shlex
 from pathlib import Path
 
 from asapdiscovery.genetics.blast import PDBEntry, get_blast_seqs
@@ -14,11 +15,20 @@ parser.add_argument(
     required=True,
     help="Path to input fasta file with ref sequence",
 )
+
 parser.add_argument(
     "--results-folder",
     type=str,
     required=True,
     help="Path to folder for storing results",
+)
+
+parser.add_argument(
+    "--input-type",
+    type=str,
+    required=False,
+    default="fasta",
+    help="Type of input between ['fasta', 'pdb', 'pre-calc']",
 )
 
 parser.add_argument(
@@ -30,11 +40,19 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--e-thr",
+    type=float,
+    required=False,
+    default=10,
+    help="Threshold to select BLAST results",
+)
+
+parser.add_argument(
     "--sel-key",
     type=str,
     required=False,
-    default="human",
-    help="Selection key to filter BLAST output",
+    default="",
+    help="Selection key to filter BLAST output. Provide either a keyword, or 'host: <species>'",
 )
 
 parser.add_argument(
@@ -61,26 +79,51 @@ parser.add_argument(
     help="Optional file name for saving result of BLAST search",
 )
 
+parser.add_argument(
+    "--email",
+    type=str,
+    required=False,
+    default="",
+    help="Email for Entrez search",
+)
+
 
 def main():
     args = parser.parse_args()
     # check all the required files exist
     fasta = Path(args.fasta)
     if not fasta.exists():
-        raise FileNotFoundError(f"Pose file {fasta} does not exist")
+        raise FileNotFoundError(f"Fasta file {fasta} does not exist")
+    if args.input_type in ["fasta", "pdb", "pre-calc"]:
+        input_type = args.input_type
+    else:
+        raise ValueError(
+            "The option input-type must be either 'fasta', 'pdb' or 'pre-calc'"
+        )
+
+    if "host" in args.sel_key:
+        if len(args.email) > 0:
+            email = args.email
+        else:
+            raise ValueError(
+                "If a host selection is requested, an email must be provided"
+            )
     # Create folder if doesn't already exists
     results_folder = Path(args.results_folder)
     results_folder.mkdir(parents=True, exist_ok=True)
+
     # Perform BLAST search on input sequence
     matches_df = get_blast_seqs(
         args.fasta,
         results_folder,
-        input_type="fasta",
+        input_type=input_type,
         save_csv=args.save_blast,
         nalign=args.nalign,
-        nhits=args.nalign * 3 / 4,
+        nhits=int(args.nalign * 3 / 4),
+        e_val_thresh=args.e_thr,
         database="refseq_protein",
         verbose=False,
+        email=email,
     )
 
     # Perform alignment for each entry in the FASTA file
@@ -99,6 +142,12 @@ def main():
 
         record = pdb_file_record[0]
         print(f"A PDB template for {record.label} was saved as {record.pdb_file}")
+
+        # The following can be added to a shell file for running ColabFold
+        file = open(results_folder / f"{file_prefix}_command.txt", "w")
+        file.write("# Copy template PDB for ColabFold use\n")
+        file.write(f'cp {shlex.quote(record.pdb_file)} "$template_path/0001.pdb"')
+        file.close()
 
     return
 
