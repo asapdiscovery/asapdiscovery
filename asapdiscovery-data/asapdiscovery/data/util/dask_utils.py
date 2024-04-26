@@ -1,14 +1,12 @@
 import functools
 import logging
+import operator
 from collections.abc import Iterable
 from typing import Optional, Union
 
 import dask
 import numpy as np
 import psutil
-import functools
-import operator
-
 from asapdiscovery.data.util.execution_utils import (
     get_platform,
     guess_network_interface,

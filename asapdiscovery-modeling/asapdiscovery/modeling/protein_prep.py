@@ -52,8 +52,7 @@ class ProteinPrepperBase(BaseModel):
         arbitrary_types_allowed = True
 
     @abc.abstractmethod
-    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]:
-        ...
+    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]: ...
 
     @staticmethod
     def _gather_new_tasks(
@@ -167,8 +166,7 @@ class ProteinPrepperBase(BaseModel):
         return all_outputs
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
     @staticmethod
     def cache(

@@ -211,12 +211,12 @@ class HTMLVisualizer(VisualizerBase):
 
                 # make dataframe with ligand name, target name, and path to HTML
                 row = {}
-                row[
-                    DockingResultCols.LIGAND_ID.value
-                ] = result.input_pair.ligand.compound_name
-                row[
-                    DockingResultCols.TARGET_ID.value
-                ] = result.input_pair.complex.target.target_name
+                row[DockingResultCols.LIGAND_ID.value] = (
+                    result.input_pair.ligand.compound_name
+                )
+                row[DockingResultCols.TARGET_ID.value] = (
+                    result.input_pair.complex.target.target_name
+                )
                 row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
                 row[self.get_tag_for_color_method()] = outpath
                 data.append(row)
