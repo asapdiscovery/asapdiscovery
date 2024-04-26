@@ -380,9 +380,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
-            fitness_visualizations[DockingResultCols.TARGET_ID.value]
-        )
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
 
         # join the two dataframes on ligand_id, target_id and smiles
         scores_df = scores_df.merge(

@@ -6,6 +6,9 @@ from typing import Optional, Union
 import dask
 import numpy as np
 import psutil
+import functools
+import operator
+
 from asapdiscovery.data.util.execution_utils import (
     get_platform,
     guess_network_interface,
@@ -131,7 +134,7 @@ def backend_wrapper(kwargname):
     return backend_wrapper_inner
 
 
-def dask_vmap(kwargsnames, remove_none=True):
+def dask_vmap(kwargsnames, remove_falsy=True):
     """
     Decorator to handle either returning a whole vector if not using dask, or using dask to parallelise over a vector
     if dask is being used
@@ -149,6 +152,8 @@ def dask_vmap(kwargsnames, remove_none=True):
     ----------
     kwargsnames : list[str]
         List of keyword argument names to parallelise over
+    remove_falsy : bool, optional
+        Whether to remove falsy (bool casted) results from the output, by default True
     use_dask : bool, optional
         Whether to use dask, by default False
     dask_client : Client, optional
@@ -184,13 +189,16 @@ def dask_vmap(kwargsnames, remove_none=True):
                     for name, value in zip(iterable_kwargs.keys(), values):
                         local_kwargs[name] = [value]
                     computations.append(dask.delayed(func)(*args, **local_kwargs))
-                results = np.ravel(
-                    actualise_dask_delayed_iterable(
-                        computations, dask_client=dask_client, errors=dask_failure_mode
-                    )
-                ).tolist()
-                if remove_none:
-                    results = [r for r in results if r is not None]
+
+                results = actualise_dask_delayed_iterable(
+                    computations, dask_client=dask_client, errors=dask_failure_mode
+                )
+
+                if remove_falsy:
+                    results = [r for r in results if r]
+
+                results = np.ravel(np.asarray(results)).tolist()
+
                 return results
 
             else:

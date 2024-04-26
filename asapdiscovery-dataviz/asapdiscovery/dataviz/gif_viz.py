@@ -324,55 +324,68 @@ class GIFVisualizer(VisualizerBase):
         self,
         inputs: list[SimulationResult],
         outpaths: Optional[list[Path]] = None,
+        error: str = "skip",
         **kwargs,
     ):
         data = []
 
         for i, res in enumerate(inputs):
-            if not outpaths:
-                if self.static_view_only:
-                    out = (
-                        self.output_dir
-                        / res.input_docking_result.unique_name
-                        / "view.pse"
-                    )
+            try:
+                if not outpaths:
+                    if self.static_view_only:
+                        out = (
+                            self.output_dir
+                            / res.input_docking_result.unique_name
+                            / "view.pse"
+                        )
+                    else:
+                        out = (
+                            self.output_dir
+                            / res.input_docking_result.unique_name
+                            / "trajectory.gif"
+                        )
                 else:
-                    out = (
-                        self.output_dir
-                        / res.input_docking_result.unique_name
-                        / "trajectory.gif"
-                    )
-            else:
-                out = self.output_dir / outpaths[i]
+                    out = self.output_dir / outpaths[i]
 
-            path = self.pymol_traj_viz(
-                target=self.target,
-                traj=res.traj_path,
-                system=res.minimized_pdb_path,
-                outpath=out,
-                static_view_only=self.static_view_only,
-                pse=self.pse,
-                pse_share=self.pse_share,
-                start=self.start,
-                stop=self.stop,
-                interval=self.interval,
-                smooth=self.smooth,
-                contacts=self.contacts,
-                frames_per_ns=self.frames_per_ns,
-                out_dir=self.output_dir,
-            )
-            row = {}
-            row[DockingResultCols.LIGAND_ID.value] = (
-                res.input_docking_result.posed_ligand.compound_name
-            )
-            row[DockingResultCols.TARGET_ID.value] = (
-                res.input_docking_result.input_pair.complex.target.target_name
-            )
-            row[DockingResultCols.SMILES.value] = (
-                res.input_docking_result.posed_ligand.smiles
-            )
-            row[DockingResultCols.GIF_PATH.value] = path
-            data.append(row)
+                path = self.pymol_traj_viz(
+                    target=self.target,
+                    traj=res.traj_path,
+                    system=res.minimized_pdb_path,
+                    outpath=out,
+                    static_view_only=self.static_view_only,
+                    pse=self.pse,
+                    pse_share=self.pse_share,
+                    start=self.start,
+                    stop=self.stop,
+                    interval=self.interval,
+                    smooth=self.smooth,
+                    contacts=self.contacts,
+                    frames_per_ns=self.frames_per_ns,
+                    out_dir=self.output_dir,
+                )
+                row = {}
+                row[
+                    DockingResultCols.LIGAND_ID.value
+                ] = res.input_docking_result.posed_ligand.compound_name
+                row[
+                    DockingResultCols.TARGET_ID.value
+                ] = res.input_docking_result.input_pair.complex.target.target_name
+                row[
+                    DockingResultCols.SMILES.value
+                ] = res.input_docking_result.posed_ligand.smiles
+                row[DockingResultCols.GIF_PATH.value] = path
+                data.append(row)
+            except Exception as e:
+                if error == "skip":
+                    logger.error(
+                        f"Error processing {res.input_docking_result.unique_name}: {e}"
+                    )
+                elif error == "raise":
+                    raise e
+                else:
+                    raise ValueError(
+                        f"Unknown error mode: {error}, must be 'skip' or 'raise'"
+                    )
         return data
 
     @_dispatch.register
@@ -380,49 +393,60 @@ class GIFVisualizer(VisualizerBase):
         self,
         inputs: list[tuple[Optional[Path], Path]],
         outpaths: Optional[list[Path]] = None,
+        error: str = "skip",
         **kwargs,
     ):
         data = []
         for i, tup in enumerate(inputs):
-            # unpack the tuple
-            traj, top = tup
-            # find with the unique identifier for the ligand would be
-            complex = Complex.from_pdb(
-                top,
-                target_kwargs={"target_name": f"{top.stem}_target"},
-                ligand_kwargs={"compound_name": f"{top.stem}_ligand"},
-            )
-            csp = CompoundStructurePair(complex=complex, ligand=complex.ligand)
-            if not outpaths:
-                if self.static_view_only:
-                    out = self.output_dir / csp.unique_name / "view.pse"
+            try:
+                # unpack the tuple
+                traj, top = tup
+                # find with the unique identifier for the ligand would be
+                complex = Complex.from_pdb(
+                    top,
+                    target_kwargs={"target_name": f"{top.stem}_target"},
+                    ligand_kwargs={"compound_name": f"{top.stem}_ligand"},
+                )
+                csp = CompoundStructurePair(complex=complex, ligand=complex.ligand)
+                if not outpaths:
+                    if self.static_view_only:
+                        out = self.output_dir / csp.unique_name / "view.pse"
+                    else:
+                        out = self.output_dir / csp.unique_name / "trajectory.gif"
                 else:
-                    out = self.output_dir / csp.unique_name / "trajectory.gif"
-            else:
-                out = self.output_dir / outpaths[i]
+                    out = self.output_dir / outpaths[i]
 
-            path = self.pymol_traj_viz(
-                target=self.target,
-                traj=traj,
-                system=top,
-                outpath=out,
-                static_view_only=self.static_view_only,
-                pse=self.pse,
-                pse_share=self.pse_share,
-                start=self.start,
-                stop=self.stop,
-                interval=self.interval,
-                smooth=self.smooth,
-                contacts=self.contacts,
-                frames_per_ns=self.frames_per_ns,
-                out_dir=self.output_dir,
-            )
-            row = {}
-            row[DockingResultCols.LIGAND_ID.value] = complex.ligand.compound_name
-            row[DockingResultCols.TARGET_ID.value] = complex.target.target_name
-            row[DockingResultCols.SMILES.value] = complex.ligand.smiles
-            row[DockingResultCols.GIF_PATH.value] = path
-            data.append(row)
+                path = self.pymol_traj_viz(
+                    target=self.target,
+                    traj=traj,
+                    system=top,
+                    outpath=out,
+                    static_view_only=self.static_view_only,
+                    pse=self.pse,
+                    pse_share=self.pse_share,
+                    start=self.start,
+                    stop=self.stop,
+                    interval=self.interval,
+                    smooth=self.smooth,
+                    contacts=self.contacts,
+                    frames_per_ns=self.frames_per_ns,
+                    out_dir=self.output_dir,
+                )
+                row = {}
+                row[DockingResultCols.LIGAND_ID.value] = complex.ligand.compound_name
+                row[DockingResultCols.TARGET_ID.value] = complex.target.target_name
+                row[DockingResultCols.SMILES.value] = complex.ligand.smiles
+                row[DockingResultCols.GIF_PATH.value] = path
+                data.append(row)
+            except Exception as e:
+                if error == "skip":
+                    logger.error(f"Error processing {csp.unique_name}: {e}")
+                elif error == "raise":
+                    raise e
+                else:
+                    raise ValueError(
+                        f"Unknown error mode: {error}, must be 'skip' or 'raise'"
+                    )
         return data
 
 

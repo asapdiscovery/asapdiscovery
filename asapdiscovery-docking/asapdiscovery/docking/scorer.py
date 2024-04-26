@@ -218,7 +218,8 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]: ...
+    def _score() -> list[DockingResult]:
+        ...
 
     def score(
         self,
@@ -289,7 +290,6 @@ class ScorerBase(BaseModel):
         data_list = []
         # flatten the list of scores
         scores = np.ravel(scores)
-
         for score in scores:
             dct = score.dict()
             dct["score_type"] = score.score_type.value  # convert to string

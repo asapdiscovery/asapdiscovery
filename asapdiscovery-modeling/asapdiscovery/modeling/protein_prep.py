@@ -52,7 +52,8 @@ class ProteinPrepperBase(BaseModel):
         arbitrary_types_allowed = True
 
     @abc.abstractmethod
-    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]: ...
+    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]:
+        ...
 
     @staticmethod
     def _gather_new_tasks(
@@ -166,7 +167,8 @@ class ProteinPrepperBase(BaseModel):
         return all_outputs
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]: ...
+    def provenance(self) -> dict[str, str]:
+        ...
 
     @staticmethod
     def cache(
@@ -258,69 +260,82 @@ class ProteinPrepper(ProteinPrepperBase):
             raise ValueError("Must provide active_site_chain if align is provided")
         return values
 
-    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]:
+    def _prep(self, inputs: list[Complex], error="skip") -> list[PreppedComplex]:
         """
         Prepares a series of proteins for docking using OESpruce.
         """
         prepped_complexes = []
         for complex_target in inputs:
-            # load protein
-            prot = complex_target.to_combined_oemol()
+            try:
+                # load protein
+                prot = complex_target.to_combined_oemol()
 
-            if self.align:
-                prot, _ = superpose_molecule(
-                    self.align.to_combined_oemol(),
-                    prot,
-                    self.ref_chain,
-                    self.active_site_chain,
+                if self.align:
+                    prot, _ = superpose_molecule(
+                        self.align.to_combined_oemol(),
+                        prot,
+                        self.ref_chain,
+                        self.active_site_chain,
+                    )
+
+                # mutate residues
+                if self.seqres_yaml:
+                    with open(self.seqres_yaml) as f:
+                        seqres_dict = yaml.safe_load(f)
+                    seqres = seqres_dict["SEQRES"]
+                    res_list = seqres_to_res_list(seqres)
+                    prot = mutate_residues(prot, res_list, place_h=True)
+                    protein_sequence = " ".join(res_list)
+                else:
+                    seqres = None
+                    protein_sequence = None
+
+                # spruce protein
+                success, spruce_error_message, spruced = spruce_protein(
+                    initial_prot=prot,
+                    protein_sequence=protein_sequence,
+                    loop_db=self.loop_db,
                 )
 
-            # mutate residues
-            if self.seqres_yaml:
-                with open(self.seqres_yaml) as f:
-                    seqres_dict = yaml.safe_load(f)
-                seqres = seqres_dict["SEQRES"]
-                res_list = seqres_to_res_list(seqres)
-                prot = mutate_residues(prot, res_list, place_h=True)
-                protein_sequence = " ".join(res_list)
-            else:
-                seqres = None
-                protein_sequence = None
+                if not success:
+                    raise ValueError(
+                        f"Prep failed, with error message: {spruce_error_message}"
+                    )
 
-            # spruce protein
-            success, spruce_error_message, spruced = spruce_protein(
-                initial_prot=prot,
-                protein_sequence=protein_sequence,
-                loop_db=self.loop_db,
-            )
-
-            if not success:
-                raise ValueError(
-                    f"Prep failed, with error message: {spruce_error_message}"
+                success, du = make_design_unit(
+                    spruced,
+                    site_residue=self.oe_active_site_residue,
+                    protein_sequence=protein_sequence,
                 )
+                if not success:
+                    raise ValueError("Failed to make design unit.")
 
-            success, du = make_design_unit(
-                spruced,
-                site_residue=self.oe_active_site_residue,
-                protein_sequence=protein_sequence,
-            )
-            if not success:
-                raise ValueError("Failed to make design unit.")
+                prepped_target = PreppedTarget.from_oedu(
+                    du,
+                    ids=complex_target.target.ids,
+                    target_name=complex_target.target.target_name,
+                    ligand_chain=complex_target.ligand_chain,
+                    target_hash=complex_target.target.hash,
+                )
+                # we need the ligand at the new translated coordinates
+                translated_oemol, _, _ = split_openeye_design_unit(du=du)
+                translated_lig = Ligand.from_oemol(
+                    translated_oemol, **complex_target.ligand.dict(exclude={"data"})
+                )
+                pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
+                prepped_complexes.append(pc)
 
-            prepped_target = PreppedTarget.from_oedu(
-                du,
-                ids=complex_target.target.ids,
-                target_name=complex_target.target.target_name,
-                ligand_chain=complex_target.ligand_chain,
-                target_hash=complex_target.target.hash,
-            )
-            # we need the ligand at the new translated coordinates
-            translated_oemol, _, _ = split_openeye_design_unit(du=du)
-            translated_lig = Ligand.from_oemol(
-                translated_oemol, **complex_target.ligand.dict(exclude={"data"})
-            )
-            pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
-            prepped_complexes.append(pc)
+            except Exception as e:
+                if error == "skip":
+                    logger.error(
+                        f"Failed to prep complex: {complex_target.target.target_name} - {e}"
+                    )
+                elif error == "raise":
+                    raise e
+                else:
+                    raise ValueError(
+                        f"Unknown error mode: {error}, must be 'skip' or 'raise'"
+                    )
 
         return prepped_complexes
 

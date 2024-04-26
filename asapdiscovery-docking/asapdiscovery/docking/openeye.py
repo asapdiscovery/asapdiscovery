@@ -77,21 +77,21 @@ class POSITDockingResults(DockingResult):
         df_prep = []
         for result in results:
             docking_dict = {}
-            docking_dict[DockingResultCols.LIGAND_ID.value] = (
-                result.input_pair.ligand.compound_name
-            )
-            docking_dict[DockingResultCols.TARGET_ID.value] = (
-                result.input_pair.complex.target.target_name
-            )
-            docking_dict["target_bound_compound_smiles"] = (
-                result.input_pair.complex.ligand.smiles
-            )
-            docking_dict[DockingResultCols.SMILES.value] = (
-                result.input_pair.ligand.smiles
-            )
-            docking_dict[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value] = (
-                result.probability
-            )
+            docking_dict[
+                DockingResultCols.LIGAND_ID.value
+            ] = result.input_pair.ligand.compound_name
+            docking_dict[
+                DockingResultCols.TARGET_ID.value
+            ] = result.input_pair.complex.target.target_name
+            docking_dict[
+                "target_bound_compound_smiles"
+            ] = result.input_pair.complex.ligand.smiles
+            docking_dict[
+                DockingResultCols.SMILES.value
+            ] = result.input_pair.ligand.smiles
+            docking_dict[
+                DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
+            ] = result.probability
             df_prep.append(docking_dict)
 
         df = pd.DataFrame(df_prep)
@@ -333,7 +333,6 @@ class POSITDocker(DockingBase):
                     error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
                     if error == "skip":
                         logger.warn(error_msg)
-                        docking_results.append(None)
                     elif error == "raise":
                         raise ValueError(error_msg)
                     else:
