@@ -661,7 +661,6 @@ def test_alchemy_predict_ccd_data(
 
         result = runner.invoke(alchemy, ["predict", "-ep", protocol_name])
         assert result.exit_code == 0
-        assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
         assert (
             "Absolute report written to predictions-absolute-tyk2-small-test.html"
@@ -717,6 +716,90 @@ def test_alchemy_predict_ccd_data(
         )
         assert relative_mol_data["prediction error (kcal/mol)"] == pytest.approx(
             0.2615, abs=1e-4
+        )
+
+
+def test_predict_missing_all_exp_data(
+    tyk2_reference_data, tyk2_result_network, tmpdir, monkeypatch
+):
+    """
+    Test making a prediction when experimental data is provided but does not overlap with the ligands, this should
+    stop the generation of the interactive reports.
+    """
+    # mock the env variables
+    monkeypatch.setenv("CDD_API_KEY", "mykey")
+    monkeypatch.setenv("CDD_VAULT_NUMBER", "1")
+    protocol_name = "my-protocol"
+
+    # mock the cdd_api
+    def get_tyk2_data(*args, **kwargs):
+        methanol = Chem.MolFromSmiles("CO")
+        fake_tyk2_data = {
+            "Smiles": "CO",
+            f"{protocol_name}: IC50 (µM)": 50,
+            f"{protocol_name}: IC50 CI (Lower) (µM)": 49.98,
+            f"{protocol_name}: IC50 CI (Upper) (µM)": 50.001,
+            f"{protocol_name}: Curve class": 1.1,
+            "Inchi": Chem.MolToInchi(methanol),
+            "Inchi Key": Chem.MolToInchiKey(methanol),
+            "name": "methanol",
+            "Molecule Name": "methanol",
+        }
+
+        return pd.DataFrame([fake_tyk2_data])
+
+    monkeypatch.setattr(CDDAPI, "get_ic50_data", get_tyk2_data)
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network.to_file("result_network.json")
+
+        result = runner.invoke(alchemy, ["predict", "-ep", protocol_name])
+        assert result.exit_code == 0
+        assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
+        assert (
+            "Absolute report written to predictions-absolute-tyk2-small-test.html"
+            not in result.stdout
+        )
+        assert (
+            "Relative report written to predictions-relative-tyk2-small-test.html"
+            not in result.stdout
+        )
+        # load the datasets and check the results match what's expected
+        absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
+        # make sure all results are present
+        assert len(absolute_dataframe) == 10
+        mol_data = absolute_dataframe.iloc[0]
+        assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
+        assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
+        assert mol_data["label"] == "lig_ejm_31"
+        # make sure the results have not been shifted
+        assert mol_data["DG (kcal/mol) (FECS)"] == pytest.approx(-0.1332, abs=1e-4)
+        assert mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+            0.0757, abs=1e-4
+        )
+
+        relative_dataframe = pd.read_csv("predictions-relative-tyk2-small-test.csv")
+        # make sure all results are present
+        assert len(relative_dataframe) == 9
+        relative_mol_data = relative_dataframe.iloc[0]
+        assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
+        assert (
+            relative_mol_data["SMILES_B"]
+            == "c1cc(c(c(c1)Cl)C(=O)Nc2ccnc(c2)NC(=O)C3CCC3)Cl"
+        )
+        assert relative_mol_data["Inchi_Key_A"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
+        assert relative_mol_data["Inchi_Key_B"] == "YJMGZFGQBBEAQT-UHFFFAOYSA-N"
+        assert relative_mol_data["labelA"] == "lig_ejm_31"
+        assert relative_mol_data["labelB"] == "lig_ejm_47"
+        # these should not be changed as they do not need shifting
+        assert relative_mol_data["DDG (kcal/mol) (FECS)"] == pytest.approx(
+            0.1115, abs=1e-4
+        )
+        assert relative_mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+            0.1497, abs=1e-4
         )
 
 

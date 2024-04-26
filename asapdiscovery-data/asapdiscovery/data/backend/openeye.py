@@ -661,11 +661,14 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
         oechem.OEFormat_SDF,
         oechem.OEIFlavor_SDF_Default,
     )
+    rmol = oechem.OEMol()
     ims.SetConfTest(oechem.OEOmegaConfTest())
     if ims.openstring(sdf_str):
+
         for mol in ims.GetOEMols():
-            ims.close()
-            return mol
+            rmol = mol.CreateCopy()
+            break  # only return the first molecule
+    return rmol
 
 
 def smiles_to_oemol(smiles: str) -> oechem.OEMol:
