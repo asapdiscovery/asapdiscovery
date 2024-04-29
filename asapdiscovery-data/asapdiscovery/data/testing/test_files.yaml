@@ -281,6 +281,15 @@ files:
     sha256hash: 5e73f6cf3b68defcffa5cf54c91ffb5ac1569688278a91c8032d4cd3426930cc
 
   # integration testing for ML
+  - resource: ml_testing/cdd_filtered_processed.csv
+    sha256hash: a3ac008167733a6473fe4ccdb6111d0802ad96fda0b9b7a6444710911701bfda
+
+  - resource: ml_testing/cdd_filtered_processed.json
+    sha256hash: 7a6753e33d52f4d1d5dcd07a8bfa85b542cd1b1c3718a582a56daee5fe246074
+
+  - resource: ml_testing/cdd_unfiltered.csv
+    sha256hash: 632e7067ef155349054405247396edcbd5c2aa19442e5626cb9ebb8ecb36874c
+
   - resource: ml_testing/exp_file.json
     sha256hash: d887d5bdc705b22b8dfb2be2f9fdd3ac2679be4d19d434fd61873b6497d6f36b
 
