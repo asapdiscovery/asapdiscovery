@@ -87,7 +87,7 @@ def upload_to_postera(
 
 
 def get_cdd_molecules(
-    protocol_name: str, defined_stereo_only: bool = True
+    protocol_name: str, defined_stereo_only: bool = True, remove_covalent: bool = True
 ) -> list["Ligand"]:
     """
     Search the CDD protocol for molecules with experimental values and return a list of asapdiscovery ligands.
@@ -98,6 +98,8 @@ def get_cdd_molecules(
     Args:
         protocol_name: The name of the experimental protocol in CDD we should extract molecules from.
         defined_stereo_only: Only return ligands which have fully defined stereochemistry
+        remove_covalent: If `True` remove potential covalent ligands from the protocol based on the presence of warheads
+            found via smarts matches.
 
     Returns:
         A list of molecules with experimental data.
@@ -147,7 +149,50 @@ def get_cdd_molecules(
 
         ref_ligands = defined_ligands
 
+    if remove_covalent:
+        # remove any ligands which contain potential covalent warheads
+        non_covalent_ligands = []
+        for mol in ref_ligands:
+            if not has_warhead(ligand=mol):
+                non_covalent_ligands.append(mol)
+
+        ref_ligands = non_covalent_ligands
+
     return ref_ligands
+
+
+def has_warhead(ligand: "Ligand") -> bool:
+    """
+    Check if the molecule has a potential covalent warhead based on the presence of some simple SMARTS patterns.
+
+    Args:
+        ligand: The ligand which we should check for potential covalent warheads
+
+    Returns:
+        `True` if the ligand has a possible warhead else `False`.
+
+    Notes:
+        The list of possible warheads is not exhaustive and so the molecule may still be a covalent ligand.
+    """
+    from rdkit import Chem
+
+    covalent_warhead_smarts = {
+        "acrylamide": "[C;H2:1]=[C;H1]C(N)=O",
+        "acrylamide_adduct": "NC(C[C:1]S)=O",
+        "chloroacetamide": "Cl[C;H2:1]C(N)=O",
+        "chloroacetamide_adduct": "S[C:1]C(N)=O",
+        "vinylsulfonamide": "NS(=O)([C;H1]=[C;H2:1])=O",
+        "vinylsulfonamide_adduct": "NS(=O)(C[C:1]S)=O",
+        "nitrile": "N#[C:1]-[*]",
+        "nitrile_adduct": "C-S-[C:1](=N)",
+        "propiolamide": "NC(=O)C#C",
+        "sulfamate": "NS(=O)(=O)O",
+    }
+    rdkit_mol = ligand.to_rdkit()
+    for smarts in covalent_warhead_smarts.values():
+        if rdkit_mol.HasSubstructMatch(Chem.MolFromSmarts(smarts)):
+            return True
+    return False
 
 
 class SpecialHelpOrder(click.Group):
