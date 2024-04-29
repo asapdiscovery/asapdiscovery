@@ -245,12 +245,12 @@ class POSITDocker(DockingBase):
                     omega_retcode = omega.Build(lig_oemol)
                     if omega_retcode:
                         error_msg = f"Omega failed with error code: {omega_retcode} : {oeomega.OEGetOmegaError(omega_retcode)}"
-                        if error == "skip":
+                        if failure_mode == "skip":
                             logger.error(error_msg)
-                        elif error == "raise":
+                        elif failure_mode == "raise":
                             raise ValueError(error_msg)
                         else:
-                            raise ValueError(f"Unknown error handling option {error}")
+                            raise ValueError(f"Unknown error handling option {failure_mode}")
 
                 opts = oedocking.OEPositOptions()
                 opts.SetIgnoreNitrogenStereo(True)
