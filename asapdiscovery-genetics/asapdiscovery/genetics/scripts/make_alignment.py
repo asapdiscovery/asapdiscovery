@@ -92,7 +92,7 @@ parser.add_argument(
     default=False,
     action="store_true",
     help="Store the output sequences for a multimer ColabFold run (from identical chains)."
-        'If not set, "--n-chains" will not be used. '
+    'If not set, "--n-chains" will not be used. ',
 )
 
 parser.add_argument(
@@ -107,8 +107,9 @@ parser.add_argument(
     "--gen-ref-pdb",
     default=False,
     action="store_true",
-    help="Whether to retrieve a pdb file for the query structure"
+    help="Whether to retrieve a pdb file for the query structure",
 )
+
 
 def main():
     args = parser.parse_args()
@@ -130,7 +131,7 @@ def main():
             raise ValueError(
                 "If a host selection is requested, an email must be provided"
             )
-        
+
     n_chains = 1
     if args.multimer:
         n_chains = args.n_chains
