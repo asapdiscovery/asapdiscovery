@@ -57,7 +57,14 @@ class MLModelBase(BaseModel):
         the versions specified by the pins.
         """
 
-        cur_version = Version.parse(mtenn.__version__)
+        try:
+            cur_version = Version.parse(mtenn.__version__)
+        except AttributeError:
+            warnings.warn(
+                "No mtenn version found. Assuming compatibility, but note "
+                "that this may be incorrect."
+            )
+            return True
 
         # If no lower/upper pin has been set, set temp values here that will pass
         if self.mtenn_lower_pin is None:
