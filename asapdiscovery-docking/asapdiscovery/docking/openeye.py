@@ -214,7 +214,7 @@ class POSITDocker(DockingBase):
         docking_results = []
 
         for set in inputs:
-            try: 
+            try:
                 if output_dir is not None:
                     docked_result_json_path = Path(
                         Path(output_dir) / set.unique_name / "docking_result.json"
@@ -251,7 +251,9 @@ class POSITDocker(DockingBase):
                             elif failure_mode == "raise":
                                 raise ValueError(error_msg)
                             else:
-                                raise ValueError(f"Unknown error handling option {failure_mode}")
+                                raise ValueError(
+                                    f"Unknown error handling option {failure_mode}"
+                                )
 
                     opts = oedocking.OEPositOptions()
                     opts.SetIgnoreNitrogenStereo(True)
@@ -265,7 +267,10 @@ class POSITDocker(DockingBase):
 
                     if self.allow_retries:
                         # try again with no relaxation
-                        if retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses:
+                        if (
+                            retcode
+                            == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+                        ):
                             opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_NONE)
                             pose_res, retcode = self.run_oe_posit_docking(
                                 opts, pose_res, dus, lig_oemol, self.num_poses
@@ -273,7 +278,8 @@ class POSITDocker(DockingBase):
 
                         # try again with low posit probability
                         if (
-                            retcode == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+                            retcode
+                            == oedocking.OEDockingReturnCode_NoValidNonClashPoses
                             and self.allow_low_posit_prob
                         ):
                             opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
@@ -299,7 +305,9 @@ class POSITDocker(DockingBase):
                             posed_mol = result.GetPose()
                             prob = result.GetProbability()
 
-                            posed_ligand = Ligand.from_oemol(posed_mol, **set.ligand.dict())
+                            posed_ligand = Ligand.from_oemol(
+                                posed_mol, **set.ligand.dict()
+                            )
                             # set SD tags
                             sd_data = {
                                 DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
