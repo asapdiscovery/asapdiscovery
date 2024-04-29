@@ -23,7 +23,7 @@ from asapdiscovery.cli.cli_args import (
 )
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import FailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.workflows.docking_workflows.cross_docking import (
     CrossDockingWorkflowInputs,

@@ -40,9 +40,7 @@ class StructureDirFactory(BaseModel):
         """
         return cls(parent_dir=Path(parent_dir))
 
-    def load(
-        self, use_dask=True, dask_client=None, failure_mode=FailureMode.SKIP
-    ):
+    def load(self, use_dask=True, dask_client=None, failure_mode=FailureMode.SKIP):
         """
         Load a directory of PDB files as Complex objects.
 

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import FailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 

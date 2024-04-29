@@ -165,9 +165,7 @@ def dask_vmap(kwargsnames, remove_falsy=True, has_failure_mode=False):
             # grab optional dask kwargs
             use_dask = kwargs.pop("use_dask", None)
             dask_client = kwargs.pop("dask_client", None)
-            failure_mode = kwargs.pop(
-                "failure_mode", FailureMode.SKIP.value
-            )
+            failure_mode = kwargs.pop("failure_mode", FailureMode.SKIP.value)
 
             if use_dask:
                 # grab iterable_kwargs

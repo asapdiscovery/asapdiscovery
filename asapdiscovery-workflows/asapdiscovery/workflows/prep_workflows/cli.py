@@ -11,7 +11,7 @@ from asapdiscovery.cli.cli_args import (
     structure_dir,
     target,
 )
-from asapdiscovery.data.util.dask_utils import FailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 
 if TYPE_CHECKING:
     from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
