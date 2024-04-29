@@ -90,7 +90,7 @@ class GIFVisualizer(VisualizerBase):
     class Config:
         arbitrary_types_allowed = True
 
-    @dask_vmap(["inputs"])
+    @dask_vmap(["inputs"], has_failure_mode=True)
     def _visualize(
         self, inputs: list[Any], outpaths: Optional[list[Path]] = None, **kwargs
     ) -> list[dict[str, str]]:
@@ -324,7 +324,7 @@ class GIFVisualizer(VisualizerBase):
         self,
         inputs: list[SimulationResult],
         outpaths: Optional[list[Path]] = None,
-        error: str = "skip",
+        failure_mode: str = "skip",
         **kwargs,
     ):
         data = []
@@ -376,15 +376,15 @@ class GIFVisualizer(VisualizerBase):
                 row[DockingResultCols.GIF_PATH.value] = path
                 data.append(row)
             except Exception as e:
-                if error == "skip":
+                if failure_mode == "skip":
                     logger.error(
                         f"Error processing {res.input_docking_result.unique_name}: {e}"
                     )
-                elif error == "raise":
+                elif failure_mode == "raise":
                     raise e
                 else:
                     raise ValueError(
-                        f"Unknown error mode: {error}, must be 'skip' or 'raise'"
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
                     )
         return data
 
@@ -393,7 +393,7 @@ class GIFVisualizer(VisualizerBase):
         self,
         inputs: list[tuple[Optional[Path], Path]],
         outpaths: Optional[list[Path]] = None,
-        error: str = "skip",
+        failure_mode: str = "skip",
         **kwargs,
     ):
         data = []
@@ -439,13 +439,13 @@ class GIFVisualizer(VisualizerBase):
                 row[DockingResultCols.GIF_PATH.value] = path
                 data.append(row)
             except Exception as e:
-                if error == "skip":
+                if failure_mode == "skip":
                     logger.error(f"Error processing {csp.unique_name}: {e}")
-                elif error == "raise":
+                elif failure_mode == "raise":
                     raise e
                 else:
                     raise ValueError(
-                        f"Unknown error mode: {error}, must be 'skip' or 'raise'"
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
                     )
         return data
 

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import FailureMode, DaskType
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
@@ -54,8 +54,8 @@ class DockingWorkflowInputsBase(BaseModel):
         DaskType.LOCAL, description="Dask client to use for parallelism."
     )
 
-    dask_failure_mode: DaskFailureMode = Field(
-        DaskFailureMode.SKIP, description="Dask failure mode."
+    failure_mode: FailureMode = Field(
+        FailureMode.SKIP, description="Dask failure mode."
     )
 
     dask_cluster_n_workers: PositiveInt = Field(

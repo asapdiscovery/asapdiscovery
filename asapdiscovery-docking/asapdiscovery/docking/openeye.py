@@ -189,7 +189,7 @@ class POSITDocker(DockingBase):
         retcode = poser.Dock(pose_res, lig, num_poses)
         return pose_res, retcode
 
-    @dask_vmap(["inputs"])
+    @dask_vmap(["inputs"], has_failure_mode=True)
     def _dock(
         self,
         inputs: list[
@@ -199,8 +199,9 @@ class POSITDocker(DockingBase):
             ]
         ],
         output_dir: Optional[Union[str, Path]] = None,
-        error="skip",
+        failure_mode="skip",
         return_for_disk_backend=False,
+        **kwargs,
     ) -> list[DockingResult]:
         """
         Docking workflow using OEPosit
@@ -331,9 +332,9 @@ class POSITDocker(DockingBase):
 
                 else:
                     error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name}"
-                    if error == "skip":
+                    if failure_mode == "skip":
                         logger.warn(error_msg)
-                    elif error == "raise":
+                    elif failure_mode == "raise":
                         raise ValueError(error_msg)
                     else:
                         raise ValueError(f"Unknown error handling option {error}")

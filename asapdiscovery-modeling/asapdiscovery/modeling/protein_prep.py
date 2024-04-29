@@ -10,7 +10,7 @@ from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.target import PreppedTarget
 from asapdiscovery.data.util.dask_utils import (
-    DaskFailureMode,
+    FailureMode,
     actualise_dask_delayed_iterable,
 )
 from asapdiscovery.data.util.stringenum import StringEnum
@@ -90,7 +90,7 @@ class ProteinPrepperBase(BaseModel):
         inputs: list[Complex],
         use_dask: bool = False,
         dask_client: Optional["Client"] = None,
-        dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+        failure_mode: FailureMode = FailureMode.SKIP,
         cache_dir: Optional[str] = None,
         use_only_cache: bool = False,
     ) -> list[PreppedComplex]:
@@ -101,7 +101,7 @@ class ProteinPrepperBase(BaseModel):
         inputs: The list of complexs to prepare.
         use_dask: If dask should be used to distribute the jobs.
         dask_client: The dask client that should be used to submit the jobs.
-        dask_failure_mode: The failure mode for dask. Can be 'raise' or 'skip'.
+        failure_mode: The failure mode for dask. Can be 'raise' or 'skip'.
         cache_dir: The directory of previously cached PreppedComplexs which can be reused.
 
         Note
@@ -150,10 +150,10 @@ class ProteinPrepperBase(BaseModel):
                     out = dask.delayed(self._prep)(inputs=[inp])
                     delayed_outputs.append(out[0])  # flatten
                 outputs = actualise_dask_delayed_iterable(
-                    delayed_outputs, dask_client, errors=dask_failure_mode
+                    delayed_outputs, dask_client, errors=failure_mode
                 )  # skip here as some complexes may fail for various reasons
             else:
-                outputs = self._prep(inputs=inputs)
+                outputs = self._prep(inputs=inputs, failure_mode=failure_mode)
 
             outputs = [o for o in outputs if o is not None]
             # save the newly calculated outputs
@@ -258,7 +258,7 @@ class ProteinPrepper(ProteinPrepperBase):
             raise ValueError("Must provide active_site_chain if align is provided")
         return values
 
-    def _prep(self, inputs: list[Complex], error="skip") -> list[PreppedComplex]:
+    def _prep(self, inputs: list[Complex], failure_mode="skip") -> list[PreppedComplex]:
         """
         Prepares a series of proteins for docking using OESpruce.
         """
@@ -324,15 +324,15 @@ class ProteinPrepper(ProteinPrepperBase):
                 prepped_complexes.append(pc)
 
             except Exception as e:
-                if error == "skip":
+                if failure_mode == "skip":
                     logger.error(
                         f"Failed to prep complex: {complex_target.target.target_name} - {e}"
                     )
-                elif error == "raise":
+                elif failure_mode == "raise":
                     raise e
                 else:
                     raise ValueError(
-                        f"Unknown error mode: {error}, must be 'skip' or 'raise'"
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
                     )
 
         return prepped_complexes

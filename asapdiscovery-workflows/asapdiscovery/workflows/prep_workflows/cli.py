@@ -11,7 +11,7 @@ from asapdiscovery.cli.cli_args import (
     structure_dir,
     target,
 )
-from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import FailureMode, DaskType
 
 if TYPE_CHECKING:
     from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
@@ -83,7 +83,7 @@ def protein_prep(
     save_to_cache: bool = True,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
-    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+    failure_mode: FailureMode = FailureMode.SKIP,
     output_dir: str = "output",
     input_json: Optional[str] = None,
 ):
@@ -115,7 +115,7 @@ def protein_prep(
             save_to_cache=save_to_cache,
             use_dask=use_dask,
             dask_type=dask_type,
-            dask_failure_mode=dask_failure_mode,
+            failure_mode=failure_mode,
             output_dir=output_dir,
         )
 

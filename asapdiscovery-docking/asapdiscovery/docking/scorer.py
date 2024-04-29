@@ -14,7 +14,7 @@ from asapdiscovery.data.schema.target import TargetIdentifiers
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import (
     BackendType,
-    DaskFailureMode,
+    FailureMode,
     backend_wrapper,
     dask_vmap,
 )
@@ -227,7 +227,7 @@ class ScorerBase(BaseModel):
         ],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
@@ -245,8 +245,8 @@ class ScorerBase(BaseModel):
             Whether to use dask, by default False
         dask_client : dask.distributed.Client, optional
             Dask client to use, by default None
-        dask_failure_mode : DaskFailureMode, optional
-            How to handle dask failures, by default DaskFailureMode.SKIP
+        failure_mode : FailureMode, optional
+            How to handle dask failures, by default FailureMode.SKIP
         backend : BackendType, optional
             Backend to use, by default BackendType.IN_MEMORY
         reconstruct_cls : Optional[Callable], optional
@@ -260,7 +260,7 @@ class ScorerBase(BaseModel):
             inputs=inputs,
             use_dask=use_dask,
             dask_client=dask_client,
-            dask_failure_mode=dask_failure_mode,
+            failure_mode=failure_mode,
             backend=backend,
             reconstruct_cls=reconstruct_cls,
         )
@@ -702,7 +702,7 @@ class MetaScorer(BaseModel):
         inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
@@ -717,7 +717,7 @@ class MetaScorer(BaseModel):
                 inputs=inputs,
                 use_dask=use_dask,
                 dask_client=dask_client,
-                dask_failure_mode=dask_failure_mode,
+                failure_mode=failure_mode,
                 backend=backend,
                 reconstruct_cls=reconstruct_cls,
                 return_df=return_df,

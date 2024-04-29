@@ -139,7 +139,7 @@ class HTMLVisualizer(VisualizerBase):
         elif self.color_method == "fitness":
             return make_color_res_fitness(protein, self.target)
 
-    @dask_vmap(["inputs"])
+    @dask_vmap(["inputs"], has_failure_mode=True)
     @backend_wrapper("inputs")
     def _visualize(
         self,
@@ -168,7 +168,7 @@ class HTMLVisualizer(VisualizerBase):
         self,
         inputs: list[DockingResult],
         outpaths: Optional[list[Path]] = None,
-        error: str = "skip",
+        failure_mode: str = "skip",
         **kwargs,
     ) -> Union[list[dict[str, str]], list[str]]:
         """
@@ -221,13 +221,13 @@ class HTMLVisualizer(VisualizerBase):
                 row[self.get_tag_for_color_method()] = outpath
                 data.append(row)
             except Exception as e:
-                if error == "skip":
+                if failure_mode == "skip":
                     logger.error(f"Error processing {result.unique_name}: {e}")
-                elif error == "raise":
+                elif failure_mode == "raise":
                     raise e
                 else:
                     raise ValueError(
-                        f"Unknown error mode: {error}, must be 'skip' or 'raise'"
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
                     )
 
         if self.write_to_disk:
@@ -271,7 +271,7 @@ class HTMLVisualizer(VisualizerBase):
         self,
         inputs: list[Complex],
         outpaths: Optional[list[Path]] = None,
-        error: str = "skip",
+        failure_mode: str = "skip",
         **kwargs,
     ) -> Union[list[dict[str, str]], list[str]]:
         """
@@ -321,13 +321,13 @@ class HTMLVisualizer(VisualizerBase):
                 row[self.get_tag_for_color_method()] = outpath
                 data.append(row)
             except Exception as e:
-                if error == "skip":
+                if failure_mode == "skip":
                     logger.error(f"Error processing {cmplx.unique_name}: {e}")
-                elif error == "raise":
+                elif failure_mode == "raise":
                     raise e
                 else:
                     raise ValueError(
-                        f"Unknown error mode: {error}, must be 'skip' or 'raise'"
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
                     )
 
         if self.write_to_disk:
@@ -342,7 +342,7 @@ class HTMLVisualizer(VisualizerBase):
         self,
         inputs: list[tuple[Complex, list[Ligand]]],
         outpaths: Optional[list[Path]] = None,
-        error: str = "skip",
+        failure_mode: str = "skip",
         **kwargs,
     ) -> Union[list[dict[str, str]], list[str]]:
         """
@@ -397,13 +397,13 @@ class HTMLVisualizer(VisualizerBase):
                 row[self.get_tag_for_color_method()] = outpath
                 data.append(row)
             except Exception as e:
-                if error == "skip":
+                if failure_mode == "skip":
                     logger.error(f"Error processing {cmplx.unique_name}: {e}")
-                elif error == "raise":
+                elif failure_mode == "raise":
                     raise e
                 else:
                     raise ValueError(
-                        f"Unknown error mode: {error}, must be 'skip' or 'raise'"
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
                     )
 
         if self.write_to_disk:
