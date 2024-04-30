@@ -41,14 +41,6 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--out-dir",
-    type=str,
-    required=False,
-    default="./",
-    help="Path to output folder given on ColabFold run.",
-)
-
-parser.add_argument(
     "--pymol-save",
     type=str,
     required=False,
@@ -71,7 +63,6 @@ def main():
     seq_file = Path(args.seq_file)
     if not seq_file.exists():
         raise FileNotFoundError(f"Sequence file {seq_file} does not exist")
-    query_name = seq_file.stem
 
     ref_pdb = Path(args.ref_pdb)
     if not ref_pdb.exists():
@@ -94,11 +85,10 @@ def main():
     for index, row in seq_df.iterrows():
         # iterate over each csv entry
         mol = row["id"]
-        cf_results = results_dir / query_name / mol / args.out_dir
         final_pdb = save_dir / f"{mol}_aligned.pdb"
         # Select best seed repetition
         min_rmsd, min_file = select_best_colabfold(
-            cf_results,
+            results_dir,
             mol,
             ref_pdb,
             chain="A",

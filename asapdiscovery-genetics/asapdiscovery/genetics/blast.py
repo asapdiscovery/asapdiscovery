@@ -148,7 +148,7 @@ def get_blast_seqs(
     else:  # Another source?
         raise ValueError("unknown input type")
 
-    print(f"BLAST search with {nalign} alignments and {nhits} hitlist_size")
+    print(f"BLAST search with {nalign} alignments, expect {e_val_thresh}, {nhits} hitlist_size and {nhits} descriptions")
     # Retrieve blastp results
     result_handle = NCBIWWW.qblast(
         "blastp",
@@ -223,7 +223,8 @@ class PDBEntry(BaseModel):
             results_folder,
             input_type=self.type,
             xml_file=record_name,
-            nalign=500,
+            nhits=50,
+            nalign=100,
             database="pdb",
             verbose=False,
         )
