@@ -110,6 +110,7 @@ parser.add_argument(
     help="Whether to retrieve a pdb file for the query structure",
 )
 
+
 def main():
     args = parser.parse_args()
     # check all the required files exist
@@ -134,7 +135,7 @@ def main():
     n_chains = 1
     if args.multimer:
         n_chains = args.n_chains
-        
+
     n_chains = 1
     if args.multimer:
         n_chains = args.n_chains
