@@ -41,14 +41,6 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--out-dir",
-    type=str,
-    required=False,
-    default="./",
-    help="Path to output folder given on ColabFold run.",
-)
-
-parser.add_argument(
     "--pymol-save",
     type=str,
     required=False,
@@ -60,8 +52,8 @@ parser.add_argument(
     "--cf-format",
     type=str,
     required=False,
-    default="*_unrelaxed_rank_001_alphafold2_ptm_model_1_seed_*.pdb",
-    help="Format of pdb file saved by ColabFold. Will rarely be different than default. ",
+    default="_unrelaxed_rank_001_alphafold2_ptm",
+    help="Format of pdb file saved by ColabFold, according to the folding model used. ",
 )
 
 
@@ -94,16 +86,15 @@ def main():
     for index, row in seq_df.iterrows():
         # iterate over each csv entry
         mol = row["id"]
-        cf_results = results_dir / query_name / mol / args.out_dir
         final_pdb = save_dir / f"{mol}_aligned.pdb"
         # Select best seed repetition
         min_rmsd, min_file = select_best_colabfold(
-            cf_results,
+            results_dir,
             mol,
             ref_pdb,
             chain="A",
             final_pdb=final_pdb,
-            default_CF=cf_format,
+            fold_model=cf_format,
         )
 
         aligned_pdbs.append(min_file)

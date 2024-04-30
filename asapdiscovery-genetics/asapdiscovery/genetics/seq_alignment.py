@@ -180,7 +180,6 @@ class Alignment:
             return re.findall(pattern, x)[-1]
 
         desc = [f"{matches(rec.description)} ({rec.id})" for rec in aln]
-        print(desc)
 
         # List with ALL colors
         colors = get_colors_protein(seqs)
