@@ -110,29 +110,6 @@ parser.add_argument(
     help="Whether to retrieve a pdb file for the query structure",
 )
 
-parser.add_argument(
-    "--multimer",
-    default=False,
-    action="store_true",
-    help="Store the output sequences for a multimer ColabFold run (from identical chains)."
-        'If not set, "--n-chains" will not be used. '
-)
-
-parser.add_argument(
-    "--n-chains",
-    type=int,
-    default=None,
-    help="Number of repeated chains that will be saved in csv file."
-    'Requires calling the "--multimer" option first.',
-)
-
-parser.add_argument(
-    "--gen-ref-pdb",
-    default=False,
-    action="store_true",
-    help="Whether to retrieve a pdb file for the query structure"
-)
-
 def main():
     args = parser.parse_args()
     # check all the required files exist
@@ -185,7 +162,6 @@ def main():
         file_prefix = f"{args.aln_output}{alignment.query_label}"
         selection_fasta, plot = do_MSA(
             alignment, args.sel_key, file_prefix, args.plot_width, n_chains
-            alignment, args.sel_key, file_prefix, args.plot_width, n_chains
         )
 
         # Generate PDB file for template if requested (only for the reference structure)
@@ -194,23 +170,10 @@ def main():
             pdb_file_record = pdb_entry.retrieve_pdb(
                 results_folder=results_folder, min_id_match=99.9, ref_only=True
             )
-        # Generate PDB file for template if requested (only for the reference structure)
-        if args.gen_ref_pdb:
-            pdb_entry = PDBEntry(seq=selection_fasta, type="fasta")
-            pdb_file_record = pdb_entry.retrieve_pdb(
-                results_folder=results_folder, min_id_match=99.9, ref_only=True
-            )
 
             record = pdb_file_record[0]
             print(f"A PDB template for {record.label} was saved as {record.pdb_file}")
-            record = pdb_file_record[0]
-            print(f"A PDB template for {record.label} was saved as {record.pdb_file}")
 
-            # The following can be added to a shell file for running ColabFold
-            file = open(results_folder / f"{file_prefix}_command.txt", "w")
-            file.write("# Copy template PDB for ColabFold use\n")
-            file.write(f'cp {shlex.quote(record.pdb_file)} "$template_path/0001.pdb"')
-            file.close()
             # The following can be added to a shell file for running ColabFold
             file = open(results_folder / f"{file_prefix}_command.txt", "w")
             file.write("# Copy template PDB for ColabFold use\n")
