@@ -37,7 +37,7 @@ def test_from_smiles_ids_made(smiles):
 def test_from_oemol_sd_tags_left(moonshot_sdf):
     """Make sure any sd tags on an oemol are not lost when building a ligand."""
     mol = load_openeye_sdf(str(moonshot_sdf))
-    sd_data = {"compound_name": "moonshot-mol", "energy": "1"}
+    sd_data = {"compound_name": ["moonshot-mol"], "energy": ["1"]}
     set_SD_data(mol, sd_data)
     # create a ligand keeping the original sd safe
     _ = Ligand.from_oemol(mol)
@@ -125,6 +125,156 @@ def test_ligand_from_sdf_title_used(moonshot_sdf):
         lig.smiles == "c1ccc2c(c1)c(cc(=O)[nH]2)C(=O)NCCOc3cc(cc(c3)Cl)O[C@H]4CC(=O)N4"
     )
     assert lig.compound_name == "Mpro-P0008_0A_ERI-UCB-ce40166b-17"
+
+
+def test_multi_pose_ligand_sdf_roundtrip(multipose_ligand, tmp_path):
+    lig = Ligand.from_sdf(multipose_ligand)
+    assert lig.num_poses == 50
+
+    lig.to_sdf(tmp_path / "test.sdf")
+
+    lig2 = Ligand.from_sdf(tmp_path / "test.sdf")
+
+    assert lig2.num_poses == 50
+    assert lig2 == lig
+
+
+def test_multi_pose_ligand_json_roundtrip(multipose_ligand, tmp_path):
+    lig = Ligand.from_sdf(multipose_ligand)
+    assert lig.num_poses == 50
+
+    lig.to_json_file(tmp_path / "test.json")
+
+    lig2 = Ligand.from_json_file(tmp_path / "test.json")
+
+    assert lig2.num_poses == 50
+    assert lig2 == lig
+
+
+def test_multiconf_ligand_basics(multipose_ligand):
+    lig = Ligand.from_sdf(multipose_ligand)
+    lig2 = Ligand.from_sdf(multipose_ligand)
+    assert lig.num_poses == 50
+
+    ligs = lig.to_single_conformers()
+
+    mols = [lig.to_oemol() for lig in ligs]
+
+    assert len(ligs) == 50
+    assert len(mols) == 50
+
+    assert ligs[0].tags == {
+        "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+        "Docking_posit_hybrid_clash_POSIT": "0.23999999463558197",
+        "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+        "Docking_posit_hybrid_clash_clash": "0",
+        "Docking_posit_hybrid_clash_Chemgauss4": "-3.9384562969207764",
+        "Docking_posit_hybrid_clash_RMSD": "23.510106811395577",
+        "Dataset": "Mpro-P2005_0A",
+        "Compound_ID": "ADA-UCB-6c2cb422-1",
+    }
+
+    assert ligs[-1].tags == {
+        "Docking_posit_hybrid_clash_RMSD": "23.63229756112464",
+        "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+        "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+        "Docking_posit_hybrid_clash_Chemgauss4": "-6.079061985015869",
+        "Docking_posit_hybrid_clash_clash": "0",
+        "Dataset": "Mpro-P2005_0A",
+        "Docking_posit_hybrid_clash_POSIT": "0.18000000715255737",
+        "Compound_ID": "ADA-UCB-6c2cb422-1",
+    }
+
+    for i in range(50):
+        assert ligs[i].tags == lig.get_single_conf_SD_data(i)
+        assert Ligand.from_oemol(mols[i]) == ligs[i]
+
+    lig.set_SD_data({"same_for_all": "yes"})
+
+    lig.set_SD_data({"different_for_all": [str(i) for i in range(50)]})
+
+    assert lig2.tags != lig.tags
+
+    assert all(
+        lig.tags["same_for_all"] == value for value in lig.conf_tags["same_for_all"]
+    )
+    assert lig.tags["different_for_all"] == lig.conf_tags["different_for_all"][0]
+    assert all(
+        lig.tags["different_for_all"] != value
+        for value in lig.conf_tags["different_for_all"][1:]
+    )
+
+
+@pytest.mark.parametrize(
+    ("sort_by", "top_tags_dict"),
+    [
+        (
+            "Docking_posit_hybrid_clash_POSIT",
+            {
+                "Docking_posit_hybrid_clash_Chemgauss4": "-5.716377258300781",
+                "Docking_posit_hybrid_clash_POSIT": "0.18000000715255737",
+                "Docking_posit_hybrid_clash_RMSD": "23.07465599544404",
+                "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+                "Compound_ID": "ADA-UCB-6c2cb422-1",
+                "Docking_posit_hybrid_clash_clash": "0",
+                "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+                "Dataset": "Mpro-P2005_0A",
+            },
+        ),
+        (
+            "Docking_posit_hybrid_clash_RMSD",
+            {
+                "Docking_posit_hybrid_clash_Chemgauss4": "-6.190071105957031",
+                "Docking_posit_hybrid_clash_POSIT": "0.18000000715255737",
+                "Docking_posit_hybrid_clash_RMSD": "21.846467954052606",
+                "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+                "Compound_ID": "ADA-UCB-6c2cb422-1",
+                "Docking_posit_hybrid_clash_clash": "0",
+                "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+                "Dataset": "Mpro-P2005_0A",
+            },
+        ),
+        (
+            "Docking_posit_hybrid_clash_Chemgauss4",
+            {
+                "Docking_posit_hybrid_clash_Chemgauss4": "-2.448556661605835",
+                "Docking_posit_hybrid_clash_POSIT": "0.18000000715255737",
+                "Docking_posit_hybrid_clash_RMSD": "23.0875245713518",
+                "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+                "Compound_ID": "ADA-UCB-6c2cb422-1",
+                "Docking_posit_hybrid_clash_clash": "0",
+                "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+                "Dataset": "Mpro-P2005_0A",
+            },
+        ),
+    ],
+)
+def test_multiconformer_sorting(sort_by, top_tags_dict, multipose_ligand):
+    lig = Ligand.from_sdf(multipose_ligand)
+    lig_unsorted = Ligand.from_sdf(multipose_ligand)
+
+    assert lig.tags == {
+        "Docking_posit_hybrid_clash_Chemgauss4": "-3.9384562969207764",
+        "Docking_posit_hybrid_clash_POSIT": "0.23999999463558197",
+        "Docking_posit_hybrid_clash_RMSD": "23.510106811395577",
+        "SMILES": "c1ccc2c(c1)cncc2NC(=O)Cc3cccc(c3)Cl",
+        "Compound_ID": "ADA-UCB-6c2cb422-1",
+        "Docking_posit_hybrid_clash_clash": "0",
+        "Docking_posit_hybrid_clash_POSIT_method": "HYBRID",
+        "Dataset": "Mpro-P2005_0A",
+    }
+
+    lig.sort_confs_by_sd_tag_value(sort_by, ascending=True)
+
+    assert lig.tags == top_tags_dict
+    assert lig_unsorted.tags != lig.tags
+    assert lig.to_oemol().GetCoords() != lig_unsorted.to_oemol().GetCoords()
+
+
+def test_multiconf_lig_to_rdkit(multipose_ligand):
+    lig = Ligand.from_sdf(multipose_ligand)
+    rdkit_mol = lig.to_rdkit()
+    assert rdkit_mol.GetNumConformers() == 50
 
 
 def test_inchi(smiles):
@@ -309,12 +459,32 @@ def test_ligand_oemol_roundtrip_data_only(moonshot_sdf):
     assert l1.data_equal(l2)
 
 
+def test_clear_sd_data_reserved_fails(moonshot_sdf):
+    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
+    data = {"experimental_data": "blahblah"}
+    with pytest.warns():
+        l1.set_SD_data(data)
+
+
 def test_get_set_sd_data(moonshot_sdf):
     l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
-    data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
+    data = {
+        "test_key": "test_value",
+        "test_key2": "test_value2",
+        "test_key3": 3,
+        "test_key4": None,
+        "test_key5": 4.304,
+    }
+    data_roundtrip = {
+        "test_key": "test_value",
+        "test_key2": "test_value2",
+        "test_key3": "3",
+        "test_key4": "None",
+        "test_key5": "4.304",
+    }
     l1.set_SD_data(data)
-    data_pulled = l1.get_SD_data()
-    assert data_pulled == data
+    data_pulled = l1.get_single_conf_SD_data()
+    assert all(data_pulled[key] == data_roundtrip[key] for key in data_roundtrip.keys())
 
 
 def test_print_sd_data(moonshot_sdf):
@@ -329,14 +499,7 @@ def test_clear_sd_data(moonshot_sdf):
     data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
     l1.set_SD_data(data)
     l1.clear_SD_data()
-    assert l1.get_SD_data() == {}
-
-
-def test_clear_sd_data_reserved_fails(moonshot_sdf):
-    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
-    data = {"experimental_data": "blahblah"}
-    with pytest.raises(ValueError):
-        l1.set_SD_data(data)
+    assert l1.get_single_conf_SD_data() == {}
 
 
 @pytest.mark.parametrize("tags", [{"test_key": "test_value"}, {}])

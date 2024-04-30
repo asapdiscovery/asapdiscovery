@@ -314,16 +314,20 @@ class Alignment:
             seq_print = str(rec.seq)
             if n_chains > 1:
                 # ColabFold reads multimer chains separated by ":"
-                seq_print = ":".join([seq_print] * n_chains)
-            dfi = pd.DataFrame.from_dict(
-                {"id": [red_label], "sequence": [seq_print]}
-            )
+                seq_print = ":".join(seq_print * n_chains)
+            dfi = pd.DataFrame.from_dict({"id": [red_label], "sequence": [seq_print]})
             df = pd.concat([df, dfi], ignore_index=True)
         df.to_csv(output_file, index=False)
         return output_file
 
 
-def do_MSA(alignment: Alignment, select_mode: str, file_prefix: str, plot_width: int, n_chains: int):
+def do_MSA(
+    alignment: Alignment,
+    select_mode: str,
+    file_prefix: str,
+    plot_width: int,
+    n_chains: int,
+):
     save_file = alignment.dir_save / file_prefix
     # Select sequeneces of interest
     if select_mode == "checkbox":

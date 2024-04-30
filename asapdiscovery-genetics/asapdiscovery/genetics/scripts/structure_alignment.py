@@ -52,8 +52,8 @@ parser.add_argument(
     "--cf-format",
     type=str,
     required=False,
-    default="*_unrelaxed_rank_001_alphafold2_ptm_model_1_seed_*.pdb",
-    help="Format of pdb file saved by ColabFold. Will rarely be different than default. ",
+    default="_unrelaxed_rank_001_alphafold2_ptm",
+    help="Format of pdb file saved by ColabFold, according to the folding model used. ",
 )
 
 
@@ -93,7 +93,7 @@ def main():
             ref_pdb,
             chain="A",
             final_pdb=final_pdb,
-            default_CF=cf_format,
+            fold_model=cf_format,
         )
 
         aligned_pdbs.append(min_file)

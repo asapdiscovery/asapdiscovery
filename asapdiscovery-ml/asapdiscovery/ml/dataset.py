@@ -1,4 +1,5 @@
 import torch
+from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from torch.utils.data import Dataset
@@ -105,27 +106,32 @@ class DockedDataset(Dataset):
         Helper function to convert a Complex to a pose.
         """
 
-        # First get target atom positions and atomic numbers
+        # First get target atom positions, atomic numbers, and B factors
         target_mol = comp.target.to_oemol()
         target_coords = target_mol.GetCoords()
         target_pos = []
         target_z = []
+        target_b = []
         for atom in target_mol.GetAtoms():
             target_pos.append(target_coords[atom.GetIdx()])
             target_z.append(atom.GetAtomicNum())
+            target_b.append(oechem.OEAtomGetResidue(atom).GetBFactor())
 
-        # Get ligand atom positions and atomic numbers
+        # Get ligand atom positions, atomic numbers, and B factors
         ligand_mol = comp.ligand.to_oemol()
         ligand_coords = ligand_mol.GetCoords()
         ligand_pos = []
         ligand_z = []
+        ligand_b = []
         for atom in ligand_mol.GetAtoms():
             ligand_pos.append(ligand_coords[atom.GetIdx()])
             ligand_z.append(atom.GetAtomicNum())
+            ligand_b.append(oechem.OEAtomGetResidue(atom).GetBFactor())
 
         # Combine the two
         all_pos = torch.tensor(target_pos + ligand_pos).float()
         all_z = torch.tensor(target_z + ligand_z)
+        all_b = torch.tensor(target_b + ligand_b)
         all_lig = torch.tensor(
             [False] * target_mol.NumAtoms() + [True] * ligand_mol.NumAtoms()
         )
@@ -138,10 +144,17 @@ class DockedDataset(Dataset):
             h_idx = all_z == 1
             all_pos = all_pos[~h_idx]
             all_z = all_z[~h_idx]
+            all_b = all_b[~h_idx]
             all_lig = all_lig[~h_idx]
             all_one_hot = all_one_hot[~h_idx]
 
-        pose = {"pos": all_pos, "z": all_z, "lig": all_lig, "x": all_one_hot}
+        pose = {
+            "pos": all_pos,
+            "z": all_z,
+            "lig": all_lig,
+            "x": all_one_hot,
+            "b": all_b,
+        }
         if compound:
             pose["compound"] = compound
         return pose | exp_dict

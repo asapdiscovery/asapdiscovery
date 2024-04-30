@@ -103,7 +103,9 @@ def select_best_colabfold(
         return 0, ""
     min_rmsd = np.argmin(rmsds)
     min_rmsd_file = file_seed[min_rmsd]
-    print(f"{seq_name} seed with least RMSD is {seeds[min_rmsd]} with RMSD {rmsds[min_rmsd]} A")
+    print(
+        f"{seq_name} seed with least RMSD is {seeds[min_rmsd]} with RMSD {rmsds[min_rmsd]} A"
+    )
 
     min_rmsd, final_pdb = rmsd_alignment(
         min_rmsd_file, pdb_ref, final_pdb, chain, chain
