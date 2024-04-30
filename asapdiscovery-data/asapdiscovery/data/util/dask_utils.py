@@ -8,15 +8,12 @@ import numpy as np
 import psutil
 from asapdiscovery.data.util.execution_utils import (
     get_platform,
-    guess_network_interface,
     hyperthreading_is_enabled,
 )
 from asapdiscovery.data.util.stringenum import StringEnum
 from dask import config as cfg
 from dask.utils import parse_timedelta
-from dask_jobqueue import LSFCluster
 from distributed import Client, LocalCluster
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -208,45 +205,6 @@ class DaskType(StringEnum):
 
     LOCAL = "local"
     LOCAL_GPU = "local-gpu"
-    LILAC_GPU = "lilac-gpu"
-    LILAC_CPU = "lilac-cpu"
-
-    def is_lilac(self):
-        return self in [DaskType.LILAC_CPU, DaskType.LILAC_GPU]
-
-
-class GPU(StringEnum):
-    """
-    Enum for GPU types on lilac
-    """
-
-    GTX1080TI = "GTX1080TI"
-
-
-class CPU(StringEnum):
-    """
-    Enum for CPU types
-    """
-
-    # lilcac lt-gpu queue used in CPU mode
-    LT = "LT"
-
-
-_LILAC_GPU_GROUPS = {
-    GPU.GTX1080TI: "lt-gpu",
-}
-
-_LILAC_GPU_EXTRAS = {
-    GPU.GTX1080TI: [
-        '-R "select[hname!=lt16]"'
-    ],  # random node that has something wrong with its GPU driver versioning
-}
-
-# Lilac does not have a specific CPU group, but we can use the lt-gpu group
-# for CPU jobs in combination with `cpuqueue` (per MSK HPC) as lt has the most nodes.
-_LILAC_CPU_GROUPS = {
-    CPU.LT: "lt-gpu",
-}
 
 
 def dask_timedelta_to_hh_mm(time_str: str) -> str:
@@ -293,156 +251,11 @@ def dask_time_delta_diff(time_str_1: str, time_str_2: str) -> str:
     return str(seconds_diff) + "s"
 
 
-class DaskCluster(BaseModel):
-    """
-    Base config for a dask cluster
-
-    Important is that cores == processes, otherwise we get some weird behaviour with multiple threads per process and
-    OE heavy computation jobs.
-    """
-
-    class Config:
-        allow_mutation = False
-        extra = "forbid"
-
-    name: str = Field("dask-worker", description="Name of the dask worker")
-    cores: int = Field(8, description="Number of cores per job")
-    processes: int = Field(8, description="Number of processes per job")
-    memory: str = Field("48 GB", description="Amount of memory per job")
-    death_timeout: int = Field(
-        120, description="Timeout in seconds for a worker to be considered dead"
-    )
-    silence_logs: Union[int, str] = Field(
-        logging.INFO, description="Log level for dask"
-    )
-
-
-class LilacDaskCluster(DaskCluster):
-    shebang: str = Field("#!/usr/bin/env bash", description="Shebang for the job")
-    queue: str = Field("cpuqueue", description="LSF queue to submit jobs to")
-    project: str = Field(None, description="LSF project to submit jobs to")
-    walltime: str = Field("72h", description="Walltime for the job")
-    use_stdin: bool = Field(True, description="Whether to use stdin for job submission")
-    job_extra_directives: Optional[list[str]] = Field(
-        None, description="Extra directives to pass to LSF"
-    )
-    job_script_prologue: list[str] = Field(
-        ["ulimit -c 0"], description="Job prologue, default is to turn off core dumps"
-    )
-    dashboard_address: str = Field(":6412", description="port to activate dashboard on")
-    lifetime_margin: str = Field(
-        "10m",
-        description="Margin to shut down workers before their walltime is up to ensure clean exit",
-    )
-
-    def to_cluster(self, exclude_interface: Optional[str] = "lo") -> LSFCluster:
-        interface = guess_network_interface(exclude=[exclude_interface])
-        _walltime = dask_timedelta_to_hh_mm(self.walltime)
-        return LSFCluster(
-            interface=interface,
-            scheduler_options={
-                "interface": interface,
-                "dashboard_address": self.dashboard_address,
-            },
-            worker_extra_args=[
-                "--lifetime",
-                dask_time_delta_diff(self.walltime, self.lifetime_margin),
-                "--lifetime-stagger",
-                "10s",
-            ],  # leave a buffer to cleanly exit
-            walltime=_walltime,  # convert to LSF units manually
-            **self.dict(exclude={"walltime", "dashboard_address", "lifetime_margin"}),
-        )
-
-
-class LilacGPUConfig(BaseModel):
-    gpu: GPU = Field(..., description="GPU type")
-    gpu_group: str = Field(..., description="GPU group")
-    extra: Optional[list[str]] = Field(
-        None, description="Extra directives to pass to LSF"
-    )
-
-    def to_job_extra_directives(self):
-        return [
-            "-gpu num=1:j_exclusive=yes:mode=shared",
-            f"-m {self.gpu_group}",
-            *self.extra,
-        ]
-
-    @classmethod
-    def from_gpu(cls, gpu: GPU, **kwargs):
-        return cls(
-            gpu=gpu,
-            gpu_group=_LILAC_GPU_GROUPS[gpu],
-            extra=_LILAC_GPU_EXTRAS[gpu],
-            **kwargs,
-        )
-
-
-class LilacCPUConfig(BaseModel):
-    cpu: CPU = Field(..., description="CPU type")
-    cpu_group: str = Field(..., description="CPU group")
-    extra: Optional[list[str]] = Field(
-        None, description="Extra directives to pass to LSF"
-    )
-
-    def to_job_extra_directives(self):
-        return [
-            f"-m {self.cpu_group}",
-            *self.extra,
-        ]
-
-    @classmethod
-    def from_cpu(cls, cpu: CPU, **kwargs):
-        return cls(cpu=cpu, cpu_group=_LILAC_CPU_GROUPS[cpu], extra=[], **kwargs)
-
-
-class LilacGPUDaskCluster(LilacDaskCluster):
-    queue: str = "gpuqueue"
-    walltime = "72h"
-    memory = "96 GB"
-    cores = 1
-
-    @classmethod
-    def from_gpu(
-        cls,
-        gpu: GPU = GPU.GTX1080TI,
-        loglevel: Union[str, int] = logging.INFO,
-        walltime: str = "72h",
-    ):
-        gpu_config = LilacGPUConfig.from_gpu(gpu)
-        return cls(
-            job_extra_directives=gpu_config.to_job_extra_directives(),
-            silence_logs=loglevel,
-            walltime=walltime,
-        )
-
-
-class LilacCPUDaskCluster(LilacDaskCluster):
-    # uses default
-
-    @classmethod
-    def from_cpu(
-        cls,
-        cpu: CPU = CPU.LT,
-        loglevel: Union[int, str] = logging.INFO,
-        walltime: str = "72h",
-    ):
-        cpu_config = LilacCPUConfig.from_cpu(cpu)
-        return cls(
-            job_extra_directives=cpu_config.to_job_extra_directives(),
-            silence_logs=loglevel,
-            walltime=walltime,
-        )
-
-
 def dask_cluster_from_type(
     dask_type: DaskType,
-    gpu: GPU = GPU.GTX1080TI,
-    cpu: CPU = CPU.LT,
     local_threads_per_worker: int = 1,
     loglevel: Union[int, str] = logging.INFO,
-    walltime: str = "72h",
+    force_n_workers: int = None,
 ):
     """
     Get a dask client from a DaskType
@@ -451,14 +264,16 @@ def dask_cluster_from_type(
     ----------
     dask_type : DaskType
         The type of dask client / cluster to get
-    gpu : GPU, optional
-        The GPU type to use if type is lilac-gpu, by default GPU.GTX1080TI
-    cpu : CPU, optional
-        The CPU type to use if type is lilac-cpu, by default CPU.LT
+    local_threads_per_worker : int, optional
+        The number of threads per worker for a local cluster, by default 1
+    loglevel : Union[int, str], optional
+        The log level to use, by default logging.INFO
+    force_n_workers : int, optional
+        The number of workers to use, by default None
 
     Returns
     -------
-    dask_jobqueue.Cluster
+    dask.Cluster
         A dask cluster
     """
     logger.info(f"Platform: {get_platform()}")
@@ -471,18 +286,21 @@ def dask_cluster_from_type(
     logger.info(f"Dask log level: {loglevel}")
 
     if dask_type == DaskType.LOCAL:
-        n_workers = cpu_count // local_threads_per_worker
-        logger.info(f"initial guess {n_workers} workers")
-        if hyperthreading_is_enabled():
-            logger.info("Hyperthreading is enabled")
-            n_workers = n_workers // 2
-            logger.info(f"Scaling to {n_workers} workers due to hyperthreading")
+        if force_n_workers is not None:
+            n_workers = force_n_workers
         else:
-            logger.info("Hyperthreading is disabled")
+            n_workers = cpu_count // local_threads_per_worker
+            logger.info(f"initial guess {n_workers} workers")
+            if hyperthreading_is_enabled():
+                logger.info("Hyperthreading is enabled")
+                n_workers = n_workers // 2
+                logger.info(f"Scaling to {n_workers} workers due to hyperthreading")
+            else:
+                logger.info("Hyperthreading is disabled")
 
-        if n_workers < 1:
-            n_workers = 1
-            logger.info("Estimating 1 worker due to low CPU count")
+            if n_workers < 1:
+                n_workers = 1
+                logger.info("Estimating 1 worker due to low CPU count")
 
         logger.info(f"Executing with {n_workers} workers")
 
@@ -499,18 +317,6 @@ def dask_cluster_from_type(
                 "dask_cuda is not installed, please install with `pip install dask_cuda`"
             )
         cluster = LocalCUDACluster()
-    elif dask_type == DaskType.LILAC_GPU:
-        cluster = (
-            LilacGPUDaskCluster()
-            .from_gpu(gpu, loglevel=loglevel, walltime=walltime)
-            .to_cluster(exclude_interface="lo")
-        )
-    elif dask_type == DaskType.LILAC_CPU:
-        cluster = (
-            LilacCPUDaskCluster()
-            .from_cpu(cpu, loglevel=loglevel, walltime=walltime)
-            .to_cluster(exclude_interface="lo")
-        )
     else:
         raise ValueError(f"Unknown dask type {dask_type}")
 
@@ -520,32 +326,15 @@ def dask_cluster_from_type(
 def make_dask_client_meta(
     dask_type: DaskType,
     loglevel: Union[int, str] = logging.INFO,
-    walltime: str = "72h",
-    adaptive_min_workers: int = 10,
-    adaptive_max_workers: int = 200,
-    adaptive_wait_count: int = 10,
-    adaptive_interval: str = "1m",
+    force_n_workers: int = None,
 ):
     logger.info(f"Using dask for parallelism of type: {dask_type}")
     if isinstance(loglevel, int):
         loglevel = logging.getLevelName(loglevel)
     set_dask_config()
     dask_cluster = dask_cluster_from_type(
-        dask_type, loglevel=loglevel, walltime=walltime
+        dask_type, loglevel=loglevel, force_n_workers=force_n_workers
     )
-    if dask_type.is_lilac():
-        logger.info("Lilac HPC config selected, setting adaptive scaling")
-        dask_cluster.adapt(
-            minimum=adaptive_min_workers,
-            maximum=adaptive_max_workers,
-            wait_count=adaptive_wait_count,
-            interval=adaptive_interval,
-        )
-        logger.info(
-            f"Starting with minimum worker count: {adaptive_min_workers} workers"
-        )
-        dask_cluster.scale(adaptive_min_workers)
-
     dask_client = Client(dask_cluster)
     dask_client.forward_logging(level=loglevel)
     logger.info(f"Using dask client: {dask_client}")
