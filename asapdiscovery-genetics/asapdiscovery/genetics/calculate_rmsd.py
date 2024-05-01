@@ -49,7 +49,7 @@ def select_best_colabfold(
     pdb_ref: str,
     chain="A",
     final_pdb="aligned_protein.pdb",
-    fold_model="_unrelaxed_rank_001_alphafold2_ptm",
+    default_CF="*_unrelaxed_rank_001_alphafold2_ptm_model_1_seed_*.pdb",
 ) -> tuple[float, Path]:
     """Select the best seed output (repetition) from a ColabFold run based on its RMSD wrt the reference.
 
@@ -65,8 +65,8 @@ def select_best_colabfold(
         Chain of both reference and generated PDB that will be used, by default "A"
     final_pdb : str, optional
         Path to the PDB where aligned structure will be saved, by default "aligned_protein.pdb"
-    fold_model : str, optional
-        The file format of the ColabFold PDB output, by default "_unrelaxed_rank_001_alphafold2_ptm"
+    default_CF : str, optional
+        The file format of the ColabFold PDB output, by default "*_unrelaxed_rank_001_alphafold2_ptm_model_1_seed_*.pdb"
 
     Returns
     -------
@@ -89,7 +89,7 @@ def select_best_colabfold(
             f"A folder with ColbFold results {results_dir} does not exist"
         )
 
-    for file_path in results_dir.glob(seq_name + fold_model + "_model_1_seed_*.pdb"):
+    for file_path in results_dir.glob(seq_name + default_CF):
         pdb_to_compare = file_path
         seed = str(pdb_to_compare).split("_")[-1].split(".")[0]
         rmsd, pdb = rmsd_alignment(pdb_to_compare, pdb_ref, final_pdb, chain, chain)
@@ -103,9 +103,7 @@ def select_best_colabfold(
         return 0, ""
     min_rmsd = np.argmin(rmsds)
     min_rmsd_file = file_seed[min_rmsd]
-    print(
-        f"{seq_name} seed with least RMSD is {seeds[min_rmsd]} with RMSD {rmsds[min_rmsd]} A"
-    )
+    print(f"Seed with least RMSD is {seeds[min_rmsd]} with RMSD {rmsds[min_rmsd]} A")
 
     min_rmsd, final_pdb = rmsd_alignment(
         min_rmsd_file, pdb_ref, final_pdb, chain, chain
