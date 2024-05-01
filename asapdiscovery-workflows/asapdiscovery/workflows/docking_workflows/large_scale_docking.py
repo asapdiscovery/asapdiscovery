@@ -191,7 +191,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     )
     complexes = structure_factory.load(
         use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
 
@@ -230,7 +230,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         complexes,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         cache_dir=inputs.cache_dir,
     )
     del complexes
@@ -269,7 +269,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         return_for_disk_backend=True,
     )
 
@@ -318,7 +318,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         return_df=True,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
@@ -338,7 +338,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
     )
@@ -374,7 +374,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
             backend=BackendType.DISK,
             reconstruct_cls=docker.result_cls,
         )

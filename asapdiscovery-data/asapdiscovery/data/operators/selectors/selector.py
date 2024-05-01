@@ -6,7 +6,7 @@ from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.util.dask_utils import (
-    DaskFailureMode,
+    FailureMode,
     actualise_dask_delayed_iterable,
 )
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
@@ -31,7 +31,7 @@ class SelectorBase(abc.ABC, BaseModel):
         complexes: list[Union[Complex, PreppedComplex]],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         **kwargs,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         if use_dask:
@@ -43,7 +43,7 @@ class SelectorBase(abc.ABC, BaseModel):
                 # see # 560
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors=dask_failure_mode
+                delayed_outputs, dask_client, errors=failure_mode
             )
             outputs = [
                 item for sublist in outputs for item in sublist

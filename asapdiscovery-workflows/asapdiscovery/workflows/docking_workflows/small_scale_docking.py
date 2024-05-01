@@ -94,7 +94,7 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     )
 
     n_select: PositiveInt = Field(
-        1, description="Number of targets to dock each ligand against."
+        3, description="Number of targets to dock each ligand against."
     )
 
     ml_scorers: Optional[list[str]] = Field(
@@ -222,12 +222,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
         use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
     complexes = structure_factory.load(
         use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
 
@@ -261,7 +261,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         cache_dir=inputs.cache_dir,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
     del complexes
 
@@ -296,7 +296,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
 
     n_results = len(results)
@@ -333,8 +333,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         return_df=True,
+        include_input=True,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -370,7 +371,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -403,7 +404,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
         )
 
         # duplicate target id column so we can join
@@ -443,19 +444,22 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     # then order by chemgauss4 score
-    scores_df = scores_df.sort_values(
+    combined_df = combined_df.sort_values(
         DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
     )
-    scores_df.to_csv(
+    combined_df.to_csv(
         data_intermediates / "docking_scores_filtered_sorted.csv", index=False
     )
 
     # remove duplicates that are the same compound docked to different structures
-    scores_df = scores_df.drop_duplicates(
+    combined_df = combined_df.drop_duplicates(
         subset=[DockingResultCols.SMILES.value], keep="first"
     )
 
-    n_duplicate_filtered = len(scores_df)
+    # re-extract the filtered input results
+    results = combined_df["input"].tolist()
+
+    n_duplicate_filtered = len(combined_df)
     logger.info(
         f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
@@ -498,7 +502,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
         )
 
         if local_cpu_client_gpu_override and inputs.use_dask:
@@ -520,9 +524,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             simulation_results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
         )
-
+        gifs.to_csv(data_intermediates / "md_gifs.csv", index=False)
         # duplicate target id column so we can join
         gifs[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = gifs[
             DockingResultCols.TARGET_ID.value
