@@ -21,7 +21,12 @@ To prevent this, you can pass `--cheng_prusoff 0 0` to disable using the Cheng-P
 If you'd like to pas your own values for this equation, see the help text of the CLI arg for more details.
 
 ```
-CDDTOKEN="" download-cdd-data -o cdd_filtered_processed.csv -cache cdd_unfiltered.csv --retain_achiral --retain_enantiopure --retain_semiquant
+CDDTOKEN="" download-cdd-data \
+-o cdd_filtered_processed.csv \
+-cache cdd_unfiltered.csv \
+--retain_achiral \
+--retain_enantiopure \
+--retain_semiquant
 ```
 
 The output of this script call should be the CSV file `cdd_filtered_processed.csv`, containing the filtered and processed data from CDD.
@@ -29,7 +34,9 @@ The last step in this process is to convert this data into the format that the M
 The next script call does that, taking the previously generated CSV file as input and producing a JSON file that we will load later.
 
 ```
-cdd-to-schema -i cdd_filtered_processed.csv -json cdd_filtered_processed.json
+cdd-to-schema \
+-i cdd_filtered_processed.csv \
+-json cdd_filtered_processed.json
 ```
 
 ## Building the ML dataset
@@ -47,13 +54,24 @@ We assume that the docked PDB files are all in the top level of the directory `.
 
 ```
 # Build GAT dataset
-asap-ml build-ds gat --exp-file cdd_filtered_processed.json --ds-cache gat_ds.pkl --ds-config-cache gat_config.json
+asap-ml build-ds gat \
+--exp-file cdd_filtered_processed.json \
+--ds-cache gat_ds.pkl \
+--ds-config-cache gat_config.json
 
 # Build SchNet dataset
-asap-ml build-ds schnet --exp-file cdd_filtered_processed.json --ds-cache schnet_ds.pkl --ds-config-cache schnet_config.json --structures './docked_results/*.pdb'
+asap-ml build-ds schnet \
+--exp-file cdd_filtered_processed.json \
+--ds-cache schnet_ds.pkl \
+--ds-config-cache schnet_config.json \
+--structures './docked_results/*.pdb'
 
 # Build e3nn dataset
-asap-ml build-ds e3nn --exp-file cdd_filtered_processed.json --ds-cache e3nn_ds.pkl --ds-config-cache e3nn_config.json --structures './docked_results/*.pdb'
+asap-ml build-ds e3nn \
+--exp-file cdd_filtered_processed.json \
+--ds-cache e3nn_ds.pkl \
+--ds-config-cache e3nn_config.json \
+--structures './docked_results/*.pdb'
 ```
 
 The output of these commands should be a `<model>_config.json` and a `<model>_ds.pkl` file for each architecture.
@@ -70,13 +88,46 @@ We will log each training run to W&B, in a project named tutorial as a run named
 
 ```
 # Train GAT model
-asap-ml build-and-train gat --output-dir ./gat_training/ --trainer-config-cache ./gat_training/trainer.json --ds-split-type temporal --ds-cache gat_ds.pkl --ds-config-cache gat_config.json --loss-type mse_step --device cuda --n-epochs 500 --use-wandb True --wandb-project tutorial --wandb-name gat
+asap-ml build-and-train gat \
+--output-dir ./gat_training/ \
+--trainer-config-cache ./gat_training/trainer.json \
+--ds-split-type temporal \
+--ds-cache gat_ds.pkl \
+--ds-config-cache gat_config.json \
+--loss-type mse_step \
+--device cuda \
+--n-epochs 500 \
+--use-wandb True \
+--wandb-project tutorial \
+--wandb-name gat
 
 # Train SchNet model
-asap-ml build-and-train schnet --output-dir ./schnet_training/ --trainer-config-cache ./schnet_training/trainer.json --ds-split-type temporal --ds-cache schnet_ds.pkl --ds-config-cache schnet_config.json --loss-type mse_step --device cuda --n-epochs 500 --use-wandb True --wandb-project tutorial --wandb-name schnet
+asap-ml build-and-train schnet \
+--output-dir ./schnet_training/ \
+--trainer-config-cache ./schnet_training/trainer.json \
+--ds-split-type temporal \
+--ds-cache schnet_ds.pkl \
+--ds-config-cache schnet_config.json \
+--loss-type mse_step \
+--device cuda \
+--n-epochs 500 \
+--use-wandb True \
+--wandb-project tutorial \
+--wandb-name schnet
 
 # Train e3nn model
-asap-ml build-and-train e3nn --output-dir ./e3nn_training/ --trainer-config-cache ./e3nn_training/trainer.json --ds-split-type temporal --ds-cache e3nn_ds.pkl --ds-config-cache e3nn_config.json --loss-type mse_step --device cuda --n-epochs 500 --use-wandb True --wandb-project tutorial --wandb-name e3nn
+asap-ml build-and-train e3nn \
+--output-dir ./e3nn_training/ \
+--trainer-config-cache ./e3nn_training/trainer.json \
+--ds-split-type temporal \
+--ds-cache e3nn_ds.pkl \
+--ds-config-cache e3nn_config.json \
+--loss-type mse_step \
+--device cuda \
+--n-epochs 500 \
+--use-wandb True \
+--wandb-project tutorial \
+--wandb-name e3nn
 ```
 
 In the above CLI calls, we passed a value for `--trainer-config-cache`.
@@ -89,11 +140,14 @@ Once the above is run, future training runs can be carried out by simply passing
 
 ```
 # Train GAT model
-asap-ml build-and-train gat --trainer-config-cache ./gat_training/trainer.json
+asap-ml build-and-train gat \
+--trainer-config-cache ./gat_training/trainer.json
 
 # Train SchNet model
-asap-ml build-and-train schnet --trainer-config-cache ./schnet_training/trainer.json
+asap-ml build-and-train schnet \
+--trainer-config-cache ./schnet_training/trainer.json
 
 # Train e3nn model
-asap-ml build-and-train e3nn --trainer-config-cache ./e3nn_training/trainer.json
+asap-ml build-and-train e3nn \
+--trainer-config-cache ./e3nn_training/trainer.json
 ```
