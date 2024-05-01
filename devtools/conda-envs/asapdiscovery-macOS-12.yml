@@ -34,7 +34,6 @@ dependencies:
   - panel
   - plotmol
   - semver
-  - mafft
 
   # data
   - requests

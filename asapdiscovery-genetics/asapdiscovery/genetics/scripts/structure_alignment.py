@@ -63,7 +63,6 @@ def main():
     seq_file = Path(args.seq_file)
     if not seq_file.exists():
         raise FileNotFoundError(f"Sequence file {seq_file} does not exist")
-    query_name = seq_file.stem
 
     ref_pdb = Path(args.ref_pdb)
     if not ref_pdb.exists():
