@@ -226,7 +226,7 @@ class MLModelRegistry(BaseModel):
             )
         return [model for model in self.models.values() if target in model.targets]
 
-    def get_targets_with_models(self) -> List[TargetTags]:
+    def get_targets_with_models(self) -> list[TargetTags]:
         """
         Get all targets with models
 
