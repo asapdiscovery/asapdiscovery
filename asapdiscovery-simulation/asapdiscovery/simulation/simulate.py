@@ -10,7 +10,7 @@ import openmm
 import pandas as pd
 from asapdiscovery.data.backend.openeye import save_openeye_pdb
 from asapdiscovery.data.util.dask_utils import (
-    DaskFailureMode,
+    FailureMode,
     actualise_dask_delayed_iterable,
 )
 from asapdiscovery.data.util.stringenum import StringEnum
@@ -84,7 +84,7 @@ class SimulatorBase(BaseModel):
         docking_results: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         **kwargs,
     ) -> pd.DataFrame:
         if use_dask:
@@ -93,7 +93,7 @@ class SimulatorBase(BaseModel):
                 out = dask.delayed(self._simulate)(docking_results=[res], **kwargs)
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors=dask_failure_mode
+                delayed_outputs, dask_client, errors=failure_mode
             )
             outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
