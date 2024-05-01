@@ -50,10 +50,10 @@ We assume that the docked PDB files are all in the top level of the directory `.
 asap-ml build-ds gat --exp-file cdd_filtered_processed.json --ds-cache gat_ds.pkl --ds-config-cache gat_config.json
 
 # Build SchNet dataset
-asap-ml build-ds schnet --exp-file cdd_filtered_processed.json --ds-cache schnet_ds.pkl --ds-config-cache schnet_config.json --structures ./docked_results/*.pdb
+asap-ml build-ds schnet --exp-file cdd_filtered_processed.json --ds-cache schnet_ds.pkl --ds-config-cache schnet_config.json --structures './docked_results/*.pdb'
 
 # Build e3nn dataset
-asap-ml build-ds e3nn --exp-file cdd_filtered_processed.json --ds-cache e3nn_ds.pkl --ds-config-cache e3nn_config.json --structures ./docked_results/*.pdb
+asap-ml build-ds e3nn --exp-file cdd_filtered_processed.json --ds-cache e3nn_ds.pkl --ds-config-cache e3nn_config.json --structures './docked_results/*.pdb'
 ```
 
 The output of these commands should be a `<model>_config.json` and a `<model>_ds.pkl` file for each architecture.
