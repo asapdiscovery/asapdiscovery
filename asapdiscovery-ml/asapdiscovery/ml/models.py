@@ -225,6 +225,17 @@ class MLModelRegistry(BaseModel):
                 f"Target {target} not valid, must be one of {TargetTags.get_values()}"
             )
         return [model for model in self.models.values() if target in model.targets]
+    
+    def get_targets_with_models(self) -> List[TargetTags]:
+        """
+        Get all targets with models
+
+        Returns
+        -------
+        List[TargetTags]
+            List of targets with models
+        """
+        return list({target.value for model in self.models.values() for target in model.targets})
 
     def get_latest_model_for_target_and_type(
         self, target: TargetTags, type: ModelType
