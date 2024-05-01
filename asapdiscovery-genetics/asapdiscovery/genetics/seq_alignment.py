@@ -180,6 +180,7 @@ class Alignment:
             return re.findall(pattern, x)[-1]
 
         desc = [f"{matches(rec.description)} ({rec.id})" for rec in aln]
+        print(desc)
 
         # List with ALL colors
         colors = get_colors_protein(seqs)
@@ -305,29 +306,21 @@ class Alignment:
         return output_file
 
     @staticmethod
-    def csv_align_data(input_alignment, output_file, n_chains):
+    def csv_align_data(input_alignment, output_file):
         alignment = SeqIO.parse(input_alignment, "fasta")
         df = pd.DataFrame(columns=["id", "sequence"])
         for rec in alignment:
             label_parts = rec.id.split("|")[1].split(".")
             red_label = f"{label_parts[0]}_{label_parts[1]}"
-            seq_print = str(rec.seq)
-            if n_chains > 1:
-                # ColabFold reads multimer chains separated by ":"
-                seq_print = ":".join(seq_print * n_chains)
-            dfi = pd.DataFrame.from_dict({"id": [red_label], "sequence": [seq_print]})
+            dfi = pd.DataFrame.from_dict(
+                {"id": [red_label], "sequence": [str(rec.seq)]}
+            )
             df = pd.concat([df, dfi], ignore_index=True)
         df.to_csv(output_file, index=False)
         return output_file
 
 
-def do_MSA(
-    alignment: Alignment,
-    select_mode: str,
-    file_prefix: str,
-    plot_width: int,
-    n_chains: int,
-):
+def do_MSA(alignment: Alignment, select_mode: str, file_prefix: str, plot_width: int):
     save_file = alignment.dir_save / file_prefix
     # Select sequeneces of interest
     if select_mode == "checkbox":
@@ -346,7 +339,7 @@ def do_MSA(
     )
 
     # Save CSV for ColabFold step
-    clean_csv = alignment.csv_align_data(select_file, f"{save_file}.csv", n_chains)
+    clean_csv = alignment.csv_align_data(select_file, f"{save_file}.csv")
     print(f"A csv file {clean_csv} have been generated with the selected sequences")
 
     p, align_html = alignment.view_alignment(

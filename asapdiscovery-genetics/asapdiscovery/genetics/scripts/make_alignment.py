@@ -108,14 +108,6 @@ def main():
             raise ValueError(
                 "If a host selection is requested, an email must be provided"
             )
-
-    n_chains = 1
-    if args.multimer:
-        n_chains = args.n_chains
-        
-    n_chains = 1
-    if args.multimer:
-        n_chains = args.n_chains
     # Create folder if doesn't already exists
     results_folder = Path(args.results_folder)
     results_folder.mkdir(parents=True, exist_ok=True)
