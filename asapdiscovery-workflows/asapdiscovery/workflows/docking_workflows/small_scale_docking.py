@@ -128,18 +128,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
                     )
         return v
 
-    @root_validator
-    @classmethod
-    def dask_type_cannot_be_lilac_cpu_and_md(cls, values):
-        """
-        Validate that the dask type is not lilac cpu if MD is requested
-        """
-        dask_type = values.get("dask_type")
-        md = values.get("md")
-
-        if dask_type == dask_type.LILAC_CPU and md:
-            raise ValueError("Cannot run MD on a CPU cluster, please use a GPU cluster")
-        return values
 
 
 def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):

@@ -50,10 +50,6 @@ class ProteinPrepInputs(BaseModel):
         Whether to use dask for parallelism
     dask_type : DaskType
         Dask client to use for parallelism
-    dask_cluster_n_workers : PositiveInt
-        Number of workers to use as inital guess for Lilac dask cluster
-    dask_cluster_max_workers : PositiveInt
-        Maximum number of workers to use for Lilac dask cluster
     logname : str
         Name of the log file
     loglevel : int
@@ -103,15 +99,6 @@ class ProteinPrepInputs(BaseModel):
 
     dask_type: DaskType = Field(
         DaskType.LOCAL, description="Dask client to use for parallelism."
-    )
-
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as initial guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        40, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
     logname: str = Field("", description="Name of the log file.")

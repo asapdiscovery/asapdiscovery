@@ -57,16 +57,7 @@ class DockingWorkflowInputsBase(BaseModel):
     dask_failure_mode: DaskFailureMode = Field(
         DaskFailureMode.SKIP, description="Dask failure mode."
     )
-
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        200, description="Maximum number of workers to use for Lilac dask cluster"
-    )
-
+    
     n_select: PositiveInt = Field(
         5, description="Number of targets to dock each ligand against."
     )
