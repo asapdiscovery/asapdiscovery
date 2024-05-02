@@ -18,7 +18,7 @@ from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
-from asapdiscovery.data.util.dask_utils import BackendType, DaskFailureMode
+from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat
 
@@ -90,7 +90,7 @@ class DockingBase(BaseModel):
         output_dir: Optional[Union[str, Path]] = None,
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         return_for_disk_backend: bool = False,
     ) -> list["DockingResult"]:
         """
@@ -107,8 +107,8 @@ class DockingBase(BaseModel):
             Whether to use dask, by default False
         dask_client : dask.distributed.Client, optional
             Dask client to use, by default None
-        dask_failure_mode : DaskFailureMode, optional
-            Dask failure mode, by default DaskFailureMode.SKIP
+        failure_mode : FailureMode, optional
+            Dask failure mode, by default FailureMode.SKIP
         return_for_disk_backend : bool, optional
             Whether to return the results for disk backend, by default False
 
@@ -126,7 +126,7 @@ class DockingBase(BaseModel):
             output_dir=output_dir,
             use_dask=use_dask,
             dask_client=dask_client,
-            dask_failure_mode=dask_failure_mode,
+            failure_mode=failure_mode,
             return_for_disk_backend=return_for_disk_backend,
         )
 

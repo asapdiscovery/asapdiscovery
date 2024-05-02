@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
@@ -56,8 +56,8 @@ class DockingWorkflowInputsBase(BaseModel):
 
     dask_n_workers: Optional[PositiveInt] = Field(None, description="Number of workers")
 
-    dask_failure_mode: DaskFailureMode = Field(
-        DaskFailureMode.SKIP, description="Dask failure mode."
+    failure_mode: FailureMode = Field(
+        FailureMode.SKIP, description="Dask failure mode."
     )
 
     n_select: PositiveInt = Field(

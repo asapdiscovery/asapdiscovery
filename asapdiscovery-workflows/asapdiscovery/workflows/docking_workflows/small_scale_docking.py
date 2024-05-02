@@ -207,12 +207,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
         use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
     complexes = structure_factory.load(
         use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
 
@@ -246,7 +246,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         cache_dir=inputs.cache_dir,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
     del complexes
 
@@ -281,7 +281,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
 
     n_results = len(results)
@@ -318,7 +318,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         return_df=True,
         include_input=True,
     )
@@ -356,7 +356,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -389,7 +389,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
         )
 
         # duplicate target id column so we can join
@@ -487,7 +487,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
         )
 
         if local_cpu_client_gpu_override and inputs.use_dask:
@@ -509,7 +509,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             simulation_results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
         )
         gifs.to_csv(data_intermediates / "md_gifs.csv", index=False)
         # duplicate target id column so we can join

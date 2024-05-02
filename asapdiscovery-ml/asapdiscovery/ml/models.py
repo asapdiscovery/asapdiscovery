@@ -219,6 +219,19 @@ class MLModelRegistry(BaseModel):
             )
         return [model for model in self.models.values() if target in model.targets]
 
+    def get_targets_with_models(self) -> list[TargetTags]:
+        """
+        Get all targets with models
+
+        Returns
+        -------
+        List[TargetTags]
+            List of targets with models
+        """
+        return list(
+            {target.value for model in self.models.values() for target in model.targets}
+        )
+
     def get_latest_model_for_target_and_type(
         self, target: TargetTags, type: ModelType
     ) -> MLModelSpec:

@@ -28,9 +28,9 @@ class BackendType(StringEnum):
     DISK = "disk"
 
 
-class DaskFailureMode(StringEnum):
+class FailureMode(StringEnum):
     """
-    Enum for Dask failure modes
+    Enum for failure modes
     """
 
     RAISE = "raise"
@@ -53,7 +53,7 @@ def set_dask_config():
 def actualise_dask_delayed_iterable(
     delayed_iterable: Iterable,
     dask_client: Optional[Client] = None,
-    errors: str = DaskFailureMode.RAISE.value,
+    errors: str = FailureMode.RAISE.value,
 ):
     """
     Run a list of dask delayed functions or collections, and return the results
@@ -128,7 +128,7 @@ def backend_wrapper(kwargname):
     return backend_wrapper_inner
 
 
-def dask_vmap(kwargsnames, remove_none=True):
+def dask_vmap(kwargsnames, remove_falsy=True, has_failure_mode=False):
     """
     Decorator to handle either returning a whole vector if not using dask, or using dask to parallelise over a vector
     if dask is being used
@@ -136,7 +136,7 @@ def dask_vmap(kwargsnames, remove_none=True):
     Designed to be used structure of the form
 
     @dask_vmap(["kwargs1", "kwargs2"])
-    def my_function(kwargs1, kwargs2, use_dask=False, dask_client=None, dask_failure_mode=DaskFailureMode.RAISE.value):
+    def my_function(kwargs1, kwargs2, use_dask=False, dask_client=None, failure_mode=FailureMode.RAISE.value):
         return _my_function(kwargs1, kwargs2)
 
     If use_dask is `True`, then `_my_function` will be parallelised over kwargs1 and kwargs2 (zipped, must be same length) using dask, passing in iterable
@@ -146,12 +146,14 @@ def dask_vmap(kwargsnames, remove_none=True):
     ----------
     kwargsnames : list[str]
         List of keyword argument names to parallelise over
+    remove_falsy : bool, optional
+        Whether to remove falsy (bool casted) results from the output, by default True
     use_dask : bool, optional
         Whether to use dask, by default False
     dask_client : Client, optional
         Dask client to use, by default None
-    dask_failure_mode : str, optional
-        Dask failure mode, by default DaskFailureMode.RAISE.value
+    failure_mode : str, optional
+        Dask failure mode, by default FailureMode.RAISE.value
     """
 
     def dask_vmap_inner(func):
@@ -160,9 +162,7 @@ def dask_vmap(kwargsnames, remove_none=True):
             # grab optional dask kwargs
             use_dask = kwargs.pop("use_dask", None)
             dask_client = kwargs.pop("dask_client", None)
-            dask_failure_mode = kwargs.pop(
-                "dask_failure_mode", DaskFailureMode.SKIP.value
-            )
+            failure_mode = kwargs.pop("failure_mode", FailureMode.SKIP.value)
 
             if use_dask:
                 # grab iterable_kwargs
@@ -178,16 +178,21 @@ def dask_vmap(kwargsnames, remove_none=True):
                 computations = []
                 for values in zip(*iterable_kwargs.values()):
                     local_kwargs = kwargs.copy()
+                    if has_failure_mode:
+                        local_kwargs["failure_mode"] = failure_mode
                     for name, value in zip(iterable_kwargs.keys(), values):
                         local_kwargs[name] = [value]
                     computations.append(dask.delayed(func)(*args, **local_kwargs))
-                results = np.ravel(
-                    actualise_dask_delayed_iterable(
-                        computations, dask_client=dask_client, errors=dask_failure_mode
-                    )
-                ).tolist()
-                if remove_none:
-                    results = [r for r in results if r is not None]
+
+                results = actualise_dask_delayed_iterable(
+                    computations, dask_client=dask_client, errors=failure_mode
+                )
+
+                if remove_falsy:
+                    results = [r for r in results if r]
+
+                results = np.ravel(np.asarray(results)).tolist()
+
                 return results
 
             else:

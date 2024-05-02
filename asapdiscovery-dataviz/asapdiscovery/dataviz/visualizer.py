@@ -1,7 +1,7 @@
 import abc
 
 import pandas as pd
-from asapdiscovery.data.util.dask_utils import BackendType, DaskFailureMode
+from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
 from asapdiscovery.docking.docking import DockingResult
 from pydantic import BaseModel
 
@@ -19,7 +19,7 @@ class VisualizerBase(abc.ABC, BaseModel):
         inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         **kwargs,
@@ -28,7 +28,7 @@ class VisualizerBase(abc.ABC, BaseModel):
             inputs=inputs,
             use_dask=use_dask,
             dask_client=dask_client,
-            dask_failure_mode=dask_failure_mode,
+            failure_mode=failure_mode,
             backend=backend,
             reconstruct_cls=reconstruct_cls,
             **kwargs,
