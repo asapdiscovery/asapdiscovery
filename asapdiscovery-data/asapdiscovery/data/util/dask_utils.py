@@ -253,7 +253,7 @@ def dask_time_delta_diff(time_str_1: str, time_str_2: str) -> str:
 
 def dask_cluster_from_type(
     dask_type: DaskType,
-    local_threads_per_worker: int = 1,
+    threads_per_worker: int = 1,
     loglevel: Union[int, str] = logging.INFO,
     n_workers: int = None,
 ):
@@ -289,7 +289,7 @@ def dask_cluster_from_type(
         if n_workers is not None:
             pass
         else:
-            n_workers = cpu_count // local_threads_per_worker
+            n_workers = cpu_count // threads_per_worker
             logger.info(f"initial guess {n_workers} workers")
             if hyperthreading_is_enabled():
                 logger.info("Hyperthreading is enabled")
@@ -306,7 +306,7 @@ def dask_cluster_from_type(
 
         cluster = LocalCluster(
             n_workers=n_workers,
-            threads_per_worker=local_threads_per_worker,
+            threads_per_worker=threads_per_worker,
             silence_logs=loglevel,  # used as silence_logs, worst kwarg name but it is what it is
         )
     elif dask_type == DaskType.LOCAL_GPU:
@@ -327,13 +327,17 @@ def make_dask_client_meta(
     dask_type: DaskType,
     loglevel: Union[int, str] = logging.INFO,
     n_workers: int = None,
+    threads_per_worker: int = 1,
 ):
     logger.info(f"Using dask for parallelism of type: {dask_type}")
     if isinstance(loglevel, int):
         loglevel = logging.getLevelName(loglevel)
     set_dask_config()
     dask_cluster = dask_cluster_from_type(
-        dask_type, loglevel=loglevel, n_workers=n_workers
+        dask_type,
+        loglevel=loglevel,
+        n_workers=n_workers,
+        threads_per_worker=threads_per_worker,
     )
     dask_client = Client(dask_cluster)
     dask_client.forward_logging(level=loglevel)

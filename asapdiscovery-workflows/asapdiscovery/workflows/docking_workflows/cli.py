@@ -132,7 +132,7 @@ def large_scale(
             top_n=top_n,
             use_dask=use_dask,
             dask_type=dask_type,
-            dask_n_workers=None,
+            dask_n_workers=dask_n_workers,
             dask_failure_mode=dask_failure_mode,
             posit_confidence_cutoff=posit_confidence_cutoff,
             use_omega=use_omega,

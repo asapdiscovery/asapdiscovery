@@ -67,9 +67,11 @@ def dask_failure_mode(func):
 def dask_n_workers(func):
     return click.option(
         "--dask-n-workers",
+        type=int,
         default=None,
         help="The number of workers to use with dask.",
     )(func)
+
 
 def dask_args(func):
     return use_dask(dask_type(dask_n_workers(dask_failure_mode(func))))
