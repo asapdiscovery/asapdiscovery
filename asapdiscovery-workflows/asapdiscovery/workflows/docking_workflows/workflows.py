@@ -57,7 +57,7 @@ class DockingWorkflowInputsBase(BaseModel):
     dask_failure_mode: DaskFailureMode = Field(
         DaskFailureMode.SKIP, description="Dask failure mode."
     )
-    
+
     n_select: PositiveInt = Field(
         5, description="Number of targets to dock each ligand against."
     )

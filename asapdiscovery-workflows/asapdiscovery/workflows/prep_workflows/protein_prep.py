@@ -8,8 +8,7 @@ from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import DaskType
-from asapdiscovery.data.util.dask_utils import make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from distributed import Client

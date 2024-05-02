@@ -129,7 +129,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         return v
 
 
-
 def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     """
     Run small scale docking on a set of ligands, against multiple targets
@@ -393,9 +392,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
+            fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        )
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
