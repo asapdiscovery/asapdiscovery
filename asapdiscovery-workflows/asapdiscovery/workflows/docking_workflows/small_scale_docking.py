@@ -46,7 +46,7 @@ from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic import Field, PositiveInt, root_validator, validator
+from pydantic import Field, PositiveInt, validator
 
 
 class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
@@ -128,19 +128,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
                     )
         return v
 
-    @root_validator
-    @classmethod
-    def dask_type_cannot_be_lilac_cpu_and_md(cls, values):
-        """
-        Validate that the dask type is not lilac cpu if MD is requested
-        """
-        dask_type = values.get("dask_type")
-        md = values.get("md")
-
-        if dask_type == dask_type.LILAC_CPU and md:
-            raise ValueError("Cannot run MD on a CPU cluster, please use a GPU cluster")
-        return values
-
 
 def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     """
@@ -189,10 +176,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     if inputs.use_dask:
         dask_client = make_dask_client_meta(
             inputs.dask_type,
-            adaptive_min_workers=inputs.dask_cluster_n_workers,
-            adaptive_max_workers=inputs.dask_cluster_max_workers,
             loglevel=inputs.loglevel,
-            walltime=inputs.walltime,
+            n_workers=inputs.dask_n_workers,
         )
     else:
         dask_client = None
@@ -475,7 +460,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
             dask_client = make_dask_client_meta(
-                DaskType.LOCAL_GPU, walltime=inputs.walltime, loglevel=inputs.loglevel
+                DaskType.LOCAL_GPU, loglevel=inputs.loglevel
             )
             local_cpu_client_gpu_override = True
 
