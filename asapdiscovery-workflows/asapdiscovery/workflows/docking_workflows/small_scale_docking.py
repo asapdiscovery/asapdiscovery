@@ -177,6 +177,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         dask_client = make_dask_client_meta(
             inputs.dask_type,
             loglevel=inputs.loglevel,
+            n_workers=inputs.dask_n_workers,
         )
     else:
         dask_client = None

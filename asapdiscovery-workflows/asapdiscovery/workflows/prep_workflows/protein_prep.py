@@ -11,7 +11,7 @@ from asapdiscovery.data.services.postera.manifold_data_validation import TargetT
 from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, root_validator, PositiveInt
 
 
 class ProteinPrepInputs(BaseModel):
@@ -99,6 +99,8 @@ class ProteinPrepInputs(BaseModel):
         DaskType.LOCAL, description="Dask client to use for parallelism."
     )
 
+    dask_n_workers: Optional[PositiveInt] = Field(None, description="Number of workers")
+
     logname: str = Field("", description="Name of the log file.")
 
     loglevel: Union[str, int] = Field(logging.INFO, description="Logging level")
@@ -159,6 +161,7 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
         dask_client = make_dask_client_meta(
             inputs.dask_type,
             loglevel=inputs.loglevel,
+            n_workers=inputs.dask_n_workers,
         )
     else:
         dask_client = None

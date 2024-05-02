@@ -54,6 +54,8 @@ class DockingWorkflowInputsBase(BaseModel):
         DaskType.LOCAL, description="Dask client to use for parallelism."
     )
 
+    dask_n_workers: Optional[PositiveInt] = Field(None, description="Number of workers")
+
     dask_failure_mode: DaskFailureMode = Field(
         DaskFailureMode.SKIP, description="Dask failure mode."
     )
