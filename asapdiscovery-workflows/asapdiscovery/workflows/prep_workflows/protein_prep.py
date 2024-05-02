@@ -11,7 +11,7 @@ from asapdiscovery.data.services.postera.manifold_data_validation import TargetT
 from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
-from pydantic import BaseModel, Field, root_validator, PositiveInt
+from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
 class ProteinPrepInputs(BaseModel):
