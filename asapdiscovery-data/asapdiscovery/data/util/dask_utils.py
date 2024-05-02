@@ -255,7 +255,7 @@ def dask_cluster_from_type(
     dask_type: DaskType,
     local_threads_per_worker: int = 1,
     loglevel: Union[int, str] = logging.INFO,
-    force_n_workers: int = None,
+    n_workers: int = None,
 ):
     """
     Get a dask client from a DaskType
@@ -286,8 +286,8 @@ def dask_cluster_from_type(
     logger.info(f"Dask log level: {loglevel}")
 
     if dask_type == DaskType.LOCAL:
-        if force_n_workers is not None:
-            n_workers = force_n_workers
+        if n_workers is not None:
+            pass
         else:
             n_workers = cpu_count // local_threads_per_worker
             logger.info(f"initial guess {n_workers} workers")
@@ -326,14 +326,14 @@ def dask_cluster_from_type(
 def make_dask_client_meta(
     dask_type: DaskType,
     loglevel: Union[int, str] = logging.INFO,
-    force_n_workers: int = None,
+    n_workers: int = None,
 ):
     logger.info(f"Using dask for parallelism of type: {dask_type}")
     if isinstance(loglevel, int):
         loglevel = logging.getLevelName(loglevel)
     set_dask_config()
     dask_cluster = dask_cluster_from_type(
-        dask_type, loglevel=loglevel, force_n_workers=force_n_workers
+        dask_type, loglevel=loglevel, n_workers=n_workers
     )
     dask_client = Client(dask_cluster)
     dask_client.forward_logging(level=loglevel)

@@ -8,11 +8,8 @@ from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import (
-    DaskType,
-    dask_cluster_from_type,
-    set_dask_config,
-)
+from asapdiscovery.data.util.dask_utils import DaskType
+from asapdiscovery.data.util.dask_utils import make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from distributed import Client
@@ -174,29 +171,10 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     inputs.to_json_file(output_dir / "protein_prep.json")
 
     if inputs.use_dask:
-        logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
-        set_dask_config()
-        dask_cluster = dask_cluster_from_type(
-            inputs.dask_type, loglevel=inputs.loglevel
+        dask_client = make_dask_client_meta(
+            inputs.dask_type,
+            loglevel=inputs.loglevel,
         )
-
-        if inputs.dask_type.is_lilac():
-            logger.info("Lilac HPC config selected, setting adaptive scaling")
-            dask_cluster.adapt(
-                minimum=1,
-                maximum=inputs.dask_cluster_max_workers,
-                wait_count=10,
-                interval="1m",
-            )
-            logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
-            dask_cluster.scale(inputs.dask_cluster_n_workers)
-
-        dask_client = Client(dask_cluster)
-        dask_client.forward_logging(level=inputs.loglevel)
-        logger.info(f"Using dask client: {dask_client}")
-        logger.info(f"Using dask cluster: {dask_cluster}")
-        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
-
     else:
         dask_client = None
 

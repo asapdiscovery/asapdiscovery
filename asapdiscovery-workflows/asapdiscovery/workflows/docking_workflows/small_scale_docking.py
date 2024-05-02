@@ -189,10 +189,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     if inputs.use_dask:
         dask_client = make_dask_client_meta(
             inputs.dask_type,
-            adaptive_min_workers=inputs.dask_cluster_n_workers,
-            adaptive_max_workers=inputs.dask_cluster_max_workers,
             loglevel=inputs.loglevel,
-            walltime=inputs.walltime,
         )
     else:
         dask_client = None
@@ -408,9 +405,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
-            fitness_visualizations[DockingResultCols.TARGET_ID.value]
-        )
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
@@ -475,7 +472,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
             dask_client = make_dask_client_meta(
-                DaskType.LOCAL_GPU, walltime=inputs.walltime, loglevel=inputs.loglevel
+                DaskType.LOCAL_GPU, loglevel=inputs.loglevel
             )
             local_cpu_client_gpu_override = True
 
