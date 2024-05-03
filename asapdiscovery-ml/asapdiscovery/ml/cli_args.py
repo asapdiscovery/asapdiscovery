@@ -1087,7 +1087,7 @@ def ds_split_args(func):
         train_frac,
         val_frac,
         test_frac,
-        enforce_1,
+        enforce_one,
         ds_rand_seed,
         ds_split_config_cache,
     ]:
@@ -1131,7 +1131,7 @@ def test_frac(func):
     )(func)
 
 
-def enforce_1(func):
+def enforce_one(func):
     return click.option(
         "--enforce-one",
         type=bool,
