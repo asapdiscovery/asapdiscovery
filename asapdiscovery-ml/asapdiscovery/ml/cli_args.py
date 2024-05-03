@@ -1299,6 +1299,12 @@ def data_aug(func):
 
 ################################################################################
 # Sweep args
+def sweep_args(func):
+    for fn in [sweep_config, force_new_sweep, sweep_start_only]:
+        func = fn(func)
+    return func
+
+
 def sweep_config(func):
     return click.option(
         "--sweep-config",
@@ -1312,6 +1318,16 @@ def force_new_sweep(func):
         "--force-new-sweep",
         type=bool,
         help="Start a new sweep even if an existing sweep_id is present.",
+    )(func)
+
+
+def sweep_start_only(func):
+    return click.option(
+        "--start-only",
+        type=bool,
+        is_flag=True,
+        defualt=False,
+        help="Only start the sweep, don't run any training.",
     )(func)
 
 

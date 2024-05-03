@@ -9,7 +9,6 @@ from asapdiscovery.ml.cli_args import (
     ds_split_args,
     e3nn_args,
     es_args,
-    force_new_sweep,
     gat_args,
     graph_ds_args,
     loss_args,
@@ -21,7 +20,7 @@ from asapdiscovery.ml.cli_args import (
     overwrite_args,
     schnet_args,
     struct_ds_args,
-    sweep_config,
+    sweep_args,
     sweep_config_cache,
     sweep_config_cache_overwrite,
     trainer_args,
@@ -61,8 +60,7 @@ def sweep():
 @ds_split_args
 @loss_args
 @trainer_args
-@sweep_config
-@force_new_sweep
+@sweep_args
 @sweep_config_cache_overwrite
 @overwrite_args
 def sweep_gat(
@@ -136,6 +134,7 @@ def sweep_gat(
     device: torch.device | None = None,
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
+    start_only: bool = False,
     overwrite_sweep_config_cache: bool = False,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
@@ -263,7 +262,7 @@ def sweep_gat(
         overwrite_sweep_config_cache,
     )
 
-    sweeper.start_continue_sweep()
+    sweeper.start_continue_sweep(start_only=start_only)
 
 
 @sweep.command(name="schnet")
@@ -283,8 +282,7 @@ def sweep_gat(
 @ds_split_args
 @loss_args
 @trainer_args
-@sweep_config
-@force_new_sweep
+@sweep_args
 @sweep_config_cache_overwrite
 @overwrite_args
 def sweep_schnet(
@@ -360,6 +358,7 @@ def sweep_schnet(
     device: torch.device | None = None,
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
+    start_only: bool = False,
     overwrite_sweep_config_cache: bool = False,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
@@ -491,7 +490,7 @@ def sweep_schnet(
         overwrite_sweep_config_cache,
     )
 
-    sweeper.start_continue_sweep()
+    sweeper.start_continue_sweep(start_only=start_only)
 
 
 @sweep.command("e3nn")
@@ -511,8 +510,7 @@ def sweep_schnet(
 @ds_split_args
 @loss_args
 @trainer_args
-@sweep_config
-@force_new_sweep
+@sweep_args
 @sweep_config_cache_overwrite
 @overwrite_args
 def sweep_e3nn(
@@ -589,6 +587,7 @@ def sweep_e3nn(
     device: torch.device | None = None,
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
+    start_only: bool = False,
     overwrite_sweep_config_cache: bool = False,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
@@ -721,7 +720,7 @@ def sweep_e3nn(
         overwrite_sweep_config_cache,
     )
 
-    sweeper.start_continue_sweep()
+    sweeper.start_continue_sweep(start_only=start_only)
 
 
 @sweep.command(name="visnet")
@@ -741,8 +740,7 @@ def sweep_e3nn(
 @ds_split_args
 @loss_args
 @trainer_args
-@sweep_config
-@force_new_sweep
+@sweep_args
 @sweep_config_cache_overwrite
 @overwrite_args
 def sweep_visnet(
@@ -824,6 +822,7 @@ def sweep_visnet(
     device: torch.device | None = None,
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
+    start_only: bool = False,
     overwrite_sweep_config_cache: bool = False,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
@@ -961,7 +960,7 @@ def sweep_visnet(
         overwrite_sweep_config_cache,
     )
 
-    sweeper.start_continue_sweep()
+    sweeper.start_continue_sweep(start_only=start_only)
 
 
 def _build_sweeper(
