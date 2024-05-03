@@ -1326,7 +1326,7 @@ def sweep_start_only(func):
         "--start-only",
         type=bool,
         is_flag=True,
-        defualt=False,
+        default=False,
         help="Only start the sweep, don't run any training.",
     )(func)
 
