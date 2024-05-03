@@ -141,3 +141,5 @@ wandb/*
 *.inchi
 *.inchikey
 *.gz
+
+examples/html
