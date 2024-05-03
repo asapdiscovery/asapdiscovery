@@ -1029,60 +1029,80 @@ def _build_sweeper(
     Sweeper
     """
 
+    # One dict for all kwargs, update in the following priority:
+    # 1. trainer_config_cache
+    # 2. sweep_config_cache
+    # 3. trainer_kwargs
+    # 4. sweep_kwargs
+
     # Filter out None Trainer kwargs
     trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
-
-    # If we got a config for the Trainer, load those args and merge with CLI args
-    if trainer_config_cache and trainer_config_cache.exists():
-        print("loading trainer args from cache", flush=True)
-        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
-
-        for config_name, config_val in config_trainer_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in trainer_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
-                    }
-                )
-            else:
-                config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
-
-        trainer_kwargs = config_trainer_kwargs
 
     # Filter out None Sweeper kwargs
     sweep_kwargs = {k: v for k, v in sweep_kwargs.items() if v is not None}
 
-    # If we got a config for the Sweeper, load those args and merge with CLI args
+    # One dict containing everything
+    overall_kwargs = {}
+
+    # If we got a config for the Trainer, load those args and update overall_kwargs
+    if trainer_config_cache and trainer_config_cache.exists():
+        print("loading trainer args from cache", flush=True)
+        config_trainer_kwargs = json.loads(trainer_config_cache.read_text())
+
+        # Nothing else in there yet
+        overall_kwargs = config_trainer_kwargs
+
+    # If we got a config for the Sweeper, load those args and merge with overall_kwargs
     if sweep_config_cache and sweep_config_cache.exists():
         print("loading sweep args from cache", flush=True)
         config_sweep_kwargs = json.loads(sweep_config_cache.read_text())
 
         for config_name, config_val in config_sweep_kwargs.items():
-            # Arg wasn't passed at all, so got filtered out before
-            if config_name not in sweep_kwargs:
-                continue
-
-            if isinstance(config_val, dict):
-                config_val.update(
-                    {
-                        k: v
-                        for k, v in sweep_kwargs[config_name].items()
-                        if v is not None
-                    }
+            # If both are dicts, update existing vals with new vals
+            if (
+                (config_name in overall_kwargs)
+                and isinstance(config_val, dict)
+                and isinstance(overall_kwargs[config_name], dict)
+            ):
+                overall_kwargs[config_name].update(
+                    {k: v for k, v in config_val.items() if v is not None}
                 )
+            # Otherwise just overwrite
             else:
-                config_sweep_kwargs[config_name] = sweep_kwargs[config_name]
+                overall_kwargs[config_name] = config_val
 
-        sweep_kwargs = config_sweep_kwargs
+    # Update from Trainer kwargs
+    for config_name, config_val in trainer_kwargs.items():
+        # If both are dicts, update existing vals with new vals
+        if (
+            (config_name in overall_kwargs)
+            and isinstance(config_val, dict)
+            and isinstance(overall_kwargs[config_name], dict)
+        ):
+            overall_kwargs[config_name].update(
+                {k: v for k, v in config_val.items() if v is not None}
+            )
+        # Otherwise just overwrite
+        else:
+            overall_kwargs[config_name] = config_val
+
+    # Update from Sweeper kwargs
+    for config_name, config_val in sweep_kwargs.items():
+        # If both are dicts, update existing vals with new vals
+        if (
+            (config_name in overall_kwargs)
+            and isinstance(config_val, dict)
+            and isinstance(overall_kwargs[config_name], dict)
+        ):
+            overall_kwargs[config_name].update(
+                {k: v for k, v in config_val.items() if v is not None}
+            )
+        # Otherwise just overwrite
+        else:
+            overall_kwargs[config_name] = config_val
 
     try:
-        sweeper = Sweeper(**sweep_kwargs, **trainer_kwargs)
+        sweeper = Sweeper(**overall_kwargs)
     except pydantic.ValidationError as exc:
         # Only want to handle missing values, so if anything else went wrong just raise
         #  the pydantic error
