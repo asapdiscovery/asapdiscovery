@@ -110,6 +110,7 @@ def sweep_gat(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -195,6 +196,7 @@ def sweep_gat(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -331,6 +333,7 @@ def sweep_schnet(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -418,6 +421,7 @@ def sweep_schnet(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -560,6 +564,7 @@ def sweep_e3nn(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -648,6 +653,7 @@ def sweep_e3nn(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
@@ -795,6 +801,7 @@ def sweep_visnet(
     es_patience: int | None = None,
     es_n_check: int | None = None,
     es_divergence: float | None = None,
+    es_burnin: int | None = None,
     es_config_cache: Path | None = None,
     exp_file: Path | None = None,
     ds_cache: Path | None = None,
@@ -888,6 +895,7 @@ def sweep_visnet(
         "patience": es_patience,
         "n_check": es_n_check,
         "divergence": es_divergence,
+        "burnin": es_burnin,
     }
     ds_config = {
         "cache": ds_config_cache,
