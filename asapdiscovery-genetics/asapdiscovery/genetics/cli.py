@@ -1,29 +1,31 @@
-from typing import Optional
 from pathlib import Path
-import pandas as pd
+from typing import Optional
 
 import click
-from asapdiscovery.genetics.cli_args import (
-    seq_file,
-    seq_type,
-    blast_json,
-    output_dir,
-    email,
-    multimer,
-    n_chains,
-    pdb_file,
-)
+import pandas as pd
 from asapdiscovery.genetics.blast import PDBEntry, get_blast_seqs
-from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
 from asapdiscovery.genetics.calculate_rmsd import (
     save_alignment_pymol,
     select_best_colabfold,
 )
+from asapdiscovery.genetics.cli_args import (
+    blast_json,
+    email,
+    multimer,
+    n_chains,
+    output_dir,
+    pdb_file,
+    seq_file,
+    seq_type,
+)
+from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
+
 
 @click.group()
 def genetics():
     """Run genetics alignment workflows for related protein search and alignment."""
     pass
+
 
 @genetics.command()
 @seq_file
@@ -41,7 +43,7 @@ def genetics():
     default=10.0,
     help="Threshold to select BLAST results.",
 )
-@click.option(  
+@click.option(
     "--save-blast",
     type=str,
     default="blast.csv",
@@ -63,7 +65,6 @@ def genetics():
 @email
 @multimer
 @n_chains
-
 def seq_alignment(
     seq_file: str,
     seq_type: Optional[str] = None,
@@ -146,6 +147,7 @@ def seq_alignment(
             record = pdb_file_record[0]
             print(f"A PDB template for {record.label} was saved as {record.pdb_file}")
 
+
 @genetics.command()
 @seq_file
 @pdb_file
@@ -168,8 +170,6 @@ def seq_alignment(
     default="_unrelaxed_rank_001_alphafold2_ptm",
     help="Format of pdb file saved by ColabFold, according to the folding model and relaxation used.",
 )
-
-
 def struct_alignment(
     seq_file: str,
     pdb_file: str,
@@ -188,7 +188,7 @@ def struct_alignment(
     ref_pdb = Path(pdb_file)
     if not ref_pdb.exists():
         raise FileNotFoundError(f"Ref PDB file {ref_pdb} does not exist")
-    
+
     results_dir = Path(cfold_results)
     if not results_dir.exists():
         raise FileNotFoundError(

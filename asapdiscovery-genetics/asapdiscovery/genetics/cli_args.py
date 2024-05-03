@@ -1,5 +1,6 @@
 import click
 
+
 def seq_file(func):
     return click.option(
         "-f",
@@ -7,6 +8,7 @@ def seq_file(func):
         type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
         help="File containing reference sequences",
     )(func)
+
 
 def output_dir(func):
     return click.option(
@@ -18,6 +20,7 @@ def output_dir(func):
         default="output",
     )(func)
 
+
 def seq_type(func):
     return click.option(
         "-t",
@@ -28,12 +31,14 @@ def seq_type(func):
         show_default=True,
     )(func)
 
+
 def blast_json(func):
     return click.option(
         "--blast-json",
         type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
         help="Path to a json file containing parameters for the blast search.",
     )(func)
+
 
 def email(func):
     return click.option(
@@ -52,6 +57,7 @@ def gen_ref_pdb(func):
         help="Whether to retrieve a pdb file for the query structure.",
     )(func)
 
+
 def multimer(func):
     return click.option(
         "--multimer",
@@ -61,6 +67,7 @@ def multimer(func):
         'If not set, "--n-chains" will not be used. ',
     )(func)
 
+
 def n_chains(func):
     return click.option(
         "--n-chains",
@@ -69,6 +76,7 @@ def n_chains(func):
         help="Number of repeated chains that will be saved in csv file."
         'Requires calling the "--multimer" option first.',
     )(func)
+
 
 def pdb_file(func):
     return click.option(
