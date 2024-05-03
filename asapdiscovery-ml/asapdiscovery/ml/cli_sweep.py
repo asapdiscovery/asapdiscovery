@@ -133,6 +133,7 @@ def sweep_gat(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
     start_only: bool = False,
@@ -224,6 +225,10 @@ def sweep_gat(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -236,6 +241,7 @@ def sweep_gat(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -359,6 +365,7 @@ def sweep_schnet(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
     start_only: bool = False,
@@ -454,6 +461,10 @@ def sweep_schnet(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -466,6 +477,7 @@ def sweep_schnet(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -590,6 +602,7 @@ def sweep_e3nn(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
     start_only: bool = False,
@@ -686,6 +699,10 @@ def sweep_e3nn(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -698,6 +715,7 @@ def sweep_e3nn(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -827,6 +845,7 @@ def sweep_visnet(
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
+    data_aug: tuple[str] = (),
     sweep_config: Path | None = None,
     force_new_sweep: bool | None = None,
     start_only: bool = False,
@@ -928,6 +947,10 @@ def sweep_visnet(
         "loss_type": loss_type,
         "semiquant_fill": semiquant_fill,
     }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
 
     # Parse loss_dict
     if loss_dict:
@@ -940,6 +963,7 @@ def sweep_visnet(
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
         "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
