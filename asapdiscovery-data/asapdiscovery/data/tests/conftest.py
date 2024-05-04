@@ -68,6 +68,12 @@ def ligands(smiles):
     return [Ligand.from_smiles(s, compound_name="test") for s in smiles]
 
 
+@pytest.fixture(scope="module")
+def ligands_from_complexes(complexes):
+    # get ligands from 3d structure to ensure the added hydrogens make sense, using top 4 to match the smiles
+    return [c.ligand for c in complexes[0:4]]
+
+
 @pytest.fixture()
 def mocked_cdd_api():
     """A cdd_api configured with dummy data which should have the requests mocked."""
