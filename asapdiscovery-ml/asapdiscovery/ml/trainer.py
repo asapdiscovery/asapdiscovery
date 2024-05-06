@@ -57,6 +57,14 @@ class Trainer(BaseModel):
         ...,
         description="Config describing the loss function for training.",
     )
+    loss_weights: list[float] = Field(
+        [],
+        description=(
+            "Weight for each loss function. If no values are passed, each loss "
+            "function will be weighted equally. If any values are passed, there must "
+            "be one for each loss function."
+        ),
+    )
     data_aug_configs: list[DataAugConfig] = Field(
         [],
         description="List of data augmentations to be applied in order to each pose.",
@@ -428,6 +436,19 @@ class Trainer(BaseModel):
             extra_config[key] = val
 
         return extra_config
+
+    @validator("loss_weights", pre=False)
+    def check_loss_weights(cls, v, values):
+        """
+        Make sure that we have the right number of loss function weights.
+        """
+        if (len(v) > 0) and (len(v) != len(values["loss_configs"])):
+            raise ValueError(
+                f"Mismatch between number of loss function weights ({len(v)}) and "
+                f"number of loss functions ({len(values['loss_configs'])})."
+            )
+
+        return v
 
     def wandb_init(self):
         """
