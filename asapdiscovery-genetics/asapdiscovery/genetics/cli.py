@@ -12,11 +12,11 @@ from asapdiscovery.genetics.calculate_rmsd import (
 from asapdiscovery.genetics.cli_args import (
     blast_json,
     email,
+    gen_ref_pdb,
     multimer,
     n_chains,
     seq_file,
     seq_type,
-    gen_ref_pdb,
 )
 from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
 
