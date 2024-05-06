@@ -141,3 +141,8 @@ wandb/*
 *.inchi
 *.inchikey
 *.gz
+
+
+# tutorial files
+examples/html/*
+examples/md/*
