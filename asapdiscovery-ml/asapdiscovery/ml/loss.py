@@ -154,3 +154,54 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
             loss *= mask
 
         return loss.sum()
+
+
+class RangeLoss(torch.nn.Module):
+    def __init__(self, lower_lim, upper_lim):
+        """
+        Class for calculating a loss to penalize predictions outside of the given range.
+        Current implementation uses a squared difference penalty.
+
+        Parameters
+        ----------
+        lower_lim : float
+            Bottom limit of acceptable range
+        upper_lim : float
+            Upper limit of acceptable range
+        """
+        super().__init__()
+
+        self.lower_lim = lower_lim
+        self.upper_lim = upper_lim
+
+    def forward(self, input, target, in_range, uncertainty):
+        """
+        No loss for predictions within self range, otherwise calculate squared distance
+        to closest bound.
+
+        Parameters
+        ----------
+        Parameters
+        ----------
+        input : torch.Tensor
+            Model prediction
+        target : torch.Tensor
+            Prediction target
+        in_range : torch.Tensor
+            `target`'s presence in the dynamic range of the assay. Give a value
+            of < 0 for `target` below lower bound, > 0 for `target` above upper
+            bound, and 0 or None for inside range
+        uncertainty : torch.Tensor
+            Uncertainty in `target` measurements
+
+        Returns
+        -------
+        torch.Tensor
+            Calculated loss
+        """
+        if input < self.lower_lim:
+            return torch.pow(input - self.lower_lim, 2)
+        elif input > self.upper_lim:
+            return torch.pow(input - self.upper_lim, 2)
+        else:
+            return input * 0
