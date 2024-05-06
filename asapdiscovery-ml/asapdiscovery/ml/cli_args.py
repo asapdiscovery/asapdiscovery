@@ -1087,7 +1087,7 @@ def ds_split_args(func):
         train_frac,
         val_frac,
         test_frac,
-        enforce_1,
+        enforce_one,
         ds_rand_seed,
         ds_split_config_cache,
     ]:
@@ -1131,7 +1131,7 @@ def test_frac(func):
     )(func)
 
 
-def enforce_1(func):
+def enforce_one(func):
     return click.option(
         "--enforce-one",
         type=bool,
@@ -1299,6 +1299,12 @@ def data_aug(func):
 
 ################################################################################
 # Sweep args
+def sweep_args(func):
+    for fn in [sweep_config, force_new_sweep, sweep_start_only]:
+        func = fn(func)
+    return func
+
+
 def sweep_config(func):
     return click.option(
         "--sweep-config",
@@ -1312,6 +1318,16 @@ def force_new_sweep(func):
         "--force-new-sweep",
         type=bool,
         help="Start a new sweep even if an existing sweep_id is present.",
+    )(func)
+
+
+def sweep_start_only(func):
+    return click.option(
+        "--start-only",
+        type=bool,
+        is_flag=True,
+        default=False,
+        help="Only start the sweep, don't run any training.",
     )(func)
 
 
