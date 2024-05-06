@@ -141,3 +141,4 @@ wandb/*
 *.inchi
 *.inchikey
 *.gz
+*.json
