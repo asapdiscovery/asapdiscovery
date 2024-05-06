@@ -53,7 +53,7 @@ class Trainer(BaseModel):
             "test splits."
         ),
     )
-    loss_config: LossFunctionConfig = Field(
+    loss_configs: list[LossFunctionConfig] = Field(
         ...,
         description="Config describing the loss function for training.",
     )
@@ -72,7 +72,9 @@ class Trainer(BaseModel):
     )
     start_epoch: int = Field(
         0,
-        description="Which epoch to start training at (used for continuing training runs).",
+        description=(
+            "Which epoch to start training at (used for continuing training runs)."
+        ),
     )
     n_epochs: int = Field(
         300,
@@ -159,7 +161,6 @@ class Trainer(BaseModel):
         "model_config",
         "es_config",
         "ds_splitter_config",
-        "loss_config",
         pre=True,
     )
     def load_cache_files(cls, config_kwargs, field):
@@ -211,7 +212,7 @@ class Trainer(BaseModel):
             **config_kwargs,
         )
 
-    @validator("data_aug_configs", pre=True)
+    @validator("data_aug_configs", "loss_configs", pre=True)
     def load_cache_files_lists(cls, kwargs_list, field):
         """
         This validator performs the same functionality as the above function, but for
@@ -614,7 +615,7 @@ class Trainer(BaseModel):
         self.data_augs = [aug.build() for aug in self.data_aug_configs]
 
         # Build loss function
-        self.loss_func = self.loss_config.build()
+        self.loss_funcs = [loss.build() for loss in self.loss_configs]
 
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
