@@ -25,7 +25,7 @@ from mtenn.config import (
     SchNetModelConfig,
     ViSNetModelConfig,
 )
-from pydantic import BaseModel, Extra, Field, ValidationError, validator
+from pydantic import BaseModel, conlist, Extra, Field, ValidationError, validator
 
 
 class Trainer(BaseModel):
@@ -53,7 +53,7 @@ class Trainer(BaseModel):
             "test splits."
         ),
     )
-    loss_configs: list[LossFunctionConfig] = Field(
+    loss_configs: conlist(item_type=LossFunctionConfig, min_items=1) = Field(
         ...,
         description="Config describing the loss function for training.",
     )
