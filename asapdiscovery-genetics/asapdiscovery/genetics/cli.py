@@ -178,7 +178,7 @@ def struct_alignment(
     output_dir: str = "output",
 ):
     """
-    Align PDB structures generated from ColabFold.
+    Align PDB structures generated from ColabFold with respect to a reference pdb_file, as listed in the csv seq_file used for the folding.
     """
 
     if not Path(seq_file).exists():
