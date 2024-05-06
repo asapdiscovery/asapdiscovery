@@ -10,16 +10,6 @@ def seq_file(func):
     )(func)
 
 
-def output_dir(func):
-    return click.option(
-        "--output-dir",
-        type=click.Path(
-            resolve_path=True, exists=False, file_okay=False, dir_okay=True
-        ),
-        help="The directory to output results to.",
-        default="output",
-    )(func)
-
 
 def seq_type(func):
     return click.option(
@@ -77,10 +67,3 @@ def n_chains(func):
         'Requires calling the "--multimer" option first.',
     )(func)
 
-
-def pdb_file(func):
-    return click.option(
-        "--pdb-file",
-        type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
-        help="Path to a pdb file containing a structure",
-    )(func)

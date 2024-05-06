@@ -8,13 +8,12 @@ from asapdiscovery.genetics.calculate_rmsd import (
     save_alignment_pymol,
     select_best_colabfold,
 )
+from asapdiscovery.cli.cli_args import output_dir, pdb_file
 from asapdiscovery.genetics.cli_args import (
     blast_json,
     email,
     multimer,
     n_chains,
-    output_dir,
-    pdb_file,
     seq_file,
     seq_type,
 )
