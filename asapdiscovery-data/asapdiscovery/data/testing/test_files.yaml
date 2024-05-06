@@ -313,3 +313,7 @@ files:
 
   - resource: ml_testing/docked/AAR-RCN-845f9611-1_Mpro-P2005_0A_0_bound_best.pdb
     sha256hash: 028cb829b537906edf57f3ddafb5a1daad8d4e969669801aa27e01dac520adae
+
+  - resource: mpro_fragalysis-04-01-24_zipped.zip
+    sha256hash: 82c47271ce2f1035b6c00d3421f43b7beeebcb27aedfea3dba9f2def8194421b
+     
