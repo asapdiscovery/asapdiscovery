@@ -820,6 +820,8 @@ class LossFunctionType(StringEnum):
     gaussian = "gaussian"
     # Gaussian NLL loss (including semiquant values)
     gaussian_sq = "gaussian_sq"
+    # Squared difference penalty for pred outside range
+    range_penalty = "range"
 
 
 class LossFunctionConfig(ConfigBase):
@@ -844,8 +846,33 @@ class LossFunctionConfig(ConfigBase):
         ),
     )
 
+    # Range values for RangeLoss
+    range_lower_lim: float = Field(
+        description="Lower range of acceptable prediction values."
+    )
+    range_upper_lim: float = Field(
+        description="Upper range of acceptable prediction values."
+    )
+
+    @root_validator(pre=False)
+    def check_range_lims(cls, values):
+        if values["loss_type"] != LossFunctionType.range_penalty:
+            return values
+
+        if (values["range_lower_lim"] is None) or (values["range_upper_lim"] is None):
+            raise ValueError(
+                "Values must be passed for range_lower_lim and range_upper_lim."
+            )
+
+        if values["range_lower_lim"] >= values["range_upper_lim"]:
+            raise ValueError(
+                "Value given for range_lower_lim >= value given for range_upper_lim."
+            )
+
+        return values
+
     def build(self):
-        from asapdiscovery.ml.loss import GaussianNLLLoss, MSELoss
+        from asapdiscovery.ml.loss import GaussianNLLLoss, MSELoss, RangeLoss
 
         match self.loss_type:
             case LossFunctionType.mse:
@@ -856,6 +883,10 @@ class LossFunctionConfig(ConfigBase):
                 return GaussianNLLLoss(keep_sq=False)
             case LossFunctionType.gaussian_sq:
                 return GaussianNLLLoss(keep_sq=True, semiquant_fill=self.semiquant_fill)
+            case LossFunctionType.range_penalty:
+                return RangeLoss(
+                    lower_lim=self.range_lower_lim, upper_lim=self.range_upper_lim
+                )
             case other:
                 raise ValueError(f"Unknown LossFunctionType {other}.")
 
