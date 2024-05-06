@@ -16,6 +16,7 @@ from asapdiscovery.genetics.cli_args import (
     n_chains,
     seq_file,
     seq_type,
+    gen_ref_pdb,
 )
 from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
 
@@ -64,6 +65,7 @@ def genetics():
 @email
 @multimer
 @n_chains
+@gen_ref_pdb
 def seq_alignment(
     seq_file: str,
     seq_type: Optional[str] = None,

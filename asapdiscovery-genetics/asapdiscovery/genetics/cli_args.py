@@ -53,7 +53,7 @@ def multimer(func):
         is_flag=True,
         default=False,
         help="Store the output sequences for a multimer ColabFold run (from identical chains)."
-        'If not set, "--n-chains" will not be used. ',
+        ' If not set, "--n-chains" will not be used. ',
     )(func)
 
 
@@ -63,5 +63,5 @@ def n_chains(func):
         type=int,
         default=None,
         help="Number of repeated chains that will be saved in csv file."
-        'Requires calling the "--multimer" option first.',
+        ' Requires calling the "--multimer" flag',
     )(func)
