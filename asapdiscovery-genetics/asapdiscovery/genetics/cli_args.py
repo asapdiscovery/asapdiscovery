@@ -10,7 +10,6 @@ def seq_file(func):
     )(func)
 
 
-
 def seq_type(func):
     return click.option(
         "-t",
@@ -66,4 +65,3 @@ def n_chains(func):
         help="Number of repeated chains that will be saved in csv file."
         'Requires calling the "--multimer" option first.',
     )(func)
-
