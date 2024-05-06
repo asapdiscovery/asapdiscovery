@@ -724,7 +724,16 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
-                loss = self.loss_func(pred, target, in_range, uncertainty)
+                losses = torch.cat(
+                    [
+                        loss_func(pred, target, in_range, uncertainty)
+                        for loss_func in self.loss_funcs
+                    ]
+                )
+                if len(self.loss_weights) > 0:
+                    loss = losses.dot(torch.tensor(self.loss_weights))
+                else:
+                    loss = losses.mean(axis=0)
 
                 # Can just call loss.backward, grads will accumulate additively
                 loss.backward()
@@ -816,7 +825,16 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
-                loss = self.loss_func(pred, target, in_range, uncertainty)
+                losses = torch.cat(
+                    [
+                        loss_func(pred, target, in_range, uncertainty)
+                        for loss_func in self.loss_funcs
+                    ]
+                )
+                if len(self.loss_weights) > 0:
+                    loss = losses.dot(torch.tensor(self.loss_weights))
+                else:
+                    loss = losses.mean(axis=0)
 
                 # Update loss_dict
                 self._update_loss_dict(
@@ -862,7 +880,16 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
                 pose_preds = [p.item() for p in pose_preds]
-                loss = self.loss_func(pred, target, in_range, uncertainty)
+                losses = torch.cat(
+                    [
+                        loss_func(pred, target, in_range, uncertainty)
+                        for loss_func in self.loss_funcs
+                    ]
+                )
+                if len(self.loss_weights) > 0:
+                    loss = losses.dot(torch.tensor(self.loss_weights))
+                else:
+                    loss = losses.mean(axis=0)
 
                 # Update loss_dict
                 self._update_loss_dict(
