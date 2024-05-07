@@ -16,7 +16,7 @@ Thanks also to the whole FOSS community and the tireless work done to make all o
 
 ASAP maintains several satellite packages that depend on the functionality in the `asapdiscovery` repo.
 
-Each of these help us fufil our purpose as an open-science drug discovery enterpries.
+Each of these help us fulfil our purpose as an open-science drug discovery enterprises.
 
 ### Argos
 
