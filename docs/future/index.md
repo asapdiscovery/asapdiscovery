@@ -8,5 +8,5 @@ We are actively looking for collaborations in these spaces. If you are intereste
 Our current aims are:
 
 * Spin out ASAP-Alchemy into a standalone product
-* Generalise `asapdiscovery` such that it works with arbitrary targets.
+* Generalize `asapdiscovery` such that it works with arbitrary targets.
 * Spin out our fitness viewer and HTML interactive visualizer into their own product (work ongoing in [choppa](https://github.com/asapdiscovery/choppa))
