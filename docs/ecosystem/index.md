@@ -33,7 +33,7 @@ Each of these help us fulfil our purpose as an open-science drug discovery enter
 
 ## Spinouts
 
-We are aiming to productise some aspects of the `asapdiscovery` stack into their own standalone products. See `future` for more information.
+We are aiming to productize some aspects of the `asapdiscovery` stack into their own standalone products. See `future` for more information.
 
 ### Choppa
 
