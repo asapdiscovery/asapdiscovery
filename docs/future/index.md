@@ -3,7 +3,7 @@ Future
 
 The comp-chem team at ASAP is seeking to productise our workflows into individual pieces that are of use to the community on their own.
 
-We are actively looking for collaborations in these spaces. If you are interested please raise an issue on the repo, or contact hugo.macdermott@choderlab.org or jenke.scheen@choderalab.org.
+We are actively looking for collaborations in these spaces. If you are interested please raise an issue on the repo, or contact hugo.macdermott@choderalab.org or jenke.scheen@choderalab.org.
 
 Our current aims are:
 
