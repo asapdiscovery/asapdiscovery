@@ -13,6 +13,7 @@ from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.dask_utils import dask_vmap
 from asapdiscovery.docking.docking import (
     DockingBase,
+    DockingInputBase,
     DockingInputMultiStructure,
     DockingInputPair,
     DockingResult,
@@ -192,12 +193,7 @@ class POSITDocker(DockingBase):
     @dask_vmap(["inputs"], has_failure_mode=True)
     def _dock(
         self,
-        inputs: list[
-            Union[
-                DockingInputPair,
-                DockingInputMultiStructure,
-            ]
-        ],
+        inputs: list[DockingInputBase],
         output_dir: Optional[Union[str, Path]] = None,
         failure_mode="skip",
         return_for_disk_backend=False,
