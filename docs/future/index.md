@@ -1,5 +1,5 @@
 Future
-========
+=======
 
 The comp-chem team at ASAP is seeking to productise our workflows into individual pieces that are of use to the community on their own.
 
@@ -7,7 +7,7 @@ We are actively looking for collaborations in these spaces. If you are intereste
 
 Our current aims are:
 
-* Spin out ASAP-
-* Generalise ASAPDiscovery such that it works with arbitrary targets.
-* Spin out our fitness viewer and HTML interactive visualizer into their own product
+* Spin out ASAP-Alchemy into a standalone product
+* Generalise `asapdiscovery` such that it works with arbitrary targets.
+* Spin out our fitness viewer and HTML interactive visualizer into their own product (work ongoing in [choppa](https://github.com/asapdiscovery/choppa))
 
