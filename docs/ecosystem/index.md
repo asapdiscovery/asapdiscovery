@@ -24,7 +24,7 @@ Each of these help us fulfil our purpose as an open-science drug discovery enter
 
 ### Hindsight-public
 
-[Hindsight-public](https://github.com/asapdiscovery/hindsight-public) is an automatically updated repository that tracks the predictions made for ASAP that have experimental equivalents and tracks their accuracy. This is automatically updated from our systems of record and allows us to
+[Hindsight-public](https://github.com/asapdiscovery/hindsight-public) is an automatically updated repository that tracks the computational predictions made by ASAP that have experimental equivalents and tracks their accuracy versus those experimental outcomes. This is automatically updated from our systems of record and allows us to keep track of our performance in real time.
 
 ### FALCBot
 
