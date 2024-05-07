@@ -142,3 +142,8 @@ wandb/*
 *.inchikey
 *.gz
 *.json
+
+
+# tutorial files
+examples/html/*
+examples/md/*

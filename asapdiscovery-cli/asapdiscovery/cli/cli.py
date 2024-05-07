@@ -25,3 +25,7 @@ cli.add_command(alchemy)
 from asapdiscovery.ml.cli import ml  # noqa: F401, E402, F811
 
 cli.add_command(ml)
+
+from asapdiscovery.genetics.cli import genetics  # noqa: F401, E402, F811
+
+cli.add_command(genetics)
