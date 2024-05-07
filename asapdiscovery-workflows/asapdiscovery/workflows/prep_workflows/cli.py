@@ -83,6 +83,7 @@ def protein_prep(
     save_to_cache: bool = True,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
+    dask_n_workers: Optional[int] = None,
     failure_mode: FailureMode = FailureMode.SKIP,
     output_dir: str = "output",
     input_json: Optional[str] = None,
@@ -115,6 +116,7 @@ def protein_prep(
             save_to_cache=save_to_cache,
             use_dask=use_dask,
             dask_type=dask_type,
+            dask_n_workers=dask_n_workers,
             failure_mode=failure_mode,
             output_dir=output_dir,
         )

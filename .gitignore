@@ -142,4 +142,7 @@ wandb/*
 *.inchikey
 *.gz
 
-examples/html
+
+# tutorial files
+examples/html/*
+examples/md/*

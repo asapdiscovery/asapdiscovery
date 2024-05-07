@@ -54,17 +54,10 @@ class DockingWorkflowInputsBase(BaseModel):
         DaskType.LOCAL, description="Dask client to use for parallelism."
     )
 
+    dask_n_workers: Optional[PositiveInt] = Field(None, description="Number of workers")
+
     failure_mode: FailureMode = Field(
         FailureMode.SKIP, description="Dask failure mode."
-    )
-
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        200, description="Maximum number of workers to use for Lilac dask cluster"
     )
 
     n_select: PositiveInt = Field(
@@ -80,9 +73,6 @@ class DockingWorkflowInputsBase(BaseModel):
 
     overwrite: bool = Field(
         False, description="Whether to overwrite existing output directory."
-    )
-    walltime: str = Field(
-        "72h", description="Walltime for the workflow, used for dask-jobqueue"
     )
 
     class Config:
