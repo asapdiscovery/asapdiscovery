@@ -37,7 +37,7 @@ We are aiming to productise some aspects of the `asapdiscovery` stack into their
 
 ### Choppa
 
-[Choppa](https://github.com/asapdiscovery/choppa) is a spinout of our fitness pymol and HTML viewer for arbitrary fitness data.
+[Choppa](https://github.com/asapdiscovery/choppa) is a spinout of our fitness PyMOL and HTML viewer for arbitrary fitness data in the form of for example DMS or phylogenetics experiments.
 
 ### ASAP-Alchemy
 
