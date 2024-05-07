@@ -58,15 +58,15 @@
         display: block;
         cursor: default;
       }
-                                                              
+
       /* Show the dropdown menu on hover */
       .dropdown:hover .dropdown-content {display: block;}
       .dropdown_ctcs:hover .dropdown-content {display: block;}
    .dropdown_lgplts:hover .dropdown-content {display: block;}
-   
+
       /* Change the background color of the dropdown button when the dropdown content is shown */
       .dropdown:hover .dropbtn {background-color: #3e8e41;}
-    
+
 
       .viewerbox {
         position: absolute;
@@ -5200,11 +5200,11 @@ ATOM   5060 HD13 LEU B 169      47.522  23.185  19.515  1.00 20.00           H
 ATOM   5061 HD21 LEU B 169      45.671  24.362  17.261  1.00 20.00           H
 ATOM   5062 HD22 LEU B 169      47.313  25.021  17.568  1.00 20.00           H
 ATOM   5063 HD23 LEU B 169      46.883  24.406  15.936  1.00 20.00           H
-TER    5064      LEU B 169 
+TER    5064      LEU B 169
 MASTER        0    0    0    0    0    0    0    0 5063    1    0    0
 END
 
-                     
+
                      `;
                      var lig_sdf =`  LIG
   -OEChem-05072413523D
@@ -5226,30 +5226,30 @@ END
 M  END
 $$$$
 
-                     `;       
+                     `;
                          //////////////// set up system
-                         viewer.addModel(prot_pdb, "pdb") 
+                         viewer.addModel(prot_pdb, "pdb")
                          // set protein sticks and surface
                          viewer.setStyle({model: 0}, {stick: {colorscheme: "whiteCarbon", radius:0.15}});
-                         // define a coloring function based on our residue ranges. We can't call .addSurface separate times because the surfaces won't be merged nicely. 
-                         var colorAsSnake = function(atom) {                         if (['154_A','156_A','22_A','23_A','24_A','52_A','49_A','125_A'].includes(atom.resi+'_'+atom.chain)){ 
- return 'yellow' 
- } else if (['126_A','155_A'].includes(atom.resi+'_'+atom.chain)){ 
- return 'pink' 
- } else if (['46_A','47_A','48_A','38_A','39_A','40_A','130_A','131_A','132_A','127_A','128_A','97_A'].includes(atom.resi+'_'+atom.chain)){ 
- return 'orange' 
- } else if (['129_A','157_A','160_A','136_A','164_A'].includes(atom.resi+'_'+atom.chain)){ 
- return 'blue' 
- } else if (['1_A','2_A','3_A','4_A','5_A','6_A','7_A','8_A','9_A','10_A','11_A','12_A','13_A','14_A','15_A','16_A','17_A','18_A','19_A','20_A','21_A','22_A','23_A','24_A','25_A','26_A','27_A','28_A','29_A','30_A','31_A','32_A','33_A','34_A','35_A','36_A','37_A','38_A','39_A','40_A','41_A','42_A','43_A','44_A','45_A','46_A','47_A','48_A','49_A','50_A','51_A','52_A','53_A','54_A','55_A','56_A','57_A','58_A','59_A','60_A','61_A','62_A','63_A','64_A','65_A','66_A','67_A','68_A','69_A','70_A','71_A','72_A','73_A','74_A','75_A','76_A','77_A','78_A','79_A','80_A','81_A','82_A','83_A','84_A','85_A','86_A','87_A','88_A','89_A','90_A','91_A','92_A','93_A','94_A','95_A','96_A','97_A','98_A','99_A','100_A','101_A','102_A','103_A','104_A','105_A','106_A','107_A','108_A','109_A','110_A','111_A','112_A','113_A','114_A','115_A','116_A','117_A','118_A','119_A','120_A','121_A','122_A','123_A','124_A','125_A','126_A','127_A','128_A','129_A','130_A','131_A','132_A','133_A','134_A','135_A','136_A','137_A','138_A','139_A','140_A','141_A','142_A','143_A','144_A','145_A','146_A','147_A','148_A','149_A','150_A','151_A','152_A','153_A','154_A','155_A','156_A','157_A','158_A','159_A','160_A','161_A','162_A','163_A','164_A','165_A','166_A','167_A','168_A','169_A'].includes(atom.resi+'_'+atom.chain)){ 
- return 'white' 
-                                          }};                         viewer.addSurface("MS", {colorfunc: colorAsSnake, opacity: 0.9}) 
-                     
+                         // define a coloring function based on our residue ranges. We can't call .addSurface separate times because the surfaces won't be merged nicely.
+                         var colorAsSnake = function(atom) {                         if (['154_A','156_A','22_A','23_A','24_A','52_A','49_A','125_A'].includes(atom.resi+'_'+atom.chain)){
+ return 'yellow'
+ } else if (['126_A','155_A'].includes(atom.resi+'_'+atom.chain)){
+ return 'pink'
+ } else if (['46_A','47_A','48_A','38_A','39_A','40_A','130_A','131_A','132_A','127_A','128_A','97_A'].includes(atom.resi+'_'+atom.chain)){
+ return 'orange'
+ } else if (['129_A','157_A','160_A','136_A','164_A'].includes(atom.resi+'_'+atom.chain)){
+ return 'blue'
+ } else if (['1_A','2_A','3_A','4_A','5_A','6_A','7_A','8_A','9_A','10_A','11_A','12_A','13_A','14_A','15_A','16_A','17_A','18_A','19_A','20_A','21_A','22_A','23_A','24_A','25_A','26_A','27_A','28_A','29_A','30_A','31_A','32_A','33_A','34_A','35_A','36_A','37_A','38_A','39_A','40_A','41_A','42_A','43_A','44_A','45_A','46_A','47_A','48_A','49_A','50_A','51_A','52_A','53_A','54_A','55_A','56_A','57_A','58_A','59_A','60_A','61_A','62_A','63_A','64_A','65_A','66_A','67_A','68_A','69_A','70_A','71_A','72_A','73_A','74_A','75_A','76_A','77_A','78_A','79_A','80_A','81_A','82_A','83_A','84_A','85_A','86_A','87_A','88_A','89_A','90_A','91_A','92_A','93_A','94_A','95_A','96_A','97_A','98_A','99_A','100_A','101_A','102_A','103_A','104_A','105_A','106_A','107_A','108_A','109_A','110_A','111_A','112_A','113_A','114_A','115_A','116_A','117_A','118_A','119_A','120_A','121_A','122_A','123_A','124_A','125_A','126_A','127_A','128_A','129_A','130_A','131_A','132_A','133_A','134_A','135_A','136_A','137_A','138_A','139_A','140_A','141_A','142_A','143_A','144_A','145_A','146_A','147_A','148_A','149_A','150_A','151_A','152_A','153_A','154_A','155_A','156_A','157_A','158_A','159_A','160_A','161_A','162_A','163_A','164_A','165_A','166_A','167_A','168_A','169_A'].includes(atom.resi+'_'+atom.chain)){
+ return 'white'
+                                          }};                         viewer.addSurface("MS", {colorfunc: colorAsSnake, opacity: 0.9})
+
                          viewer.setStyle({bonds: 0}, {sphere:{radius:0.5}}); //water molecules
-                     
-                         viewer.addModel(lig_sdf, "sdf")   
+
+                         viewer.addModel(lig_sdf, "sdf")
                          // set ligand sticks
                          viewer.setStyle({model: -1}, {stick: {colorscheme: "pinkCarbon"}});
-                     
+
                          ////////////////// enable show residue number on hover
                          viewer.setHoverable({}, true,
                          function (atom, viewer, event, container) {
@@ -5264,7 +5264,7 @@ $$$$
                          }
                          );
                          viewer.setHoverDuration(100); // makes resn popup instant on hover
-                     
+
                          //////////////// add protein-ligand interactions
                          var intn_dict = {'0_VAL49.A': {'lig_at_x': '9.915', 'lig_at_y': '2.050', 'lig_at_z': '21.642', 'prot_at_x': '11.954', 'prot_at_y': '-0.935', 'prot_at_z': '21.622', 'type': 'hydrophobic_interaction', 'color': '#808080'}, '1_ALA129.A': {'lig_at_x': '11.361', 'lig_at_y': '3.863', 'lig_at_z': '22.720', 'prot_at_x': '13.817', 'prot_at_y': '6.947', 'prot_at_z': '22.923', 'type': 'hydrophobic_interaction', 'color': '#808080'}, '2_PHE156.A': {'lig_at_x': '8.657', 'lig_at_y': '1.196', 'lig_at_z': '21.811', 'prot_at_x': '6.376', 'prot_at_y': '1.973', 'prot_at_z': '18.975', 'type': 'hydrophobic_interaction', 'color': '#808080'}}
                          for (const [_, intn] of Object.entries(intn_dict)) {
@@ -5277,7 +5277,7 @@ $$$$
                                                      color:intn["color"]},
                                                      );
                          }
-                     
+
                          ////////////////// set the view correctly
                          viewer.setBackgroundColor(0xffffffff);
                          viewer.setView(
