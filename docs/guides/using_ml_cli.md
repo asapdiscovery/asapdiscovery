@@ -3,7 +3,7 @@ Using the ML CLI
 
 This guide will roughly follow the same flow as the corresponding [tutorial notebook](examples/training_ml_models_on_asap_data.ipynb).
 
-% TODO: Switch these scripts to click instead of argparse and hook into main CLI
+<!--- TODO: Switch these scripts to click instead of argparse and hook into main CLI --->
 
 ## Preparing the experimental data
 
@@ -83,8 +83,16 @@ There are many CLI args that can be passed for this, defining every different pa
 We'll leave most of them as the default here, but you can explore the different options by running `asap-ml build-and-train --help`.
 
 We will be using the default Adam optimizer, default model hyperparameters with a pIC50 readout for the structure-basd models, no early stopping, temporal data splitting with an 80:10:10 split, and a semi-quantitative MSE loss function.
-We will train for 500 epochs, with a mini-batch size of 25, on the GPU, and will save the model outputs to `<model>_training/.
+We will train for 500 epochs, with a mini-batch size of 25, on the GPU, and will save the model outputs to `<model>_training/`.
 We will log each training run to W&B, in a project named tutorial as a run named after the model, although this is optional`
+
+Here we show training for 3 different models that we have currently implemented.
+They are:
+
+* Graph attention ([GAT](https://arxiv.org/abs/1710.10903)): a topology-only, ligand-only GNN
+* [SchNet](https://arxiv.org/abs/1706.08566): an E(3)-invariant, structure-based model
+* [e3nn](https://arxiv.org/abs/2207.09453): an E(3)-equivariant, structure-based model
+
 
 ```
 # Train GAT model
