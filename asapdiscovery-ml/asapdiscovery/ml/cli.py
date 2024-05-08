@@ -2126,6 +2126,11 @@ def _build_trainer(
                         if v is not None
                     }
                 )
+            elif isinstance(config_val, list) and (
+                len(trainer_kwargs[config_name]) == 0
+            ):
+                # If no values are passed to CLI keep config values
+                pass
             else:
                 config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 
