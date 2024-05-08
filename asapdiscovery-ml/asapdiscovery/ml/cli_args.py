@@ -1173,7 +1173,7 @@ def loss(func):
             "<key>:<value> pairs, which will be passed directly to the "
             "LossFunctionConfig class. For example, to add a loss term that penalizes "
             "predictions for being outside a normal pIC50 range, you could pass "
-            "--loss loss_type:range_penalty,range_lower_lim:0,range_upper_lim:10."
+            "--loss loss_type:range,range_lower_lim:0,range_upper_lim:10."
         ),
     )(func)
 
