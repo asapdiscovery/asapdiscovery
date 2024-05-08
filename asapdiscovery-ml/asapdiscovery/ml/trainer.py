@@ -731,7 +731,9 @@ class Trainer(BaseModel):
                     ]
                 )
                 if len(self.loss_weights) > 0:
-                    loss = losses.dot(torch.tensor(self.loss_weights))
+                    loss = losses.flatten().dot(
+                        torch.tensor(self.loss_weights, device=losses.device)
+                    )
                 else:
                     loss = losses.mean(axis=0)
 
@@ -832,7 +834,9 @@ class Trainer(BaseModel):
                     ]
                 )
                 if len(self.loss_weights) > 0:
-                    loss = losses.dot(torch.tensor(self.loss_weights))
+                    loss = losses.flatten().dot(
+                        torch.tensor(self.loss_weights, device=losses.device)
+                    )
                 else:
                     loss = losses.mean(axis=0)
 
@@ -887,7 +891,9 @@ class Trainer(BaseModel):
                     ]
                 )
                 if len(self.loss_weights) > 0:
-                    loss = losses.dot(torch.tensor(self.loss_weights))
+                    loss = losses.flatten().dot(
+                        torch.tensor(self.loss_weights, device=losses.device)
+                    )
                 else:
                     loss = losses.mean(axis=0)
 
