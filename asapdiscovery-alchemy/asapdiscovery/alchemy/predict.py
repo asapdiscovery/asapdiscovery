@@ -470,7 +470,7 @@ def get_data_from_femap(
 
     # add experimental data if available
     experimental_data = None
-    if reference_dataset:
+    if reference_dataset is not None:
         experimental_data = extract_experimental_data(
             reference_csv=reference_dataset, assay_units=assay_units
         )
