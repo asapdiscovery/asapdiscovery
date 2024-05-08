@@ -1182,6 +1182,7 @@ def loss_weights(func):
     return click.option(
         "--loss-weights",
         type=float,
+        multiple=True,
         help="Weights for each loss function. If no weights values are passed, each "
         "loss term will be weighted equally. These args are assumed to be in the same "
         "order as the --loss args that they correspond to.",
