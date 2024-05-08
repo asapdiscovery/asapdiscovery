@@ -856,7 +856,7 @@ class LossFunctionConfig(ConfigBase):
 
     @root_validator(pre=False)
     def check_range_lims(cls, values):
-        if values["loss_type"] != LossFunctionType.range_penalty:
+        if values["loss_type"] is not LossFunctionType.range_penalty:
             return values
 
         if (values["range_lower_lim"] is None) or (values["range_upper_lim"] is None):
