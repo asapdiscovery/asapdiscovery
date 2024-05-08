@@ -848,10 +848,10 @@ class LossFunctionConfig(ConfigBase):
 
     # Range values for RangeLoss
     range_lower_lim: float = Field(
-        description="Lower range of acceptable prediction values."
+        None, description="Lower range of acceptable prediction values."
     )
     range_upper_lim: float = Field(
-        description="Upper range of acceptable prediction values."
+        None, description="Upper range of acceptable prediction values."
     )
 
     @root_validator(pre=False)
