@@ -64,7 +64,6 @@ def overwrite_args(func):
         ds_config_cache_overwrite,
         ds_cache_overwrite,
         ds_split_config_cache_overwrite,
-        loss_config_cache_overwrite,
     ]:
         func = fn(func)
 
@@ -132,14 +131,6 @@ def ds_split_config_cache_overwrite(func):
         "--overwrite-ds-split-config-cache",
         is_flag=True,
         help="Overwrite any existing DatasetSplitterConfig JSON cache file.",
-    )(func)
-
-
-def loss_config_cache_overwrite(func):
-    return click.option(
-        "--overwrite-loss-config-cache",
-        is_flag=True,
-        help="Overwrite any existing LossFunctionConfig JSON cache file.",
     )(func)
 
 
@@ -1164,39 +1155,36 @@ def ds_split_config_cache(func):
 ################################################################################
 # Loss function args
 def loss_args(func):
-    for fn in [loss_type, semiquant_fill, loss_config_cache]:
+    for fn in [loss, loss_weights]:
         func = fn(func)
 
     return func
 
 
-def loss_type(func):
+def loss(func):
     return click.option(
-        "--loss-type",
-        type=LossFunctionType,
+        "--loss",
+        type=str,
+        multiple=True,
         help=(
-            "Loss function to use. "
-            f"Options are [{', '.join(LossFunctionType.get_values())}]."
+            "Specifications for loss function(s) to use. Multiple can be passed, and "
+            "they will be weighted as specified with --loss-weights. Each individual "
+            "loss function should be specified as a comma separated list of "
+            "<key>:<value> pairs, which will be passed directly to the "
+            "LossFunctionConfig class. For example, to add a loss term that penalizes "
+            "predictions for being outside a normal pIC50 range, you could pass "
+            "--loss loss_type:range_penalty,range_lower_lim:0,range_upper_lim:10."
         ),
     )(func)
 
 
-def semiquant_fill(func):
+def loss_weights(func):
     return click.option(
-        "--semiquant-fill",
+        "--loss-weights",
         type=float,
-        help="Value to fill in for semiquant uncertainty values in gaussian_sq loss.",
-    )(func)
-
-
-def loss_config_cache(func):
-    return click.option(
-        "--loss-config-cache",
-        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
-        help=(
-            "LossFunctionConfig JSON cache file. Other loss function-related "
-            "args that are passed will supersede anything stored in this file."
-        ),
+        help="Weights for each loss function. If no weights values are passed, each "
+        "loss term will be weighted equally. These args are assumed to be in the same "
+        "order as the --loss args that they correspond to.",
     )(func)
 
 
