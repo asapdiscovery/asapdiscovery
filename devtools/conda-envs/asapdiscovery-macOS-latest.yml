@@ -24,6 +24,7 @@ dependencies:
   - appdirs
   - mdanalysis
   - openff-toolkit
+  - openff-forcefields >=2024.04.0
   - openeye-toolkits <2023.2.3
   - pandas
   - pebble
