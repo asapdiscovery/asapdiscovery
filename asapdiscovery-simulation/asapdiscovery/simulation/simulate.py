@@ -166,7 +166,7 @@ class VanillaMDSimulator(SimulatorBase):
 
     small_molecule_force_field: str = Field(
         "openff-2.2.0.offxml",
-        description="The name off the OpenFF small molecule force field which should be used for the ligand.",
+        description="The OpenFF small molecule force field which should be used for the ligand.",
     )
 
     @validator("rmsd_restraint_type")
