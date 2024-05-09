@@ -270,6 +270,9 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             An OEGraphMol of the MCS matched core fragment.
         """
 
+        # work with a copy and remove the hydrogens from the reference as we dont want to constrain to them
+        input_mol = oechem.OEMol(reference_ligand)
+        oechem.OESuppressHydrogens(input_mol)
         # build a query mol which allows for wild card matches
         # <https://github.com/choderalab/asapdiscovery/pull/430#issuecomment-1702360130>
         smarts_mol = oechem.OEGraphMol()
@@ -279,10 +282,10 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         bondexpr = oechem.OEExprOpts_DefaultBonds
         pattern_query.BuildExpressions(atomexpr, bondexpr)
         ss = oechem.OESubSearch(pattern_query)
-        oechem.OEPrepareSearch(reference_ligand, ss)
+        oechem.OEPrepareSearch(input_mol, ss)
         core_fragment = None
 
-        for match in ss.Match(reference_ligand):
+        for match in ss.Match(input_mol):
             core_fragment = oechem.OEGraphMol()
             oechem.OESubsetMol(core_fragment, match)
             break
