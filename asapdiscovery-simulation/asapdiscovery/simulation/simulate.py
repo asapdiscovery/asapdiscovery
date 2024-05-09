@@ -164,6 +164,11 @@ class VanillaMDSimulator(SimulatorBase):
         description="Whether to truncate num_steps to multiple of reporting interval, used mostly for testing",
     )
 
+    small_molecule_force_field: str = Field(
+        "openff-2.2.0.offxml",
+        description="The name off the OpenFF small molecule force field which should be used for the ligand."
+    )
+
     @validator("rmsd_restraint_type")
     @classmethod
     def check_restraint_type(cls, v):
@@ -324,8 +329,7 @@ class VanillaMDSimulator(SimulatorBase):
         ligand_mol = Molecule(rdkitmolh)
         return ligand_mol
 
-    @staticmethod
-    def create_system_generator(ligand_mol):
+    def create_system_generator(self, ligand_mol):
         forcefield_kwargs = {
             "constraints": app.HBonds,
             "rigidWater": True,
@@ -335,7 +339,7 @@ class VanillaMDSimulator(SimulatorBase):
         periodic_forcefield_kwargs = {"nonbondedMethod": app.PME}
         system_generator = SystemGenerator(
             forcefields=["amber/ff14SB.xml", "amber/tip3p_standard.xml"],
-            small_molecule_forcefield="openff-1.3.1",
+            small_molecule_forcefield=self.small_molecule_force_field,
             molecules=[ligand_mol],
             cache=None,
             forcefield_kwargs=forcefield_kwargs,
