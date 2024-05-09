@@ -720,7 +720,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     pool.submit(
                         self._generate_pose,
                         **{
-                            "target_ligand": Chem.AddHs(mol.to_rdkit()),
+                            "target_ligand": mol.to_rdkit(),
                             "core_ligand": core_ligand,
                             "core_smarts": core_smarts,
                         },

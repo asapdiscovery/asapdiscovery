@@ -135,10 +135,10 @@ def run(
     dataset_name: The name which should be given to the AlchemyDataset all results will be saved in a folder with the same name.
     ligands: The name of the local file which contains the input ligands to be prepared in the workflow.
     receptor_complex: The name of the local file which contains the prepared complex including the crystal ligand.
-    structure_dir: The name of the folder which contains the prepared complexs that we should select the best reference from
+    structure_dir: The name of the folder which contains the prepared complexs that we should select the best reference from.
     factory_file: The name of the JSON file with the configured AlchemyPrepWorkflow, if not supplied the default will be
-        used but a core smarts must be provided.
-    core_smarts: The SMARTS string used to identify the atoms in each ligand to be constrained. Required if the factory file is not supplied.
+        used.
+    core_smarts: The SMARTS string used to identify the atoms in each ligand to be constrained.
     processors: The number of processors which can be used to run the workflow in parallel. `auto` will use all
         cpus -1, `all` will use all or the exact number of cpus to use can be provided.
     postera_molset_name: The name of the postera molecule set we should pull the data from instead of a local file.
