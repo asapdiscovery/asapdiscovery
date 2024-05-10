@@ -65,6 +65,15 @@ class Trainer(BaseModel):
             "any values are passed, there must be one for each loss function."
         ),
     )
+    eval_loss_weights: torch.Tensor = Field(
+        [],
+        description=(
+            "Weight for each loss function when calculating val and test losses. "
+            "Values will be normalized to add up to 1. If no values are passed, the "
+            "weights from loss_weights will be used. If any values are passed, there "
+            "must be one for each loss function."
+        ),
+    )
     data_aug_configs: list[DataAugConfig] = Field(
         [],
         description="List of data augmentations to be applied in order to each pose.",
@@ -469,6 +478,35 @@ class Trainer(BaseModel):
 
         return v
 
+    @validator("eval_loss_weights", pre=True)
+    def check_eval_loss_weights(cls, v, values):
+        """
+        Make sure that we have the right number of loss function weights, and cast to
+        normalized tensor.
+        """
+        if (len(v) > 0) and (len(v) != len(values["loss_configs"])):
+            raise ValueError(
+                f"Mismatch between number of loss function weights ({len(v)}) and "
+                f"number of loss functions ({len(values['loss_configs'])})."
+            )
+
+        # Fill with 1s if no values passed
+        if len(v) == 0:
+            return values["loss_weights"]
+
+        # Cast to tensor (don't send to device in case we're building the Trainer on a
+        #  CPU-only node)
+        v = torch.tensor(v, dtype=torch.float32)
+
+        # Check for negative numbers
+        if (v < 0).any():
+            raise ValueError("Values for loss_weights can't be negative.")
+
+        # Normalize to 1
+        v /= v.sum()
+
+        return v
+
     def wandb_init(self):
         """
         Initialize WandB, handling saving the run ID (for continuing the run later).
@@ -659,6 +697,7 @@ class Trainer(BaseModel):
 
         # Send loss_weights to appropriate device
         self.loss_weights = self.loss_weights.to(self.device)
+        self.eval_loss_weights = self.eval_loss_weights.to(self.device)
 
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
@@ -850,7 +889,7 @@ class Trainer(BaseModel):
                         for loss_func in self.loss_funcs
                     ]
                 )
-                loss = losses.flatten().dot(self.loss_weights)
+                loss = losses.flatten().dot(self.eval_loss_weights)
 
                 # Update loss_dict
                 self._update_loss_dict(
@@ -902,7 +941,7 @@ class Trainer(BaseModel):
                         for loss_func in self.loss_funcs
                     ]
                 )
-                loss = losses.flatten().dot(self.loss_weights)
+                loss = losses.flatten().dot(self.eval_loss_weights)
 
                 # Update loss_dict
                 self._update_loss_dict(
