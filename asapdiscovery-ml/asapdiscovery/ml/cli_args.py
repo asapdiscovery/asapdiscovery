@@ -1154,7 +1154,7 @@ def ds_split_config_cache(func):
 ################################################################################
 # Loss function args
 def loss_args(func):
-    for fn in [loss, loss_weights]:
+    for fn in [loss, loss_weights, eval_loss_weights]:
         func = fn(func)
 
     return func
@@ -1182,9 +1182,24 @@ def loss_weights(func):
         "--loss-weights",
         type=float,
         multiple=True,
-        help="Weights for each loss function. If no weights values are passed, each "
-        "loss term will be weighted equally. These args are assumed to be in the same "
-        "order as the --loss args that they correspond to.",
+        help=(
+            "Weights for each loss function. If no weights values are passed, each "
+            "loss term will be weighted equally. These args are assumed to be in the "
+            "same order as the --loss args that they correspond to."
+        ),
+    )(func)
+
+
+def eval_loss_weights(func):
+    return click.option(
+        "--eval-loss-weights",
+        type=float,
+        multiple=True,
+        help=(
+            "Weights for each loss function for val and test sets. If no values are "
+            "passed, will reuse the values from --loss-weights. These args are assumed "
+            "to be in the same order as the --loss args that they correspond to."
+        ),
     )(func)
 
 
