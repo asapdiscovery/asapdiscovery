@@ -11,63 +11,81 @@ from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to data
 
 
-def test_pairwise_selector(ligands, complexes):
+def test_pairwise_selector(ligands_from_complexes, complexes):
     selector = PairwiseSelector()
-    pairs = selector.select(ligands, complexes)
+    pairs = selector.select(ligands_from_complexes, complexes)
     assert len(pairs) == 40
 
 
-def test_leave_one_out_selector(ligands, complexes):
+def test_leave_one_out_selector(ligands_from_complexes, complexes):
     selector = LeaveOneOutSelector()
-    pairs = selector.select(ligands, complexes)
+    pairs = selector.select(ligands_from_complexes, complexes)
     assert len(pairs) == 36
 
 
-def test_leave_similar_out_selector(ligands, complexes):
+def test_leave_similar_out_selector(ligands_from_complexes, complexes):
     selector = LeaveSimilarOutSelector()
-    pairs = selector.select(ligands, complexes)
+    pairs = selector.select(ligands_from_complexes, complexes)
     assert len(pairs) == 36
 
 
-def test_self_docking_selector(ligands, complexes):
+def test_self_docking_selector(ligands_from_complexes, complexes):
     selector = SelfDockingSelector()
-    pairs = selector.select(ligands, complexes)
+    pairs = selector.select(ligands_from_complexes, complexes)
     assert len(pairs) == 4
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
-def test_pairwise_selector_prepped(ligands, prepped_complexes, use_dask):
+def test_pairwise_selector_prepped(ligands_from_complexes, prepped_complexes, use_dask):
     selector = PairwiseSelector()
-    pairs = selector.select(ligands, prepped_complexes, use_dask=use_dask)
+    pairs = selector.select(
+        ligands_from_complexes, prepped_complexes, use_dask=use_dask
+    )
     assert len(pairs) == 8
 
 
-def test_mcs_selector(ligands, complexes):
+def test_mcs_selector(ligands_from_complexes, complexes):
     selector = MCSSelector()
-    pairs = selector.select(ligands, complexes, n_select=1)
+    pairs = selector.select(ligands_from_complexes, complexes, n_select=1)
     # should be 4 pairs
     assert len(pairs) == 4
-    # as we matched against the exact smiles of the first 4 complex ligands, they should be in order
-    assert pairs[0] == CompoundStructurePair(ligand=ligands[0], complex=complexes[0])
-    assert pairs[1] == CompoundStructurePair(ligand=ligands[1], complex=complexes[1])
-    assert pairs[2] == CompoundStructurePair(ligand=ligands[2], complex=complexes[2])
-    assert pairs[3] == CompoundStructurePair(ligand=ligands[3], complex=complexes[3])
+    # as we matched against the exact smiles of the first 4 complex ligands_from_complexes, they should be in order
+    assert pairs[0] == CompoundStructurePair(
+        ligand=ligands_from_complexes[0], complex=complexes[0]
+    )
+    assert pairs[1] == CompoundStructurePair(
+        ligand=ligands_from_complexes[1], complex=complexes[1]
+    )
+    assert pairs[2] == CompoundStructurePair(
+        ligand=ligands_from_complexes[2], complex=complexes[2]
+    )
+    assert pairs[3] == CompoundStructurePair(
+        ligand=ligands_from_complexes[3], complex=complexes[3]
+    )
 
 
-def test_mcs_select_prepped(ligands, prepped_complexes):
+def test_mcs_select_prepped(ligands_from_complexes, prepped_complexes):
     selector = MCSSelector()
-    pairs = selector.select(ligands, prepped_complexes, n_select=1)
+    pairs = selector.select(ligands_from_complexes, prepped_complexes, n_select=1)
     # should be 4 pairs
     assert len(pairs) == 4
-    assert pairs[0] == DockingInputPair(ligand=ligands[0], complex=prepped_complexes[0])
-    assert pairs[1] == DockingInputPair(ligand=ligands[1], complex=prepped_complexes[1])
-    assert pairs[2] == DockingInputPair(ligand=ligands[2], complex=prepped_complexes[1])
-    assert pairs[3] == DockingInputPair(ligand=ligands[3], complex=prepped_complexes[0])
+    assert pairs[0] == DockingInputPair(
+        ligand=ligands_from_complexes[0], complex=prepped_complexes[0]
+    )
+    assert pairs[1] == DockingInputPair(
+        ligand=ligands_from_complexes[1], complex=prepped_complexes[1]
+    )
+    assert pairs[2] == DockingInputPair(
+        ligand=ligands_from_complexes[2], complex=prepped_complexes[1]
+    )
+    assert pairs[3] == DockingInputPair(
+        ligand=ligands_from_complexes[3], complex=prepped_complexes[0]
+    )
 
 
-def test_mcs_selector_nselect(ligands, complexes):
+def test_mcs_selector_nselect(ligands_from_complexes, complexes):
     selector = MCSSelector()
-    pairs = selector.select(ligands, complexes, n_select=2)
+    pairs = selector.select(ligands_from_complexes, complexes, n_select=2)
     # should be 8 pairs
     assert len(pairs) == 8
     assert (

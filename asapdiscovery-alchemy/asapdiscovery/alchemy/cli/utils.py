@@ -106,6 +106,12 @@ def get_cdd_molecules(
     """
     from asapdiscovery.alchemy.predict import download_cdd_data
     from asapdiscovery.data.schema.ligand import Ligand
+    from openff.toolkit import Molecule
+    from openff.toolkit.utils.exceptions import (
+        RadicalsNotSupportedError,
+        UndefinedStereochemistryError,
+    )
+    from rdkit import Chem
 
     # get all molecules with data for the protocol
     cdd_data = download_cdd_data(protocol_name=protocol_name)
@@ -121,30 +127,28 @@ def get_cdd_molecules(
         asap_mol.tags["experimental"] = "True"
         ref_ligands.append(asap_mol)
 
-    if defined_stereo_only:
-        # remove ligands with undefined or non-absolute stereochemistry
-        defined_ligands = []
-        from openff.toolkit import Molecule
-        from openff.toolkit.utils.exceptions import UndefinedStereochemistryError
-        from rdkit import Chem
+    defined_ligands = []
+    for mol in ref_ligands:
+        try:
+            # this checks for any undefined stereo centers
+            _ = Molecule.from_smiles(mol.smiles)
+            # check for non-absolute centers using the enhanced stereo smiles
+            rdmol = Chem.MolFromSmiles(mol.tags["cxsmiles"])
+            groups = rdmol.GetStereoGroups()
+            for stereo_group in groups:
+                if stereo_group.GetGroupType() != Chem.StereoGroupType.STEREO_ABSOLUTE:
+                    raise UndefinedStereochemistryError("missing absolute stereo")
+            # if we make it through all checks add the molecule
+            defined_ligands.append(mol)
 
-        for mol in ref_ligands:
-            try:
-                # this checks for any undefined stereo centers
-                _ = Molecule.from_smiles(mol.smiles)
-                # check for non-absolute centers using the enhanced stereo smiles
-                rdmol = Chem.MolFromSmiles(mol.tags["cxsmiles"])
-                groups = rdmol.GetStereoGroups()
-                for stereo_group in groups:
-                    if (
-                        stereo_group.GetGroupType()
-                        != Chem.StereoGroupType.STEREO_ABSOLUTE
-                    ):
-                        raise UndefinedStereochemistryError("missing absolute stereo")
-                # if we make it through all checks add the molecule
+        except RadicalsNotSupportedError:
+            # always remove radicals
+            continue
+        except UndefinedStereochemistryError:
+            # only remove undefined stereo when requested
+            if not defined_stereo_only:
                 defined_ligands.append(mol)
-
-            except UndefinedStereochemistryError:
+            else:
                 continue
 
         ref_ligands = defined_ligands

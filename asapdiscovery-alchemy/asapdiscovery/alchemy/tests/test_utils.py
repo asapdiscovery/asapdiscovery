@@ -406,3 +406,32 @@ def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands, remove_cov
     for ligand in molecules:
         assert ligand.tags["experimental"] == "True"
         assert ligand.tags["cdd_protocol"] == "my-protocol"
+
+
+def test_cdd_download_remove_radicals(monkeypatch):
+    """Make sure radical molecules are removed from downloaded protocols."""
+
+    import asapdiscovery.alchemy.predict
+
+    def get_cdd_data(protocol_name: str):
+        data = [
+            {"Smiles": "CCO", "Molecule Name": "ethanol", "CXSmiles": "CCO"},
+            {
+                "Smiles": "C[CH2]",
+                "Molecule Name": "radical",
+                "CXSmiles": "C[CH2]",
+            },
+        ]
+        return pandas.DataFrame(data)
+
+    monkeypatch.setattr(
+        asapdiscovery.alchemy.predict, "download_cdd_data", get_cdd_data
+    )
+
+    molecules = get_cdd_molecules(
+        protocol_name="my-protocol",
+        defined_stereo_only=True,
+        remove_covalent=True,
+    )
+    assert len(molecules) == 1
+    assert molecules[0].compound_name == "ethanol"

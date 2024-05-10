@@ -4,11 +4,10 @@ from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import CompoundMultiStructure
 
 
-def test_multi_structure_from_pairs(ligands, complexes):
-    # I could use the pairwise selector but that makes it an integration test, right?
+def test_multi_structure_from_pairs(ligands_from_complexes, complexes):
     pairs = [
         CompoundStructurePair(ligand=ligand, complex=complex)
-        for ligand, complex in product(ligands, complexes)
+        for ligand, complex in product(ligands_from_complexes, complexes)
     ]
     assert len(pairs) == 40
     multi_structures = CompoundMultiStructure.from_pairs(pairs)
@@ -22,11 +21,11 @@ def test_multi_structure_from_pairs(ligands, complexes):
 
     assert (
         multi_structures[0].unique_name
-        == "test-KTTFDHLIVPVQIE-UHFFFAOYNA-N_0bf8638845b542d72ce3375b24f0c5757fccc4e8f11b2eb65d838acc41508a16"
+        == "test-KTTFDHLIVPVQIE-UHFFFAOYNA-N_de2fc89d89986c55d83706d99acce170a34caebb3cc1de6d2a0780b9c1a9fd7f"
     )
     assert (
         multi_structures[1].unique_name
-        == "test-AVCQLYXAEKNILW-UHFFFAOYNA-N_0bf8638845b542d72ce3375b24f0c5757fccc4e8f11b2eb65d838acc41508a16"
+        == "test-AVCQLYXAEKNILW-UHFFFAOYNA-N_de2fc89d89986c55d83706d99acce170a34caebb3cc1de6d2a0780b9c1a9fd7f"
     )
 
     # the ligands should be different, but the complexes should be the same

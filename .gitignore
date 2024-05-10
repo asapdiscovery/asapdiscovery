@@ -141,6 +141,7 @@ wandb/*
 *.inchi
 *.inchikey
 *.gz
+*.json
 
 
 # tutorial files
