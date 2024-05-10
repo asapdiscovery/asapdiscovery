@@ -34,7 +34,7 @@ Given a:
 - if the target has fitness data HTML will be generated for the fitness viewer
 - the top N (`--top-n`  default 500) structures will be marked as hits
 
-You can then update or make a new Postera molecule set with the data (`--postera-upload` ) updates existing if you pulled down from one or one with the specified name already exists. If a new name not already present in postera is given with `--postera-molset-name` then a new molecule set will be created. 
+You can then update or make a new Postera molecule set with the data (`--postera-upload` ) updates existing if you pulled down from one or one with the specified name already exists. If a new name not already present in postera is given with `--postera-molset-name` then a new molecule set will be created.
 ****
 
 
@@ -52,9 +52,9 @@ There is also the  capacity to run directly from a JSON file with the appropriat
 
 **Parallelisation**
 
-You can run the workflow in serial (not recommended) or using [Dask](https://www.dask.org/) (`--use-dask`). Dask should be run in  `local` mode. 
+You can run the workflow in serial (not recommended) or using [Dask](https://www.dask.org/) (`--use-dask`). Dask should be run in  `local` mode.
 
-Use of these is given in the examples below. It is recommended to have a look at the dask dashboard, whose url is printed in the logfile of the docking job. 
+Use of these is given in the examples below. It is recommended to have a look at the dask dashboard, whose url is printed in the logfile of the docking job.
 
 **Postera**
 
@@ -62,10 +62,10 @@ If you wish to use the Postera  platform, contact the ASAP team. There are sevrr
 
 **Examples**
 
-Running on your own computer locally using dask, using a **molecule file**  and docking against **Fragalysis,** using a **cache**  ****and **saving any structures** that are not already prepped to the cache 
+Running on your own computer locally using dask, using a **molecule file**  and docking against **Fragalysis,** using a **cache**  ****and **saving any structures** that are not already prepped to the cache
 
 ```bash
-asap-cli docking large-scale 
+asap-cli docking large-scale
  --target SARS-CoV-2-Mpro
  --ligands moonshot_subseries.smi
  --fragalysis-dir mpro_fragalysis-24-07-23
@@ -74,12 +74,12 @@ asap-cli docking large-scale
  --save-to-cache
 ```
 
-Running on your own computer locally using a **molecule file,**  docking against **a pdb file** and uploading to postera. 
+Running on your own computer locally using a **molecule file,**  docking against **a pdb file** and uploading to postera.
 
 ```bash
-asap-cli docking large-scale 
+asap-cli docking large-scale
  --target SARS-CoV-2-Mpro
- --ligands moonshot_subseries.smi 
+ --ligands moonshot_subseries.smi
  --pdb-file my_structure.pdb
  --use-dask
  --postera-upload
@@ -90,7 +90,7 @@ asap-cli docking large-scale
 Running on your own computer locally,  pulling and pushing to **Postera, using** a **set of custom structures**, using GAT and Schnet **ML scorers** and adjusting the **acceptable POSIT cutoff,** how many **MCS matched docking partners,**  and how many **top structures** to return.
 
 ```bash
-asap-cli docking large-scale 
+asap-cli docking large-scale
  --target SARS-CoV-2-Mac1
  --postera
  --postera-molset-name MY_POSTERA_MOLSET
@@ -105,20 +105,20 @@ asap-cli docking large-scale
 
 ```
 
-## Small scale docking workflow 
+## Small scale docking workflow
 
-The small scale docking workflow is designed for more detailed investigation of a series of ligands. It has a similar API to the `large-scale` workflows but can also run MD simulations to investigate the stability and dynamics of docked poses. GIFs are then generated from each simulation.  
+The small scale docking workflow is designed for more detailed investigation of a series of ligands. It has a similar API to the `large-scale` workflows but can also run MD simulations to investigate the stability and dynamics of docked poses. GIFs are then generated from each simulation.
 
 
 Request MD with `--md` and a default timestep of `4.0 fs` is used with  and a default number of steps of  `2500000` and reporting interval of 1250 steps. You can change the number of steps with `--md-steps` . I often use `--md-steps 1250` to give one full reporting interval when testing. You can also change the openmm platform with `--md-openmm-platform` . Switching the platform to OpenCL with `--md-openmm-platform` is often useful to fix errors like `Error: Cannot initialize FFT: 5`.
 
 
-**Examples** 
+**Examples**
 
 Running on your own computer locally using dask, using a **molecule file**  and docking against **Fragalysis,** using a **cache**  ****and **saving any structures** that are not already prepped to the cache then **running MD** using the **OpenMM OpenCL platform**
 
 ```bash
-asap-cli docking small-scale 
+asap-cli docking small-scale
  --target SARS-CoV-2-Mpro
  --ligands moonshot_subseries.smi
  --fragalysis-dir mpro_fragalysis-24-07-23
