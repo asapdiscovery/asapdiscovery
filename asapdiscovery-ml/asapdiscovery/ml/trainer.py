@@ -784,10 +784,9 @@ class Trainer(BaseModel):
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
-                pose_preds = [p.item() for p in pose_preds]
                 losses = torch.cat(
                     [
-                        loss_func(pred, target, in_range, uncertainty)
+                        loss_func(pred, pose_preds, target, in_range, uncertainty)
                         for loss_func in self.loss_funcs
                     ]
                 )
@@ -805,7 +804,7 @@ class Trainer(BaseModel):
                     uncertainty.item(),
                     pred.item(),
                     loss.item(),
-                    pose_preds=pose_preds,
+                    pose_preds=[p.item() for p in pose_preds],
                 )
 
                 # Keep track of loss for each sample
@@ -882,10 +881,9 @@ class Trainer(BaseModel):
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
-                pose_preds = [p.item() for p in pose_preds]
                 losses = torch.cat(
                     [
-                        loss_func(pred, target, in_range, uncertainty)
+                        loss_func(pred, pose_preds, target, in_range, uncertainty)
                         for loss_func in self.loss_funcs
                     ]
                 )
@@ -900,7 +898,7 @@ class Trainer(BaseModel):
                     uncertainty.item(),
                     pred.item(),
                     loss.item(),
-                    pose_preds=pose_preds,
+                    pose_preds=[p.item() for p in pose_preds],
                 )
 
                 tmp_loss.append(loss.item())
@@ -934,10 +932,9 @@ class Trainer(BaseModel):
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
                 pred = pred.reshape(target.shape)
-                pose_preds = [p.item() for p in pose_preds]
                 losses = torch.cat(
                     [
-                        loss_func(pred, target, in_range, uncertainty)
+                        loss_func(pred, pose_preds, target, in_range, uncertainty)
                         for loss_func in self.loss_funcs
                     ]
                 )
@@ -952,7 +949,7 @@ class Trainer(BaseModel):
                     uncertainty.item(),
                     pred.item(),
                     loss.item(),
-                    pose_preds=pose_preds,
+                    pose_preds=[p.item() for p in pose_preds],
                 )
 
                 tmp_loss.append(loss.item())
