@@ -751,9 +751,10 @@ class Trainer(BaseModel):
                     compound_id = compound
 
                 # convert to float to match other types
-                target = torch.tensor(
-                    [[pose[self.target_prop]]], device=self.device
-                ).float()
+                targets = [
+                    torch.tensor([[pose[target_prop]]], device=self.device).float()
+                    for target_prop in self.target_props
+                ]
                 in_range = torch.tensor(
                     [[pose[f"{self.target_prop}_range"]]], device=self.device
                 ).float()
@@ -783,11 +784,16 @@ class Trainer(BaseModel):
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
-                pred = pred.reshape(target.shape)
                 losses = torch.cat(
                     [
-                        loss_func(pred, pose_preds, target, in_range, uncertainty)
-                        for loss_func in self.loss_funcs
+                        loss_func(
+                            pred.reshape(target.shape),
+                            pose_preds,
+                            target,
+                            in_range,
+                            uncertainty,
+                        )
+                        for loss_func, target in zip(self.loss_funcs, targets)
                     ]
                 )
                 loss = losses.flatten().dot(self.loss_weights)
@@ -861,9 +867,10 @@ class Trainer(BaseModel):
                     compound_id = compound
 
                 # convert to float to match other types
-                target = torch.tensor(
-                    [[pose[self.target_prop]]], device=self.device
-                ).float()
+                targets = [
+                    torch.tensor([[pose[target_prop]]], device=self.device).float()
+                    for target_prop in self.target_props
+                ]
                 in_range = torch.tensor(
                     [[pose[f"{self.target_prop}_range"]]], device=self.device
                 ).float()
@@ -880,11 +887,16 @@ class Trainer(BaseModel):
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
-                pred = pred.reshape(target.shape)
                 losses = torch.cat(
                     [
-                        loss_func(pred, pose_preds, target, in_range, uncertainty)
-                        for loss_func in self.loss_funcs
+                        loss_func(
+                            pred.reshape(target.shape),
+                            pose_preds,
+                            target,
+                            in_range,
+                            uncertainty,
+                        )
+                        for loss_func, target in zip(self.loss_funcs, targets)
                     ]
                 )
                 loss = losses.flatten().dot(self.eval_loss_weights)
@@ -912,9 +924,10 @@ class Trainer(BaseModel):
                     compound_id = compound
 
                 # convert to float to match other types
-                target = torch.tensor(
-                    [[pose[self.target_prop]]], device=self.device
-                ).float()
+                targets = [
+                    torch.tensor([[pose[target_prop]]], device=self.device).float()
+                    for target_prop in self.target_props
+                ]
                 in_range = torch.tensor(
                     [[pose[f"{self.target_prop}_range"]]], device=self.device
                 ).float()
@@ -931,11 +944,16 @@ class Trainer(BaseModel):
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
-                pred = pred.reshape(target.shape)
                 losses = torch.cat(
                     [
-                        loss_func(pred, pose_preds, target, in_range, uncertainty)
-                        for loss_func in self.loss_funcs
+                        loss_func(
+                            pred.reshape(target.shape),
+                            pose_preds,
+                            target,
+                            in_range,
+                            uncertainty,
+                        )
+                        for loss_func, target in zip(self.loss_funcs, targets)
                     ]
                 )
                 loss = losses.flatten().dot(self.eval_loss_weights)
