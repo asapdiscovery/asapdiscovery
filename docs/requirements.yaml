@@ -14,6 +14,7 @@ dependencies:
   - myst-parser
   - nbsphinx
   - nbsphinx-link
+  - pandoc
 
   # Testing
   - pytest

@@ -7,7 +7,6 @@ The below guides are designed to help you get started with the `asapdiscovery` t
 ```{toctree}
 :maxdepth: 5
 :hidden:
-using_asapdiscovery
 using_asap_alchemy_cli
 using_docking_cli
 using_ml_cli
