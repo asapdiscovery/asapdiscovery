@@ -32,7 +32,7 @@ class MSELoss(TorchMSELoss):
 
         self.loss_type = loss_type
 
-    def forward(self, input, target, in_range, uncertainty):
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
         """
         Dispatch method for calculating loss. All arguments should be passed
         regardless of actual loss function to keep an identical signature for
@@ -41,25 +41,25 @@ class MSELoss(TorchMSELoss):
 
         if self.loss_type is None:
             # Just need to calculate mean to get MSE
-            return self.loss_function(input, target).mean()
+            return self.loss_function(pred, target).mean()
         elif self.loss_type == "step":
             # Call step_loss
-            return self.loss_function(input, target, in_range)
+            return self.loss_function(pred, target, in_range)
         elif self.loss_type == "uncertainty":
             # Call uncertainty_loss
-            return self.loss_function(input, target, uncertainty)
+            return self.loss_function(pred, target, uncertainty)
 
-    def step_loss(self, input, target, in_range):
+    def step_loss(self, pred, target, in_range):
         """
         Step loss calculation. For `in_range` < 0, loss is returned as 0 if
-        `input` < `target`, otherwise MSE is calculated as normal. For
-        `in_range` > 0, loss is returned as 0 if `input` > `target`, otherwise
+        `pred` < `target`, otherwise MSE is calculated as normal. For
+        `in_range` > 0, loss is returned as 0 if `pred` > `target`, otherwise
         MSE is calculated as normal. For `in_range` == 0, MSE is calculated as
         normal.
 
         Parameters
         ----------
-        input : torch.Tensor
+        pred : torch.Tensor
             Model prediction
         target : torch.Tensor
             Prediction target
@@ -74,10 +74,10 @@ class MSELoss(TorchMSELoss):
             Calculated loss
         """
         # Calculate loss
-        loss = super().forward(input, target)
+        loss = super().forward(pred, target)
 
         # Calculate mask:
-        #  1.0 - If input or data is semiquant and prediction is inside the
+        #  1.0 - If pred or data is semiquant and prediction is inside the
         #    assay range
         #  0.0 - If data is semiquant and prediction is outside the assay range
         # r < 0 -> measurement is below thresh, want to count if pred > target
@@ -85,10 +85,10 @@ class MSELoss(TorchMSELoss):
         mask = torch.tensor(
             [
                 1.0 if r == 0 else ((r < 0) == (t < i))
-                for i, t, r in zip(input, target, in_range)
+                for i, t, r in zip(pred, target, in_range)
             ]
         )
-        mask = mask.to(input.device)
+        mask = mask.to(pred.device)
 
         # Need to add the max in the denominator in case there are no values that we
         #  want to calculate loss for
@@ -116,14 +116,16 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
         self.include_semiquant = include_semiquant
         self.fill_value = fill_value
 
-    def forward(self, input, target, in_range, uncertainty):
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
         """
         Loss calculation
 
         Parameters
         ----------
-        input : torch.Tensor
+        pred : torch.Tensor
             Model prediction
+        pose_preds : torch.Tensor
+            Predictions for each pose
         target : torch.Tensor
             Prediction target
         in_range : torch.Tensor
@@ -144,7 +146,7 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
             uncertainty_clone[idx] = self.fill_value
 
         # Calculate loss (need to square uncertainty to convert to variance)
-        loss = super().forward(input, target, uncertainty_clone**2)
+        loss = super().forward(pred, target, uncertainty_clone**2)
 
         # Mask out losses for all semiquant measurements
         if not self.include_semiquant:
@@ -174,7 +176,7 @@ class RangeLoss(torch.nn.Module):
         self.lower_lim = lower_lim
         self.upper_lim = upper_lim
 
-    def forward(self, input, target, in_range, uncertainty):
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
         """
         No loss for predictions within self range, otherwise calculate squared distance
         to closest bound.
@@ -183,7 +185,7 @@ class RangeLoss(torch.nn.Module):
         ----------
         Parameters
         ----------
-        input : torch.Tensor
+        pred : torch.Tensor
             Model prediction
         target : torch.Tensor
             Prediction target
@@ -199,9 +201,9 @@ class RangeLoss(torch.nn.Module):
         torch.Tensor
             Calculated loss
         """
-        if input < self.lower_lim:
-            return torch.pow(input - self.lower_lim, 2)
-        elif input > self.upper_lim:
-            return torch.pow(input - self.upper_lim, 2)
+        if pred < self.lower_lim:
+            return torch.pow(pred - self.lower_lim, 2)
+        elif pred > self.upper_lim:
+            return torch.pow(pred - self.upper_lim, 2)
         else:
-            return input * 0
+            return pred * 0
