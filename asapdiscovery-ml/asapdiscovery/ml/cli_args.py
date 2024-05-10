@@ -6,7 +6,6 @@ from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.config import (
     DatasetSplitterType,
     EarlyStoppingType,
-    LossFunctionType,
     OptimizerType,
 )
 from mtenn.config import CombinationConfig, ReadoutConfig, StrategyConfig

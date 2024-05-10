@@ -57,12 +57,12 @@ class Trainer(BaseModel):
         ...,
         description="Config describing the loss function for training.",
     )
-    loss_weights: list[float] = Field(
+    loss_weights: torch.Tensor = Field(
         [],
         description=(
-            "Weight for each loss function. If no values are passed, each loss "
-            "function will be weighted equally. If any values are passed, there must "
-            "be one for each loss function."
+            "Weight for each loss function. Values will be normalized to add up to 1. "
+            "If no values are passed, each loss function will be weighted equally. If "
+            "any values are passed, there must be one for each loss function."
         ),
     )
     data_aug_configs: list[DataAugConfig] = Field(
@@ -145,14 +145,17 @@ class Trainer(BaseModel):
             "ds_train": {"exclude": True},
             "ds_val": {"exclude": True},
             "ds_test": {"exclude": True},
-            "loss_func": {"exclude": True},
+            "loss_funcs": {"exclude": True},
         }
 
         # Allow things to be added to the object after initialization/validation
         extra = Extra.allow
 
         # Custom encoder to cast device to str before trying to serialize
-        json_encoders = {torch.device: lambda d: str(d)}
+        json_encoders = {
+            torch.device: lambda d: str(d),
+            torch.Tensor: lambda t: t.tolist(),
+        }
 
     # Validator to make sure that if output_dir exists, it is a directory
     @validator("output_dir")
@@ -437,16 +440,32 @@ class Trainer(BaseModel):
 
         return extra_config
 
-    @validator("loss_weights", pre=False)
+    @validator("loss_weights", pre=True)
     def check_loss_weights(cls, v, values):
         """
-        Make sure that we have the right number of loss function weights.
+        Make sure that we have the right number of loss function weights, and cast to
+        normalized tensor.
         """
         if (len(v) > 0) and (len(v) != len(values["loss_configs"])):
             raise ValueError(
                 f"Mismatch between number of loss function weights ({len(v)}) and "
                 f"number of loss functions ({len(values['loss_configs'])})."
             )
+
+        # Fill with 1s if no values passed
+        if len(v) == 0:
+            v = [1] * len(values["loss_configs"])
+
+        # Cast to tensor (don't send to device in case we're building the Trainer on a
+        #  CPU-only node)
+        v = torch.tensor(v, dtype=torch.float32)
+
+        # Check for negative numbers
+        if (v < 0).any():
+            raise ValueError("Values for loss_weights can't be negative.")
+
+        # Normalize to 1
+        v /= v.sum()
 
         return v
 
@@ -638,6 +657,9 @@ class Trainer(BaseModel):
         # Build loss function
         self.loss_funcs = [loss.build() for loss in self.loss_configs]
 
+        # Send loss_weights to appropriate device
+        self.loss_weights = self.loss_weights.to(self.device)
+
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
@@ -730,12 +752,7 @@ class Trainer(BaseModel):
                         for loss_func in self.loss_funcs
                     ]
                 )
-                if len(self.loss_weights) > 0:
-                    loss = losses.flatten().dot(
-                        torch.tensor(self.loss_weights, device=losses.device)
-                    )
-                else:
-                    loss = losses.mean(axis=0)
+                loss = losses.flatten().dot(self.loss_weights)
 
                 # Can just call loss.backward, grads will accumulate additively
                 loss.backward()
@@ -833,12 +850,7 @@ class Trainer(BaseModel):
                         for loss_func in self.loss_funcs
                     ]
                 )
-                if len(self.loss_weights) > 0:
-                    loss = losses.flatten().dot(
-                        torch.tensor(self.loss_weights, device=losses.device)
-                    )
-                else:
-                    loss = losses.mean(axis=0)
+                loss = losses.flatten().dot(self.loss_weights)
 
                 # Update loss_dict
                 self._update_loss_dict(
@@ -890,12 +902,7 @@ class Trainer(BaseModel):
                         for loss_func in self.loss_funcs
                     ]
                 )
-                if len(self.loss_weights) > 0:
-                    loss = losses.flatten().dot(
-                        torch.tensor(self.loss_weights, device=losses.device)
-                    )
-                else:
-                    loss = losses.mean(axis=0)
+                loss = losses.flatten().dot(self.loss_weights)
 
                 # Update loss_dict
                 self._update_loss_dict(
