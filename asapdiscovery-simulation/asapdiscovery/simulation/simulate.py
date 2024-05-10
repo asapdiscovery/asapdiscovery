@@ -165,7 +165,7 @@ class VanillaMDSimulator(SimulatorBase):
     )
 
     small_molecule_force_field: str = Field(
-        "openff-2.2.0.offxml",
+        "openff-2.2.0",
         description="The OpenFF small molecule force field which should be used for the ligand.",
     )
 
