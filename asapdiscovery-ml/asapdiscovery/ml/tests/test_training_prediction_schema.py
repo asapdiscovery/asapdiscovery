@@ -59,3 +59,23 @@ def test_training_pred_tracker_constructor_bad_dict(identifiers, loss_configs):
 
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         _ = TrainingPredictionTracker(split_dict={"train": [tp1], "val": [tp2]})
+
+
+def test_find_value_idxs():
+    pass
+
+
+def test_get_values_split():
+    pass
+
+
+def test_get_values_no_split():
+    pass
+
+
+def test_update_values_existing():
+    pass
+
+
+def test_update_values_new():
+    pass
