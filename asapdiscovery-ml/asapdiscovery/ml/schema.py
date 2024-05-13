@@ -57,7 +57,7 @@ class TrainingPredictionTracker(BaseModel):
         # Allow things to be added to the object after initialization/validation
         extra = Extra.allow
 
-    @validator("split_dict")
+    @validator("split_dict", always=True)
     def init_split_dict(cls, split_dict):
         # If nothing was passed, just init an empty dict
         if not split_dict:
