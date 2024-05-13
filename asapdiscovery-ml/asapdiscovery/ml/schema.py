@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Extra, Field, validator
 
 from asapdiscovery.ml.config import LossFunctionConfig
 
@@ -27,9 +27,9 @@ class TrainingPrediction(BaseModel):
     )
 
     # Prediction info
-    predictions: list[float] = Field(..., description="Model prediction.")
+    predictions: list[float] = Field([], description="Model prediction.")
     pose_predictions: list[list[float]] = Field(
-        ...,
+        [],
         description="Single-pose model prediction for each pose in input.",
     )
 
@@ -37,7 +37,11 @@ class TrainingPrediction(BaseModel):
     loss_config: LossFunctionConfig = Field(
         ..., description="Config describing loss function."
     )
-    loss_vals: list[float] = Field(..., description="Loss value of model prediction.")
+    loss_vals: list[float] = Field([], description="Loss value of model prediction.")
+
+    class Config:
+        # Allow things to be added to the object after initialization/validation
+        extra = Extra.allow
 
 
 class TrainingPredictionTracker(BaseModel):
@@ -48,6 +52,10 @@ class TrainingPredictionTracker(BaseModel):
     split_dict: dict[str, list[TrainingPrediction]] = Field(
         None, description="Internal dict storing all TrainingPredictions."
     )
+
+    class Config:
+        # Allow things to be added to the object after initialization/validation
+        extra = Extra.allow
 
     @validator("split_dict")
     def init_split_dict(cls, split_dict):
@@ -195,3 +203,74 @@ class TrainingPredictionTracker(BaseModel):
                 sp: [split_list[i] for i in return_idxs[sp]]
                 for sp, split_list in self.split_dict.items()
             }
+
+    def update_values(
+        self,
+        prediction,
+        pose_predictions,
+        loss_val,
+        split=None,
+        compound_id=None,
+        xtal_id=None,
+        target_prop=None,
+        loss_config=None,
+        allow_multiple=False,
+    ):
+        """
+        Get TrainingPrediction values based on passed filters. The type of the return
+        value will depend on the filters passed. If split is not passed, the result will
+        be a dict, giving a mapping of split: list[TrainingPrediction]. If a split is
+        given, then a list of the TrainingPredictions found in that split will be
+        returned.
+
+        Parameters
+        ----------
+        prediction : float
+            Model prediction value to add
+        pose_predictions : list[float]
+            Single-pose model prediction values to add
+        loss_val : float
+            Loss value to add
+        split : str, optional
+            Split to look for values in
+        compound_id : str, optional
+            Compound ID to match
+        xtal_id : str, optional
+            Crystal structure to match
+        target_prop : str, optional
+            Target property to match
+        loss_config : LossFunctionConfig, optional
+            LossFunctionConfig to match
+        allow_multiple : bool, default=False
+            Allow updating multiple entries at once. This is disabled by default, which
+            will raise an error in the case that the passed filter criteria return more
+            than one entry.
+        """
+
+        # Get indices to return
+        return_idxs = self._find_value_idxs(
+            split, compound_id, xtal_id, target_prop, loss_config
+        )
+
+        num_found = sum([len(idx_list) for idx_list in return_idxs.values()])
+        if num_found == 0:
+            print(
+                "No matches found for",
+                ", ".join([split, compound_id, xtal_id, target_prop, str(loss_config)]),
+            )
+
+        # Check that we've only got one, if necessary
+        if not allow_multiple:
+            if num_found > 1:
+                raise ValueError(
+                    "Multiple results found for search "
+                    ", ".join(
+                        [split, compound_id, xtal_id, target_prop, str(loss_config)]
+                    )
+                )
+
+        for sp, split_list in self.split_dict.items():
+            for i in return_idxs[sp]:
+                split_list[i].predictions.append(prediction)
+                split_list[i].pose_predictions.append(pose_predictions)
+                split_list[i].loss_vals.append(loss_val)
