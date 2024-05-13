@@ -215,13 +215,15 @@ class TrainingPredictionTracker(BaseModel):
         target_prop=None,
         loss_config=None,
         allow_multiple=False,
+        **kwargs,
     ):
         """
         Get TrainingPrediction values based on passed filters. The type of the return
         value will depend on the filters passed. If split is not passed, the result will
         be a dict, giving a mapping of split: list[TrainingPrediction]. If a split is
         given, then a list of the TrainingPredictions found in that split will be
-        returned.
+        returned. If no values are returned, a new TrainingPrediction will be created
+        using the passed search terms, as well as any additional kwargs passed.
 
         Parameters
         ----------
@@ -254,10 +256,24 @@ class TrainingPredictionTracker(BaseModel):
 
         num_found = sum([len(idx_list) for idx_list in return_idxs.values()])
         if num_found == 0:
-            print(
-                "No matches found for",
-                ", ".join([split, compound_id, xtal_id, target_prop, str(loss_config)]),
+            if split not in self.split_dict.keys():
+                raise ValueError(
+                    "Can't add new TrainingPrediction without split specified."
+                )
+
+            new_pred = TrainingPrediction(
+                compound_id=compound_id,
+                xtal_id=xtal_id,
+                target_prop=target_prop,
+                predictions=[prediction],
+                pose_predictions=[pose_predictions],
+                loss_config=loss_config,
+                loss_vals=[loss_val],
+                **kwargs,
             )
+            self.split_dict[split].append(new_pred)
+
+            return
 
         # Check that we've only got one, if necessary
         if not allow_multiple:
