@@ -80,3 +80,118 @@ class TrainingPredictionTracker(BaseModel):
             )
 
         return split_dict
+
+    def _find_value_idxs(
+        self,
+        split=None,
+        compound_id=None,
+        xtal_id=None,
+        target_prop=None,
+        loss_config=None,
+    ):
+        """
+        Helper function to find the appropriate indices in each list of self.split_dict.
+
+        Parameters
+        ----------
+        split : str, optional
+            Split to look for values in
+        compound_id : str, optional
+            Compound ID to match
+        xtal_id : str, optional
+            Crystal structure to match
+        target_prop : str, optional
+            Target property to match
+        loss_config : LossFunctionConfig, optional
+            LossFunctionConfig to match
+
+        Returns
+        -------
+        dict[str, int]
+            Dict mapping split to indices in each split list
+        """
+
+        # Match functions
+        def compound_id_match(query):
+            return (compound_id is None) or (query == compound_id)
+
+        def xtal_id_match(query):
+            return (xtal_id is None) or (query == xtal_id)
+
+        def target_prop_match(query):
+            return (target_prop is None) or (query == target_prop)
+
+        def loss_config_match(query):
+            return (loss_config is None) or (query == loss_config)
+
+        if split:
+            return {
+                split: [
+                    i
+                    for i, q in enumerate(self.split_dict[split])
+                    if compound_id_match(q)
+                    and xtal_id_match(q)
+                    and target_prop_match(q)
+                    and loss_config_match(q)
+                ]
+            } | {sp: [] for sp in self.split_dict.keys() if sp != split}
+        else:
+            return {
+                sp: [
+                    i
+                    for i, q in enumerate(split_list)
+                    if compound_id_match(q)
+                    and xtal_id_match(q)
+                    and target_prop_match(q)
+                    and loss_config_match(q)
+                ]
+                for sp, split_list in self.split_dict.items()
+            }
+
+    def get_values(
+        self,
+        split=None,
+        compound_id=None,
+        xtal_id=None,
+        target_prop=None,
+        loss_config=None,
+    ):
+        """
+        Get TrainingPrediction values based on passed filters. The type of the return
+        value will depend on the filters passed. If split is not passed, the result will
+        be a dict, giving a mapping of split: list[TrainingPrediction]. If a split is
+        given, then a list of the TrainingPredictions found in that split will be
+        returned.
+
+        Parameters
+        ----------
+        split : str, optional
+            Split to look for values in
+        compound_id : str, optional
+            Compound ID to match
+        xtal_id : str, optional
+            Crystal structure to match
+        target_prop : str, optional
+            Target property to match
+        loss_config : LossFunctionConfig, optional
+            LossFunctionConfig to match
+
+        Returns
+        -------
+        dict[str, list[TrainingPrediction]] | list[TrainingPrediction]
+            Found values
+        """
+
+        # Get indices to return
+        return_idxs = self._find_value_idxs(
+            split, compound_id, xtal_id, target_prop, loss_config
+        )
+
+        # Extract values
+        if split:
+            return [self.split_dict[split][i] for i in return_idxs]
+        else:
+            return {
+                sp: [split_list[i] for i in return_idxs[sp]]
+                for sp, split_list in self.split_dict.items()
+            }
