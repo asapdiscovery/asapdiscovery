@@ -27,8 +27,8 @@ class TrainingPrediction(BaseModel):
     )
 
     # Prediction info
-    prediction: float = Field(..., description="Model prediction.")
-    pose_predictions: list[float] = Field(
+    predictions: list[float] = Field(..., description="Model prediction.")
+    pose_predictions: list[list[float]] = Field(
         ...,
         description="Single-pose model prediction for each pose in input.",
     )
@@ -37,4 +37,4 @@ class TrainingPrediction(BaseModel):
     loss_config: LossFunctionConfig = Field(
         ..., description="Config describing loss function."
     )
-    loss_val: float = Field(..., description="Loss value of model prediction.")
+    loss_vals: list[float] = Field(..., description="Loss value of model prediction.")
