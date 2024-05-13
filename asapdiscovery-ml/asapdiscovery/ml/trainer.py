@@ -755,13 +755,23 @@ class Trainer(BaseModel):
                     torch.tensor([[pose[target_prop]]], device=self.device).float()
                     for target_prop in self.target_props
                 ]
-                in_range = torch.tensor(
-                    [[pose[f"{self.target_prop}_range"]]], device=self.device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[pose[f"{self.target_prop}_stderr"]]],
-                    device=self.device,
-                ).float()
+                in_ranges = [
+                    torch.tensor(
+                        [[pose[f"{target_prop}_range"]]], device=self.device
+                    ).float()
+                    if f"{target_prop}_range" in pose
+                    else None
+                    for target_prop in self.target_props
+                ]
+                uncertaintys = [
+                    torch.tensor(
+                        [[pose[f"{target_prop}_stderr"]]],
+                        device=self.device,
+                    ).float()
+                    if f"{target_prop}_range" in pose
+                    else None
+                    for target_prop in self.target_props
+                ]
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -793,7 +803,9 @@ class Trainer(BaseModel):
                             in_range,
                             uncertainty,
                         )
-                        for loss_func, target in zip(self.loss_funcs, targets)
+                        for loss_func, target, in_range, uncertainty in zip(
+                            self.loss_funcs, targets, in_ranges, uncertaintys
+                        )
                     ]
                 )
                 loss = losses.flatten().dot(self.loss_weights)
@@ -871,13 +883,23 @@ class Trainer(BaseModel):
                     torch.tensor([[pose[target_prop]]], device=self.device).float()
                     for target_prop in self.target_props
                 ]
-                in_range = torch.tensor(
-                    [[pose[f"{self.target_prop}_range"]]], device=self.device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[pose[f"{self.target_prop}_stderr"]]],
-                    device=self.device,
-                ).float()
+                in_ranges = [
+                    torch.tensor(
+                        [[pose[f"{target_prop}_range"]]], device=self.device
+                    ).float()
+                    if f"{target_prop}_range" in pose
+                    else None
+                    for target_prop in self.target_props
+                ]
+                uncertaintys = [
+                    torch.tensor(
+                        [[pose[f"{target_prop}_stderr"]]],
+                        device=self.device,
+                    ).float()
+                    if f"{target_prop}_range" in pose
+                    else None
+                    for target_prop in self.target_props
+                ]
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -896,7 +918,9 @@ class Trainer(BaseModel):
                             in_range,
                             uncertainty,
                         )
-                        for loss_func, target in zip(self.loss_funcs, targets)
+                        for loss_func, target, in_range, uncertainty in zip(
+                            self.loss_funcs, targets, in_ranges, uncertaintys
+                        )
                     ]
                 )
                 loss = losses.flatten().dot(self.eval_loss_weights)
@@ -928,13 +952,23 @@ class Trainer(BaseModel):
                     torch.tensor([[pose[target_prop]]], device=self.device).float()
                     for target_prop in self.target_props
                 ]
-                in_range = torch.tensor(
-                    [[pose[f"{self.target_prop}_range"]]], device=self.device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[pose[f"{self.target_prop}_stderr"]]],
-                    device=self.device,
-                ).float()
+                in_ranges = [
+                    torch.tensor(
+                        [[pose[f"{target_prop}_range"]]], device=self.device
+                    ).float()
+                    if f"{target_prop}_range" in pose
+                    else None
+                    for target_prop in self.target_props
+                ]
+                uncertaintys = [
+                    torch.tensor(
+                        [[pose[f"{target_prop}_stderr"]]],
+                        device=self.device,
+                    ).float()
+                    if f"{target_prop}_range" in pose
+                    else None
+                    for target_prop in self.target_props
+                ]
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -953,7 +987,9 @@ class Trainer(BaseModel):
                             in_range,
                             uncertainty,
                         )
-                        for loss_func, target in zip(self.loss_funcs, targets)
+                        for loss_func, target, in_range, uncertainty in zip(
+                            self.loss_funcs, targets, in_ranges, uncertaintys
+                        )
                     ]
                 )
                 loss = losses.flatten().dot(self.eval_loss_weights)
@@ -1089,6 +1125,7 @@ class Trainer(BaseModel):
         self,
         split,
         compound_id,
+        target_prop,
         target,
         in_range,
         uncertainty,
