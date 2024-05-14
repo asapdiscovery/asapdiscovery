@@ -520,7 +520,7 @@ class Trainer(BaseModel):
 
         return v
 
-    @validator("target_props")
+    @validator("target_props", always=True)
     def check_target_props_len(cls, v, values):
         if len(v) == 1:
             return v * len(values["loss_configs"])
