@@ -92,6 +92,11 @@ class TrainingPredictionTracker(BaseModel):
     def __len__(self):
         return sum([len(split_list) for split_list in self.split_dict.values()])
 
+    def __iter__(self):
+        for sp, split_list in self.split_dict.items():
+            for tp in split_list:
+                yield sp, tp
+
     def get_compounds(self):
         return {
             sp: {(tp.xtal_id, tp.compound_id) for tp in split_list}

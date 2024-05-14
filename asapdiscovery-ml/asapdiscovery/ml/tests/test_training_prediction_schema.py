@@ -98,6 +98,28 @@ def test_training_pred_tracker_len(identifiers, loss_configs):
     assert len(tp_tracker) == 2
 
 
+def test_training_pred_tracker_iter(identifiers, loss_configs):
+    tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
+    tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
+
+    tp_tracker = TrainingPredictionTracker(
+        split_dict={"train": [tp1], "val": [tp2], "test": []}
+    )
+
+    it = iter(tp_tracker)
+
+    sp, tp = next(it)
+    assert sp == "train"
+    assert tp == tp1
+
+    sp, tp = next(it)
+    assert sp == "val"
+    assert tp == tp2
+
+    with pytest.raises(StopIteration):
+        sp, tp = next(it)
+
+
 def test_find_value_idxs(identifiers, loss_configs):
     tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
     tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
