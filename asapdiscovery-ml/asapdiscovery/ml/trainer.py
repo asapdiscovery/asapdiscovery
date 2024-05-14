@@ -108,7 +108,13 @@ class Trainer(BaseModel):
             "Set to -1 to use the entire training set as a batch."
         ),
     )
-    target_prop: str = Field("pIC50", description="Target property to train against.")
+    target_props: conlist(item_type=str, min_items=1) = Field(
+        ["pIC50"],
+        description=(
+            "Target property(s) to train against. If only one is "
+            "given, it will be used for all loss functions."
+        ),
+    )
     cont: bool = Field(
         False, description="This is a continuation of a previous training run."
     )
@@ -511,6 +517,19 @@ class Trainer(BaseModel):
 
         # Normalize to 1
         v /= v.sum()
+
+        return v
+
+    @validator("target_props")
+    def check_target_props_len(cls, v, values):
+        if len(v) == 1:
+            return v * len(values["loss_configs"])
+
+        if len(v) != len(values["loss_configs"]):
+            raise ValueError(
+                "Mismatch lengths of target_props and loss_configs "
+                f"({len(v)}, {len(values['loss_configs'])})"
+            )
 
         return v
 
