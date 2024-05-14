@@ -342,8 +342,6 @@ class POSITDocker(DockingBase):
                     raise ValueError(error_msg)
                 else:
                     raise ValueError(f"Unknown error handling option {failure_mode}")
-        
-
 
         return docking_results
 

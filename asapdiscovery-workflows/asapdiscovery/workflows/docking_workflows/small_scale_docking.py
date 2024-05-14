@@ -17,9 +17,9 @@ from asapdiscovery.data.services.postera.manifold_artifacts import (
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
+    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.services.postera.manifold_data_validation import map_output_col_to_manifold_tag
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.services.services_config import (
@@ -555,7 +555,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )[DockingResultCols.DOCKING_SCORE_POSIT.value]
 
         postera_uploader = PosteraUploader(
-            settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name, sort_column=posit_score_tag, sort_ascending=True
+            settings=PosteraSettings(),
+            molecule_set_name=inputs.postera_molset_name,
+            sort_column=posit_score_tag,
+            sort_ascending=True,
         )
 
         # push the results to PostEra, making a new molecule set if necessary

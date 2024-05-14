@@ -33,7 +33,9 @@ class PosteraUploader(BaseModel):
         False, description="Overwrite existing data on molecule set"
     )
 
-    def push(self, df: pd.DataFrame, sort_column: bool = None, sort_ascending: bool = False) -> tuple[pd.DataFrame, UUID, bool]:
+    def push(
+        self, df: pd.DataFrame, sort_column: bool = None, sort_ascending: bool = False
+    ) -> tuple[pd.DataFrame, UUID, bool]:
         """
         Push molecules to a Postera molecule set
 
@@ -96,7 +98,9 @@ class PosteraUploader(BaseModel):
                     smiles_field=self.smiles_field,
                     id_field=self.id_field,
                 )
-                data = self.remove_duplicates(data,  id_field, sort_column, sort_ascending)
+                data = self.remove_duplicates(
+                    data, id_field, sort_column, sort_ascending
+                )
                 # find rows with blank id, they need to be added to molset, using **add** endpoint rather than **update**
                 has_blank_id_rows, blank_id_rows = self._check_for_blank_ids(
                     data, self.id_field, raise_error=False
@@ -227,7 +231,14 @@ class PosteraUploader(BaseModel):
             return False
 
     @staticmethod
-    def _check_for_duplicates(df, id_field, allow_empty=True, raise_error=False, sort_column=None, sort_ascending=False):
+    def _check_for_duplicates(
+        df,
+        id_field,
+        allow_empty=True,
+        raise_error=False,
+        sort_column=None,
+        sort_ascending=False,
+    ):
         """
         Check for duplicate UUIDs in the dataframe
 
@@ -307,7 +318,9 @@ class PosteraUploader(BaseModel):
         DataFrame
             The input dataframe with duplicates removed
         """
-        dup, _ =  self._check_for_duplicates(data, self.id_field, allow_empty=True, raise_error=False)
+        dup, _ = self._check_for_duplicates(
+            data, self.id_field, allow_empty=True, raise_error=False
+        )
         if dup:
             if sort_column not in data.columns:
                 raise ValueError(f"sort_column {sort_column} not found in dataframe")
