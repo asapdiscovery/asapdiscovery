@@ -99,7 +99,7 @@ class PosteraUploader(BaseModel):
                     id_field=self.id_field,
                 )
                 data = self.remove_duplicates(
-                    data, self.id_field, sort_column, sort_ascending
+                    data,  sort_column, sort_ascending
                 )
                 # find rows with blank id, they need to be added to molset, using **add** endpoint rather than **update**
                 has_blank_id_rows, blank_id_rows = self._check_for_blank_ids(
