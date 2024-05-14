@@ -197,7 +197,7 @@ class TrainingPredictionTracker(BaseModel):
 
         # Extract values
         if split:
-            return [self.split_dict[split][i] for i in return_idxs]
+            return [self.split_dict[split][i] for i in return_idxs[split]]
         else:
             return {
                 sp: [split_list[i] for i in return_idxs[sp]]
