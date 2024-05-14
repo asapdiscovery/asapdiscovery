@@ -328,10 +328,7 @@ class POSITDocker(DockingBase):
                                 probability=prob,
                                 provenance=self.provenance(),
                             )
-                            if return_for_disk_backend:
-                                docking_results.append(docked_result_json_path)
-                            else:
-                                docking_results.append(docking_result)
+
                             if output_dir is not None:
                                 docking_result.write_docking_files(output_dir)
             except Exception as e:
@@ -342,6 +339,12 @@ class POSITDocker(DockingBase):
                     raise ValueError(error_msg)
                 else:
                     raise ValueError(f"Unknown error handling option {failure_mode}")
+        
+            if return_for_disk_backend:
+                print("RDISK")
+                docking_results.append(docked_result_json_path)
+            else:
+                docking_results.append(docking_result)
 
         return docking_results
 
