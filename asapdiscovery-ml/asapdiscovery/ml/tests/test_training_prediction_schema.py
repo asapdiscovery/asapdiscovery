@@ -289,3 +289,35 @@ def test_update_values_new_no_split(identifiers, loss_configs):
             **identifiers,
             loss_config=loss_configs[0],
         )
+
+
+def test_training_pred_tracker_compounds(identifiers, loss_configs):
+    tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
+    tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
+
+    tp_tracker = TrainingPredictionTracker(
+        split_dict={"train": [tp1], "val": [], "test": []}
+    )
+
+    cpds = tp_tracker.compounds
+    assert cpds == {
+        "train": {(tp1.xtal_id, tp1.compound_id)},
+        "val": set(),
+        "test": set(),
+    }
+
+    tp_tracker.update_values(
+        split="val",
+        prediction=1.0,
+        pose_predictions=[1.0, 2.0, 3.0],
+        loss_val=0.0,
+        **identifiers,
+        loss_config=loss_configs[1],
+    )
+
+    cpds = tp_tracker.compounds
+    assert cpds == {
+        "train": {(tp1.xtal_id, tp1.compound_id)},
+        "val": {(tp2.xtal_id, tp2.compound_id)},
+        "test": set(),
+    }

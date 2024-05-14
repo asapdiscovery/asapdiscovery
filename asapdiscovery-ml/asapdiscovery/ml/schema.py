@@ -92,6 +92,13 @@ class TrainingPredictionTracker(BaseModel):
     def __len__(self):
         return sum([len(split_list) for split_list in self.split_dict.values()])
 
+    @property
+    def compounds(self):
+        return {
+            sp: {(tp.xtal_id, tp.compound_id) for tp in split_list}
+            for sp, split_list in self.split_dict.items()
+        }
+
     def _find_value_idxs(
         self,
         split=None,
