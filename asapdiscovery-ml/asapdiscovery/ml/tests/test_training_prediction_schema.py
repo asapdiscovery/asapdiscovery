@@ -129,9 +129,126 @@ def test_get_values_no_split(identifiers, loss_configs):
     assert vals == {"train": [], "val": [], "test": []}
 
 
-def test_update_values_existing():
-    pass
+def test_update_values_existing(identifiers, loss_configs):
+    tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
+    tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
+
+    tp_tracker = TrainingPredictionTracker(
+        split_dict={"train": [tp1], "val": [tp2], "test": []}
+    )
+
+    tp_tracker.update_values(
+        prediction=1.0,
+        pose_predictions=[1.0, 2.0, 3.0],
+        loss_val=0.0,
+        **identifiers,
+        loss_config=loss_configs[0],
+    )
+
+    tp = tp_tracker.get_values(
+        split="train",
+        compound_id=identifiers["compound_id"],
+        xtal_id=identifiers["xtal_id"],
+        target_prop=identifiers["target_prop"],
+        loss_config=loss_configs[0],
+    )[0]
+
+    assert len(tp.predictions) == 1
+    assert len(tp.pose_predictions) == 1
+    assert len(tp.loss_vals) == 1
 
 
-def test_update_values_new():
-    pass
+def test_update_values_existing_multi_bad(identifiers, loss_configs):
+    tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
+    tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
+
+    tp_tracker = TrainingPredictionTracker(
+        split_dict={"train": [tp1], "val": [tp2], "test": []}
+    )
+
+    with pytest.raises(ValueError):
+        tp_tracker.update_values(
+            prediction=1.0,
+            pose_predictions=[1.0, 2.0, 3.0],
+            loss_val=0.0,
+            **identifiers,
+        )
+
+
+def test_update_values_existing_multi_ok(identifiers, loss_configs):
+    tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
+    tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
+
+    tp_tracker = TrainingPredictionTracker(
+        split_dict={"train": [tp1], "val": [tp2], "test": []}
+    )
+
+    tp_tracker.update_values(
+        prediction=1.0,
+        pose_predictions=[1.0, 2.0, 3.0],
+        loss_val=0.0,
+        **identifiers,
+        allow_multiple=True,
+    )
+
+    tp = tp_tracker.get_values(
+        split="train",
+        compound_id=identifiers["compound_id"],
+        xtal_id=identifiers["xtal_id"],
+        target_prop=identifiers["target_prop"],
+        loss_config=loss_configs[0],
+    )[0]
+
+    assert len(tp.predictions) == 1
+    assert len(tp.pose_predictions) == 1
+    assert len(tp.loss_vals) == 1
+
+    tp = tp_tracker.get_values(
+        split="val",
+        compound_id=identifiers["compound_id"],
+        xtal_id=identifiers["xtal_id"],
+        target_prop=identifiers["target_prop"],
+        loss_config=loss_configs[1],
+    )[0]
+
+    assert len(tp.predictions) == 1
+    assert len(tp.pose_predictions) == 1
+    assert len(tp.loss_vals) == 1
+
+
+def test_update_values_new(identifiers, loss_configs):
+    tp_tracker = TrainingPredictionTracker()
+
+    tp_tracker.update_values(
+        split="train",
+        prediction=1.0,
+        pose_predictions=[1.0, 2.0, 3.0],
+        loss_val=0.0,
+        **identifiers,
+        loss_config=loss_configs[0],
+    )
+
+    tp = tp_tracker.get_values(
+        split="train",
+        compound_id=identifiers["compound_id"],
+        xtal_id=identifiers["xtal_id"],
+        target_prop=identifiers["target_prop"],
+        loss_config=loss_configs[0],
+    )[0]
+
+    assert len(tp.predictions) == 1
+    assert len(tp.pose_predictions) == 1
+    assert len(tp.loss_vals) == 1
+
+
+def test_update_values_new_no_split(identifiers, loss_configs):
+    tp_tracker = TrainingPredictionTracker()
+
+    with pytest.raises(ValueError):
+        tp_tracker.update_values(
+            prediction=1.0,
+            pose_predictions=[1.0, 2.0, 3.0],
+            loss_val=0.0,
+            **identifiers,
+            loss_config=loss_configs[0],
+        )
