@@ -299,7 +299,7 @@ def test_training_pred_tracker_compounds(identifiers, loss_configs):
         split_dict={"train": [tp1], "val": [], "test": []}
     )
 
-    cpds = tp_tracker.compounds
+    cpds = tp_tracker.get_compounds()
     assert cpds == {
         "train": {(tp1.xtal_id, tp1.compound_id)},
         "val": set(),
@@ -315,7 +315,7 @@ def test_training_pred_tracker_compounds(identifiers, loss_configs):
         loss_config=loss_configs[1],
     )
 
-    cpds = tp_tracker.compounds
+    cpds = tp_tracker.get_compounds()
     assert cpds == {
         "train": {(tp1.xtal_id, tp1.compound_id)},
         "val": {(tp2.xtal_id, tp2.compound_id)},
@@ -331,7 +331,7 @@ def test_training_pred_tracker_compound_ids(identifiers, loss_configs):
         split_dict={"train": [tp1], "val": [], "test": []}
     )
 
-    cpds = tp_tracker.compound_ids
+    cpds = tp_tracker.get_compound_ids()
     assert cpds == {
         "train": {tp1.compound_id},
         "val": set(),
@@ -347,7 +347,7 @@ def test_training_pred_tracker_compound_ids(identifiers, loss_configs):
         loss_config=loss_configs[1],
     )
 
-    cpds = tp_tracker.compound_ids
+    cpds = tp_tracker.get_compound_ids()
     assert cpds == {
         "train": {tp1.compound_id},
         "val": {tp2.compound_id},
