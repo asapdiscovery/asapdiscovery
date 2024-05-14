@@ -99,7 +99,7 @@ class PosteraUploader(BaseModel):
                     id_field=self.id_field,
                 )
                 data = self.remove_duplicates(
-                    data, id_field, sort_column, sort_ascending
+                    data, self.id_field, sort_column, sort_ascending
                 )
                 # find rows with blank id, they need to be added to molset, using **add** endpoint rather than **update**
                 has_blank_id_rows, blank_id_rows = self._check_for_blank_ids(
@@ -298,7 +298,7 @@ class PosteraUploader(BaseModel):
         else:
             return False, None
 
-    def remove_duplicates(self, data, id_field, sort_column=None, sort_ascending=False):
+    def remove_duplicates(self, data, sort_column, sort_ascending=False):
         """
         Remove duplicates from the dataframe
 
@@ -324,6 +324,8 @@ class PosteraUploader(BaseModel):
         if dup:
             if sort_column not in data.columns:
                 raise ValueError(f"sort_column {sort_column} not found in dataframe")
+            if not sort_column:
+                raise ValueError(f"sort_column {sort_column} must be a string")
             data = data.sort_values(by=sort_column, ascending=sort_ascending)
-            data = data.drop_duplicates(subset=[id_field], keep="first")
+            data = data.drop_duplicates(subset=[self.id_field], keep="first")
         return data
