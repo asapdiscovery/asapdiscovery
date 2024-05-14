@@ -121,16 +121,16 @@ class TrainingPredictionTracker(BaseModel):
 
         # Match functions
         def compound_id_match(query):
-            return (compound_id is None) or (query == compound_id)
+            return (compound_id is None) or (query.compound_id == compound_id)
 
         def xtal_id_match(query):
-            return (xtal_id is None) or (query == xtal_id)
+            return (xtal_id is None) or (query.xtal_id == xtal_id)
 
         def target_prop_match(query):
-            return (target_prop is None) or (query == target_prop)
+            return (target_prop is None) or (query.target_prop == target_prop)
 
         def loss_config_match(query):
-            return (loss_config is None) or (query == loss_config)
+            return (loss_config is None) or (query.loss_config == loss_config)
 
         if split:
             return {
