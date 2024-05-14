@@ -99,6 +99,13 @@ class TrainingPredictionTracker(BaseModel):
             for sp, split_list in self.split_dict.items()
         }
 
+    @property
+    def compound_ids(self):
+        return {
+            sp: {tp.compound_id for tp in split_list}
+            for sp, split_list in self.split_dict.items()
+        }
+
     def _find_value_idxs(
         self,
         split=None,
