@@ -38,6 +38,9 @@ class TrainingPrediction(BaseModel):
         ..., description="Config describing loss function."
     )
     loss_vals: list[float] = Field([], description="Loss value of model prediction.")
+    loss_weight: float = Field(
+        None, description="Contribution of this loss function to the full loss."
+    )
 
     class Config:
         # Allow things to be added to the object after initialization/validation
