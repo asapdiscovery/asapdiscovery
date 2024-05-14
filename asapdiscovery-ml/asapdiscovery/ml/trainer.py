@@ -1185,9 +1185,7 @@ class Trainer(BaseModel):
             wandb.finish()
 
         torch.save(self.model.state_dict(), self.output_dir / "final.th")
-        (self.output_dir / "pred_tracker.json").write_text(
-            json.dumps(self.pred_tracker)
-        )
+        (self.output_dir / "pred_tracker.json").write_text(self.pred_tracker.json())
 
     def _make_wandb_ds_tables(self):
         ds_tables = []
