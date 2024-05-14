@@ -87,6 +87,17 @@ def test_training_pred_tracker_json_roundtrip(identifiers, loss_configs):
         assert getattr(tp_roundtrip, k) == v
 
 
+def test_training_pred_tracker_len(identifiers, loss_configs):
+    tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
+    tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
+
+    tp_tracker = TrainingPredictionTracker(
+        split_dict={"train": [tp1], "val": [tp2], "test": []}
+    )
+
+    assert len(tp_tracker) == 2
+
+
 def test_find_value_idxs(identifiers, loss_configs):
     tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
     tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])

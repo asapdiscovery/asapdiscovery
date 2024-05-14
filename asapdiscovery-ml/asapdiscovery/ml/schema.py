@@ -89,6 +89,9 @@ class TrainingPredictionTracker(BaseModel):
 
         return split_dict
 
+    def __len__(self):
+        return sum([len(split_list) for split_list in self.split_dict.values()])
+
     def _find_value_idxs(
         self,
         split=None,
