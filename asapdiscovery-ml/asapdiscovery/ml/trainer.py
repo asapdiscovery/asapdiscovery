@@ -856,12 +856,20 @@ class Trainer(BaseModel):
                 loss.backward()
 
                 # Update pred_tracker
-                for target_prop, target, in_range, uncertainty, loss_config in zip(
+                for (
+                    target_prop,
+                    target,
+                    in_range,
+                    uncertainty,
+                    loss_config,
+                    loss_wt,
+                ) in zip(
                     self.target_props,
                     targets,
                     in_ranges,
                     uncertaintys,
                     self.loss_configs,
+                    self.loss_weights,
                 ):
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
@@ -875,6 +883,7 @@ class Trainer(BaseModel):
                         in_range=in_range,
                         uncertainty=uncertainty,
                         loss_config=loss_config,
+                        loss_weight=loss_wt,
                     )
 
                 # Keep track of loss for each sample
@@ -978,12 +987,20 @@ class Trainer(BaseModel):
                 loss = losses.flatten().dot(self.eval_loss_weights)
 
                 # Update pred_tracker
-                for target_prop, target, in_range, uncertainty, loss_config in zip(
+                for (
+                    target_prop,
+                    target,
+                    in_range,
+                    uncertainty,
+                    loss_config,
+                    loss_wt,
+                ) in zip(
                     self.target_props,
                     targets,
                     in_ranges,
                     uncertaintys,
                     self.loss_configs,
+                    self.loss_weights,
                 ):
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
@@ -997,6 +1014,7 @@ class Trainer(BaseModel):
                         in_range=in_range,
                         uncertainty=uncertainty,
                         loss_config=loss_config,
+                        loss_weight=loss_wt,
                     )
 
                 tmp_loss.append(loss.item())
@@ -1057,12 +1075,20 @@ class Trainer(BaseModel):
                 loss = losses.flatten().dot(self.eval_loss_weights)
 
                 # Update pred_tracker
-                for target_prop, target, in_range, uncertainty, loss_config in zip(
+                for (
+                    target_prop,
+                    target,
+                    in_range,
+                    uncertainty,
+                    loss_config,
+                    loss_wt,
+                ) in zip(
                     self.target_props,
                     targets,
                     in_ranges,
                     uncertaintys,
                     self.loss_configs,
+                    self.loss_weights,
                 ):
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
@@ -1076,6 +1102,7 @@ class Trainer(BaseModel):
                         in_range=in_range,
                         uncertainty=uncertainty,
                         loss_config=loss_config,
+                        loss_weight=loss_wt,
                     )
 
                 tmp_loss.append(loss.item())
