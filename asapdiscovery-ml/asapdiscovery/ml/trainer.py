@@ -456,7 +456,7 @@ class Trainer(BaseModel):
 
         return extra_config
 
-    @validator("loss_weights", pre=True)
+    @validator("loss_weights", pre=True, always=True)
     def check_loss_weights(cls, v, values):
         """
         Make sure that we have the right number of loss function weights, and cast to
@@ -485,7 +485,7 @@ class Trainer(BaseModel):
 
         return v
 
-    @validator("eval_loss_weights", pre=True)
+    @validator("eval_loss_weights", pre=True, always=True)
     def check_eval_loss_weights(cls, v, values):
         """
         Make sure that we have the right number of loss function weights, and cast to
