@@ -61,8 +61,29 @@ def test_training_pred_tracker_constructor_bad_dict(identifiers, loss_configs):
         _ = TrainingPredictionTracker(split_dict={"train": [tp1], "val": [tp2]})
 
 
-def test_find_value_idxs():
-    pass
+def test_find_value_idxs(identifiers, loss_configs):
+    tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
+    tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
+
+    tp_tracker = TrainingPredictionTracker(
+        split_dict={"train": [tp1], "val": [tp2], "test": []}
+    )
+
+    idxs = tp_tracker._find_value_idxs(loss_config=loss_configs[0])
+    assert idxs == {"train": [0], "val": [], "test": []}
+
+    idxs = tp_tracker._find_value_idxs(split="train")
+    assert idxs == {"train": [0], "val": [], "test": []}
+
+    idxs = tp_tracker._find_value_idxs(
+        compound_id=identifiers["compound_id"],
+        xtal_id=identifiers["xtal_id"],
+        target_prop=identifiers["target_prop"],
+    )
+    assert idxs == {"train": [0], "val": [0], "test": []}
+
+    idxs = tp_tracker._find_value_idxs()
+    assert idxs == {"train": [0], "val": [0], "test": []}
 
 
 def test_get_values_split():
