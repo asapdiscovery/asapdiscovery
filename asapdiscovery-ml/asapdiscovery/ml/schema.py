@@ -281,7 +281,9 @@ class TrainingPredictionTracker(BaseModel):
                 raise ValueError(
                     "Multiple results found for search "
                     ", ".join(
-                        [split, compound_id, xtal_id, target_prop, str(loss_config)]
+                        map(
+                            str, [split, compound_id, xtal_id, target_prop, loss_config]
+                        )
                     )
                 )
 
