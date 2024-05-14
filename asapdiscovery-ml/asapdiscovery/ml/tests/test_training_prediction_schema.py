@@ -1,3 +1,4 @@
+import json
 import pydantic
 import pytest
 
@@ -32,6 +33,16 @@ def test_training_pred_constructor(identifiers, loss_configs):
     _ = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
 
 
+def test_training_pred_json_roundtrip(identifiers, loss_configs):
+    tp = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
+
+    json_str = tp.json()
+    tp_roundtrip = TrainingPrediction(**json.loads(json_str))
+
+    for k, v in tp.dict().items():
+        assert getattr(tp_roundtrip, k) == v
+
+
 def test_training_pred_tracker_constructor_no_dict():
     tp_tracker = TrainingPredictionTracker()
 
@@ -59,6 +70,21 @@ def test_training_pred_tracker_constructor_bad_dict(identifiers, loss_configs):
 
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         _ = TrainingPredictionTracker(split_dict={"train": [tp1], "val": [tp2]})
+
+
+def test_training_pred_tracker_json_roundtrip(identifiers, loss_configs):
+    tp1 = TrainingPrediction(**identifiers, loss_config=loss_configs[0])
+    tp2 = TrainingPrediction(**identifiers, loss_config=loss_configs[1])
+
+    tp_tracker = TrainingPredictionTracker(
+        split_dict={"train": [tp1], "val": [tp2], "test": []}
+    )
+
+    json_str = tp_tracker.json()
+    tp_roundtrip = TrainingPredictionTracker(**json.loads(json_str))
+
+    for k, v in tp_tracker.dict().items():
+        assert getattr(tp_roundtrip, k) == v
 
 
 def test_find_value_idxs(identifiers, loss_configs):
