@@ -287,8 +287,7 @@ class PosteraUploader(BaseModel):
         else:
             return False, None
 
-    @staticmethod
-    def remove_duplicates(df, id_field, sort_column=None, sort_ascending=False):
+    def remove_duplicates(self, data, id_field, sort_column=None, sort_ascending=False):
         """
         Remove duplicates from the dataframe
 
