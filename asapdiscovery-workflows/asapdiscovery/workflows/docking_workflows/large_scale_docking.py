@@ -17,6 +17,7 @@ from asapdiscovery.data.services.postera.manifold_artifacts import (
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
+from asapdiscovery.data.services.postera.manifold_data_validation import map_output_col_to_manifold_tag
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.postera.postera_uploader import PosteraUploader
 from asapdiscovery.data.services.services_config import (

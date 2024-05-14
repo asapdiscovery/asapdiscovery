@@ -308,11 +308,10 @@ class PosteraUploader(BaseModel):
         DataFrame
             The input dataframe with duplicates removed
         """
-        dup, _ self._check_for_duplicates(data, self.id_field, allow_empty=True, raise_error=False)
+        dup, _ =  self._check_for_duplicates(data, self.id_field, allow_empty=True, raise_error=False)
         if dup:
             if sort_column not in data.columns:
                 raise ValueError(f"sort_column {sort_column} not found in dataframe")
-            if 
             data = data.sort_values(by=sort_column, ascending=sort_ascending)
             data = data.drop_duplicates(subset=[id_field], keep="first")
         return data
