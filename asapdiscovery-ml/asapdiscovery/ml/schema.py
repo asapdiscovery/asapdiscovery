@@ -1,3 +1,4 @@
+import numpy as np
 from pydantic import BaseModel, Extra, Field, validator
 
 from asapdiscovery.ml.config import LossFunctionConfig
@@ -315,3 +316,76 @@ class TrainingPredictionTracker(BaseModel):
                 split_list[i].predictions.append(prediction)
                 split_list[i].pose_predictions.append(pose_predictions)
                 split_list[i].loss_vals.append(loss_val)
+
+    def get_losses(self, agg_compounds=False, agg_losses=False):
+        """
+        Convenience function for extracting the per-epoch loss values across all
+        tracked values. The output structure will differ depending on the combination of
+        (agg_compounds, agg_losses):
+
+        * (False, False): dict with levels split: compound: loss_config: loss_vals
+        * (True, False): dict with levels split: loss_config: loss_vals
+        * (False, True): dict with levels split: compound: loss_vals
+        * (True, True): dict with levels split: loss_vals
+
+        Parameters
+        ----------
+        agg_compounds : bool, default=False
+            Aggregate (by mean) loss values for all compounds
+        agg_losses : bool, default=False
+            Aggregate (by weighted mean) all different types of loss values for each
+            compound
+
+        Returns
+        -------
+        dict
+            Dict storing loss values, as described in docstring
+        """
+
+        # Check that all loss_configs are consistent if not collapsing them
+        if agg_compounds and (not agg_losses):
+            sp_loss_config_dict = {}
+            for sp, split_list in self.split_dict.items():
+                cur_loss_configs = {}
+                for tp in split_list:
+                    try:
+                        cur_loss_configs[tp.compound_id].update([tp.loss_config])
+                    except KeyError:
+                        cur_loss_configs[tp.compound_id] = {tp.loss_config}
+
+                cur_loss_configs = {tuple(s) for s in cur_loss_configs.values()}
+                if len(cur_loss_configs) != 1:
+                    raise ValueError(f"Mismatched loss_configs in split {sp}")
+
+                sp_loss_config_dict[sp] = next(iter(cur_loss_configs))
+
+        full_loss_dict = {}
+
+        # Loop through the dict and gather loss value lists at the appropriate levels
+        for sp, split_list in self.split_dict.items():
+            for tp in split_list:
+                # Indexes into full_loss_dict
+                idx = [sp]
+                if not agg_compounds:
+                    idx += [tp.compound_id]
+                if not agg_losses:
+                    idx += [tp.loss_config]
+
+                # Keep going into the dict until we reach the bottom level we want
+                cur_d = full_loss_dict
+                for val in idx[:-1]:
+                    try:
+                        cur_d = cur_d[val]
+                    except KeyError:
+                        cur_d[val] = {}
+                        cur_d = cur_d[val]
+
+                try:
+                    cur_d[idx[-1]].append(np.asarray(tp.loss_vals) * tp.loss_weight)
+                except KeyError:
+                    cur_d[idx[-1]] = [np.asarray(tp.loss_vals) * tp.loss_weight]
+
+        # Get all the actual loss values
+        iter_list = list(full_loss_dict.values())
+        while isinstance(iter_list[0], dict):
+            iter_list = [v.values() for v in iter_list]
