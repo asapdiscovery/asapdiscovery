@@ -225,9 +225,12 @@ class POSITDocker(DockingBase):
                         f"Docking result for {set.unique_name} already exists, reading from disk"
                     )
                     output_dir = Path(output_dir)
-                    docking_results.append(
-                        POSITDockingResults.from_json_file(docked_result_json_path)
-                    )
+                    if return_for_disk_backend:
+                        docking_results.append(docked_result_json_path)
+                    else:
+                        docking_results.append(
+                            POSITDockingResults.from_json_file(docked_result_json_path)
+                        )
                 else:
                     dus = set.to_design_units()
                     lig_oemol = oechem.OEMol(set.ligand.to_oemol())
