@@ -342,6 +342,11 @@ class TrainingPredictionTracker(BaseModel):
             Dict storing loss values, as described in docstring
         """
 
+        # Check that everything has the same number of loss_values
+        all_loss_vals_lens = {len(tp.loss_vals) for tp in self}
+        if len(all_loss_vals_lens) > 1:
+            raise ValueError("Mismatched number of loss values")
+
         # Check that all loss_configs are consistent if not collapsing them
         if agg_compounds and (not agg_losses):
             sp_loss_config_dict = {}
@@ -349,9 +354,9 @@ class TrainingPredictionTracker(BaseModel):
                 cur_loss_configs = {}
                 for tp in split_list:
                     try:
-                        cur_loss_configs[tp.compound_id].update([tp.loss_config])
+                        cur_loss_configs[tp.compound_id].update([tp.loss_config.json()])
                     except KeyError:
-                        cur_loss_configs[tp.compound_id] = {tp.loss_config}
+                        cur_loss_configs[tp.compound_id] = {tp.loss_config.json()}
 
                 cur_loss_configs = {tuple(s) for s in cur_loss_configs.values()}
                 if len(cur_loss_configs) != 1:
@@ -361,17 +366,13 @@ class TrainingPredictionTracker(BaseModel):
 
         full_loss_dict = {}
 
-        # Loop through the dict and gather loss value lists at the appropriate levels
+        # Build full dict, then we can aggregate as desired later
         for sp, split_list in self.split_dict.items():
             for tp in split_list:
                 # Indexes into full_loss_dict
-                idx = [sp]
-                if not agg_compounds:
-                    idx += [tp.compound_id]
-                if not agg_losses:
-                    idx += [tp.loss_config]
+                idx = [sp, tp.compound_id, tp.loss_config.json()]
 
-                # Keep going into the dict until we reach the bottom level we want
+                # Keep going into the dict until we reach the bottom level
                 cur_d = full_loss_dict
                 for val in idx[:-1]:
                     try:
@@ -380,12 +381,72 @@ class TrainingPredictionTracker(BaseModel):
                         cur_d[val] = {}
                         cur_d = cur_d[val]
 
-                try:
-                    cur_d[idx[-1]].append(np.asarray(tp.loss_vals) * tp.loss_weight)
-                except KeyError:
-                    cur_d[idx[-1]] = [np.asarray(tp.loss_vals) * tp.loss_weight]
+                loss_vals = np.asarray(tp.loss_vals)
+                if agg_losses:
+                    # Taking the weighted mean, so need to multiply by weight
+                    loss_vals *= tp.loss_weight
 
-        # Get all the actual loss values
-        iter_list = list(full_loss_dict.values())
-        while isinstance(iter_list[0], dict):
-            iter_list = [v.values() for v in iter_list]
+                try:
+                    cur_d[idx[-1]].append(loss_vals)
+                    print(
+                        (
+                            "Multiple TrainingPrediction values found for "
+                            f'compound_id="{tp.compound_id}" and '
+                            f'loss_config="{tp.loss_config.json()}"'
+                        )
+                    )
+                except KeyError:
+                    cur_d[idx[-1]] = [loss_vals]
+
+        agg_loss_dict = {}
+        # Aggregate stuff, probably bottom up
+        for sp, split_dict in full_loss_dict.items():
+            if agg_compounds:
+                # If aggregating across compounds, keep everything in a list to flatten
+                #  later
+                sp_loss_vals = []
+            else:
+                # Otherwise keep track of stuff per-compound
+                sp_loss_vals = {}
+            for compound_id, cpd_dict in split_dict.items():
+                if agg_losses:
+                    # First take the mean in case there were multiple TrainingPrediction
+                    #  values with the same loss config, then sum across loss configs
+                    #  since we've already taken care of weighting the values
+                    lc_loss_vals = np.stack(
+                        [
+                            np.stack(loss_val_lists, axis=0).mean(axis=0)
+                            for loss_val_lists in cpd_dict.values()
+                        ],
+                        axis=0,
+                    ).sum(axis=0)
+                else:
+                    # Just take mean in case of multiple TrainingPrediction values with
+                    #  the same loss config
+                    # Return a dict since not aggregating across loss config values
+                    lc_loss_vals = {
+                        loss_config: np.stack(loss_val_lists, axis=0).mean(axis=0)
+                        for loss_config, loss_val_lists in cpd_dict.items()
+                    }
+
+                if agg_compounds:
+                    sp_loss_vals.append(lc_loss_vals)
+                else:
+                    sp_loss_vals[compound_id] = lc_loss_vals
+
+            if agg_compounds and (not agg_losses):
+                # Need to combine across dicts
+                sp_loss_vals = {
+                    loss_config: np.stack(
+                        [cpd_dict[loss_config] for cpd_dict in sp_loss_vals],
+                        axis=0,
+                    ).mean(axis=0)
+                    for loss_config in sp_loss_config_dict[sp]
+                }
+            elif agg_compounds:
+                # Just take mean across compounds
+                sp_loss_vals = np.stack(sp_loss_vals, axis=0).mean(axis=0)
+
+            agg_loss_dict[sp] = sp_loss_vals
+
+        return agg_loss_dict
