@@ -1217,17 +1217,16 @@ class Trainer(BaseModel):
     def _make_wandb_ds_tables(self):
         ds_tables = []
 
+        table_cols = ["crystal", "compound_id"]
+        for target_prop in self.target_props:
+            table_cols += [
+                target_prop,
+                f"{target_prop}_range",
+                f"{target_prop}_stderr",
+            ]
+        table_cols += ["date_created"]
         for ds in [self.ds_train, self.ds_val, self.ds_test]:
-            table = wandb.Table(
-                columns=[
-                    "crystal",
-                    "compound_id",
-                    self.target_prop,
-                    f"{self.target_prop}_range",
-                    f"{self.target_prop}_stderr",
-                    "date_created",
-                ]
-            )
+            table = wandb.Table(columns=table_cols)
             # Build table and add each molecule
             for compound, d in ds:
                 try:
@@ -1238,32 +1237,10 @@ class Trainer(BaseModel):
                     xtal_id = ""
                     compound_id = compound
 
-                try:
-                    target_value = d[self.target_prop]
-                except KeyError:
-                    target_value = np.nan
-                try:
-                    target_value_range = d[f"{self.target_prop}_range"]
-                except KeyError:
-                    target_value_range = np.nan
-                try:
-                    target_value_stderr = d[f"{self.target_prop}_stderr"]
-                except KeyError:
-                    target_value_stderr = np.nan
-                except AttributeError:
-                    target_value = d[self.target_prop]
-                try:
-                    date_created = d["date_created"]
-                except KeyError:
-                    date_created = None
-                table.add_data(
-                    xtal_id,
-                    compound_id,
-                    target_value,
-                    target_value_range,
-                    target_value_stderr,
-                    date_created,
-                )
+                row_data = [xtal_id, compound_id]
+                row_data += [d.get(col, np.nan) for col in table_cols[2:-1]]
+                row_data += [d.get("date_created", None)]
+                table.add_data(*row_data)
 
             ds_tables.append(table)
 
