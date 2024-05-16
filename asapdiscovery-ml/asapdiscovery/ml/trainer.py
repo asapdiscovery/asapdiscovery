@@ -1000,7 +1000,7 @@ class Trainer(BaseModel):
                     in_ranges,
                     uncertaintys,
                     self.loss_configs,
-                    self.loss_weights,
+                    self.eval_loss_weights,
                 ):
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
@@ -1088,7 +1088,7 @@ class Trainer(BaseModel):
                     in_ranges,
                     uncertaintys,
                     self.loss_configs,
-                    self.loss_weights,
+                    self.eval_loss_weights,
                 ):
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
