@@ -343,7 +343,7 @@ class TrainingPredictionTracker(BaseModel):
         """
 
         # Check that everything has the same number of loss_values
-        all_loss_vals_lens = {len(tp.loss_vals) for tp in self}
+        all_loss_vals_lens = {len(tp.loss_vals) for _, tp in self}
         if len(all_loss_vals_lens) > 1:
             raise ValueError("Mismatched number of loss values")
 
@@ -359,10 +359,12 @@ class TrainingPredictionTracker(BaseModel):
                         cur_loss_configs[tp.compound_id] = {tp.loss_config.json()}
 
                 cur_loss_configs = {tuple(s) for s in cur_loss_configs.values()}
-                if len(cur_loss_configs) != 1:
+                if len(cur_loss_configs) > 1:
                     raise ValueError(f"Mismatched loss_configs in split {sp}")
-
-                sp_loss_config_dict[sp] = next(iter(cur_loss_configs))
+                elif len(cur_loss_configs) == 0:
+                    sp_loss_config_dict[sp] = ()
+                else:
+                    sp_loss_config_dict[sp] = next(iter(cur_loss_configs))
 
         full_loss_dict = {}
 
