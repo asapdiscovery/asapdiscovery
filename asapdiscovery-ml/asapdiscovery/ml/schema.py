@@ -1,4 +1,5 @@
 import numpy as np
+import pandas
 from pydantic import BaseModel, Extra, Field, validator
 
 from asapdiscovery.ml.config import LossFunctionConfig
@@ -452,3 +453,68 @@ class TrainingPredictionTracker(BaseModel):
             agg_loss_dict[sp] = sp_loss_vals
 
         return agg_loss_dict
+
+    def to_plot_df(self, agg_compounds=False, agg_losses=False):
+        """
+        Convenience function for returning loss values in a DatFrame that can be used
+        immediately for plotting.
+
+        Parameters
+        ----------
+        agg_compounds : bool, default=False
+            Aggregate (by mean) loss values for all compounds
+        agg_losses : bool, default=False
+            Aggregate (by weighted mean) all different types of loss values for each
+            compound
+
+        Returns
+        -------
+        pandas.DataFrame
+            Plot-ready DataFrame
+        """
+        all_split = []
+        all_epoch = []
+        all_compounds = []
+        all_losses = []
+        all_loss_vals = []
+
+        loss_dict = self.get_losses(agg_compounds=agg_compounds, agg_losses=agg_losses)
+
+        for sp, split_dict in loss_dict.items():
+            match agg_compounds, agg_losses:
+                case (False, False):
+                    for compound_id, cpd_dict in split_dict.items():
+                        for loss_config, loss_val_list in cpd_dict.items():
+                            all_split.extend([sp] * len(loss_val_list))
+                            all_epoch.extend(np.arange(len(loss_val_list)))
+                            all_compounds.extend([compound_id] * len(loss_val_list))
+                            all_losses.extend([loss_config] * len(loss_val_list))
+                            all_loss_vals.extend(loss_val_list)
+                case (True, False):
+                    for loss_config, loss_val_list in split_dict.items():
+                        all_split.extend([sp] * len(loss_val_list))
+                        all_epoch.extend(np.arange(len(loss_val_list)))
+                        all_losses.extend([loss_config] * len(loss_val_list))
+                        all_loss_vals.extend(loss_val_list)
+                case (False, True):
+                    for compound_id, loss_val_list in split_dict.items():
+                        all_split.extend([sp] * len(loss_val_list))
+                        all_epoch.extend(np.arange(len(loss_val_list)))
+                        all_compounds.extend([compound_id] * len(loss_val_list))
+                        all_loss_vals.extend(loss_val_list)
+                case (True, True):
+                    loss_val_list = split_dict
+                    all_split.extend([sp] * len(loss_val_list))
+                    all_epoch.extend(np.arange(len(loss_val_list)))
+                    all_loss_vals.extend(loss_val_list)
+
+        use_vals = [
+            (label, val)
+            for label, val in zip(
+                ["split", "epoch", "compound_id", "loss_config", "loss"],
+                [all_split, all_epoch, all_compounds, all_losses, all_loss_vals],
+            )
+            if len(val) > 0
+        ]
+
+        return pandas.DataFrame(dict(use_vals))
