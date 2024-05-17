@@ -322,10 +322,11 @@ class PosteraUploader(BaseModel):
             data, self.id_field, allow_empty=True, raise_error=False
         )
         if dup:
+            if not sort_column:
+                raise ValueError("sort_column must be provided if duplicates are found")
             if sort_column not in data.columns:
                 raise ValueError(f"sort_column {sort_column} not found in dataframe")
-            if not sort_column:
-                raise ValueError(f"sort_column {sort_column} must be a string")
             data = data.sort_values(by=sort_column, ascending=sort_ascending)
             data = data.drop_duplicates(subset=[self.id_field], keep="first")
+        
         return data
