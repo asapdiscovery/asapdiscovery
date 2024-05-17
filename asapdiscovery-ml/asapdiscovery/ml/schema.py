@@ -41,7 +41,7 @@ class TrainingPrediction(BaseModel):
     )
     loss_vals: list[float] = Field([], description="Loss value of model prediction.")
     loss_weight: float = Field(
-        None, description="Contribution of this loss function to the full loss."
+        1.0, description="Contribution of this loss function to the full loss."
     )
 
     class Config:
