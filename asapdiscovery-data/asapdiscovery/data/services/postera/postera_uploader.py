@@ -132,7 +132,7 @@ class PosteraUploader(BaseModel):
                 # if the id data is castable to UUID, we can just update the molecule set
 
                 # check for duplicates, removing them
-                self.remove_duplicates(df, sort_column, sort_ascending)
+                data = self.remove_duplicates(df, sort_column, sort_ascending)
                 # check for blanks, raising
                 self._check_for_blank_ids(data, self.id_field, raise_error=True)
 
