@@ -605,4 +605,4 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             s3=S3.from_settings(aws_s3_settings),
             cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
         )
-        uploader.upload_artifacts()
+        uploader.upload_artifacts(sort_column=posit_score_tag, sort_ascending=True)
