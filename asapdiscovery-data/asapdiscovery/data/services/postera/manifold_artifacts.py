@@ -241,7 +241,7 @@ class ManifoldArtifactUploader(BaseModel):
         
         return data
 
-   @staticmethod
+    @staticmethod
     def _check_for_duplicates(
         df,
         id_field,
