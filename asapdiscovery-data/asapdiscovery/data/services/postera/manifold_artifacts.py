@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 
 import pandas as pd
+import numpy as np
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_data_validation import (
