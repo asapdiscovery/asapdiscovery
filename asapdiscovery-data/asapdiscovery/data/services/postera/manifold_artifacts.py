@@ -229,7 +229,7 @@ class ManifoldArtifactUploader(BaseModel):
             The input dataframe with duplicates removed
         """
         dup, _ = self._check_for_duplicates(
-            data, self.id_field, allow_empty=True, raise_error=False
+            data, self.manifold_id_column, allow_empty=True, raise_error=False
         )
         if dup:
             if not sort_column:
