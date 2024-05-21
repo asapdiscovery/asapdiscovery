@@ -454,6 +454,84 @@ class TrainingPredictionTracker(BaseModel):
 
         return agg_loss_dict
 
+    def get_predictions(self, agg_compounds="none"):
+        """
+        Convenience function for extracting the per-epoch predictions values across all
+        tracked values. The output structure will differ depending on the selection for
+        agg_compounds:
+
+        * "none": dict with levels split: compound: predictions (n_epochs,)
+        * "stack": dict with levels split: predctions (n_compounds, n_epochs)
+        * "mean": dict with levels split: predctions (n_epochs,)
+
+        Parameters
+        ----------
+        agg_compounds : str, default="none
+            How to aggregate the compounds. Options are "none", which does no
+            aggregation, "stack", which stacks the prediction values for each compound,
+            and "mean", which takes the mean across all compounds
+
+        Returns
+        -------
+        dict
+            Dict storing predictions, as described in docstring
+        """
+
+        agg_compounds = agg_compounds.lower()
+        if agg_compounds not in {"none", "stack", "mean"}:
+            raise ValueError(f'Unknown value for agg_compounds: "{agg_compounds}"')
+
+        # Check that everything has the same number of epochs
+        all_predictions_lens = {len(tp.predictions) for _, tp in self}
+        if len(all_predictions_lens) > 1:
+            raise ValueError("Mismatched number of predictions")
+
+        # Check that each compound has the same prediction values across loss_configs
+        sp_compound_preds_dict = {}
+        for sp, split_list in self.split_dict.items():
+            cur_preds = {}
+            for tp in split_list:
+                try:
+                    cur_preds[tp.compound_id].update([tuple(tp.predictions)])
+                except KeyError:
+                    cur_preds[tp.compound_id] = {tuple(tp.predictions)}
+
+            for compound_id, pred_list_set in cur_preds.items():
+                if len(pred_list_set) > 1:
+                    raise ValueError(
+                        f"Mismatched predictions for compound {compound_id} in "
+                        f"split {sp}"
+                    )
+
+            cur_preds = {
+                compound_id: next(iter(pred_list_set))
+                for compound_id, pred_list_set in cur_preds.items()
+            }
+            sp_compound_preds_dict[sp] = cur_preds
+
+        # Format into numpy arrays
+        sp_compound_preds_dict = {
+            sp: {
+                compound_id: np.asarray(pred_set).flatten()
+                for compound_id, pred_set in split_dict.items()
+            }
+            for sp, split_dict in sp_compound_preds_dict.items()
+        }
+        if agg_compounds == "none":
+            return sp_compound_preds_dict
+        elif agg_compounds == "stack":
+            return {
+                sp: np.stack(list(split_dict.values()))
+                for sp, split_dict in sp_compound_preds_dict.items()
+            }
+        else:
+            return {
+                sp: np.stack(list(split_dict.values())).mean(axis=0)
+                for sp, split_dict in sp_compound_preds_dict.items()
+            }
+
+        return sp_compound_preds_dict
+
     def to_plot_df(self, agg_compounds=False, agg_losses=False):
         """
         Convenience function for returning loss values in a DatFrame that can be used
