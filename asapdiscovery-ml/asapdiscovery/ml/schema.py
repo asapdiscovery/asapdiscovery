@@ -94,6 +94,48 @@ class TrainingPredictionTracker(BaseModel):
 
         return split_dict
 
+    @classmethod
+    def from_loss_dict(cls, loss_dict, loss_config, target_prop="pIC50"):
+        """
+        Method for building a TrainingPredictionTracker from the old loss_dict method
+        of tracking losses and predictions over training.
+
+        Parameters
+        ----------
+        loss_dict : dict
+            Old style of loss_dict
+        loss_config : LossFunctionConfig
+            LossFunctionConfig to set for each TrainingPrediction. loss_dict format only
+            allowed for one type of loss, so we only need to pass one
+        target_prop : str, default="pIC50"
+            Name of target being predicted. Same deal as for loss_config
+
+        Returns
+        -------
+        cls
+            Parsed TrainingPredictionTracker
+        """
+        tracker_split_dict = {"train": [], "val": [], "test": []}
+
+        # Loop through
+        for sp, split_dict in loss_dict.items():
+            for compound_id, cpd_dict in split_dict.items():
+                tp = TrainingPrediction(
+                    compound_id=compound_id,
+                    xtal_id="NA",
+                    target_prop=target_prop,
+                    target_val=cpd_dict["target"],
+                    in_range=cpd_dict["in_range"],
+                    uncertainty=cpd_dict["uncertainty"],
+                    predictions=cpd_dict["preds"],
+                    pose_predictions=cpd_dict["pose_preds"],
+                    loss_config=loss_config,
+                    loss_vals=cpd_dict["losses"],
+                )
+                tracker_split_dict[sp].append(tp)
+
+        return cls(split_dict=tracker_split_dict)
+
     def __len__(self):
         return sum([len(split_list) for split_list in self.split_dict.values()])
 
