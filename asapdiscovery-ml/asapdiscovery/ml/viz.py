@@ -60,7 +60,7 @@ def plot_split_losses(
         hue_order=hue_order,
         style_order=style_order,
         kind="line",
-        # facet_kws={"gridspec_kws": {"figure": fig}},
+        aspect=1.5,
     )
 
     # Set axes
