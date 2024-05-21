@@ -1,4 +1,5 @@
 import torch
+from torch.nn import CrossEntropyLoss as TorchCrossEntropyLoss
 from torch.nn import GaussianNLLLoss as TorchGaussianNLLLoss
 from torch.nn import MSELoss as TorchMSELoss
 
@@ -207,3 +208,57 @@ class RangeLoss(torch.nn.Module):
             return torch.pow(pred - self.upper_lim, 2)
         else:
             return pred * 0
+
+
+class PoseCrossEntropyLoss(TorchCrossEntropyLoss):
+    def __init__(self, pre_converted=False):
+        """
+        Class for calculating a cross entropy loss for per-pose delta G predictions
+        in kT units compared to labels for pose closest to experimental structure.
+
+        Parameters
+        ----------
+        pre_converted : bool, default=False
+            Inputs are per-pose probabilities and don't need to be converted from
+            delta G prediction
+        """
+        super().__init__()
+
+        self.pre_converted = pre_converted
+
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
+        """
+        Convert delta G prediction inputs to per-pose (Boltzmann) probabilites, unless
+        self.pre_converted is False. delta G predictions are assumed to be in implicit
+        kT units, as that is the standard in mtenn.
+
+        Parameters
+        ----------
+        pred : torch.Tensor
+            Model prediction
+        pose_preds : torch.Tensor
+            Predictions for each pose
+        target : torch.Tensor
+            Prediction target
+        in_range : torch.Tensor
+            `target`'s presence in the dynamic range of the assay. Give a value
+            of < 0 for `target` below lower bound, > 0 for `target` above upper
+            bound, and 0 or None for inside range
+        uncertainty : torch.Tensor
+            Uncertainty in `target` measurements
+
+        Returns
+        -------
+        torch.Tensor
+            Calculated loss
+        """
+        # First get relative prob values
+        prob_values = torch.exp(-torch.cat(pose_preds).flatten())
+
+        # Divide by normalizing constant to get absolute probs
+        prob_values /= prob_values.sum(axis=None)
+
+        return super().forward(
+            prob_values,
+            target.flatten().to(device=prob_values.device, dtype=prob_values.dtype),
+        )
