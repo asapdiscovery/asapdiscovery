@@ -659,28 +659,31 @@ class Trainer(BaseModel):
             #  back to splits from self.ds_splitter_config)
             if len(self.pred_tracker) > 0:
                 subset_idxs = {"train": [], "val": [], "test": []}
-                tracked_compound_ids = self.pred_tracker.get_compound_ids()
+
+                # First build a dict mapping compound_id: idx in ds
+                compound_idx_dict = {}
                 for i, (compound, _) in enumerate(self.ds):
                     if self.model_config.grouped:
                         compound_id = compound
                     else:
                         compound_id = compound[1]
-
-                    for sp, compound_id_set in tracked_compound_ids.items():
-                        if compound_id in compound_id_set:
-                            print(f"putting {compound_id} in {sp}", flush=True)
-                            subset_idxs[sp].append(i)
-                            break
-                    else:
-                        print(
-                            f"Compound {compound_id} not found in pred_tracker, not "
-                            "including it."
+                    if compound_id in compound_idx_dict:
+                        raise ValueError(
+                            f"Found multiple entries in ds for compound {compound_id}"
                         )
-                        if self.log_file:
-                            self.logger.info(
-                                f"Compound {compound_id} not found in pred_tracker, not "
-                                "including it."
-                            )
+                    compound_idx_dict[compound_id] = i
+
+                for _, tp in self.pred_tracker:
+                    if tp.compound_id not in compound_idx_dict:
+                        raise ValueError(
+                            f"Found compound {tp.compound_id} in pred_tracker "
+                            "but not in ds"
+                        )
+
+                subset_idxs = {
+                    sp: compound_idx_dict[compound_id]
+                    for sp, split_vals in self.pred_tracker.split_dict.items()
+                }
 
                 self.ds_train = torch.utils.data.Subset(self.ds, subset_idxs["train"])
                 self.ds_val = torch.utils.data.Subset(self.ds, subset_idxs["val"])
