@@ -48,6 +48,26 @@ class TrainingPrediction(BaseModel):
         # Allow things to be added to the object after initialization/validation
         extra = Extra.allow
 
+    def to_empty(self):
+        """
+        Create a copy with none of the tracked values. Useful checking identity.
+
+        Returns
+        -------
+        TrainingPrediction
+            Copy of self without predictions, pose_predictions, or loss_vals
+        """
+
+        # Make a copy
+        d = self.dict()
+
+        # Get rid of tracked values
+        del d["predictions"]
+        del d["pose_predictions"]
+        del d["loss_vals"]
+
+        return TrainingPrediction(**d)
+
 
 class TrainingPredictionTracker(BaseModel):
     """
