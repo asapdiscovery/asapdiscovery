@@ -637,10 +637,8 @@ class Trainer(BaseModel):
                     **json.loads(pred_tracker_fn.read_text())
                 )
                 try:
-                    self.start_epoch = len(
-                        self.pred_tracker.get_values(split="train")[0].predictions
-                    )
-                except IndexError:
+                    self.start_epoch = len(next(iter(self.pred_tracker))[1].predictions)
+                except StopIteration:
                     self.start_epoch = 0
             else:
                 print("No pred_tracker file found.")
