@@ -933,8 +933,9 @@ class Trainer(BaseModel):
             tmp_loss = []
             for compound, pose in self.ds_val:
                 if type(compound) is tuple:
-                    compound_id = compound[1]
+                    xtal_id, compound_id = compound
                 else:
+                    xtal_id = "NA"
                     compound_id = compound
 
                 # convert to float to match other types
@@ -1021,8 +1022,9 @@ class Trainer(BaseModel):
             tmp_loss = []
             for compound, pose in self.ds_test:
                 if type(compound) is tuple:
-                    compound_id = compound[1]
+                    xtal_id, compound_id = compound
                 else:
+                    xtal_id = "NA"
                     compound_id = compound
 
                 # convert to float to match other types
