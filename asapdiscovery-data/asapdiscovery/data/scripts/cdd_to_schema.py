@@ -16,6 +16,7 @@ import click
 from pathlib import Path
 
 from asapdiscovery.data.util.utils import cdd_to_schema, cdd_to_schema_pair
+from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 
 
 @click.command()
@@ -36,7 +37,6 @@ from asapdiscovery.data.util.utils import cdd_to_schema, cdd_to_schema_pair
 @click.option(
     "-csv",
     "--out-csv",
-    required=True,
     type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
     help="Output CSV file.",
 )
@@ -63,11 +63,31 @@ def main(
     frag_dir: Path | None = None,
 ):
     if data_type.lower() == "std":
-        _ = cdd_to_schema(in_file, out_json, out_csv)
+        compounds = cdd_to_schema(in_file, out_json, out_csv)
     elif data_type.lower() == "ep":
         _ = cdd_to_schema_pair(in_file, out_json, out_csv)
+        return
     else:
         raise ValueError(f"Unknown value for --data-type: {data_type}.")
+
+    # Add in Ligand objects from Fragalysis
+    if frag_dir and frag_dir.exists():
+        print("Loading data from Fragalysis", flush=True)
+        ff = FragalysisFactory(parent_dir=frag_dir)
+        complexes = ff.load()
+        lig_dict = {c.ligand.compound_name: c.ligand for c in complexes}
+
+        for c in compounds:
+            try:
+                lig = lig_dict[c.compound_id]
+            except KeyError:
+                continue
+
+            c.experimental_data["ligand"] = lig
+
+        n_added = sum(["ligand" in c.experimental_data for c in compounds])
+        print(f"Added {n_added} Ligands", flush=True)
+        out_json.write_text("[" + ", ".join([c.json() for c in compounds]) + "]")
 
 
 if __name__ == "__main__":
