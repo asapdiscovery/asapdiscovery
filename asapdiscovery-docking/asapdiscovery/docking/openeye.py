@@ -290,7 +290,7 @@ class POSITDocker(DockingBase):
                             pose_res, retcode = self.run_oe_posit_docking(
                                 opts, pose_res, dus, lig_oemol, self.num_poses
                             )
-                            
+
                     # try again allowing clashes
                     if (
                         self.allow_final_clash
