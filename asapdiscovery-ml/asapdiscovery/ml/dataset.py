@@ -214,41 +214,6 @@ class DockedDataset(Dataset):
 
         return cls.from_complexes(all_complexes, exp_dict=extra_dict, ignore_h=ignore_h)
 
-    @staticmethod
-    def _load_structure(fn, compound, ignore_h=True, extra_dict=None):
-        """
-        Helper function to load a single structure that can be multiprocessed in
-        the class constructor.
-
-        Parameters
-        ----------
-        fn : str
-            PDB file path
-        compound : Tuple[str]
-            (crystal structure, ligand compound id)
-        ignore_h : bool, default=True
-            Whether to remove hydrogens from the loaded structure
-        extra_dict : dict, optional
-            Extra information to add to this structure. Values can be anything
-            as long as they don't have the keys ["z", "pos", "lig", "compound"]
-
-        Returns
-        -------
-        """
-
-        if extra_dict is None:
-            extra_dict = {}
-
-        comp = Complex.from_pdb(
-            pdb_file=fn,
-            target_kwargs={"target_name": compound[0]},
-            ligand_kwargs={"compound_name": compound[1]},
-        )
-
-        return DockedDataset._complex_to_pose(
-            comp=comp, compound=compound, exp_dict=extra_dict, ignore_h=ignore_h
-        )
-
     def __len__(self):
         return len(self.structures)
 
