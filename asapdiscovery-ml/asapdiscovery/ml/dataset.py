@@ -31,7 +31,7 @@ class DockedDataset(Dataset):
         self.structures = structures
 
     @classmethod
-    def from_complexes(cls, complexes: list[Complex], exp_dict={}, ignore_h=True):
+    def from_complexes(cls, complexes: list[Complex], exp_dict=None, ignore_h=True):
         """
         Build from a list of Complex objects.
 
@@ -50,6 +50,9 @@ class DockedDataset(Dataset):
         -------
         DockedDataset
         """
+
+        if exp_dict is None:
+            exp_dict = {}
 
         # Helper function to grab all relevant
         def get_complex_id(c):
@@ -101,10 +104,13 @@ class DockedDataset(Dataset):
         return cls(compound_idxs, structures)
 
     @staticmethod
-    def _complex_to_pose(comp, compound=None, exp_dict={}, ignore_h=True):
+    def _complex_to_pose(comp, compound=None, exp_dict=None, ignore_h=True):
         """
         Helper function to convert a Complex to a pose.
         """
+
+        if exp_dict is None:
+            exp_dict = {}
 
         # First get target atom positions, atomic numbers, and B factors
         target_mol = comp.target.to_oemol()
@@ -165,7 +171,6 @@ class DockedDataset(Dataset):
         str_fns,
         compounds,
         ignore_h=True,
-        lig_resn="LIG",
         extra_dict=None,
         num_workers=1,
     ):
@@ -179,9 +184,6 @@ class DockedDataset(Dataset):
             List of (crystal structure, ligand compound id)
         ignore_h : bool, default=True
             Whether to remove hydrogens from the loaded structure
-        lig_resn : str, default='LIG'
-            The residue name for the ligand molecules in the PDB files. Used to
-            identify which atoms belong to the ligand
         extra_dict : dict[str, dict], optional
             Extra information to add to each structure. Keys should be
             compounds, and dicts can be anything as long as they don't have the
@@ -189,41 +191,31 @@ class DockedDataset(Dataset):
         num_workers : int, default=1
             Number of cores to use to load structures
         """
+        if extra_dict is None:
+            extra_dict = {}
 
-        # Function to extract from extra_dict (just to make the list
-        #  comprehension look a bit nicer)
-        def get_extra(compound):
-            return (
-                extra_dict[compound] if extra_dict and compound in extra_dict else None
+        mp_args = [(fn, compound) for fn, compound in zip(str_fns, compounds)]
+
+        def mp_func(fn, compound):
+            return Complex.from_pdb(
+                pdb_file=fn,
+                target_kwargs={"target_name": compound[0]},
+                ligand_kwargs={"compound_name": compound[1]},
             )
-
-        mp_args = [
-            (fn, compound, ignore_h, lig_resn, get_extra(compound))
-            for i, (fn, compound) in enumerate(zip(str_fns, compounds))
-        ]
 
         if num_workers > 1:
             import multiprocessing as mp
 
             n_procs = min(num_workers, mp.cpu_count(), len(mp_args))
             with mp.Pool(n_procs) as pool:
-                all_structures = pool.starmap(DockedDataset._load_structure, mp_args)
+                all_complexes = pool.starmap(mp_func, mp_args)
         else:
-            all_structures = [DockedDataset._load_structure(*args) for args in mp_args]
+            all_complexes = [mp_func(*args) for args in mp_args]
 
-        compound_idxs = {}
-        structures = []
-        for i, (compound, struct) in enumerate(zip(compounds, all_structures)):
-            try:
-                compound_idxs[compound].append(i)
-            except KeyError:
-                compound_idxs[compound] = [i]
-            structures.append(struct)
-
-        return cls(compound_idxs, structures)
+        return cls.from_complexes(all_complexes, exp_dict=extra_dict, ignore_h=ignore_h)
 
     @staticmethod
-    def _load_structure(fn, compound, ignore_h=True, lig_resn="LIG", extra_dict=None):
+    def _load_structure(fn, compound, ignore_h=True, extra_dict=None):
         """
         Helper function to load a single structure that can be multiprocessed in
         the class constructor.
@@ -236,9 +228,6 @@ class DockedDataset(Dataset):
             (crystal structure, ligand compound id)
         ignore_h : bool, default=True
             Whether to remove hydrogens from the loaded structure
-        lig_resn : str, default='LIG'
-            The residue name for the ligand molecules in the PDB files. Used to
-            identify which atoms belong to the ligand
         extra_dict : dict, optional
             Extra information to add to this structure. Values can be anything
             as long as they don't have the keys ["z", "pos", "lig", "compound"]
@@ -246,39 +235,19 @@ class DockedDataset(Dataset):
         Returns
         -------
         """
-        import torch
-        from Bio.PDB.PDBParser import PDBParser
-        from rdkit.Chem import GetPeriodicTable
 
-        table = GetPeriodicTable()
+        if extra_dict is None:
+            extra_dict = {}
 
-        if compound is None:
-            # use the stem of the name of the file as the PDB id
-            id = str(fn).split("/")[-1].split(".")[0]
-        else:
-            # use the compound info as the PDB id
-            id = f"{compound[0]}_{compound[1]}"
-        s = PDBParser().get_structure(id, fn)
-        # Filter out water residues
-        all_atoms = [a for a in s.get_atoms() if a.parent.resname != "HOH"]
-        if ignore_h:
-            all_atoms = [a for a in all_atoms if a.element != "H"]
-        # Fix multi-letter atom elements being in all caps (eg CL)
-        atomic_nums = [table.GetAtomicNumber(a.element.title()) for a in all_atoms]
-        atom_pos = [tuple(a.get_vector()) for a in all_atoms]
-        is_lig = [a.parent.resname == lig_resn for a in all_atoms]
+        comp = Complex.from_pdb(
+            pdb_file=fn,
+            target_kwargs={"target_name": compound[0]},
+            ligand_kwargs={"compound_name": compound[1]},
+        )
 
-        # Create new structure and update from extra_dict
-        new_structure = {
-            "z": torch.tensor(atomic_nums),
-            "pos": torch.tensor(atom_pos).float(),
-            "lig": torch.tensor(is_lig),
-            "compound": compound,
-        }
-        if extra_dict:
-            new_structure.update(extra_dict)
-
-        return new_structure
+        return DockedDataset._complex_to_pose(
+            comp=comp, compound=compound, exp_dict=extra_dict, ignore_h=ignore_h
+        )
 
     def __len__(self):
         return len(self.structures)
@@ -384,6 +353,12 @@ class GroupedDockedDataset(Dataset):
         self.compound_ids = np.asarray(compound_ids)
         self.structures = structures
 
+    ## TODO
+    ## For each of the constructor methods, at the end need to loop through and see
+    ##  which compounds have a Ligand object
+    ## For ones that do, calculate RMSD of each pose to experimental structure, and
+    ##  store argmax results as label for pose ranking cross entropy loss
+
     @classmethod
     def from_complexes(cls, complexes: list[Complex], exp_dict={}, ignore_h=True):
         """
@@ -438,7 +413,6 @@ class GroupedDockedDataset(Dataset):
         str_fns,
         compounds,
         ignore_h=True,
-        lig_resn="LIG",
         extra_dict=None,
         num_workers=1,
     ):
@@ -452,9 +426,6 @@ class GroupedDockedDataset(Dataset):
             List of (crystal structure, ligand compound id)
         ignore_h : bool, default=True
             Whether to remove hydrogens from the loaded structure
-        lig_resn : str, default='LIG'
-            The residue name for the ligand molecules in the PDB files. Used to
-            identify which atoms belong to the ligand
         extra_dict : dict[str, dict], optional
             Extra information to add to each structure. Keys should be
             compounds, and dicts can be anything as long as they don't have the
@@ -462,46 +433,29 @@ class GroupedDockedDataset(Dataset):
         num_workers : int, default=1
             Number of cores to use to load structures
         """
-        import numpy as np
 
-        # Function to extract from extra_dict (just to make the list
-        #  comprehension look a bit nicer)
-        def get_extra(compound):
-            return (
-                extra_dict[compound]
-                if (extra_dict and (compound in extra_dict))
-                else None
+        if extra_dict is None:
+            extra_dict = {}
+
+        mp_args = [(fn, compound) for fn, compound in zip(str_fns, compounds)]
+
+        def mp_func(fn, compound):
+            return Complex.from_pdb(
+                pdb_file=fn,
+                target_kwargs={"target_name": compound[0]},
+                ligand_kwargs={"compound_name": compound[1]},
             )
-
-        mp_args = [
-            (fn, compound, ignore_h, lig_resn, get_extra(compound))
-            for i, (fn, compound) in enumerate(zip(str_fns, compounds))
-        ]
 
         if num_workers > 1:
             import multiprocessing as mp
 
             n_procs = min(num_workers, mp.cpu_count(), len(mp_args))
             with mp.Pool(n_procs) as pool:
-                all_structures = pool.starmap(DockedDataset._load_structure, mp_args)
+                all_complexes = pool.starmap(mp_func, mp_args)
         else:
-            all_structures = [DockedDataset._load_structure(*args) for args in mp_args]
+            all_complexes = [mp_func(*args) for args in mp_args]
 
-        compound_ids = []
-        structures = {}
-        for i, ((_, compound_id), struct) in enumerate(zip(compounds, all_structures)):
-            try:
-                structures[compound_id]["poses"].append(struct)
-            except KeyError:
-                # Take compound-level data from first pose
-                exp_data = {
-                    k: v for k, v in struct.items() if not isinstance(v, torch.Tensor)
-                }
-                structures[compound_id] = {"poses": [struct]} | exp_data
-                compound_ids.append(compound_id)
-        compound_ids = np.asarray(compound_ids)
-
-        return cls(compound_ids=compound_ids, structures=structures)
+        return cls.from_complexes(all_complexes, exp_dict=extra_dict, ignore_h=ignore_h)
 
     def __len__(self):
         return len(self.compound_ids)
