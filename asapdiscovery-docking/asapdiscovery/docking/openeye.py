@@ -291,6 +291,18 @@ class POSITDocker(DockingBase):
                                 opts, pose_res, dus, lig_oemol, self.num_poses
                             )
 
+                        # try again with low posit probability
+                        if (
+                            retcode
+                            == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+                            and self.allow_low_posit_prob
+                        ):
+                            opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
+                            opts.SetMinProbability(self.low_posit_prob_thresh)
+                            pose_res, retcode = self.run_oe_posit_docking(
+                                opts, pose_res, dus, lig_oemol, self.num_poses
+                            )
+
                     # try again allowing clashes
                     if (
                         self.allow_final_clash
