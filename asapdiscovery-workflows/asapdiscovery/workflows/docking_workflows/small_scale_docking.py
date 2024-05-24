@@ -17,6 +17,7 @@ from asapdiscovery.data.services.postera.manifold_artifacts import (
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
+    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
@@ -46,7 +47,7 @@ from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic import Field, PositiveInt, root_validator, validator
+from pydantic import Field, PositiveInt, validator
 
 
 class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
@@ -94,7 +95,7 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     )
 
     n_select: PositiveInt = Field(
-        1, description="Number of targets to dock each ligand against."
+        3, description="Number of targets to dock each ligand against."
     )
 
     ml_scorers: Optional[list[str]] = Field(
@@ -127,19 +128,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
                         f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
                     )
         return v
-
-    @root_validator
-    @classmethod
-    def dask_type_cannot_be_lilac_cpu_and_md(cls, values):
-        """
-        Validate that the dask type is not lilac cpu if MD is requested
-        """
-        dask_type = values.get("dask_type")
-        md = values.get("md")
-
-        if dask_type == dask_type.LILAC_CPU and md:
-            raise ValueError("Cannot run MD on a CPU cluster, please use a GPU cluster")
-        return values
 
 
 def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
@@ -189,10 +177,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     if inputs.use_dask:
         dask_client = make_dask_client_meta(
             inputs.dask_type,
-            adaptive_min_workers=inputs.dask_cluster_n_workers,
-            adaptive_max_workers=inputs.dask_cluster_max_workers,
             loglevel=inputs.loglevel,
-            walltime=inputs.walltime,
+            n_workers=inputs.dask_n_workers,
         )
     else:
         dask_client = None
@@ -222,12 +208,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
         use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
     complexes = structure_factory.load(
         use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
 
@@ -261,7 +247,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         cache_dir=inputs.cache_dir,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
     del complexes
 
@@ -296,7 +282,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
 
     n_results = len(results)
@@ -333,8 +319,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         return_df=True,
+        include_input=True,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -370,7 +357,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -403,7 +390,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
         )
 
         # duplicate target id column so we can join
@@ -443,19 +430,22 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     )
 
     # then order by chemgauss4 score
-    scores_df = scores_df.sort_values(
+    combined_df = combined_df.sort_values(
         DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
     )
-    scores_df.to_csv(
+    combined_df.to_csv(
         data_intermediates / "docking_scores_filtered_sorted.csv", index=False
     )
 
     # remove duplicates that are the same compound docked to different structures
-    scores_df = scores_df.drop_duplicates(
+    combined_df = combined_df.drop_duplicates(
         subset=[DockingResultCols.SMILES.value], keep="first"
     )
 
-    n_duplicate_filtered = len(scores_df)
+    # re-extract the filtered input results
+    results = combined_df["input"].tolist()
+
+    n_duplicate_filtered = len(combined_df)
     logger.info(
         f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
@@ -471,7 +461,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
                 "Using local CPU dask cluster, and MD has been requested, replacing with a GPU cluster"
             )
             dask_client = make_dask_client_meta(
-                DaskType.LOCAL_GPU, walltime=inputs.walltime, loglevel=inputs.loglevel
+                DaskType.LOCAL_GPU, loglevel=inputs.loglevel
             )
             local_cpu_client_gpu_override = True
 
@@ -498,7 +488,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
         )
 
         if local_cpu_client_gpu_override and inputs.use_dask:
@@ -520,9 +510,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             simulation_results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
         )
-
+        gifs.to_csv(data_intermediates / "md_gifs.csv", index=False)
         # duplicate target id column so we can join
         gifs[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = gifs[
             DockingResultCols.TARGET_ID.value
@@ -560,12 +550,17 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     if inputs.postera_upload:
         logger.info("Uploading numerical results to Postera")
+        posit_score_tag = map_output_col_to_manifold_tag(
+            DockingResultCols, inputs.target
+        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
+
         postera_uploader = PosteraUploader(
-            settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
+            settings=PosteraSettings(),
+            molecule_set_name=inputs.postera_molset_name,
         )
 
         # push the results to PostEra, making a new molecule set if necessary
-        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df)
+        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df, sort_column=posit_score_tag, sort_ascending=True)
 
         combined = postera_uploader.join_with_manifold_data(
             result_df,
@@ -610,4 +605,4 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             s3=S3.from_settings(aws_s3_settings),
             cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
         )
-        uploader.upload_artifacts()
+        uploader.upload_artifacts(sort_column=posit_score_tag, sort_ascending=True)

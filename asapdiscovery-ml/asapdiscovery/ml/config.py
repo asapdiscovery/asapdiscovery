@@ -571,7 +571,7 @@ class DatasetSplitterConfig(ConfigBase):
     test_frac: float = Field(
         0.1, description="Fraction of dataset to put in the test split."
     )
-    enforce_1: bool = Field(
+    enforce_one: bool = Field(
         True, description="Make sure that all split fractions add up to 1."
     )
 
@@ -588,7 +588,7 @@ class DatasetSplitterConfig(ConfigBase):
 
         if not np.isclose(frac_sum, 1):
             warn_msg = f"Split fractions add to {frac_sum:0.2f}, not 1."
-            if values["enforce_1"]:
+            if values["enforce_one"]:
                 raise ValueError(warn_msg)
             else:
                 from warnings import warn
@@ -802,7 +802,7 @@ class DatasetSplitterConfig(ConfigBase):
 
         # Take out the sink split
         if sink_split:
-            all_subsets = all_subsets[:2] + all_subsets[3]
+            all_subsets = all_subsets[:2] + [all_subsets[3]]
 
         return all_subsets
 

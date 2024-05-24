@@ -33,7 +33,9 @@ class PosteraUploader(BaseModel):
         False, description="Overwrite existing data on molecule set"
     )
 
-    def push(self, df: pd.DataFrame) -> tuple[pd.DataFrame, UUID, bool]:
+    def push(
+        self, df: pd.DataFrame, sort_column: bool = None, sort_ascending: bool = False
+    ) -> tuple[pd.DataFrame, UUID, bool]:
         """
         Push molecules to a Postera molecule set
 
@@ -41,6 +43,10 @@ class PosteraUploader(BaseModel):
         ----------
         df : DataFrame
             DataFrame of data to upload
+        sort_column : str
+            The column to sort the data by if duplicates are found
+        sort_ascending : bool
+            Whether the data should be sorted in ascending order
 
         Returns
         -------
@@ -50,6 +56,7 @@ class PosteraUploader(BaseModel):
             The UUID of the molecule set
         new_molset : bool
             Whether a new molecule set was created
+
         """
 
         if self.smiles_field not in df.columns:
@@ -91,10 +98,9 @@ class PosteraUploader(BaseModel):
                     smiles_field=self.smiles_field,
                     id_field=self.id_field,
                 )
-                self._check_for_duplicates(
-                    data, self.id_field, allow_empty=True, raise_error=True
+                data = self.remove_duplicates(
+                    data,  sort_column, sort_ascending
                 )
-
                 # find rows with blank id, they need to be added to molset, using **add** endpoint rather than **update**
                 has_blank_id_rows, blank_id_rows = self._check_for_blank_ids(
                     data, self.id_field, raise_error=False
@@ -125,10 +131,8 @@ class PosteraUploader(BaseModel):
             else:
                 # if the id data is castable to UUID, we can just update the molecule set
 
-                # check for duplicates
-                self._check_for_duplicates(
-                    data, self.id_field, allow_empty=False, raise_error=True
-                )
+                # check for duplicates, removing them
+                data = self.remove_duplicates(df, sort_column, sort_ascending)
                 # check for blanks, raising
                 self._check_for_blank_ids(data, self.id_field, raise_error=True)
 
@@ -227,7 +231,14 @@ class PosteraUploader(BaseModel):
             return False
 
     @staticmethod
-    def _check_for_duplicates(df, id_field, allow_empty=True, raise_error=False):
+    def _check_for_duplicates(
+        df,
+        id_field,
+        allow_empty=True,
+        raise_error=False,
+        sort_column=None,
+        sort_ascending=False,
+    ):
         """
         Check for duplicate UUIDs in the dataframe
 
@@ -286,3 +297,36 @@ class PosteraUploader(BaseModel):
 
         else:
             return False, None
+
+    def remove_duplicates(self, data, sort_column, sort_ascending=False):
+        """
+        Remove duplicates from the dataframe
+
+        Parameters
+        ----------
+        df : DataFrame
+            DataFrame of data to upload
+        id_field : str
+            Name of the column in the dataframe to use as the ligand id
+        sort_column : str
+            The column to sort the data by if duplicates are found
+        sort_ascending : bool
+            Whether the data should be sorted in ascending order
+
+        Returns
+        -------
+        DataFrame
+            The input dataframe with duplicates removed
+        """
+        dup, _ = self._check_for_duplicates(
+            data, self.id_field, allow_empty=True, raise_error=False
+        )
+        if dup:
+            if not sort_column:
+                raise ValueError("sort_column must be provided if duplicates are found")
+            if sort_column not in data.columns:
+                raise ValueError(f"sort_column {sort_column} not found in dataframe")
+            data = data.sort_values(by=sort_column, ascending=sort_ascending)
+            data = data.drop_duplicates(subset=[self.id_field], keep="first")
+        
+        return data

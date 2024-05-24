@@ -2,7 +2,7 @@ import abc
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import ClassVar, Optional, Union
+from typing import Any, ClassVar, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ from asapdiscovery.data.schema.target import TargetIdentifiers
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import (
     BackendType,
-    DaskFailureMode,
+    FailureMode,
     backend_wrapper,
     dask_vmap,
 )
@@ -88,6 +88,7 @@ class Score(BaseModel):
     probability: Optional[float]
     pose_id: Optional[int]
     units: ScoreUnits
+    input: Optional[Any] = None
 
     @classmethod
     def from_score_and_docking_result(
@@ -110,6 +111,7 @@ class Score(BaseModel):
             probability=docking_result.probability,
             pose_id=docking_result.pose_id,
             units=units,
+            input=docking_result,
         )
 
     @classmethod
@@ -132,6 +134,7 @@ class Score(BaseModel):
             complex_ligand_smiles=complex.ligand.smiles,
             probability=None,
             units=units,
+            input=complex,
         )
 
     @classmethod
@@ -154,6 +157,7 @@ class Score(BaseModel):
             complex_ligand_smiles=None,
             probability=None,
             units=units,
+            input=smiles,
         )
 
     @classmethod
@@ -176,18 +180,32 @@ class Score(BaseModel):
             complex_ligand_smiles=None,
             probability=None,
             units=units,
+            input=ligand,
         )
 
     @staticmethod
     def _combine_and_pivot_scores_df(dfs: list[pd.DataFrame]) -> pd.DataFrame:
         """ """
         df = pd.concat(dfs)
+        made_json = False
+        if "input" in df.columns:
+            # find the type of the input and cast to the appropriate type
+            if isinstance(df["input"].iloc[0], str):
+                made_json = False  # already a string
+            else:  # cast to JSON
+                dtype = type(df["input"].iloc[0])
+                df["input"] = df["input"].apply(lambda x: x.json())
+                made_json = True
+
         indices = set(df.columns) - {"score_type", "score", "units"}
         df = df.pivot(
             index=indices,
-            columns="score_type",
+            columns=["score_type"],
             values="score",
         ).reset_index()
+
+        if made_json:
+            df["input"] = df["input"].apply(lambda x: dtype.from_json(x))
 
         df.rename(columns=_SCORE_MANIFOLD_ALIAS, inplace=True)
         return df
@@ -211,10 +229,11 @@ class ScorerBase(BaseModel):
         ],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
+        include_input: bool = False,
     ) -> list[Score]:
         """
         Score the inputs. Most of the work is done in the _score method, this method is in turn dispatched based on type to various methods.
@@ -228,32 +247,33 @@ class ScorerBase(BaseModel):
             Whether to use dask, by default False
         dask_client : dask.distributed.Client, optional
             Dask client to use, by default None
-        dask_failure_mode : DaskFailureMode, optional
-            How to handle dask failures, by default DaskFailureMode.SKIP
+        failure_mode : FailureMode, optional
+            How to handle dask failures, by default FailureMode.SKIP
         backend : BackendType, optional
             Backend to use, by default BackendType.IN_MEMORY
         reconstruct_cls : Optional[Callable], optional
             Function to use to reconstruct the inputs, by default None
         return_df : bool, optional
             Whether to return a dataframe, by default False
-
+        include_input : bool, optional
+            Whether to return the results, in the dataframe, by default False
         """
         outputs = self._score(
             inputs=inputs,
             use_dask=use_dask,
             dask_client=dask_client,
-            dask_failure_mode=dask_failure_mode,
+            failure_mode=failure_mode,
             backend=backend,
             reconstruct_cls=reconstruct_cls,
         )
 
         if return_df:
-            return self.scores_to_df(outputs)
+            return self.scores_to_df(outputs, include_input=include_input)
         else:
             return outputs
 
     @staticmethod
-    def scores_to_df(scores: list[Score]) -> pd.DataFrame:
+    def scores_to_df(scores: list[Score], include_input: bool = False) -> pd.DataFrame:
         """
         Convert a list of scores to a dataframe.
 
@@ -271,10 +291,13 @@ class ScorerBase(BaseModel):
         data_list = []
         # flatten the list of scores
         scores = np.ravel(scores)
-
         for score in scores:
             dct = score.dict()
             dct["score_type"] = score.score_type.value  # convert to string
+            # we don't want the unpacked version of the input
+            dct.pop("input")
+            dct["input"] = score.input
+            # ok better
             data_list.append(dct)
         # convert to a dataframe
         df = pd.DataFrame(data_list)
@@ -681,10 +704,11 @@ class MetaScorer(BaseModel):
         inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
+        include_input: bool = False,
     ) -> list[Score]:
         """
         Score the inputs using all the scorers provided in the constructor
@@ -695,10 +719,11 @@ class MetaScorer(BaseModel):
                 inputs=inputs,
                 use_dask=use_dask,
                 dask_client=dask_client,
-                dask_failure_mode=dask_failure_mode,
+                failure_mode=failure_mode,
                 backend=backend,
                 reconstruct_cls=reconstruct_cls,
                 return_df=return_df,
+                include_input=include_input,
             )
             results.append(vals)
 

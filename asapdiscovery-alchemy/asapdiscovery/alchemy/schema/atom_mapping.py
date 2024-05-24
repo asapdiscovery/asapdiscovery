@@ -37,7 +37,7 @@ class LomapAtomMapper(_BaseAtomMapper):
     )
     threed: bool = Field(
         True,
-        description="If positional info should used to choose between symmetrically equivalent mappins and prune the mapping.",
+        description="If positional info should used to choose between symmetrically equivalent mappings and prune the mapping.",
     )
     max3d: PositiveFloat = Field(
         1000.0,

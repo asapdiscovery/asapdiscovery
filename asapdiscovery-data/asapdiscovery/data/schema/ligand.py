@@ -190,6 +190,7 @@ class Ligand(DataModelAbstractBase):
         oechem.OEClearAromaticFlags(input_mol)
         oechem.OEAssignAromaticFlags(input_mol, oechem.OEAroModel_MDL)
         oechem.OEAssignHybridization(input_mol)
+        oechem.OEAddExplicitHydrogens(input_mol)
         kwargs.pop("data", None)
 
         conf_tags = get_SD_data(mol)

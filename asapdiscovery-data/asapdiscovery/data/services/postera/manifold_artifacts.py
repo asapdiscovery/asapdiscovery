@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 
 import pandas as pd
+import numpy as np
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -130,7 +131,7 @@ class ManifoldArtifactUploader(BaseModel):
         expiry = datetime.utcnow() + expires_delta
         return self.cloudfront.generate_signed_url(bucket_path, expiry)
 
-    def upload_artifacts(self) -> None:
+    def upload_artifacts(self, sort_column=None, sort_ascending=False) -> None:
         """
         Upload the artifacts to Postera Manifold and S3
         """
@@ -148,6 +149,9 @@ class ManifoldArtifactUploader(BaseModel):
             self.molecule_set_id = self.moleculeset_api.get_id_from_name(
                 self.molecule_set_name
             )
+
+        # remove duplicates by tag
+        self.molecule_dataframe  = self.remove_duplicates(self.molecule_dataframe, sort_column, sort_ascending=sort_ascending)
 
         for artifact_column, artifact_type in zip(
             self.artifact_columns, self.artifact_types
@@ -204,3 +208,77 @@ class ManifoldArtifactUploader(BaseModel):
                     location=row[bucket_path],
                     content_type=ARTIFACT_TYPE_TO_S3_CONTENT_TYPE[artifact_type],
                 )
+
+    def remove_duplicates(self, data, sort_column, sort_ascending=False):
+        """
+        Remove duplicates from the dataframe
+
+        Parameters
+        ----------
+        df : DataFrame
+            DataFrame of data to upload
+        id_field : str
+            Name of the column in the dataframe to use as the ligand id
+        sort_column : str
+            The column to sort the data by if duplicates are found
+        sort_ascending : bool
+            Whether the data should be sorted in ascending order
+
+        Returns
+        -------
+        DataFrame
+            The input dataframe with duplicates removed
+        """
+        dup, _ = self._check_for_duplicates(
+            data, self.manifold_id_column, allow_empty=True, raise_error=False
+        )
+        if dup:
+            if not sort_column:
+                raise ValueError("sort_column must be provided if duplicates are found")
+            if sort_column not in data.columns:
+                raise ValueError(f"sort_column {sort_column} not found in dataframe")
+            data = data.sort_values(by=sort_column, ascending=sort_ascending)
+            data = data.drop_duplicates(subset=[self.manifold_id_column], keep="first")
+        
+        return data
+
+    @staticmethod
+    def _check_for_duplicates(
+        df,
+        id_field,
+        allow_empty=True,
+        raise_error=False,
+        sort_column=None,
+        sort_ascending=False,
+    ):
+        """
+        Check for duplicate UUIDs in the dataframe
+
+        Parameters
+        ----------
+        df : DataFrame
+            DataFrame of data to upload
+        id_field : str
+            Name of the column in the dataframe to use as the ligand id
+        allow_empty : bool
+            Whether to allow empty UUIDs to be exempt from the check
+        raise_error : bool
+            Whether to raise an error if duplicates are found
+
+        Raises
+        ------
+        ValueError
+            If there are duplicate UUIDs
+        """
+        df = df.copy()
+        df = df.replace("", np.nan)
+        if allow_empty:
+            df = df[~df[id_field].isna()]
+        if df[id_field].duplicated().any():
+            duplicates = df[df[id_field].duplicated()]
+            num_duplicates = len(duplicates)
+            if raise_error:
+                raise ValueError(f"{num_duplicates} duplicate UUIDs found in dataframe")
+            return True, duplicates
+        else:
+            return False, None

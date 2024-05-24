@@ -1,6 +1,6 @@
 import click
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 
@@ -50,22 +50,31 @@ def dask_type(func):
         "--dask-type",
         type=click.Choice(DaskType.get_values(), case_sensitive=False),
         default=DaskType.LOCAL,
-        help="The type of dask cluster to use. Can be 'local', 'lilac-cpu' or  'lilac-gpu'.",
+        help="The type of dask cluster to use. Local mode is reccommended for most use cases.",
     )(func)
 
 
-def dask_failure_mode(func):
+def failure_mode(func):
     return click.option(
-        "--dask-failure-mode",
-        type=click.Choice(DaskFailureMode.get_values(), case_sensitive=False),
-        default=DaskFailureMode.SKIP,
+        "--failure-mode",
+        type=click.Choice(FailureMode.get_values(), case_sensitive=False),
+        default=FailureMode.SKIP,
         help="The failure mode for dask. Can be 'raise' or 'skip'.",
         show_default=True,
     )(func)
 
 
+def dask_n_workers(func):
+    return click.option(
+        "--dask-n-workers",
+        type=int,
+        default=None,
+        help="The number of workers to use with dask.",
+    )(func)
+
+
 def dask_args(func):
-    return use_dask(dask_type(dask_failure_mode(func)))
+    return use_dask(dask_type(dask_n_workers(failure_mode(func))))
 
 
 def target(func):
@@ -233,13 +242,4 @@ def loglevel(func):
         help="The log level to use.",
         default="INFO",
         show_default=True,
-    )(func)
-
-
-def walltime(func):
-    return click.option(
-        "--walltime",
-        type=str,
-        default="72h",
-        help="The walltime to use for the dask_jobqueue cluster (if used) in dask format, e.g. '1h'",
     )(func)

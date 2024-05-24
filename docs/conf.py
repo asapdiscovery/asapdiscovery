@@ -64,9 +64,13 @@ autosummary_generate = True
 napoleon_google_docstring = False
 napoleon_use_param = False
 napoleon_use_ivar = True
+nbsphinx_execute = 'auto'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
+
+# don't execute notebooks
+nbsphinx_execute = 'never'
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -195,15 +199,14 @@ texinfo_documents = [
 # -- Extension configuration -------------------------------------------------
 
 here = os.path.dirname(__file__)
-repo = os.path.join(here,  '..')
+repo = os.path.join(here, "..")
 
 # Ensure env.metadata[env.docname]['nbsphinx-link-target']
 # points relative to repo root:
 nbsphinx_link_target_root = repo
 
-
 nbsphinx_prolog = (
-r"""
+    r"""
 {% if env.metadata[env.docname]['nbsphinx-link-target'] %}
 {% set docpath = env.metadata[env.docname]['nbsphinx-link-target'] %}
 {% else %}
@@ -219,6 +222,6 @@ r"""
         This page was generated from `{{ docpath }}`__.
 
     __ https://github.com/choderalab/asapdiscovery/tree/main/
-        """ +
-    r"{{ docpath }}"
+        """
+    + r"{{ docpath }}"
 )

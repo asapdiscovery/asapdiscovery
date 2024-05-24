@@ -110,10 +110,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     if inputs.use_dask:
         dask_client = make_dask_client_meta(
             inputs.dask_type,
-            adaptive_min_workers=inputs.dask_cluster_n_workers,
-            adaptive_max_workers=inputs.dask_cluster_max_workers,
             loglevel=inputs.loglevel,
-            walltime=inputs.walltime,
+            n_workers=inputs.dask_n_workers,
         )
     else:
         dask_client = None
@@ -133,7 +131,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
         use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
     complexes = structure_factory.load()
@@ -150,7 +148,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         complexes,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         cache_dir=inputs.cache_dir,
         use_only_cache=inputs.use_only_cache,
     )
@@ -205,7 +203,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
 
     results = [
@@ -238,7 +236,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         return_df=True,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
     )
 
     del results

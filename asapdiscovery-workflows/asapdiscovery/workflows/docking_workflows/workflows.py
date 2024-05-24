@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
@@ -54,17 +54,10 @@ class DockingWorkflowInputsBase(BaseModel):
         DaskType.LOCAL, description="Dask client to use for parallelism."
     )
 
-    dask_failure_mode: DaskFailureMode = Field(
-        DaskFailureMode.SKIP, description="Dask failure mode."
-    )
+    dask_n_workers: Optional[PositiveInt] = Field(None, description="Number of workers")
 
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        200, description="Maximum number of workers to use for Lilac dask cluster"
+    failure_mode: FailureMode = Field(
+        FailureMode.SKIP, description="Dask failure mode."
     )
 
     n_select: PositiveInt = Field(
@@ -80,9 +73,6 @@ class DockingWorkflowInputsBase(BaseModel):
 
     overwrite: bool = Field(
         False, description="Whether to overwrite existing output directory."
-    )
-    walltime: str = Field(
-        "72h", description="Walltime for the workflow, used for dask-jobqueue"
     )
 
     class Config:

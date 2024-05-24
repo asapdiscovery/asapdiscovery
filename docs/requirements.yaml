@@ -14,6 +14,7 @@ dependencies:
   - myst-parser
   - nbsphinx
   - nbsphinx-link
+  - pandoc
 
   # Testing
   - pytest
@@ -55,6 +56,7 @@ dependencies:
   - validators
   - pyyaml
   - sigfig
+  - multimethod
 
   # ml
   - pytorch

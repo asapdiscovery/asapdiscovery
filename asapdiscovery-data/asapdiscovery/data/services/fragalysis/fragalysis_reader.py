@@ -9,7 +9,7 @@ import dask
 import pandas
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.util.dask_utils import (
-    DaskFailureMode,
+    FailureMode,
     actualise_dask_delayed_iterable,
 )
 from pydantic import BaseModel, Field, root_validator, validator
@@ -69,7 +69,7 @@ class FragalysisFactory(BaseModel):
         return values
 
     def load(
-        self, use_dask=False, dask_client=None, dask_failure_mode=DaskFailureMode.SKIP
+        self, use_dask=False, dask_client=None, failure_mode=FailureMode.SKIP
     ) -> list[Complex]:
         """
         Load a Fragalysis dump as a list of Complex objects.
@@ -81,7 +81,7 @@ class FragalysisFactory(BaseModel):
             Defaults to False.
         dask_client : dask.distributed.Client, optional
             Dask client to use for parallelisation. Defaults to None.
-        dask_failure_mode : DaskFailureMode
+        failure_mode : FailureMode
             The failure mode for dask. Can be 'raise' or 'skip'.
 
         Returns
@@ -132,7 +132,7 @@ class FragalysisFactory(BaseModel):
 
         if use_dask:
             complexes = actualise_dask_delayed_iterable(
-                complexes, dask_client=dask_client, errors=dask_failure_mode
+                complexes, dask_client=dask_client, errors=failure_mode
             )
 
         # remove None values

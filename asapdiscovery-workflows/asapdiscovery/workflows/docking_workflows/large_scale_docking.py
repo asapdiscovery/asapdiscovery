@@ -15,6 +15,7 @@ from asapdiscovery.data.services.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import (
+    map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
@@ -155,10 +156,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     if inputs.use_dask:
         dask_client = make_dask_client_meta(
             inputs.dask_type,
-            adaptive_min_workers=inputs.dask_cluster_n_workers,
-            adaptive_max_workers=inputs.dask_cluster_max_workers,
             loglevel=inputs.loglevel,
-            walltime=inputs.walltime,
+            n_workers=inputs.dask_n_workers,
         )
     else:
         dask_client = None
@@ -191,7 +190,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     )
     complexes = structure_factory.load(
         use_dask=inputs.use_dask,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
 
@@ -230,7 +229,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         complexes,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         cache_dir=inputs.cache_dir,
     )
     del complexes
@@ -269,7 +268,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         return_for_disk_backend=True,
     )
 
@@ -318,7 +317,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         return_df=True,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
@@ -338,7 +337,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        dask_failure_mode=inputs.dask_failure_mode,
+        failure_mode=inputs.failure_mode,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
     )
@@ -374,7 +373,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             results,
             use_dask=inputs.use_dask,
             dask_client=dask_client,
-            dask_failure_mode=inputs.dask_failure_mode,
+            failure_mode=inputs.failure_mode,
             backend=BackendType.DISK,
             reconstruct_cls=docker.result_cls,
         )
@@ -505,12 +504,16 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
 
     if inputs.postera_upload:
         logger.info("Uploading results to Postera")
+        posit_score_tag = map_output_col_to_manifold_tag(
+            DockingResultCols, inputs.target
+        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
 
         postera_uploader = PosteraUploader(
-            settings=PosteraSettings(), molecule_set_name=inputs.postera_molset_name
+            settings=PosteraSettings(),
+            molecule_set_name=inputs.postera_molset_name,
         )
         # push the results to PostEra, making a new molecule set if necessary
-        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df)
+        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df, sort_column=posit_score_tag, sort_ascending=True)
 
         combined = postera_uploader.join_with_manifold_data(
             result_df,
@@ -551,4 +554,4 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             s3=S3.from_settings(aws_s3_settings),
             cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
         )
-        uploader.upload_artifacts()
+        uploader.upload_artifacts(sort_column=posit_score_tag, sort_ascending=True)
