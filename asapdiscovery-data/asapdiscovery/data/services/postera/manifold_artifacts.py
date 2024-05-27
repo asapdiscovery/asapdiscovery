@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -151,7 +151,9 @@ class ManifoldArtifactUploader(BaseModel):
             )
 
         # remove duplicates by tag
-        self.molecule_dataframe  = self.remove_duplicates(self.molecule_dataframe, sort_column, sort_ascending=sort_ascending)
+        self.molecule_dataframe = self.remove_duplicates(
+            self.molecule_dataframe, sort_column, sort_ascending=sort_ascending
+        )
 
         for artifact_column, artifact_type in zip(
             self.artifact_columns, self.artifact_types
@@ -239,7 +241,7 @@ class ManifoldArtifactUploader(BaseModel):
                 raise ValueError(f"sort_column {sort_column} not found in dataframe")
             data = data.sort_values(by=sort_column, ascending=sort_ascending)
             data = data.drop_duplicates(subset=[self.manifold_id_column], keep="first")
-        
+
         return data
 
     @staticmethod

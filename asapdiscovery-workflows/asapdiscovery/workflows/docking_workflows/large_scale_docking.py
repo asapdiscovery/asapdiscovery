@@ -513,7 +513,9 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             molecule_set_name=inputs.postera_molset_name,
         )
         # push the results to PostEra, making a new molecule set if necessary
-        manifold_data, molset_name, made_new_molset = postera_uploader.push(result_df, sort_column=posit_score_tag, sort_ascending=True)
+        manifold_data, molset_name, made_new_molset = postera_uploader.push(
+            result_df, sort_column=posit_score_tag, sort_ascending=True
+        )
 
         combined = postera_uploader.join_with_manifold_data(
             result_df,
