@@ -352,10 +352,11 @@ class POSITDocker(DockingBase):
                             input_pairs.append(set)
 
                     # Create Docking Results Objects
+                    docking_results_objects = []
                     if self.num_poses == 1:
                         # this is simple for single pose results
                         for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
-                            docking_results.append(
+                            docking_results_objects.append(
                                 POSITDockingResults(
                                     input_pair=input_pair,
                                     posed_ligand=posed_ligand,
@@ -382,7 +383,7 @@ class POSITDocker(DockingBase):
 
                         # return results split by input pair
                         for input_pair_name, posed_ligands in results_dict.items():
-                            docking_results.append(
+                            docking_results_objects.append(
                                 POSITDockingResults(
                                     input_pair=input_pair_dict[input_pair_name],
                                     posed_ligand=Ligand.from_single_conformers(
@@ -405,12 +406,11 @@ class POSITDocker(DockingBase):
                             )
 
                     # No we can decide if we want to return a path to the json file or the actual object
-                    final_docking_results = []
-                    for docking_result in docking_results:
+                    for docking_result in docking_results_objects:
                         if return_for_disk_backend:
-                            final_docking_results.append(docked_result_json_path)
+                            docking_results.append(docked_result_json_path)
                         else:
-                            final_docking_results.append(docking_result)
+                            docking_results.append(docking_result)
                         if output_dir is not None:
                             docking_result.write_docking_files(output_dir)
 
@@ -423,7 +423,7 @@ class POSITDocker(DockingBase):
                 else:
                     raise ValueError(f"Unknown error handling option {failure_mode}")
 
-        return final_docking_results
+        return docking_results
 
     def provenance(self) -> dict[str, str]:
         return {
