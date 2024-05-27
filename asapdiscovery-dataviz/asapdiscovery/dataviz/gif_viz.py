@@ -229,8 +229,17 @@ class GIFVisualizer(VisualizerBase):
             # reload
             complex_name_min = "complex_min"
             p.cmd.load(str(system), object=complex_name_min)
+            # align to reference structure 
+            reference_structure = master_structures[target]
+            p.cmd.load(reference_structure, object="reference_master")
+            p.cmd.align(complex_name_min, "reference_master")
+            p.cmd.delete("reference_master") 
+
+            # align the trajectory to the minimized structure (itself aligned to the reference structure)
             p.cmd.align(complex_name, complex_name_min)
+            p.cmd.intra_fit(complex_name, 1)
             p.cmd.delete(complex_name_min)
+
 
             if smooth:
                 p.cmd.smooth(
