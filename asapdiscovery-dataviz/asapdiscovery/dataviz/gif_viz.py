@@ -222,6 +222,9 @@ class GIFVisualizer(VisualizerBase):
                 stop=stop,
                 interval=interval,
             )
+            # fix pbc
+            p.cmd.pbc_wrap(complex_name)
+
             if pse:
                 p.cmd.save(str(out_dir / "session_4_loaded_trajectory.pse"))
 
