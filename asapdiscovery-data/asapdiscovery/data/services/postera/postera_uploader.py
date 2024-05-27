@@ -98,9 +98,7 @@ class PosteraUploader(BaseModel):
                     smiles_field=self.smiles_field,
                     id_field=self.id_field,
                 )
-                data = self.remove_duplicates(
-                    data,  sort_column, sort_ascending
-                )
+                data = self.remove_duplicates(data, sort_column, sort_ascending)
                 # find rows with blank id, they need to be added to molset, using **add** endpoint rather than **update**
                 has_blank_id_rows, blank_id_rows = self._check_for_blank_ids(
                     data, self.id_field, raise_error=False
@@ -328,5 +326,5 @@ class PosteraUploader(BaseModel):
                 raise ValueError(f"sort_column {sort_column} not found in dataframe")
             data = data.sort_values(by=sort_column, ascending=sort_ascending)
             data = data.drop_duplicates(subset=[self.id_field], keep="first")
-        
+
         return data
