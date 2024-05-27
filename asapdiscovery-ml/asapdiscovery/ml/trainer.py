@@ -684,7 +684,6 @@ class Trainer(BaseModel):
                     sp: [compound_idx_dict[val.compound_id] for val in split_vals]
                     for sp, split_vals in self.pred_tracker.split_dict.items()
                 }
-                print(subset_idxs, flush=True)
 
                 self.ds_train = torch.utils.data.Subset(self.ds, subset_idxs["train"])
                 self.ds_val = torch.utils.data.Subset(self.ds, subset_idxs["val"])
