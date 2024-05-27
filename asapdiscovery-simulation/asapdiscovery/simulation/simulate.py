@@ -257,7 +257,7 @@ class VanillaMDSimulator(SimulatorBase):
         length = (self.total_simulation_time).value_in_unit(unit.nanoseconds)
         return self.n_frames / length
 
-    def _to_openmm_units(self):
+    def _to_openmm_units(self) -> OpenMMPlatform:
         self._temperature = self.temperature * unit.kelvin
         self._pressure = self.pressure * unit.atmospheres
         self._collision_rate = self.collision_rate / unit.picoseconds
@@ -265,15 +265,16 @@ class VanillaMDSimulator(SimulatorBase):
         self.n_snapshots = int(self.num_steps / self.reporting_interval)
         self.num_steps = self.n_snapshots * self.reporting_interval
         # set platform
-        self._platform = OpenMMPlatform(self.openmm_platform).get_platform()
-        if self._platform.getName() == "CUDA" or self._platform.getName() == "OpenCL":
-            self._platform.setPropertyDefaultValue("Precision", "mixed")
+        _platform = OpenMMPlatform(self.openmm_platform).get_platform()
+        if _platform.getName() == "CUDA" or _platform.getName() == "OpenCL":
+            _platform.setPropertyDefaultValue("Precision", "mixed")
 
         if self.debug:
-            self._platform = OpenMMPlatform.CPU.get_platform()
+            _platform = OpenMMPlatform.CPU.get_platform()
+        return _platform
 
     def _simulate(self, docking_results: list[DockingResult]) -> list[SimulationResult]:
-        self._to_openmm_units()
+        _platform = self._to_openmm_units()
 
         results = []
         for result in docking_results:
@@ -300,7 +301,7 @@ class VanillaMDSimulator(SimulatorBase):
                 system_generator, modeller, mol_atom_indices, processed_ligand
             )
             simulation, context = self.setup_simulation(
-                modeller, system, output_indices, output_topology, outpath
+                modeller, system, output_indices, output_topology, outpath, _platform
             )
             simulation = self.equilibrate(simulation)
             retcode = self.run_production_simulation(
@@ -403,7 +404,7 @@ class VanillaMDSimulator(SimulatorBase):
         return system, output_indices, output_topology
 
     def setup_simulation(
-        self, modeller, system, output_indices, output_topology, outpath
+        self, modeller, system, output_indices, output_topology, outpath, platform
     ):
         # Add barostat
 
@@ -447,7 +448,7 @@ class VanillaMDSimulator(SimulatorBase):
         )
 
         simulation = Simulation(
-            modeller.topology, system, integrator, platform=self._platform
+            modeller.topology, system, integrator, platform=platform
         )
         context = simulation.context
         context.setPositions(modeller.positions)

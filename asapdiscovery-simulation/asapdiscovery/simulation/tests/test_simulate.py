@@ -82,3 +82,17 @@ def test_properties(tmp_path):
     assert vs.n_frames == 200
     assert vs.total_simulation_time == unit.Quantity(4000, unit.femtosecond)
     assert vs.frames_per_ns == 50000.0
+
+
+def test_multi_use(results, tmp_path):
+    vs = VanillaMDSimulator(
+        num_steps=1, equilibration_steps=1, output_dir=tmp_path, truncate_steps=False
+    )
+    assert vs.num_steps == 1
+    assert vs.equilibration_steps == 1
+    simulation_results = vs.simulate(results)
+    assert simulation_results[0].success
+
+    simulation_results_parallel = vs.simulate(results, use_dask=True)
+
+    assert simulation_results_parallel[0].success
