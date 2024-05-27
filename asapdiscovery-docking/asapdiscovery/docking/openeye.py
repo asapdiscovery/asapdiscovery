@@ -232,6 +232,7 @@ class POSITDocker(DockingBase):
                         Path(output_dir) / set.unique_name / "docking_result.json"
                     )
 
+                # first check if output exists
                 if (
                     set.is_cacheable
                     and (output_dir is not None)
@@ -247,6 +248,7 @@ class POSITDocker(DockingBase):
                         docking_results.append(
                             POSITDockingResults.from_json_file(docked_result_json_path)
                         )
+                # run docking if output does not exist
                 else:
                     dus = set.to_design_units()
                     lig_oemol = oechem.OEMol(set.ligand.to_oemol())
@@ -303,17 +305,17 @@ class POSITDocker(DockingBase):
                                 opts, pose_res, dus, lig_oemol, self.num_poses
                             )
 
-                    # try again allowing clashes
-                    if (
-                        self.allow_final_clash
-                        and retcode
-                        == oedocking.OEDockingReturnCode_NoValidNonClashPoses
-                    ):
-                        opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
-                        opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
-                        pose_res, retcode = self.run_oe_posit_docking(
-                            opts, pose_res, dus, lig_oemol, self.num_poses
-                        )
+                        # try again allowing clashes
+                        if (
+                            self.allow_final_clash
+                            and retcode
+                            == oedocking.OEDockingReturnCode_NoValidNonClashPoses
+                        ):
+                            opts.SetPoseRelaxMode(oedocking.OEPoseRelaxMode_ALL)
+                            opts.SetAllowedClashType(oedocking.OEAllowedClashType_ANY)
+                            pose_res, retcode = self.run_oe_posit_docking(
+                                opts, pose_res, dus, lig_oemol, self.num_poses
+                            )
                 if retcode == oedocking.OEDockingReturnCode_Success:
                     input_pairs = []
                     posed_ligands = []
@@ -349,76 +351,69 @@ class POSITDocker(DockingBase):
                         else:
                             input_pairs.append(set)
 
-                    # create hashable dict of input pairs
-                    input_pair_dict = {
-                        input_pair.unique_name: input_pair for input_pair in input_pairs
-                    }
+                    # Create Docking Results Objects
+                    if self.num_poses == 1:
+                        # this is simple for single pose results
+                        for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
+                            docking_results.append(
+                                POSITDockingResults(
+                                    input_pair=input_pair,
+                                    posed_ligand=posed_ligand,
+                                    probability=posed_ligand.tags[
+                                        DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
+                                    ],
+                                    provenance=self.provenance(),
+                                )
+                            )
+                    else:
+                        # for multi-pose results, we need to split the results by input pair
+                        # create hashable dict of input pairs
+                        input_pair_dict = {
+                            input_pair.unique_name: input_pair
+                            for input_pair in input_pairs
+                        }
 
-                    # split results by input pair
-                    from collections import defaultdict
+                        # split results by input pair
+                        from collections import defaultdict
 
-                    results_dict = defaultdict(list)
-                    for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
-                        results_dict[input_pair.unique_name].append(posed_ligand)
+                        results_dict = defaultdict(list)
+                        for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
+                            results_dict[input_pair.unique_name].append(posed_ligand)
 
-                    # return results split by input pair
-                    for input_pair_name, posed_ligands in results_dict.items():
-                        docking_result = POSITDockingResults(
-                            input_pair=input_pair_dict[input_pair_name],
-                            posed_ligand=Ligand.from_single_conformers(posed_ligands),
-                            provenance=self.provenance(),
-                            probability=(
-                                posed_ligands[0].tags[
-                                    DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
-                                ]
-                                if len(posed_ligands) == 1
-                                else None
-                            ),
-                            pose_id=(
-                                posed_ligands[0].tags["Pose_ID"]
-                                if len(posed_ligands) == 1
-                                else None
-                            ),
-                        )
+                        # return results split by input pair
+                        for input_pair_name, posed_ligands in results_dict.items():
+                            docking_results.append(
+                                POSITDockingResults(
+                                    input_pair=input_pair_dict[input_pair_name],
+                                    posed_ligand=Ligand.from_single_conformers(
+                                        posed_ligands
+                                    ),
+                                    provenance=self.provenance(),
+                                    probability=(
+                                        posed_ligands[0].tags[
+                                            DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
+                                        ]
+                                        if len(posed_ligands) == 1
+                                        else None
+                                    ),
+                                    pose_id=(
+                                        posed_ligands[0].tags["Pose_ID"]
+                                        if len(posed_ligands) == 1
+                                        else None
+                                    ),
+                                )
+                            )
+
+                    # No we can decide if we want to return a path to the json file or the actual object
+                    final_docking_results = []
+                    for docking_result in docking_results:
                         if return_for_disk_backend:
-                            docking_results.append(docked_result_json_path)
+                            final_docking_results.append(docked_result_json_path)
                         else:
-                            docking_results.append(docking_result)
+                            final_docking_results.append(docking_result)
                         if output_dir is not None:
                             docking_result.write_docking_files(output_dir)
-                            posed_ligand = Ligand.from_oemol(
-                                posed_mol, **set.ligand.dict()
-                            )
-                            # set SD tags
-                            sd_data = {
-                                DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
-                                DockingResultCols.POSIT_METHOD.value: oedocking.OEPositMethodGetName(
-                                    result.GetPositMethod()
-                                ),
-                            }
-                            posed_ligand.set_SD_data(sd_data)
 
-                            # Generate info about which target was actually used by multi-reference docking
-                            if isinstance(set, DockingInputMultiStructure):
-                                docked_target = set.complexes[result.GetReceptorIndex()]
-                                input_pair = DockingInputPair(
-                                    ligand=set.ligand, complex=docked_target
-                                )
-                            else:
-                                input_pair = set
-
-                            docking_result = POSITDockingResults(
-                                input_pair=input_pair,
-                                posed_ligand=posed_ligand,
-                                probability=prob,
-                                provenance=self.provenance(),
-                            )
-                            if return_for_disk_backend:
-                                docking_results.append(docked_result_json_path)
-                            else:
-                                docking_results.append(docking_result)
-                            if output_dir is not None:
-                                docking_result.write_docking_files(output_dir)
             except Exception as e:
                 error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name} with error: {e}"
                 if failure_mode == "skip":
@@ -428,7 +423,7 @@ class POSITDocker(DockingBase):
                 else:
                     raise ValueError(f"Unknown error handling option {failure_mode}")
 
-        return docking_results
+        return final_docking_results
 
     def provenance(self) -> dict[str, str]:
         return {
