@@ -658,3 +658,39 @@ class TrainingPredictionTracker(BaseModel):
         ]
 
         return pandas.DataFrame(dict(use_vals))
+
+    def to_loss_dict(self, allow_multiple=False):
+        """
+        Method to convert a TrainingPredictionTracker to the old loss_dict method of
+        tracking losses and predictions over training, for compatibility with existing
+        methods.
+
+        Parameters
+        ----------
+        allow_multiple : bool, default=False
+            Allow multiple loss types for a given compound. If this is False, multiple
+            loss types for a compound will raise a ValueError. If True, multiple loss
+            types will generate an entry in the loss_dict for each loss type
+        """
+        loss_dict = {"train": {}, "val": {}, "test": {}}
+        for sp, values_list in self.split_dict.items():
+            for training_pred in values_list:
+                if (training_pred.compound_id in loss_dict[sp]) and (
+                    not allow_multiple
+                ):
+                    raise ValueError(
+                        "Multiple loss config values found for compound",
+                        training_pred.compound_id,
+                    )
+
+                d = {
+                    "target": training_pred.target_val,
+                    "in_range": training_pred.in_range,
+                    "uncertainty": training_pred.uncertainty,
+                    "preds": training_pred.predictions,
+                    "losses": training_pred.loss_vals,
+                    "pose_preds": training_pred.pose_predictions,
+                }
+                loss_dict[sp][training_pred.compound_id] = d
+
+        return loss_dict
