@@ -268,13 +268,13 @@ class ProteinPrepper(ProteinPrepperBase):
                 # load protein
                 prot = complex_target.to_combined_oemol()
 
-                # if self.align:
-                #     prot, _ = superpose_molecule(
-                #         self.align.to_combined_oemol(),
-                #         prot,
-                #         self.ref_chain,
-                #         self.active_site_chain,
-                #     )
+                if self.align:
+                    prot, _ = superpose_molecule(
+                        self.align.to_combined_oemol(),
+                        prot,
+                        self.ref_chain,
+                        self.active_site_chain,
+                    )
 
                 # mutate residues
                 if self.seqres_yaml:
