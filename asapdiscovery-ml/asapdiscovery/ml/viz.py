@@ -3,7 +3,11 @@ import seaborn as sns
 
 
 def plot_split_losses(
-    pred_tracker_dict, out_fn=None, splits=["train", "val", "test"], loss_label="Loss"
+    pred_tracker_dict,
+    out_fn=None,
+    splits=["train", "val", "test"],
+    loss_label="Loss",
+    **kwargs
 ):
     """
     Plot overall losses per split by training epoch.
@@ -18,6 +22,8 @@ def plot_split_losses(
         Which splits to actually plot
     loss_label : str, default="Loss"
         What to label the y-axis of the plot
+    kwargs : dict
+        Anything else to pass directly to relplot
     """
     # Build overall DF
     all_dfs = []
@@ -31,23 +37,30 @@ def plot_split_losses(
     # Subset
     all_dfs = all_dfs.loc[all_dfs["split"].isin(splits), :]
 
-    # Figure out styles
-    if len(pred_tracker_dict) > 1:
-        # More than one different experiment, so use color for experiment and style
-        #  for split
-        hue = "label"
-        hue_order = list(pred_tracker_dict.keys())
-        if len(splits) > 1:
-            style = "split"
-            style_order = splits
+    if ("hue" not in kwargs) and ("style" not in kwargs):
+        # Figure out styles
+        if len(pred_tracker_dict) > 1:
+            # More than one different experiment, so use color for experiment and style
+            #  for split
+            hue = "label"
+            hue_order = list(pred_tracker_dict.keys())
+            if len(splits) > 1:
+                style = "split"
+                style_order = splits
+            else:
+                style = None
+                style_order = None
         else:
+            hue = "split"
+            hue_order = splits
             style = None
             style_order = None
     else:
-        hue = "split"
-        hue_order = splits
-        style = None
-        style_order = None
+        # Pull from kwargs
+        hue = kwargs.pop("hue", None)
+        hue_order = kwargs.pop("hue_order", None)
+        style = kwargs.pop("style", None)
+        style_order = kwargs.pop("style_order", None)
 
     # Make plot
     # fig = plt.figure(figsize=(7, 5))
@@ -61,6 +74,7 @@ def plot_split_losses(
         style_order=style_order,
         kind="line",
         aspect=1.5,
+        **kwargs
     )
 
     # Set axes
