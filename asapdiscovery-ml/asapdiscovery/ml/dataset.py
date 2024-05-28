@@ -318,12 +318,6 @@ class GroupedDockedDataset(Dataset):
         self.compound_ids = np.asarray(compound_ids)
         self.structures = structures
 
-    ## TODO
-    ## For each of the constructor methods, at the end need to loop through and see
-    ##  which compounds have a Ligand object
-    ## For ones that do, calculate RMSD of each pose to experimental structure, and
-    ##  store argmax results as label for pose ranking cross entropy loss
-
     @classmethod
     def from_complexes(cls, complexes: list[Complex], exp_dict={}, ignore_h=True):
         """
@@ -344,6 +338,8 @@ class GroupedDockedDataset(Dataset):
         -------
         GroupedDockedDataset
         """
+        import numpy as np
+        from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
         compound_ids = []
         structures = {}
@@ -360,6 +356,14 @@ class GroupedDockedDataset(Dataset):
             pose = DockedDataset._complex_to_pose(
                 comp, compound=compound, exp_dict=comp_exp_dict, ignore_h=ignore_h
             )
+
+            # Calculate RMSD to ref if available
+            if "ligand" in pose:
+                ref_lig = Ligand(**pose["ligand"])
+                pose["ref_rmsd"] = calculate_rmsd_openeye(
+                    ref_lig.to_oemol(), comp.ligand.to_oemol()
+                )
+
             try:
                 structures[comp.ligand.compound_name]["poses"].append(pose)
             except KeyError:
@@ -369,6 +373,20 @@ class GroupedDockedDataset(Dataset):
                 }
                 structures[comp.ligand.compound_name] = {"poses": [pose]} | exp_data
                 compound_ids.append(comp.ligand.compound_name)
+
+        # Calculate which pose is closest to experiment
+        for compound_id, data in structures.items():
+            if "ligand" not in data:
+                continue
+
+            # Get all RMSDs
+            pose_rmsds = [pose["ref_rmsd"] for pose in data["poses"]]
+
+            # Label of all zeros, except the one with the best pose (lowest ref RMSD)
+            best_lab = np.zeros(len(data["poses"]))
+            best_lab[np.argmin(pose_rmsds)] = 1
+
+            data["best_pose_label"] = best_lab
 
         return cls(compound_ids=compound_ids, structures=structures)
 
