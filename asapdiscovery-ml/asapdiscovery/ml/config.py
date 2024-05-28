@@ -489,7 +489,7 @@ class DatasetConfig(ConfigBase):
             print("loading from cache", flush=True)
             ds = pkl.loads(self.cache_file.read_bytes())
             if self.for_e3nn:
-                ds = DatasetConfig.fix_e3nn_labels(ds)
+                ds = DatasetConfig.fix_e3nn_labels(ds, grouped=self.grouped)
             return ds
 
         # Build directly from Complexes/Ligands
@@ -512,7 +512,7 @@ class DatasetConfig(ConfigBase):
                         self.input_data, exp_dict=self.exp_data
                     )
                 if self.for_e3nn:
-                    ds = DatasetConfig.fix_e3nn_labels(ds)
+                    ds = DatasetConfig.fix_e3nn_labels(ds, grouped=self.grouped)
             case other:
                 raise ValueError(f"Unknwon dataset type {other}.")
 
@@ -522,15 +522,25 @@ class DatasetConfig(ConfigBase):
         return ds
 
     @staticmethod
-    def fix_e3nn_labels(ds):
-        for _, pose in ds:
-            # Check if this pose has already been adjusted
-            if pose["z"].is_floating_point():
-                # Assume it'll only be floats if we've already run this function
-                continue
+    def fix_e3nn_labels(ds, grouped=False):
+        for _, data in ds:
+            if grouped:
+                for pose in data["poses"]:
+                    # Check if this pose has already been adjusted
+                    if pose["z"].is_floating_point():
+                        # Assume it'll only be floats if we've already run this function
+                        continue
 
-            pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
-            pose["z"] = pose["lig"].reshape((-1, 1)).float()
+                    pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
+                    pose["z"] = pose["lig"].reshape((-1, 1)).float()
+            else:
+                # Check if this data has already been adjusted
+                if data["z"].is_floating_point():
+                    # Assume it'll only be floats if we've already run this function
+                    continue
+
+                data["x"] = torch.nn.functional.one_hot(data["z"] - 1, 100).float()
+                data["z"] = data["lig"].reshape((-1, 1)).float()
 
         return ds
 
