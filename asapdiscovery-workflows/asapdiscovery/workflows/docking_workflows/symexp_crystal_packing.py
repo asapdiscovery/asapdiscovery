@@ -2,12 +2,10 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
-from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
@@ -16,7 +14,6 @@ from asapdiscovery.data.services.postera.manifold_artifacts import (
     ManifoldArtifactUploader,
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import (
-    TargetProteinMap,
     map_output_col_to_manifold_tag,
     rename_output_columns_for_manifold,
 )
@@ -27,31 +24,21 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
-from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer import (
-    ChemGauss4Scorer,
-    FINTScorer,
-    MetaScorer,
-    MLModelScorer,
-)
-from asapdiscovery.genetics.fitness import target_has_fitness_data
-from asapdiscovery.ml.models import ASAPMLModelRegistry
+from asapdiscovery.docking.scorer import ChemGauss4Scorer
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
-from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
 
 
-class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs):
-    ...
-   
+class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs): ...
+
 
 def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     """
@@ -118,8 +105,6 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         aws_cloudfront_settings = CloudfrontSettings()
         logger.info("AWS S3 and CloudFront credentials found")
 
-
-
     if inputs.postera_upload:
         postera_settings = PosteraSettings()
         logger.info("Postera settings loaded")
@@ -158,20 +143,10 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     n_complexes = len(complexes)
     logger.info(f"Loaded {n_complexes} complexes")
 
-
-
-
-    ref_complex = Complex.from_pdb(
-        align_struct,
-        target_kwargs={"target_name": "ref"},
-        ligand_kwargs={"compound_name": "ref_ligand"},
-    )
-
     # prep complexes
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(
         cache_dir=inputs.cache_dir,
-        align=ref_complex,
         ref_chain="A",
         active_site_chain="A",
     )
@@ -209,7 +184,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries)
+    docker = POSITDocker(use_omega=True, allow_retries=True)
     results = docker.dock(
         pairs,
         output_dir=output_dir / "docking_results",
@@ -224,20 +199,33 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         raise ValueError("No docking results generated, exiting")
     del pairs
 
-    # score results with multiple scoring functions
+    if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
+        write_ligands_to_multi_sdf(
+            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
+        )
+
+    # score results with just normal ChemGauss scorer
     logger.info("Scoring docking results")
-    scorer = MetaScorer(scorers=scorers)
+    scorer = ChemGauss4Scorer()
     scores_df = scorer.score(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
         return_df=True,
-        include_input=True,
+        include_input=False,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
 
+    check_empty_dataframe(
+        scores_df,
+        logger=logger,
+        fail="raise",
+        tag="scores",
+        message="No docking results",
+    )
 
     logger.info("Symmetry expanding docked structures")
     expander = SymmetryExpander()
@@ -258,7 +246,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     # score results using multiple scoring functions
     logger.info("Scoring expanded structures")
-   
+
     scorer = SymExpClashScorer()
 
     logger.info("Running scoring")
@@ -273,7 +261,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     # set hit flag to False
     scores_df[DockingResultCols.SYMEXP_CLASHING.value] = False
 
-   # if clashing is greater than threshold, set hit flag to True
+    # if clashing is greater than threshold, set hit flag to True
     scores_df.loc[
         scores_df[DockingResultCols.SYMEXP_CLASHING.value] > inputs.clash_threshold,
         DockingResultCols.SYMEXP_CLASHING.value,
@@ -307,7 +295,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         failure_mode=inputs.failure_mode,
     )
 
-   # rename visualisations target id column to POSIT structure tag so we can join
+    # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
         columns={
             DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
@@ -325,17 +313,15 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         ],
         how="outer",
     )
-   
+
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
 
-
     # deduplicate scores_df TODO
-
 
     # rename columns for manifold
     result_df = rename_output_columns_for_manifold(
-        scores_df,
+        combined_df,
         inputs.target,
         [DockingResultCols],
         manifold_validate=True,
@@ -359,8 +345,9 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
             molecule_set_name=inputs.postera_molset_name,
         )
         # push the results to PostEra, making a new molecule set if necessary
+        # push the results to PostEra, making a new molecule set if necessary
         manifold_data, molset_name, made_new_molset = postera_uploader.push(
-            result_df
+            result_df, sort_column=posit_score_tag, sort_ascending=True
         )
 
         combined = postera_uploader.join_with_manifold_data(
@@ -398,4 +385,4 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
             s3=S3.from_settings(aws_s3_settings),
             cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
         )
-        uploader.upload_artifacts()
+        uploader.upload_artifacts(sort_column=posit_score_tag, sort_ascending=True)
