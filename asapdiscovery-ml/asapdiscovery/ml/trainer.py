@@ -858,6 +858,7 @@ class Trainer(BaseModel):
 
                 # Update pred_tracker
                 for (
+                    loss_val,
                     target_prop,
                     target,
                     in_range,
@@ -865,6 +866,7 @@ class Trainer(BaseModel):
                     loss_config,
                     loss_wt,
                 ) in zip(
+                    losses,
                     self.target_props,
                     targets,
                     in_ranges,
@@ -875,7 +877,7 @@ class Trainer(BaseModel):
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
                         pose_predictions=[p.item() for p in pose_preds],
-                        loss_val=loss.item(),
+                        loss_val=loss_val.item(),
                         split="train",
                         compound_id=compound_id,
                         xtal_id=xtal_id,
@@ -990,6 +992,7 @@ class Trainer(BaseModel):
 
                 # Update pred_tracker
                 for (
+                    loss_val,
                     target_prop,
                     target,
                     in_range,
@@ -997,6 +1000,7 @@ class Trainer(BaseModel):
                     loss_config,
                     loss_wt,
                 ) in zip(
+                    losses,
                     self.target_props,
                     targets,
                     in_ranges,
@@ -1007,7 +1011,7 @@ class Trainer(BaseModel):
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
                         pose_predictions=[p.item() for p in pose_preds],
-                        loss_val=loss.item(),
+                        loss_val=loss_val.item(),
                         split="val",
                         compound_id=compound_id,
                         xtal_id=xtal_id,
@@ -1079,6 +1083,7 @@ class Trainer(BaseModel):
 
                 # Update pred_tracker
                 for (
+                    loss_val,
                     target_prop,
                     target,
                     in_range,
@@ -1086,6 +1091,7 @@ class Trainer(BaseModel):
                     loss_config,
                     loss_wt,
                 ) in zip(
+                    losses,
                     self.target_props,
                     targets,
                     in_ranges,
@@ -1096,7 +1102,7 @@ class Trainer(BaseModel):
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
                         pose_predictions=[p.item() for p in pose_preds],
-                        loss_val=loss.item(),
+                        loss_val=loss_val.item(),
                         split="test",
                         compound_id=compound_id,
                         xtal_id=xtal_id,
