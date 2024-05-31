@@ -243,3 +243,21 @@ def loglevel(func):
         default="INFO",
         show_default=True,
     )(func)
+
+
+def ref_chain(func):
+    return click.option(
+        "--ref-chain",
+        type=str,
+        default="A",
+        help="Chain ID to align to",
+    )(func)
+
+
+def active_site_chain(func):
+    return click.option(
+        "--active-site-chain",
+        type=str,
+        default="A",
+        help="Active site chain ID to align to",
+    )(func)

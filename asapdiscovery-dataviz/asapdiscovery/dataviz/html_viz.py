@@ -96,7 +96,8 @@ class HTMLVisualizer(VisualizerBase):
     align: bool = Field(
         True, description="Whether to align the poses to the reference protein"
     )
-
+    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
+    mobile_chain: Optional[str] = Field("A", description="Mobile chain ID to align.")
     fitness_data: Optional[Any]
     fitness_data_logoplots: Optional[Any]
     reference_protein: Optional[Any]
@@ -211,12 +212,12 @@ class HTMLVisualizer(VisualizerBase):
 
                 # make dataframe with ligand name, target name, and path to HTML
                 row = {}
-                row[DockingResultCols.LIGAND_ID.value] = (
-                    result.input_pair.ligand.compound_name
-                )
-                row[DockingResultCols.TARGET_ID.value] = (
-                    result.input_pair.complex.target.target_name
-                )
+                row[
+                    DockingResultCols.LIGAND_ID.value
+                ] = result.input_pair.ligand.compound_name
+                row[
+                    DockingResultCols.TARGET_ID.value
+                ] = result.input_pair.complex.target.target_name
                 row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
                 row[self.get_tag_for_color_method()] = outpath
                 data.append(row)
@@ -457,6 +458,8 @@ class HTMLVisualizer(VisualizerBase):
             complex_aligned, _ = superpose_molecule(
                 self.reference_protein,
                 complex,
+                ref_chain=self.ref_chain,
+                mobile_chain=self.mobile_chain,
             )
 
             # get pose and protein back

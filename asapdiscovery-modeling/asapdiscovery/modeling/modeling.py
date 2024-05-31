@@ -1,6 +1,7 @@
 from functools import reduce
 from pathlib import Path
 from typing import Optional, Union
+import warnings
 
 from asapdiscovery.data.backend.openeye import (
     oechem,
@@ -241,13 +242,23 @@ def superpose_molecule(ref_mol, mobile_mol, ref_chain="A", mobile_chain="A"):
     float
         RMSD between `ref_mol` and `mobile_mol` after alignment.
     """
-
+    guess_ref_chain = False
+    guess_mobile_chain = False
     # Default atom predicates
     if ref_chain not in find_component_chains(ref_mol, "protein"):
-        raise ValueError(f"Chain {ref_chain} not found in reference molecule.")
+        warnings.warn(
+            f"Chain {ref_chain} not found in reference molecule, using first chain"
+        )
+        guess_ref_chain = True
     if mobile_chain not in find_component_chains(mobile_mol, "protein"):
-        raise ValueError(f"Chain {mobile_chain} not found in mobile molecule.")
-
+        warnings.warn(
+            f"Chain {mobile_chain} not found in mobile molecule, using first chain"
+        )
+        guess_mobile_chain = True
+    if guess_ref_chain:
+        ref_chain = find_component_chains(ref_mol, "protein")[0]
+    if guess_mobile_chain:
+        mobile_chain = find_component_chains(mobile_mol, "protein")[0]
     ref_pred = oechem.OEHasChainID(ref_chain)
     mobile_pred = oechem.OEHasChainID(mobile_chain)
 
@@ -388,6 +399,7 @@ def find_component_chains(mol: oechem.OEMolBase, component: str, res_name=None):
                 if res.IsHetAtom() and not res.GetName() == "HOH"
             }
         )
+
     return chainids
 
 

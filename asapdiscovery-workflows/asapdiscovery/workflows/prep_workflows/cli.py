@@ -10,6 +10,8 @@ from asapdiscovery.cli.cli_args import (
     save_to_cache,
     structure_dir,
     target,
+    ref_chain,
+    active_site_chain,
 )
 from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 
@@ -29,18 +31,8 @@ def protein_prep():
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="Path to a reference structure to align to",
 )
-@click.option(
-    "--ref-chain",
-    type=str,
-    default="A",
-    help="Chain ID to align to",
-)
-@click.option(
-    "--active-site-chain",
-    type=str,
-    default="A",
-    help="Active site chain ID to align to",
-)
+@ref_chain
+@active_site_chain
 @click.option(
     "--seqres-yaml",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
@@ -71,8 +63,8 @@ def protein_prep():
 def protein_prep(
     target: "TargetTags",
     align: Optional[str] = None,
-    ref_chain: Optional[str] = None,
-    active_site_chain: Optional[str] = None,
+    ref_chain: Optional[str] = "A",
+    active_site_chain: Optional[str] = "A",
     seqres_yaml: Optional[str] = None,
     loop_db: Optional[str] = None,
     oe_active_site_residue: Optional[str] = None,

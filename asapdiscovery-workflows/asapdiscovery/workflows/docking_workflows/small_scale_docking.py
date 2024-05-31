@@ -239,8 +239,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     prepper = ProteinPrepper(
         cache_dir=inputs.cache_dir,
         align=ref_complex,
-        ref_chain="A",
-        active_site_chain="A",
+        ref_chain=inputs.ref_chain,
+        active_site_chain=inputs.active_site_chain,
     )
     prepped_complexes = prepper.prep(
         complexes,
@@ -352,6 +352,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         color_method=ColorMethod.subpockets,
         target=inputs.target,
         output_dir=html_ouptut_dir,
+        ref_chain=inputs.ref_chain,
+        mobile_chain=inputs.ref_chain,
     )
     pose_visualizatons = html_visualizer.visualize(
         results,
@@ -385,6 +387,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             color_method=ColorMethod.fitness,
             target=inputs.target,
             output_dir=html_fitness_output_dir,
+            ref_chain=inputs.ref_chain,
+            mobile_chain=inputs.ref_chain,
         )
         fitness_visualizations = html_fitness_visualizer.visualize(
             results,
@@ -394,9 +398,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = (
-            fitness_visualizations[DockingResultCols.TARGET_ID.value]
-        )
+        fitness_visualizations[
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(

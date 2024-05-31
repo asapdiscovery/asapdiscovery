@@ -74,6 +74,10 @@ class DockingWorkflowInputsBase(BaseModel):
     overwrite: bool = Field(
         False, description="Whether to overwrite existing output directory."
     )
+    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
+    active_site_chain: Optional[str] = Field(
+        "A", description="Chain ID to align to reference."
+    )
 
     class Config:
         arbitrary_types_allowed = True
