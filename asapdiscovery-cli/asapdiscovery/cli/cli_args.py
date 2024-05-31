@@ -258,6 +258,6 @@ def active_site_chain(func):
     return click.option(
         "--active-site-chain",
         type=str,
-        default="A",
+        default=None,
         help="Active site chain ID to align to",
     )(func)

@@ -242,23 +242,24 @@ def superpose_molecule(ref_mol, mobile_mol, ref_chain="A", mobile_chain="A"):
     float
         RMSD between `ref_mol` and `mobile_mol` after alignment.
     """
-    guess_ref_chain = False
-    guess_mobile_chain = False
-    # Default atom predicates
-    if ref_chain not in find_component_chains(ref_mol, "protein"):
+    chains_in_ref = find_component_chains(ref_mol, "protein", sort_by="size")
+    if ref_chain not in chains_in_ref or ref_chain is None:
         warnings.warn(
-            f"Chain {ref_chain} not found in reference molecule, using first chain"
+            f"Chain {ref_chain} not found in reference molecule: chains {chains_in_ref}, using largest chain as reference {chains_in_mobile[0]}"
         )
-        guess_ref_chain = True
-    if mobile_chain not in find_component_chains(mobile_mol, "protein"):
+        ref_chain = chains_in_ref[0]
+
+    chains_in_mobile = find_component_chains(mobile_mol, "protein", sort_by="size")
+    if mobile_chain not in chains_in_mobile or mobile_chain is None:
         warnings.warn(
-            f"Chain {mobile_chain} not found in mobile molecule, using first chain"
+            f"Chain {mobile_chain} not found in mobile molecule: chains {chains_in_mobile}, using largest chain {chains_in_mobile[0]}"
         )
-        guess_mobile_chain = True
-    if guess_ref_chain:
-        ref_chain = find_component_chains(ref_mol, "protein")[0]
-    if guess_mobile_chain:
-        mobile_chain = find_component_chains(mobile_mol, "protein")[0]
+        mobile_chain = chains_in_mobile[0]
+
+    if ref_chain != mobile_chain:
+        warnings.warn(
+            f"Chains {ref_chain} and {mobile_chain} are not the same, this may not be what you want"
+        )
     ref_pred = oechem.OEHasChainID(ref_chain)
     mobile_pred = oechem.OEHasChainID(mobile_chain)
 
@@ -373,32 +374,49 @@ def build_dimer_from_monomer(prot):
     return prot
 
 
-def find_component_chains(mol: oechem.OEMolBase, component: str, res_name=None):
+def find_component_chains(
+    mol: oechem.OEMolBase, component: str, res_name=None, sort_by="alphabetical"
+):
+
+    if sort_by not in ["alphabetical", "size"]:
+        raise ValueError("sort_by must be either 'alphabetical' or 'size'")
+
     molcomp = MoleculeComponent(component)
+
     if res_name:
-        chainids = sorted(
-            {
-                res.GetChainID()
-                for res in oechem.OEGetResidues(mol)
-                if res.GetName() == res_name
-            }
-        )
+        # find all chains and their lengths in residues
+        chain_lengths = {}
+        for res in oechem.OEGetResidues(mol):
+            if res.GetName() == res_name:
+                chain_id = res.GetChainID()
+                if chain_id not in chain_lengths:
+                    chain_lengths[chain_id] = 0
+                chain_lengths[chain_id] += 1
+
     elif molcomp.name == MoleculeComponent.PROTEIN.name:
-        chainids = sorted(
-            {
-                res.GetChainID()
-                for res in oechem.OEGetResidues(mol)
-                if oechem.OEIsStandardProteinResidue(res)
-            }
-        )
+        chain_lengths = {}
+        for res in oechem.OEGetResidues(mol):
+            if oechem.OEIsStandardProteinResidue(res):
+                chain_id = res.GetChainID()
+                if chain_id not in chain_lengths:
+                    chain_lengths[chain_id] = 0
+                chain_lengths[chain_id] += 1
+
     elif molcomp.name == MoleculeComponent.LIGAND.name:
+        chain_lengths = {}
+        for res in oechem.OEGetResidues(mol):
+            if res.IsHetAtom() and not res.GetName() == "HOH":
+                chain_id = res.GetChainID()
+                if chain_id not in chain_lengths:
+                    chain_lengths[chain_id] = 0
+                chain_lengths[chain_id] += 1
+
+    if sort_by == "size":
         chainids = sorted(
-            {
-                res.GetChainID()
-                for res in oechem.OEGetResidues(mol)
-                if res.IsHetAtom() and not res.GetName() == "HOH"
-            }
+            chain_lengths.keys(), key=lambda x: chain_lengths[x], reverse=True
         )
+    elif sort_by == "alphabetical":
+        chainids = sorted(chain_lengths.keys())
 
     return chainids
 
@@ -453,9 +471,9 @@ def split_openeye_mol(
     opts.SetSplitCovalentCofactors(True)
 
     # Protein splitting options
-    # Default of all atoms identified as protein
+    # Default of all atoms identified as protein + complex
     prot_only = oechem.OEMolComplexFilterFactory(
-        oechem.OEMolComplexFilterCategory_Protein
+        oechem.OEMolComplexFilterCategory_ProtComplex
     )
     # If protein_chains are specified, only take protein atoms from those chains
     if len(molecule_filter.protein_chains) > 0:
