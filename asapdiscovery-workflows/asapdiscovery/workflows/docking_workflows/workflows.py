@@ -8,6 +8,7 @@ from typing import Optional, Union
 
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
+from asapdiscovery.data.metadata.resources import active_site_chains
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
@@ -74,9 +75,13 @@ class DockingWorkflowInputsBase(BaseModel):
     overwrite: bool = Field(
         False, description="Whether to overwrite existing output directory."
     )
-    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
+    ref_chain: Optional[str] = Field(
+        None,
+        description="Chain ID to align to in reference structure containing the active site",
+    )
     active_site_chain: Optional[str] = Field(
-        "A", description="Chain ID to align to reference."
+        None,
+        description="Active site chain ID to align to ref_chain in reference structure",
     )
 
     class Config:
@@ -114,6 +119,18 @@ class DockingWorkflowInputsBase(BaseModel):
                 "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
             )
 
+        return values
+
+    @root_validator(pre=True)
+    def check_and_set_chains(cls, values):
+        active_site_chain = values.get("active_site_chain")
+        ref_chain = values.get("ref_chain")
+        target = values.get("target")
+        if not active_site_chain:
+            values["active_site_chain"] = active_site_chains[target]
+        # set same chain for active site if not specified
+        if not ref_chain:
+            values["ref_chain"] = active_site_chains[target]
         return values
 
 

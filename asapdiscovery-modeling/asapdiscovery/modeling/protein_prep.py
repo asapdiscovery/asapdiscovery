@@ -23,6 +23,8 @@ from asapdiscovery.modeling.modeling import (
     superpose_molecule,
 )
 from pydantic import BaseModel, Field, root_validator
+from asapdiscovery.data.metadata.resources import active_site_chains
+
 
 if TYPE_CHECKING:
     from distributed import Client
@@ -52,7 +54,8 @@ class ProteinPrepperBase(BaseModel):
         arbitrary_types_allowed = True
 
     @abc.abstractmethod
-    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]: ...
+    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]:
+        ...
 
     @staticmethod
     def _gather_new_tasks(
@@ -166,7 +169,8 @@ class ProteinPrepperBase(BaseModel):
         return all_outputs
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]: ...
+    def provenance(self) -> dict[str, str]:
+        ...
 
     @staticmethod
     def cache(
@@ -229,9 +233,12 @@ class ProteinPrepper(ProteinPrepperBase):
     align: Optional[Complex] = Field(
         None, description="Reference structure to align to."
     )
-    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
+    ref_chain: Optional[str] = Field(
+        None, description="Chain ID to align to in reference structure"
+    )
     active_site_chain: Optional[str] = Field(
-        "A", description="Chain ID to align to reference."
+        None,
+        description="Active site chain ID to align to ref_chain in reference structure",
     )
     seqres_yaml: Optional[Path] = Field(
         None, description="Path to seqres yaml to mutate to."
@@ -243,19 +250,16 @@ class ProteinPrepper(ProteinPrepperBase):
         None, description="OE formatted string of active site residue to use"
     )
 
-    @root_validator
-    @classmethod
-    def _check_align_and_chain_info(cls, values):
-        """
-        Check that align and chain info is provided correctly.
-        """
-        align = values.get("align")
-        ref_chain = values.get("ref_chain")
+    @root_validator(pre=True)
+    def check_and_set_chains(cls, values):
         active_site_chain = values.get("active_site_chain")
-        if align and not ref_chain:
-            raise ValueError("Must provide ref_chain if align is provided")
-        if align and not active_site_chain:
-            raise ValueError("Must provide active_site_chain if align is provided")
+        ref_chain = values.get("ref_chain")
+        target = values.get("target")
+        if not active_site_chain:
+            values["active_site_chain"] = active_site_chains[target]
+        # set same chain for active site if not specified
+        if not ref_chain:
+            values["ref_chain"] = active_site_chains[target]
         return values
 
     def _prep(self, inputs: list[Complex], failure_mode="skip") -> list[PreppedComplex]:

@@ -353,7 +353,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         target=inputs.target,
         output_dir=html_ouptut_dir,
         ref_chain=inputs.ref_chain,
-        mobile_chain=inputs.ref_chain,
+        active_site_chain=inputs.ref_chain,
     )
     pose_visualizatons = html_visualizer.visualize(
         results,
@@ -388,7 +388,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             target=inputs.target,
             output_dir=html_fitness_output_dir,
             ref_chain=inputs.ref_chain,
-            mobile_chain=inputs.ref_chain,
+            active_site_chain=inputs.ref_chain,
         )
         fitness_visualizations = html_fitness_visualizer.visualize(
             results,

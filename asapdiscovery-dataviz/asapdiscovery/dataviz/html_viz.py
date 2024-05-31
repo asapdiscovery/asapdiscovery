@@ -46,6 +46,8 @@ from asapdiscovery.genetics.fitness import (
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 from multimethod import multimethod
 from pydantic import Field, root_validator
+from asapdiscovery.data.metadata.resources import active_site_chains
+
 
 logger = logging.getLogger(__name__)
 
@@ -96,11 +98,27 @@ class HTMLVisualizer(VisualizerBase):
     align: bool = Field(
         True, description="Whether to align the poses to the reference protein"
     )
-    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
-    mobile_chain: Optional[str] = Field("A", description="Mobile chain ID to align.")
+    ref_chain: Optional[str] = Field(
+        None, description="Reference chain ID to align to."
+    )
+    active_site_chain: Optional[str] = Field(
+        None, description="Mobile chain ID to align."
+    )
     fitness_data: Optional[Any]
     fitness_data_logoplots: Optional[Any]
     reference_protein: Optional[Any]
+
+    @root_validator(pre=True)
+    def check_and_set_chains(cls, values):
+        active_site_chain = values.get("active_site_chain")
+        ref_chain = values.get("ref_chain")
+        target = values.get("target")
+        if not active_site_chain:
+            values["active_site_chain"] = active_site_chains[target]
+        # set same chain for active site if not specified
+        if not ref_chain:
+            values["ref_chain"] = active_site_chains[target]
+        return values
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -459,7 +477,7 @@ class HTMLVisualizer(VisualizerBase):
                 self.reference_protein,
                 complex,
                 ref_chain=self.ref_chain,
-                mobile_chain=self.mobile_chain,
+                mobile_chain=self.active_site_chain,
             )
 
             # get pose and protein back

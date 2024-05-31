@@ -249,8 +249,8 @@ def ref_chain(func):
     return click.option(
         "--ref-chain",
         type=str,
-        default="A",
-        help="Chain ID to align to",
+        default=None,
+        help="Chain ID to align to in reference structure containing the active site.",
     )(func)
 
 
@@ -259,5 +259,5 @@ def active_site_chain(func):
         "--active-site-chain",
         type=str,
         default=None,
-        help="Active site chain ID to align to",
+        help="Active site chain ID to align to ref_chain in reference structure",
     )(func)

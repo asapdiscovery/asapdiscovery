@@ -118,8 +118,8 @@ def large_scale(
     failure_mode: FailureMode = FailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
     loglevel: Union[int, str] = logging.INFO,
-    ref_chain: Optional[str] = "A",
-    active_site_chain: Optional[str] = "A",
+    ref_chain: Optional[str] = None,
+    active_site_chain: Optional[str] = None,
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -338,8 +338,8 @@ def small_scale(
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
     loglevel: Union[int, str] = logging.INFO,
-    ref_chain: Optional[str] = "A",
-    active_site_chain: Optional[str] = "A",
+    ref_chain: Optional[str] = None,
+    active_site_chain: Optional[str] = None,
 ):
     """
     Run small scale docking on a set of ligands, against a set of targets.

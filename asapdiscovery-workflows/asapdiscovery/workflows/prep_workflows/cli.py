@@ -63,8 +63,8 @@ def protein_prep():
 def protein_prep(
     target: "TargetTags",
     align: Optional[str] = None,
-    ref_chain: Optional[str] = "A",
-    active_site_chain: Optional[str] = "A",
+    ref_chain: Optional[str] = None,
+    active_site_chain: Optional[str] = None,
     seqres_yaml: Optional[str] = None,
     loop_db: Optional[str] = None,
     oe_active_site_residue: Optional[str] = None,
