@@ -54,8 +54,7 @@ class ProteinPrepperBase(BaseModel):
         arbitrary_types_allowed = True
 
     @abc.abstractmethod
-    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]:
-        ...
+    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]: ...
 
     @staticmethod
     def _gather_new_tasks(
@@ -169,8 +168,7 @@ class ProteinPrepperBase(BaseModel):
         return all_outputs
 
     @abc.abstractmethod
-    def provenance(self) -> dict[str, str]:
-        ...
+    def provenance(self) -> dict[str, str]: ...
 
     @staticmethod
     def cache(
@@ -249,18 +247,6 @@ class ProteinPrepper(ProteinPrepperBase):
     oe_active_site_residue: Optional[str] = Field(
         None, description="OE formatted string of active site residue to use"
     )
-
-    @root_validator(pre=True)
-    def check_and_set_chains(cls, values):
-        active_site_chain = values.get("active_site_chain")
-        ref_chain = values.get("ref_chain")
-        target = values.get("target")
-        if not active_site_chain:
-            values["active_site_chain"] = active_site_chains[target]
-        # set same chain for active site if not specified
-        if not ref_chain:
-            values["ref_chain"] = active_site_chains[target]
-        return values
 
     def _prep(self, inputs: list[Complex], failure_mode="skip") -> list[PreppedComplex]:
         """
