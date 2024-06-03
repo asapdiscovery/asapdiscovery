@@ -80,6 +80,7 @@ class Complex(ComplexBase):
         # Create Target and Ligand objects
         target = Target.from_oemol(split_dict["prot"], **target_kwargs)
         ligand = Ligand.from_oemol(split_dict["lig"], **ligand_kwargs)
+        save_openeye_pdb(split_dict["oth"], "oth.pdb")
 
         return cls(
             target=target, ligand=ligand, ligand_chain=split_dict["keep_lig_chain"]
