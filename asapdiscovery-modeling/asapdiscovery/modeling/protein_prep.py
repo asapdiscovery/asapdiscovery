@@ -270,6 +270,8 @@ class ProteinPrepper(ProteinPrepperBase):
                 if self.seqres_yaml:
                     with open(self.seqres_yaml) as f:
                         seqres_dict = yaml.safe_load(f)
+                    if "SEQRES" not in seqres_dict:
+                        raise ValueError("No SEQRES found in YAML")
                     seqres = seqres_dict["SEQRES"]
                     res_list = seqres_to_res_list(seqres)
                     prot = mutate_residues(prot, res_list, place_h=True)

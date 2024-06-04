@@ -199,7 +199,7 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
             f"No seqres yaml specified, selecting based on target: {inputs.target}"
         )
         inputs.seqres_yaml = seqres_by_target(inputs.target)
-
+    logger.info(f"Using seqres yaml: {inputs.seqres_yaml}")
     if inputs.align:
         # load reference structure
         logger.info(f"Loading and aligning to reference structure: {inputs.align}")

@@ -277,7 +277,6 @@ def superpose_molecule(ref_mol, mobile_mol, ref_chain="A", mobile_chain="A"):
     # Create copy of molecule and transform it to the aligned position
     mobile_mol_aligned = mobile_mol.CreateCopy()
     aln_res.Transform(mobile_mol_aligned)
-
     return mobile_mol_aligned, aln_res.GetRMSD()
 
 
