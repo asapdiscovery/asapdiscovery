@@ -293,6 +293,11 @@ class Ligand(DataModelAbstractBase):
         # dump tags as separate items
         if self.tags is not None:
             data.update({k: v for k, v in self.tags.items()})
+        # if we have partial charges set them on the atoms assuming the atom ordering is not changed
+        if "atom.dprop.PartialCharge" in self.tags:
+            for i, charge in enumerate(self.tags["atom.dprop.PartialCharge"].split(" ")):
+                atom = rdkit_mol.GetAtomWithIdx(i)
+                atom.SetDoubleProp("PartialCharge", float(charge))
 
         # set the SD that is different for each conformer
         # convert to str first

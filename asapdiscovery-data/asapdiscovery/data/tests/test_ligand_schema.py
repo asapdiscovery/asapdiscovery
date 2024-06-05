@@ -505,7 +505,7 @@ def test_clear_sd_data(moonshot_sdf):
     assert l1.get_single_conf_SD_data() == {}
 
 
-@pytest.mark.parametrize("tags", [{"test_key": "test_value"}, {}])
+@pytest.mark.parametrize("tags", [{"test_key": "test_value"}, {"atom.dprop.PartialCharge": "-0.09213 -0.08045 -0.08045 -0.09207  0.03237  0.03237 0.03237  0.03772  0.03772  0.03772  0.03772  0.03237 0.03237  0.03237"}])
 @pytest.mark.parametrize("exp_data_vals", [{"pIC50": 5.0}, {}])
 @pytest.mark.parametrize("moonshot_compound_id", ["test_moonshot_compound_id", None])
 @pytest.mark.parametrize("manifold_vc_id", ["ASAP-VC-1234", None])
@@ -536,7 +536,7 @@ def test_ligand_sdf_roundtrip_SD(
             compchem_id=compchem_id,
         ),
         experimental_data=exp_data,
-        tags=tags,
+        **tags,
     )
     # serialize with SD data
     l1.to_sdf(tmp_path / "test_with_attrs.sdf")
@@ -557,3 +557,26 @@ def test_to_rdkit(smiles):
     assert molecule.data_format.value == props["data_format"]
     # make sure the name was set when provided.
     assert molecule.compound_name == props["_Name"]
+
+
+def test_partial_charge_conversion():
+    """Make sure we can convert molecules with partial charges to other formats."""
+
+    molecule = Ligand.from_smiles("C", compound_name="test")
+    # set some fake charges
+    molecule.tags["atom.dprop.PartialCharge"] = "-0.10868 0.02717 0.02717 0.02717 0.02717"
+    rdkit_mol = molecule.to_rdkit()
+    for atom in rdkit_mol.GetAtoms():
+        assert atom.HasProp("PartialCharge")
+    assert rdkit_mol.HasProp("atom.dprop.PartialCharge")
+    # test converting to openfe
+    with pytest.warns(UserWarning):
+        # make sure the charge warning is triggered
+        ofe = molecule.to_openfe()
+        # convert to openff and make sure the charges are found
+        off_mol = ofe.to_openff()
+        assert off_mol.partial_charges is not None
+        for i, charge in enumerate(off_mol.partial_charges.m):
+            atom = rdkit_mol.GetAtomWithIdx(i)
+            assert atom.GetDoubleProp("PartialCharge") == charge
+

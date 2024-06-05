@@ -35,6 +35,7 @@ def test_prep_workflow(strict_stereo, core_smarts, failed, mac1_complex):
         strict_stereo=strict_stereo,
         core_smarts=core_smarts,
         pose_generator=OpenEyeConstrainedPoseGenerator(),
+        charge_method=None
     )
 
     alchemy_dataset = workflow.create_alchemy_dataset(
@@ -142,6 +143,8 @@ def test_prep_workflow_ref_ligands(mac1_complex):
         core_smarts=None,
         # use small number of confs to keep the test fast
         pose_generator=RDKitConstrainedPoseGenerator(max_confs=10),
+        # turn off charging for speed
+        charge_method=None
     )
 
     experimental_data = {"cdd_protocol": "my-protocol", "experimental": "True"}
@@ -179,3 +182,43 @@ def test_prep_workflow_ref_ligands(mac1_complex):
     for mol in alchemy_dataset.posed_ligands:
         for key, value in experimental_data.items():
             assert mol.tags[key] == value
+
+
+def test_prep_with_charges(mac1_complex):
+    """Test running the prep workflow and generating charges"""
+
+    # no access to epik so skip
+    workflow = AlchemyPrepWorkflow(
+        charge_expander=None,
+        strict_stereo=True,
+        core_smarts=None,
+        # use small number of confs to keep the test fast
+        pose_generator=RDKitConstrainedPoseGenerator(max_confs=10),
+    )
+
+    alchemy_dataset = workflow.create_alchemy_dataset(
+        dataset_name="mac1-testing-dataset",
+        ligands=[
+            Ligand.from_smiles(
+                "Cc1c(cn(n1)C)c2cc3c([nH]2)ncnc3N[C@H](c4ccc5c(c4)S(=O)(=O)CCC5)C(C)C",
+                compound_name="stereo_mol",
+            )
+        ],
+        reference_complex=mac1_complex,
+    )
+    # check we have the expected number of outputs
+    assert len(alchemy_dataset.input_ligands) == 1
+    assert len(alchemy_dataset.posed_ligands) == 1
+    # make sure charges were generated, name must be this to be found by openfe and openff
+    assert "atom.dprop.PartialCharge" in alchemy_dataset.posed_ligands[0].tags
+    # mock the BFE workflow passing the charges to openfe  then openff and make sure they match
+    openfe_mol = alchemy_dataset.posed_ligands[0].to_openfe()
+    off_mol = openfe_mol.to_openff()
+    assert off_mol.partial_charges is not None
+    # make sure the charges are consistent
+    for i, charge in enumerate(alchemy_dataset.posed_ligands[0].tags["atom.dprop.PartialCharge"].split(" ")):
+        assert float(charge) == off_mol.partial_charges[i].m
+    # make sure the method was stamped on the molecule
+    method_data = workflow.charge_method.dict()
+    method_data["provenance"] = workflow.charge_method.provenance()
+    assert alchemy_dataset.posed_ligands[0].tags["charge_generation"] == method_data
