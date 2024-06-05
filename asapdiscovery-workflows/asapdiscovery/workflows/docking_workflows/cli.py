@@ -19,6 +19,8 @@ from asapdiscovery.cli.cli_args import (
     structure_dir,
     target,
     use_only_cache,
+    ref_chain,
+    active_site_chain,
 )
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
@@ -94,6 +96,8 @@ def docking():
 @input_json
 @ml_scorer
 @loglevel
+@ref_chain
+@active_site_chain
 def large_scale(
     target: TargetTags,
     n_select: int = 5,
@@ -119,6 +123,8 @@ def large_scale(
     failure_mode: FailureMode = FailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
     loglevel: Union[int, str] = logging.INFO,
+    ref_chain: Optional[str] = None,
+    active_site_chain: Optional[str] = None,
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -153,6 +159,8 @@ def large_scale(
             output_dir=output_dir,
             overwrite=overwrite,
             loglevel=loglevel,
+            ref_chain=ref_chain,
+            active_site_chain=active_site_chain,
         )
 
     large_scale_docking_workflow(inputs)
@@ -306,6 +314,8 @@ def cross_docking(
 @ml_scorer
 @md_args
 @loglevel
+@ref_chain
+@active_site_chain
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
@@ -333,6 +343,8 @@ def small_scale(
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
     loglevel: Union[int, str] = logging.INFO,
+    ref_chain: Optional[str] = None,
+    active_site_chain: Optional[str] = None,
 ):
     """
     Run small scale docking on a set of ligands, against a set of targets.
@@ -369,6 +381,8 @@ def small_scale(
             md_steps=md_steps,
             md_openmm_platform=md_openmm_platform,
             loglevel=loglevel,
+            ref_chain=ref_chain,
+            active_site_chain=active_site_chain,
         )
 
     small_scale_docking_workflow(inputs)
