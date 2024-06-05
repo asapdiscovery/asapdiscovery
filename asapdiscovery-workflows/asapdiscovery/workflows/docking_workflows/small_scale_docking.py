@@ -398,9 +398,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         )
 
         # duplicate target id column so we can join
-        fitness_visualizations[
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        ] = fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        fitness_visualizations[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] =  fitness_visualizations[DockingResultCols.TARGET_ID.value]
+        
 
         # join the two dataframes on ligand_id, target_id and smiles
         combined_df = combined_df.merge(
@@ -494,6 +493,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             dask_client=dask_client,
             failure_mode=inputs.failure_mode,
         )
+
+        if len(simulation_results) == 0:
+            raise ValueError("No MD simulation results generated, exiting")
 
         if local_cpu_client_gpu_override and inputs.use_dask:
             dask_client = make_dask_client_meta(DaskType.LOCAL)

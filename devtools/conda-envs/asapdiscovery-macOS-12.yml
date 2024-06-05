@@ -32,11 +32,11 @@ dependencies:
   - pydantic >=1.10.8,<2.0.0a0
   - rdkit
   - seaborn
-  - pebble
   - panel
   - plotmol
   - semver
   - mafft
+  - scipy >=1.13.1
 
   # data
   - requests
