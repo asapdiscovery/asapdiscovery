@@ -219,6 +219,5 @@ def test_prep_with_charges(mac1_complex):
     for i, charge in enumerate(alchemy_dataset.posed_ligands[0].tags["atom.dprop.PartialCharge"].split(" ")):
         assert float(charge) == off_mol.partial_charges[i].m
     # make sure the method was stamped on the molecule
-    method_data = workflow.charge_method.dict()
-    method_data["provenance"] = workflow.charge_method.provenance()
+    method_data = workflow.charge_method.provenance()
     assert alchemy_dataset.posed_ligands[0].tags["charge_generation"] == method_data

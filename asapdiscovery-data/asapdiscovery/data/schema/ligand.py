@@ -155,11 +155,15 @@ class Ligand(DataModelAbstractBase):
     @validator("tags")
     @classmethod
     def _validate_tags(cls, v):
-        # check that tags are not reserved attribute names
+        # check that tags are not reserved attribute names and format partial charges
         reser_attr_names = cls.__fields__.keys()
         for k in v.keys():
             if k in reser_attr_names:
                 raise ValueError(f"Tag name {k} is a reserved attribute name")
+            elif k == "atom.dprop.PartialCharge":
+                if not isinstance(v[k], str):
+                    # this can happen when the gufe json decoder is used
+                    v[k] = " ".join([str(c) for c in v[k]])
         return v
 
     def __hash__(self):
@@ -251,6 +255,12 @@ class Ligand(DataModelAbstractBase):
                         data[key] = str(getattr(self, key))
         # dump the enum using value to get the str repr
         data["data_format"] = self.data_format.value
+
+        # add partial charges if present
+        if "atom.dprop.PartialCharge" in self.tags:
+            charges = self.tags["atom.dprop.PartialCharge"].split(" ")
+            for oe_atom in mol.GetAtoms():
+                oe_atom.SetPartialCharge(float(charges[oe_atom.GetIdx()]))
 
         # add high level tags to data
         data.update(self.tags)

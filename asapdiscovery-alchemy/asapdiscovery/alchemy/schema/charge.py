@@ -9,8 +9,18 @@ class _BaseChargeMethod(_SchemaBase, abc.ABC):
 
     type: Literal["_BaseChargeMethod"] = "_BaseChargeMethod"
 
+    def provenance(self) -> dict[str, str]:
+        """
+        Get the provenance of the software and settings used to generate partial charges for the molecule.
+
+        Returns:
+            A dict of the charge generation method with the software versions.
+        """
+        data = {"protocol": self.dict(), "version": self._provenance()}
+        return data
+
     @abc.abstractmethod
-    def provenance(self) -> dict[str, Any]:
+    def _provenance(self) -> dict[str, Any]:
         """Return the provenance for this pose generation method."""
         ...
 
@@ -38,7 +48,7 @@ class OpenFFCharges(_BaseChargeMethod):
     charge_method: Literal["am1bccelf10", "am1bcc"] = Field("am1bccelf10", description="The OpenFF toolkit supported "
                                                                                        "charging method to use.")
 
-    def provenance(self) -> dict[str, Any]:
+    def _provenance(self) -> dict[str, Any]:
         import openff.toolkit
         provenance = {"openff.toolkit": openff.toolkit.__version__}
         if self.charge_method == "am1bccelf10":
@@ -67,11 +77,9 @@ class OpenFFCharges(_BaseChargeMethod):
             ligands: list[Ligand],
             processors: int = 1,
     ) -> list[Ligand]:
-        from openff.toolkit import Molecule
         from concurrent.futures import ProcessPoolExecutor, as_completed
 
-        charge_method = self.dict()
-        charge_method["provenance"] = self.provenance()
+        provenance = self.provenance()
         charged_ligands = []
 
         if processors > 1:
@@ -93,6 +101,6 @@ class OpenFFCharges(_BaseChargeMethod):
 
         for ligand in charged_ligands:
             # stamp how the charges were made
-            ligand.tags["charge_generation"] = charge_method
+            ligand.tags["charge_generation"] = provenance
 
         return charged_ligands
