@@ -107,6 +107,14 @@ class Trainer(BaseModel):
         None,
         description="Output using asapdiscovery.data.FileLogger in addition to stdout.",
     )
+    save_weights: str = Field(
+        "all",
+        description=(
+            "How often to save weights during training."
+            'Options are to keep every epoch ("all"), only keep the most recent '
+            'epoch ("recent"), or only keep the final epoch ("final").'
+        ),
+    )
 
     # W&B parameters
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
@@ -427,6 +435,18 @@ class Trainer(BaseModel):
             extra_config[key] = val
 
         return extra_config
+
+    @validator("save_weights")
+    def check_save_weights(cls, v):
+        """
+        Just make sure the option is one of the valid ones.
+        """
+        v = v.lower()
+
+        if v not in {"all", "recent", "final"}:
+            raise ValueError(f'Invalid option for save_weights: "{v}"')
+
+        return v
 
     def wandb_init(self):
         """
