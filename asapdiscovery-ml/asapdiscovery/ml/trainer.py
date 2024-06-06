@@ -702,6 +702,7 @@ class Trainer(BaseModel):
                         )
                     }
                 )
+                print(f"Using weights file {weights_path.name}", flush=True)
             except FileNotFoundError:
                 raise FileNotFoundError(
                     f"Found {self.start_epoch} epochs of training, but didn't find "
