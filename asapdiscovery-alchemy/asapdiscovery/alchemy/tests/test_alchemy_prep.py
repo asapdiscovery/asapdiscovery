@@ -211,6 +211,7 @@ def test_prep_with_charges(mac1_complex):
     assert len(alchemy_dataset.posed_ligands) == 1
     # make sure charges were generated, name must be this to be found by openfe and openff
     assert "atom.dprop.PartialCharge" in alchemy_dataset.posed_ligands[0].tags
+
     # mock the BFE workflow passing the charges to openfe  then openff and make sure they match
     openfe_mol = alchemy_dataset.posed_ligands[0].to_openfe()
     off_mol = openfe_mol.to_openff()
@@ -218,6 +219,6 @@ def test_prep_with_charges(mac1_complex):
     # make sure the charges are consistent
     for i, charge in enumerate(alchemy_dataset.posed_ligands[0].tags["atom.dprop.PartialCharge"].split(" ")):
         assert float(charge) == off_mol.partial_charges[i].m
+
     # make sure the method was stamped on the molecule
-    method_data = workflow.charge_method.provenance()
-    assert alchemy_dataset.posed_ligands[0].tags["charge_generation"] == method_data
+    assert alchemy_dataset.posed_ligands[0].charge_provenance.dict(exclude={"type"}) == workflow.charge_method.provenance()

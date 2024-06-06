@@ -28,7 +28,7 @@ from asapdiscovery.data.backend.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
-from asapdiscovery.data.schema.identifiers import LigandIdentifiers, LigandProvenance
+from asapdiscovery.data.schema.identifiers import LigandIdentifiers, LigandProvenance, ChargeProvenance
 from asapdiscovery.data.schema.schema_base import DataStorageType
 from pydantic import Field, root_validator, validator
 
@@ -114,6 +114,11 @@ class Ligand(DataModelAbstractBase):
         description="Expansion tag linking this ligand to its parent in a state expansion if needed",
     )
 
+    charge_provenance: Optional[ChargeProvenance] = Field(
+        None,
+        description="The provenance information of the local charging method."
+    )
+
     tags: dict[str, str] = Field(
         {},
         description="Dictionary of SD tags. "
@@ -160,10 +165,6 @@ class Ligand(DataModelAbstractBase):
         for k in v.keys():
             if k in reser_attr_names:
                 raise ValueError(f"Tag name {k} is a reserved attribute name")
-            elif k == "atom.dprop.PartialCharge":
-                if not isinstance(v[k], str):
-                    # this can happen when the gufe json decoder is used
-                    v[k] = " ".join([str(c) for c in v[k]])
         return v
 
     def __hash__(self):

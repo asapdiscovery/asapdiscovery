@@ -16,7 +16,7 @@ class _BaseChargeMethod(_SchemaBase, abc.ABC):
         Returns:
             A dict of the charge generation method with the software versions.
         """
-        data = {"protocol": self.dict(), "version": self._provenance()}
+        data = {"protocol": self.dict(), "provenance": self._provenance()}
         return data
 
     @abc.abstractmethod
@@ -53,8 +53,8 @@ class OpenFFCharges(_BaseChargeMethod):
         provenance = {"openff.toolkit": openff.toolkit.__version__}
         if self.charge_method == "am1bccelf10":
             from openeye import oequacpac, oeomega
-            provenance["oeomega"] = oeomega.OEOmegaGetVersion()
-            provenance["oequacpac"] = oequacpac.OE_OEQUACPAC_VERSION
+            provenance["oeomega"] = str(oeomega.OEOmegaGetVersion())
+            provenance["oequacpac"] = str(oequacpac.OE_OEQUACPAC_VERSION)
         else:
             import rdkit
             from openff.utilities import get_ambertools_version
@@ -101,6 +101,6 @@ class OpenFFCharges(_BaseChargeMethod):
 
         for ligand in charged_ligands:
             # stamp how the charges were made
-            ligand.tags["charge_generation"] = provenance
+            ligand.charge_provenance = provenance
 
         return charged_ligands
