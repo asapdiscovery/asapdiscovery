@@ -591,6 +591,8 @@ class Trainer(BaseModel):
             # Load model weights
             try:
                 weights_path = self.output_dir / f"{self.start_epoch - 1}.th"
+                if not weights_path.exists():
+                    weights_path = self.output_dir / "weights.th"
                 self.model_config = self.model_config.update(
                     {
                         "model_weights": torch.load(
@@ -601,7 +603,8 @@ class Trainer(BaseModel):
             except FileNotFoundError:
                 raise FileNotFoundError(
                     f"Found {self.start_epoch} epochs of training, but didn't find "
-                    f"{self.start_epoch - 1}.th weights file."
+                    f"{self.start_epoch - 1}.th weights file or weights.th weights "
+                    "file."
                 )
 
         print(
@@ -889,8 +892,16 @@ class Trainer(BaseModel):
                     }
                 )
             # Save states
-            torch.save(self.model.state_dict(), self.output_dir / f"{epoch_idx}.th")
-            torch.save(self.optimizer.state_dict(), self.output_dir / "optimizer.th")
+            if self.save_weights == "all":
+                torch.save(self.model.state_dict(), self.output_dir / f"{epoch_idx}.th")
+                torch.save(
+                    self.optimizer.state_dict(), self.output_dir / "optimizer.th"
+                )
+            elif self.save_weights == "recent":
+                torch.save(self.model.state_dict(), self.output_dir / "weights.th")
+                torch.save(
+                    self.optimizer.state_dict(), self.output_dir / "optimizer.th"
+                )
             (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
             # Stop if loss has gone to infinity or is NaN
