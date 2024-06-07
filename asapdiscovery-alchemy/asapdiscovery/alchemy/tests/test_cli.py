@@ -121,7 +121,7 @@ def test_alchemy_prep_create(tmpdir):
         assert prep_workflow.core_smarts == "CC"
 
 
-def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow):
+def test_alchemy_prep_run_with_fails_and_charges(tmpdir, mac1_complex, openeye_charged_prep_workflow):
     """Test running the alchemy prep workflow on a set of mac1 ligands and that failures are captured"""
 
     # locate the ligands input file
@@ -133,7 +133,7 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
         # complex to a local file
         mac1_complex.to_json_file("complex.json")
         # write out the workflow to file
-        openeye_prep_workflow.to_file("openeye_workflow.json")
+        openeye_charged_prep_workflow.to_file("openeye_workflow.json")
 
         result = runner.invoke(
             alchemy,
@@ -193,6 +193,9 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 3
         assert len(prep_dataset.failed_ligands["InconsistentStereo"]) == 2
+        for ligand in prep_dataset.posed_ligands:
+            assert "atom.dprop.PartialCharge" in ligand.tags
+            assert ligand.charge_provenance is not None
 
 
 def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):

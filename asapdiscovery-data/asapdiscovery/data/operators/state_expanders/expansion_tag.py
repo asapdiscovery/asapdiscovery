@@ -28,7 +28,7 @@ class StateExpansionTag(BaseModel):
     )
     provenance: dict[str, Any] = Field(
         ...,
-        description="Provenance of the software used during the expansion and the state expander..",
+        description="Provenance of the software used during the expansion and the state expander.",
     )
 
     class Config:
