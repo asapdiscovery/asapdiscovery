@@ -22,8 +22,7 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field, root_validator
-from asapdiscovery.data.metadata.resources import active_site_chains
+from pydantic import BaseModel, Field
 
 
 if TYPE_CHECKING:
