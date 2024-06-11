@@ -432,7 +432,10 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
             "Actioned", overflow="fold", style="orange_red1", header_style="orange_red1"
         )
         table.add_column(
-            "Priority", overflow="fold", style="dark_turquoise", header_style="dark_turquoise"
+            "Priority",
+            overflow="fold",
+            style="dark_turquoise",
+            header_style="dark_turquoise",
         )
 
         networks_status = client._client.get_networks_status(networks=running_networks)
@@ -455,7 +458,7 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                     str(network_status.get("invalid", 0)),
                     str(network_status.get("deleted", 0)),
                     str(len(actioned_tasks)),
-                    str(network_weight)
+                    str(network_weight),
                 )
         status_breakdown.stop()
         console.print(table)

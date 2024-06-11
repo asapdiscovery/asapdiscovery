@@ -1,8 +1,9 @@
-from asapdiscovery.alchemy.schema.base import _SchemaBase
-from pydantic import Field
-from typing import Literal, Any
 import abc
+from typing import Any, Literal
+
+from asapdiscovery.alchemy.schema.base import _SchemaBase
 from asapdiscovery.data.schema.ligand import Ligand
+from pydantic import Field
 
 
 class _BaseChargeMethod(_SchemaBase, abc.ABC):
@@ -26,17 +27,15 @@ class _BaseChargeMethod(_SchemaBase, abc.ABC):
 
     @abc.abstractmethod
     def _generate_charges(
-            self,
-            ligands: list[Ligand],
-            processors: int = 1,
+        self,
+        ligands: list[Ligand],
+        processors: int = 1,
     ) -> list[Ligand]:
         """The main worker method which should be used to generate charges for the ligands."""
         ...
 
     def generate_charges(
-            self,
-            ligands: list[Ligand],
-            processors: int = 1
+        self, ligands: list[Ligand], processors: int = 1
     ) -> list[Ligand]:
         return self._generate_charges(ligands=ligands, processors=processors)
 
@@ -45,19 +44,24 @@ class OpenFFCharges(_BaseChargeMethod):
 
     type: Literal["OpenFFCharges"] = "OpenFFCharges"
 
-    charge_method: Literal["am1bccelf10", "am1bcc"] = Field("am1bccelf10", description="The OpenFF toolkit supported "
-                                                                                       "charging method to use.")
+    charge_method: Literal["am1bccelf10", "am1bcc"] = Field(
+        "am1bccelf10",
+        description="The OpenFF toolkit supported " "charging method to use.",
+    )
 
     def _provenance(self) -> dict[str, Any]:
         import openff.toolkit
+
         provenance = {"openff.toolkit": openff.toolkit.__version__}
         if self.charge_method == "am1bccelf10":
-            from openeye import oequacpac, oeomega
+            from openeye import oeomega, oequacpac
+
             provenance["oeomega"] = str(oeomega.OEOmegaGetVersion())
             provenance["oequacpac"] = str(oequacpac.OE_OEQUACPAC_VERSION)
         else:
             import rdkit
             from openff.utilities import get_ambertools_version
+
             provenance["rdkit"] = rdkit.__version__
             provenance["ambertools"] = get_ambertools_version()
         return provenance
@@ -65,6 +69,7 @@ class OpenFFCharges(_BaseChargeMethod):
     def _charge_molecule(self, ligand: Ligand) -> Ligand:
         """Generate charges for the molecule using the openff toolkit."""
         from openff.toolkit import Molecule
+
         off_mol = Molecule.from_rdkit(ligand.to_rdkit())
         off_mol.assign_partial_charges(partial_charge_method=self.charge_method)
         # fake the creation of the rdkit double property list
@@ -73,9 +78,9 @@ class OpenFFCharges(_BaseChargeMethod):
         return ligand
 
     def _generate_charges(
-            self,
-            ligands: list[Ligand],
-            processors: int = 1,
+        self,
+        ligands: list[Ligand],
+        processors: int = 1,
     ) -> list[Ligand]:
         from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -85,11 +90,7 @@ class OpenFFCharges(_BaseChargeMethod):
         if processors > 1:
             with ProcessPoolExecutor(max_workers=processors) as pool:
                 work_list = [
-                    pool.submit(
-                        self._charge_molecule,
-                        ligand
-                    )
-                    for ligand in ligands
+                    pool.submit(self._charge_molecule, ligand) for ligand in ligands
                 ]
                 for work in as_completed(work_list):
                     result_ligand = work.result()

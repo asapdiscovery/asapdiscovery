@@ -23,7 +23,7 @@ def main():
     args = get_args()
 
     seqres_str = "SEQRES: |\n"
-    for r in SeqIO.parse(args.in_file.open('r'), "fasta"):
+    for r in SeqIO.parse(args.in_file.open("r"), "fasta"):
         # Based on the format Andre used in Slack
         rec_chains = r.description.split("|")[1]
         rec_chains = [c.strip(",") for c in rec_chains.split()[1:]]

@@ -121,7 +121,9 @@ def test_alchemy_prep_create(tmpdir):
         assert prep_workflow.core_smarts == "CC"
 
 
-def test_alchemy_prep_run_with_fails_and_charges(tmpdir, mac1_complex, openeye_charged_prep_workflow):
+def test_alchemy_prep_run_with_fails_and_charges(
+    tmpdir, mac1_complex, openeye_charged_prep_workflow
+):
     """Test running the alchemy prep workflow on a set of mac1 ligands and that failures are captured"""
 
     # locate the ligands input file
@@ -394,7 +396,7 @@ def test_alchemy_status_all(monkeypatch):
     network_status = {"complete": 1, "running": 2, "waiting": 3}
 
     def get_networks_status(*args, **kwargs):
-        """""We mock this as it changes the return on get scope status and get network status"""
+        """ ""We mock this as it changes the return on get scope status and get network status"""
         return [network_status]
 
     def _get_resource(*args, **kwargs):
@@ -402,15 +404,21 @@ def test_alchemy_status_all(monkeypatch):
 
     def get_network_keys(*args, **kwargs):
         """Mock a network key for a running network"""
-        return [network_key, ]
+        return [
+            network_key,
+        ]
 
     def get_actioned(*args, **kwargs):
         assert network_key in kwargs["networks"]
-        return [[i for i in range(5)],]
+        return [
+            [i for i in range(5)],
+        ]
 
     def get_networks_weight(*args, **kwargs):
         """Mock the network priority weight"""
-        return [1,]
+        return [
+            1,
+        ]
 
     # mock the full call stack in the helper function
     monkeypatch.setattr(AlchemiscaleClient, "get_networks_status", get_networks_status)
