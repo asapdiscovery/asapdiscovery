@@ -24,7 +24,6 @@ from asapdiscovery.modeling.modeling import (
 )
 from pydantic import BaseModel, Field
 
-
 if TYPE_CHECKING:
     from distributed import Client
 
