@@ -35,7 +35,7 @@ def test_prep_workflow(strict_stereo, core_smarts, failed, mac1_complex):
         strict_stereo=strict_stereo,
         core_smarts=core_smarts,
         pose_generator=OpenEyeConstrainedPoseGenerator(),
-        charge_method=None
+        charge_method=None,
     )
 
     alchemy_dataset = workflow.create_alchemy_dataset(
@@ -144,7 +144,7 @@ def test_prep_workflow_ref_ligands(mac1_complex):
         # use small number of confs to keep the test fast
         pose_generator=RDKitConstrainedPoseGenerator(max_confs=10),
         # turn off charging for speed
-        charge_method=None
+        charge_method=None,
     )
 
     experimental_data = {"cdd_protocol": "my-protocol", "experimental": "True"}
@@ -217,8 +217,13 @@ def test_prep_with_charges(mac1_complex):
     off_mol = openfe_mol.to_openff()
     assert off_mol.partial_charges is not None
     # make sure the charges are consistent
-    for i, charge in enumerate(alchemy_dataset.posed_ligands[0].tags["atom.dprop.PartialCharge"].split(" ")):
+    for i, charge in enumerate(
+        alchemy_dataset.posed_ligands[0].tags["atom.dprop.PartialCharge"].split(" ")
+    ):
         assert float(charge) == off_mol.partial_charges[i].m
 
     # make sure the method was stamped on the molecule
-    assert alchemy_dataset.posed_ligands[0].charge_provenance.dict(exclude={"type"}) == workflow.charge_method.provenance()
+    assert (
+        alchemy_dataset.posed_ligands[0].charge_provenance.dict(exclude={"type"})
+        == workflow.charge_method.provenance()
+    )

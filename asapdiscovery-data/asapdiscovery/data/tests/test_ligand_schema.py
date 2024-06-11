@@ -568,8 +568,13 @@ def test_partial_charge_conversion(tmpdir):
     with tmpdir.as_cwd():
         molecule = Ligand.from_smiles("C", compound_name="test")
         # set some fake charges
-        molecule.tags["atom.dprop.PartialCharge"] = "-0.10868 0.02717 0.02717 0.02717 0.02717"
-        molecule.charge_provenance = {"protocol": {"type": "OpenFF", "charge_method": "am1bcc"}, "provenance": {"openff": 1}}
+        molecule.tags["atom.dprop.PartialCharge"] = (
+            "-0.10868 0.02717 0.02717 0.02717 0.02717"
+        )
+        molecule.charge_provenance = {
+            "protocol": {"type": "OpenFF", "charge_method": "am1bcc"},
+            "provenance": {"openff": 1},
+        }
         # make sure the charges are set converting to rdkit on the atoms and molecule level
         rdkit_mol = molecule.to_rdkit()
         for atom in rdkit_mol.GetAtoms():
@@ -590,13 +595,19 @@ def test_partial_charge_conversion(tmpdir):
         # try a json file round trip for internal workflows
         molecule.to_json_file("test.json")
         m2 = Ligand.from_json_file("test.json")
-        assert m2.tags["atom.dprop.PartialCharge"] == molecule.tags["atom.dprop.PartialCharge"]
+        assert (
+            m2.tags["atom.dprop.PartialCharge"]
+            == molecule.tags["atom.dprop.PartialCharge"]
+        )
         assert m2.charge_provenance == molecule.charge_provenance
 
         # try sdf round trip
-        molecule.to_sdf('test.sdf')
+        molecule.to_sdf("test.sdf")
         m3 = Ligand.from_sdf("test.sdf")
-        assert m3.tags["atom.dprop.PartialCharge"] == molecule.tags["atom.dprop.PartialCharge"]
+        assert (
+            m3.tags["atom.dprop.PartialCharge"]
+            == molecule.tags["atom.dprop.PartialCharge"]
+        )
         assert m2.charge_provenance == molecule.charge_provenance
 
         # make sure openfe picks up the user charges from sdf

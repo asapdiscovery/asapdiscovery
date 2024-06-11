@@ -1,8 +1,8 @@
-from typing import Optional, Literal, Any
+from typing import Any, Literal, Optional
 
 from asapdiscovery.data.schema.schema_base import DataModelAbstractBase
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from pydantic import Field, validator, BaseModel
+from pydantic import BaseModel, Field, validator
 
 
 class LigandIdentifiers(DataModelAbstractBase):
@@ -102,5 +102,6 @@ class ChargeProvenance(BaseModel):
         ..., description="The protocol and settings used to generate the local charges."
     )
     provenance: dict[str, str] = Field(
-        ..., description="The versions of the software used to generate the local charges."
+        ...,
+        description="The versions of the software used to generate the local charges.",
     )

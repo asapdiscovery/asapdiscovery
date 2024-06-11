@@ -6,9 +6,9 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
+from asapdiscovery.data.metadata.resources import active_site_chains
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
-from asapdiscovery.data.metadata.resources import active_site_chains
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 

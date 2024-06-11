@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 import dask
 import yaml
 from asapdiscovery.data.backend.openeye import oechem
+from asapdiscovery.data.metadata.resources import active_site_chains
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.target import PreppedTarget
@@ -23,8 +24,6 @@ from asapdiscovery.modeling.modeling import (
     superpose_molecule,
 )
 from pydantic import BaseModel, Field, root_validator
-from asapdiscovery.data.metadata.resources import active_site_chains
-
 
 if TYPE_CHECKING:
     from distributed import Client

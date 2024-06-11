@@ -113,8 +113,11 @@ def openeye_charged_prep_workflow() -> AlchemyPrepWorkflow:
         charge_expander=None, pose_generator=OpenEyeConstrainedPoseGenerator()
     )
 
+
 @pytest.fixture()
 def openeye_prep_workflow() -> AlchemyPrepWorkflow:
     return AlchemyPrepWorkflow(
-        charge_expander=None, pose_generator=OpenEyeConstrainedPoseGenerator(), charge_method=None
+        charge_expander=None,
+        pose_generator=OpenEyeConstrainedPoseGenerator(),
+        charge_method=None,
     )

@@ -28,7 +28,11 @@ from asapdiscovery.data.backend.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
-from asapdiscovery.data.schema.identifiers import LigandIdentifiers, LigandProvenance, ChargeProvenance
+from asapdiscovery.data.schema.identifiers import (
+    ChargeProvenance,
+    LigandIdentifiers,
+    LigandProvenance,
+)
 from asapdiscovery.data.schema.schema_base import DataStorageType
 from pydantic import Field, root_validator, validator
 
@@ -115,8 +119,7 @@ class Ligand(DataModelAbstractBase):
     )
 
     charge_provenance: Optional[ChargeProvenance] = Field(
-        None,
-        description="The provenance information of the local charging method."
+        None, description="The provenance information of the local charging method."
     )
 
     tags: dict[str, str] = Field(
@@ -306,7 +309,9 @@ class Ligand(DataModelAbstractBase):
             data.update({k: v for k, v in self.tags.items()})
         # if we have partial charges set them on the atoms assuming the atom ordering is not changed
         if "atom.dprop.PartialCharge" in self.tags:
-            for i, charge in enumerate(self.tags["atom.dprop.PartialCharge"].split(" ")):
+            for i, charge in enumerate(
+                self.tags["atom.dprop.PartialCharge"].split(" ")
+            ):
                 atom = rdkit_mol.GetAtomWithIdx(i)
                 atom.SetDoubleProp("PartialCharge", float(charge))
 

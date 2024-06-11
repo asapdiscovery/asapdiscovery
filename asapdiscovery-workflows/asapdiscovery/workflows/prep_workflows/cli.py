@@ -2,16 +2,16 @@ from typing import TYPE_CHECKING, Optional
 
 import click
 from asapdiscovery.cli.cli_args import (
+    active_site_chain,
     dask_args,
     fragalysis_dir,
     input_json,
     output_dir,
     pdb_file,
+    ref_chain,
     save_to_cache,
     structure_dir,
     target,
-    ref_chain,
-    active_site_chain,
 )
 from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 
