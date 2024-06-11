@@ -526,6 +526,8 @@ def plotmol_absolute(
     titles: Optional[list[str]] = None,
     calculated_uncertainty: Optional[np.array] = None,
     experimental_uncertainty: Optional[np.array] = None,
+    categories: Optional[str] = None,
+    xylabels: Optional[str] = None,
 ) -> bokeh.plotting.figure:
     """
     Create an interactive plot using Plotmol for the absolute predictions of the free energies.
@@ -537,7 +539,8 @@ def plotmol_absolute(
         titles: A list of titles in order of the calculated values.
         calculated_uncertainty: An optional array of calculated uncertainty values.
         experimental_uncertainty: An optional array of experimental uncertainty values.
-
+        categories: An optional list of categories associated with the values to split on
+        xylabels: An optional list of len(2)==2 of x and y labels to use
     Returns:
         The bokeh interactive plot.
     """
@@ -575,6 +578,8 @@ def plotmol_absolute(
         calculated_uncertainty=calculated_uncertainty,
         experimental_uncertainty=experimental_uncertainty,
         custom_column_data=tooltip_data,
+        categories=categories,
+        xylabels=xylabels,
     )
 
 
@@ -586,6 +591,8 @@ def _plot_with_plotmol(
     custom_column_data: dict[str, list],
     calculated_uncertainty: Optional[np.array] = None,
     experimental_uncertainty: Optional[np.array] = None,
+    categories: Optional[str] = None,
+    xylabels: Optional[str] = None,
 ) -> bokeh.plotting.figure:
     # set up the x and y range and plot x=y line
     axis_padding = 0.5
@@ -622,7 +629,7 @@ def _plot_with_plotmol(
         fill_alpha=0.2,
         fill_color="grey",
     )
-    palette = bokeh.palettes.Spectral4
+    palette = bokeh.palettes.Category20c[20]
     figure.add_layout(in_band)
     figure.add_layout(outer_band)
 
@@ -655,18 +662,52 @@ def _plot_with_plotmol(
             dimension="width",
         )
         figure.add_layout(exp_error)
+    if categories is None:
+        plotmol.scatter(
+            figure=figure,
+            x=experimental,
+            y=calculated,
+            smiles=smiles,
+            marker="o",
+            marker_size=15,
+            marker_color=palette[0],
+            custom_column_data=custom_column_data,
+        )
+    else:
+        # we run the scatterplot for every category instead
+        for i, (cat, pred_df) in enumerate(
+            pd.DataFrame.from_dict(
+                {
+                    "category": categories,
+                    "smiles": smiles,
+                    "calculated": calculated,
+                    "experimental": experimental,
+                }
+            ).groupby(by="category")
+        ):
+            plotmol.scatter(
+                figure=figure,
+                x=pred_df["experimental"],
+                y=pred_df["calculated"],
+                smiles=pred_df["smiles"],
+                marker="o",
+                marker_size=15,
+                marker_color=palette[i],  # TODO make this work for i>20
+                legend_label=f"{cat}",
+                custom_column_data={
+                    "experimental": pred_df["experimental"],
+                    "prediction": pred_df["calculated"],
+                },
+            )
 
-    plotmol.scatter(
-        figure=figure,
-        x=experimental,
-        y=calculated,
-        smiles=smiles,
-        marker="o",
-        marker_size=15,
-        marker_color=palette[0],
-        custom_column_data=custom_column_data,
-    )
+        figure.legend.location = "top_left"
+        figure.legend.click_policy = "hide"
     figure.axis.axis_label_text_font_size = "20pt"
+
+    if xylabels:
+        # @josh this is my attempt to replace xylabels but it doesn't work?
+        figure.xaxis.axis_label = xylabels[0]
+        figure.yaxis.axis_label = xylabels[1]
     return figure
 
 
@@ -677,6 +718,8 @@ def plotmol_relative(
     titles: Optional[list[tuple[str, str]]] = None,
     calculated_uncertainty: Optional[np.array] = None,
     experimental_uncertainty: Optional[np.array] = None,
+    categories: Optional[str] = None,
+    xylabels: Optional[str] = None,
 ) -> bokeh.plotting.figure:
     """
     Create an interactive plot using Plotmol for the relative predictions of the free energies.
@@ -688,7 +731,8 @@ def plotmol_relative(
         titles: A list of titles in order of the calculated values.
         calculated_uncertainty: An optional array of calculated uncertainty values.
         experimental_uncertainty: An optional array of experimental uncertainty values.
-
+        categories: An optional list of categories associated with the values to split on
+        xylabels: An optional list of len()==2 of x and y labels to use
     Returns:
         The bokeh interactive plot.
     """
@@ -730,6 +774,8 @@ def plotmol_relative(
         calculated_uncertainty=calculated_uncertainty,
         experimental_uncertainty=experimental_uncertainty,
         custom_column_data=tooltip_data,
+        categories=categories,
+        xylabels=xylabels,
     )
 
 
