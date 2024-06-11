@@ -3,8 +3,15 @@ from typing import Any, Literal, Optional, Union
 
 import rich
 from asapdiscovery.alchemy.schema.base import _SchemaBase
-from asapdiscovery.data.operators.state_expanders.protomer_expander import EpikExpander
+from asapdiscovery.alchemy.schema.charge import OpenFFCharges
+from asapdiscovery.data.operators.state_expanders.protomer_expander import (
+    EpikExpander,
+    ProtomerExpander,
+)
 from asapdiscovery.data.operators.state_expanders.stereo_expander import StereoExpander
+from asapdiscovery.data.operators.state_expanders.tautomer_expander import (
+    TautomerExpander,
+)
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
@@ -28,7 +35,9 @@ class _AlchemyPrepBase(_SchemaBase):
         description="A class to expand the stereo"
         "chemistry of the ligands. This stage will be skipped if set to `None`.",
     )
-    charge_expander: Optional[EpikExpander] = Field(
+    charge_expander: Optional[
+        Union[EpikExpander, ProtomerExpander, TautomerExpander]
+    ] = Field(
         None,
         description="The charge and tautomer expander that"
         "should be applied to the ligands. This stage will be skipped if set to `None`.",
@@ -54,6 +63,7 @@ class _AlchemyPrepBase(_SchemaBase):
         description="The number of experimental reference molecules we should try to generate "
         "poses for.",
     )
+    charge_method: Optional[OpenFFCharges] = Field(OpenFFCharges(charge_method="am1bccelf10"), description="The method which should be used to charge the ligands locally.")
 
 
 class AlchemyDataSet(_AlchemyPrepBase):
@@ -422,6 +432,21 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             (1, 0, 1, 0),
         )
         console.print(message)
+
+        # Generate charges locally if requested
+        if self.charge_method is not None:
+            charge_status = console.status(f"Generating charges locally using {self.charge_method}")
+            charge_status.start()
+
+            posed_ligands = self.charge_method.generate_charges(ligands=posed_ligands, processors=processors)
+            provenance[self.charge_method.type] = self.charge_method.provenance()
+
+            message = Padding(
+                "[[green]✓[/green]] Charges successfully generated.",
+                (1, 0, 1, 0),
+            )
+            charge_status.stop()
+            console.print(message)
 
         # gather the results
         return AlchemyDataSet(

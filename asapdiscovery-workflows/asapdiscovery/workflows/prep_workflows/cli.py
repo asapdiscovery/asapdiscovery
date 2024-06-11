@@ -10,8 +10,10 @@ from asapdiscovery.cli.cli_args import (
     save_to_cache,
     structure_dir,
     target,
+    ref_chain,
+    active_site_chain,
 )
-from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 
 if TYPE_CHECKING:
     from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
@@ -29,18 +31,8 @@ def protein_prep():
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="Path to a reference structure to align to",
 )
-@click.option(
-    "--ref-chain",
-    type=str,
-    default="A",
-    help="Chain ID to align to",
-)
-@click.option(
-    "--active-site-chain",
-    type=str,
-    default="A",
-    help="Active site chain ID to align to",
-)
+@ref_chain
+@active_site_chain
 @click.option(
     "--seqres-yaml",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
@@ -83,7 +75,8 @@ def protein_prep(
     save_to_cache: bool = True,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
-    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+    dask_n_workers: Optional[int] = None,
+    failure_mode: FailureMode = FailureMode.SKIP,
     output_dir: str = "output",
     input_json: Optional[str] = None,
 ):
@@ -115,7 +108,8 @@ def protein_prep(
             save_to_cache=save_to_cache,
             use_dask=use_dask,
             dask_type=dask_type,
-            dask_failure_mode=dask_failure_mode,
+            dask_n_workers=dask_n_workers,
+            failure_mode=failure_mode,
             output_dir=output_dir,
         )
 

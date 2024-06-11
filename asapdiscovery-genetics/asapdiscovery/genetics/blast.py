@@ -148,7 +148,9 @@ def get_blast_seqs(
     else:  # Another source?
         raise ValueError("unknown input type")
 
-    print(f"BLAST search with {nalign} alignments and {nhits} hitlist_size")
+    print(
+        f"BLAST search with {nalign} alignments, expect {e_val_thresh}, {nhits} hitlist_size and {nhits} descriptions"
+    )
     # Retrieve blastp results
     result_handle = NCBIWWW.qblast(
         "blastp",

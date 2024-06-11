@@ -46,6 +46,8 @@ from asapdiscovery.genetics.fitness import (
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 from multimethod import multimethod
 from pydantic import Field, root_validator
+from asapdiscovery.data.metadata.resources import active_site_chains
+
 
 logger = logging.getLogger(__name__)
 
@@ -96,10 +98,27 @@ class HTMLVisualizer(VisualizerBase):
     align: bool = Field(
         True, description="Whether to align the poses to the reference protein"
     )
-
+    ref_chain: Optional[str] = Field(
+        None, description="Reference chain ID to align to."
+    )
+    active_site_chain: Optional[str] = Field(
+        None, description="Mobile chain ID to align."
+    )
     fitness_data: Optional[Any]
     fitness_data_logoplots: Optional[Any]
     reference_protein: Optional[Any]
+
+    @root_validator(pre=True)
+    def check_and_set_chains(cls, values):
+        active_site_chain = values.get("active_site_chain")
+        ref_chain = values.get("ref_chain")
+        target = values.get("target")
+        if not active_site_chain:
+            values["active_site_chain"] = active_site_chains[target]
+        # set same chain for active site if not specified
+        if not ref_chain:
+            values["ref_chain"] = active_site_chains[target]
+        return values
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -139,7 +158,7 @@ class HTMLVisualizer(VisualizerBase):
         elif self.color_method == "fitness":
             return make_color_res_fitness(protein, self.target)
 
-    @dask_vmap(["inputs"])
+    @dask_vmap(["inputs"], has_failure_mode=True)
     @backend_wrapper("inputs")
     def _visualize(
         self,
@@ -168,6 +187,7 @@ class HTMLVisualizer(VisualizerBase):
         self,
         inputs: list[DockingResult],
         outpaths: Optional[list[Path]] = None,
+        failure_mode: str = "skip",
         **kwargs,
     ) -> Union[list[dict[str, str]], list[str]]:
         """
@@ -189,35 +209,45 @@ class HTMLVisualizer(VisualizerBase):
         viz_data = []
 
         for i, result in enumerate(inputs):
-            output_pref = result.unique_name
-            if self.write_to_disk:
-                if not outpaths:
-                    outpath = self.output_dir / output_pref / "pose.html"
+            try:
+                output_pref = result.unique_name
+                if self.write_to_disk:
+                    if not outpaths:
+                        outpath = self.output_dir / output_pref / "pose.html"
+                    else:
+                        outpath = self.output_dir / Path(outpaths[i])
+                    outpath.parent.mkdir(parents=True, exist_ok=True)
                 else:
-                    outpath = self.output_dir / Path(outpaths[i])
-                outpath.parent.mkdir(parents=True, exist_ok=True)
-            else:
-                outpath = None  # we don't need to write to disk
+                    outpath = None  # we don't need to write to disk
 
-            viz = self.html_pose_viz(
-                poses=[result.posed_ligand.to_oemol()], protein=result.to_protein()
-            )
-            viz_data.append(viz)
-            # write to disk
-            if self.write_to_disk:
-                self.write_html(viz, outpath)
+                viz = self.html_pose_viz(
+                    poses=[result.posed_ligand.to_oemol()], protein=result.to_protein()
+                )
+                viz_data.append(viz)
+                # write to disk
+                if self.write_to_disk:
+                    self.write_html(viz, outpath)
 
-            # make dataframe with ligand name, target name, and path to HTML
-            row = {}
-            row[DockingResultCols.LIGAND_ID.value] = (
-                result.input_pair.ligand.compound_name
-            )
-            row[DockingResultCols.TARGET_ID.value] = (
-                result.input_pair.complex.target.target_name
-            )
-            row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
-            row[self.get_tag_for_color_method()] = outpath
-            data.append(row)
+                # make dataframe with ligand name, target name, and path to HTML
+                row = {}
+                row[
+                    DockingResultCols.LIGAND_ID.value
+                ] = result.input_pair.ligand.compound_name
+                row[
+                    DockingResultCols.TARGET_ID.value
+                ] = result.input_pair.complex.target.target_name
+                row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
+                row[self.get_tag_for_color_method()] = outpath
+                data.append(row)
+            except Exception as e:
+                if failure_mode == "skip":
+                    logger.error(f"Error processing {result.unique_name}: {e}")
+                elif failure_mode == "raise":
+                    raise e
+                else:
+                    raise ValueError(
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                    )
 
         if self.write_to_disk:
             return data
@@ -257,7 +287,11 @@ class HTMLVisualizer(VisualizerBase):
 
     @_dispatch.register
     def _dispatch(
-        self, inputs: list[Complex], outpaths: Optional[list[Path]] = None, **kwargs
+        self,
+        inputs: list[Complex],
+        outpaths: Optional[list[Path]] = None,
+        failure_mode: str = "skip",
+        **kwargs,
     ) -> Union[list[dict[str, str]], list[str]]:
         """
         Implementation for a list of Complex objects.
@@ -277,33 +311,43 @@ class HTMLVisualizer(VisualizerBase):
         data = []
         viz_data = []
         for i, cmplx in enumerate(inputs):
-            if self.write_to_disk:
-                if not outpaths:
-                    output_pref = cmplx.unique_name
-                    outpath = self.output_dir / output_pref / "pose.html"
+            try:
+                if self.write_to_disk:
+                    if not outpaths:
+                        output_pref = cmplx.unique_name
+                        outpath = self.output_dir / output_pref / "pose.html"
+                    else:
+                        outpath = self.output_dir / Path(outpaths[i])
+
+                    outpath.parent.mkdir(parents=True, exist_ok=True)
                 else:
-                    outpath = self.output_dir / Path(outpaths[i])
+                    outpath = None
 
-                outpath.parent.mkdir(parents=True, exist_ok=True)
-            else:
-                outpath = None
+                # make html string
+                viz = self.html_pose_viz(
+                    poses=[cmplx.ligand.to_oemol()], protein=cmplx.target.to_oemol()
+                )
+                viz_data.append(viz)
+                # write to disk
+                if self.write_to_disk:
+                    self.write_html(viz, outpath)
 
-            # make html string
-            viz = self.html_pose_viz(
-                poses=[cmplx.ligand.to_oemol()], protein=cmplx.target.to_oemol()
-            )
-            viz_data.append(viz)
-            # write to disk
-            if self.write_to_disk:
-                self.write_html(viz, outpath)
-
-            # make dataframe with ligand name, target name, and path to HTML
-            row = {}
-            row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
-            row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
-            row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
-            row[self.get_tag_for_color_method()] = outpath
-            data.append(row)
+                # make dataframe with ligand name, target name, and path to HTML
+                row = {}
+                row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
+                row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
+                row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
+                row[self.get_tag_for_color_method()] = outpath
+                data.append(row)
+            except Exception as e:
+                if failure_mode == "skip":
+                    logger.error(f"Error processing {cmplx.unique_name}: {e}")
+                elif failure_mode == "raise":
+                    raise e
+                else:
+                    raise ValueError(
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                    )
 
         if self.write_to_disk:
             # if we are writing to disk, return the metadata
@@ -317,6 +361,7 @@ class HTMLVisualizer(VisualizerBase):
         self,
         inputs: list[tuple[Complex, list[Ligand]]],
         outpaths: Optional[list[Path]] = None,
+        failure_mode: str = "skip",
         **kwargs,
     ) -> Union[list[dict[str, str]], list[str]]:
         """
@@ -338,37 +383,47 @@ class HTMLVisualizer(VisualizerBase):
         data = []
         viz_data = []
         for i, inp in enumerate(inputs):
-            cmplx, liglist = inp
-            if self.write_to_disk:
-                if not outpaths:
-                    output_pref = cmplx.unique_name
-                    outpath = self.output_dir / output_pref / "pose.html"
+            try:
+                cmplx, liglist = inp
+                if self.write_to_disk:
+                    if not outpaths:
+                        output_pref = cmplx.unique_name
+                        outpath = self.output_dir / output_pref / "pose.html"
+                    else:
+                        outpath = self.output_dir / Path(outpaths[i])
+                    outpath.parent.mkdir(parents=True, exist_ok=True)
                 else:
-                    outpath = self.output_dir / Path(outpaths[i])
-                outpath.parent.mkdir(parents=True, exist_ok=True)
-            else:
-                outpath = None
+                    outpath = None
 
-            # make html string
-            viz = self.html_pose_viz(
-                poses=[lig.to_oemol() for lig in liglist],
-                protein=cmplx.target.to_oemol(),
-            )
-            viz_data.append(viz)
-            # write to disk
-            if self.write_to_disk:
-                self.write_html(viz, outpath)
+                # make html string
+                viz = self.html_pose_viz(
+                    poses=[lig.to_oemol() for lig in liglist],
+                    protein=cmplx.target.to_oemol(),
+                )
+                viz_data.append(viz)
+                # write to disk
+                if self.write_to_disk:
+                    self.write_html(viz, outpath)
 
-            # make dataframe with ligand name, target name, and path to HTML
-            row = {}
-            row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
-            row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
-            if len(liglist) > 1:
-                row[DockingResultCols.SMILES.value] = "MANY"
-            else:
-                row[DockingResultCols.SMILES.value] = liglist[0].smiles
-            row[self.get_tag_for_color_method()] = outpath
-            data.append(row)
+                # make dataframe with ligand name, target name, and path to HTML
+                row = {}
+                row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
+                row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
+                if len(liglist) > 1:
+                    row[DockingResultCols.SMILES.value] = "MANY"
+                else:
+                    row[DockingResultCols.SMILES.value] = liglist[0].smiles
+                row[self.get_tag_for_color_method()] = outpath
+                data.append(row)
+            except Exception as e:
+                if failure_mode == "skip":
+                    logger.error(f"Error processing {cmplx.unique_name}: {e}")
+                elif failure_mode == "raise":
+                    raise e
+                else:
+                    raise ValueError(
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                    )
 
         if self.write_to_disk:
             # if we are writing to disk, return the metadata
@@ -421,6 +476,8 @@ class HTMLVisualizer(VisualizerBase):
             complex_aligned, _ = superpose_molecule(
                 self.reference_protein,
                 complex,
+                ref_chain=self.ref_chain,
+                mobile_chain=self.active_site_chain,
             )
 
             # get pose and protein back

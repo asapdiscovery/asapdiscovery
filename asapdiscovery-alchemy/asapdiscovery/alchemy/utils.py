@@ -44,20 +44,29 @@ class AlchemiscaleHelper:
     A convenience class to handle alchemiscale submissions restarts and results gathering.
     """
 
-    def __init__(self, api_url: str = "https://api.alchemiscale.org"):
+    def __init__(self, identifier: str, key: str, api_url: str = "https://api.alchemiscale.org"):
         """
-        Create the client which will be used for the rest of the queries
+        Create the client which will be used for the rest of the queries.
+
+        Args:
+            identifier: Your personal alchemiscale ID used to login.
+            key: Your personal alchemiscale KEY used to login.
+            api_url: The URL of the alchemiscale instance to connect to.
         """
         from alchemiscale import AlchemiscaleClient
 
-        # load the settings from the environment
-        settings = AlchemiscaleSettings()
         # connect to the client
         self._client = AlchemiscaleClient(
             api_url=api_url,
-            identifier=settings.ALCHEMISCALE_ID,
-            key=settings.ALCHEMISCALE_KEY,
+            identifier=identifier,
+            key=key,
         )
+
+    @classmethod
+    def from_settings(cls, settings: Optional[AlchemiscaleSettings] = None):
+        if settings is None:
+            settings = AlchemiscaleSettings()
+        return cls(api_url=settings.ALCHEMISCALE_URL, key=settings.ALCHEMISCALE_KEY, identifier=settings.ALCHEMISCALE_ID)
 
     def create_network(
         self, planned_network: FreeEnergyCalculationNetwork, scope: Scope

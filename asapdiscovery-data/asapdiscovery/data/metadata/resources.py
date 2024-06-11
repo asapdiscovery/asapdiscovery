@@ -100,6 +100,23 @@ master_structures = {
         __name__, "master_structures/ev_d68_capsid.pdb"
     ),
 }
+
+
+active_site_chains = {
+    "SARS-CoV-2-Mpro": "A",
+    "SARS-CoV-2-Mac1": "A",
+    "SARS-CoV-2-N-protein": "A",
+    "SARS-CoV-2-Mac1-monomer": "A",
+    "MERS-CoV-Mpro": "A",
+    "EV-D68-3Cpro": "A",
+    "EV-A71-3Cpro": "A",
+    "ZIKV-NS2B-NS3pro": "B",
+    "DENV-NS2B-NS3pro": "B",
+    "EV-A71-Capsid": "A",
+    "EV-D68-Capsid": "A",
+}
+
+
 FINTSCORE_PARAMETERS = pkg_resources.resource_filename(
     __name__, "fintscore_parameters.yaml"
 )

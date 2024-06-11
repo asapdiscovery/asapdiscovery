@@ -252,7 +252,7 @@ def submit(
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
     # create the scope
     network_scope = Scope(org=organization, campaign=campaign, project=project)
     # load the network
@@ -316,7 +316,7 @@ def gather(network: str, allow_missing: bool):
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
 
     # load the network
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
@@ -396,7 +396,7 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
     print_header(console)
 
     # launch the helper which will try to login
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
     if all_networks:
         # show the results of all tasks in scope, this will print to terminal
         client._client.get_scope_status()
@@ -513,7 +513,7 @@ def restart(network: str, verbose: bool, tasks):
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
 
     tasks = [ScopedKey.from_str(task) for task in tasks]
@@ -548,7 +548,7 @@ def stop(network_key: str):
     console = rich.get_console()
     print_header(console)
 
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
     cancel_status = console.status(f"Canceling actioned tasks on network {network_key}")
     cancel_status.start()
     canceled_tasks = client.cancel_actioned_tasks(network_key=network_key)
