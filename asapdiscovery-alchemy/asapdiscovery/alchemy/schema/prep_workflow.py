@@ -426,8 +426,12 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             pose_status.stop()
             console.print(
                 f"[[green]✓[/green]] Pose generation successful for {len(posed_refs)}/{self.n_references} experimental "
-                "ligands."
+                "ligands:"
             )
+            for ref_ligand in posed_refs:
+                console.print(
+                    f"Ligand: {ref_ligand.to_rdkit().GetProp('_Name')}; SMILES: {ref_ligand.smiles}",
+                )
             posed_ligands.extend(posed_refs)
 
         message = Padding(
