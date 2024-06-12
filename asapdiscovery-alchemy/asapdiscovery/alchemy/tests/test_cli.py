@@ -121,7 +121,9 @@ def test_alchemy_prep_create(tmpdir):
         assert prep_workflow.core_smarts == "CC"
 
 
-def test_alchemy_prep_run_with_fails_and_charges(tmpdir, mac1_complex, openeye_charged_prep_workflow):
+def test_alchemy_prep_run_with_fails_and_charges(
+    tmpdir, mac1_complex, openeye_charged_prep_workflow
+):
     """Test running the alchemy prep workflow on a set of mac1 ligands and that failures are captured"""
 
     # locate the ligands input file
@@ -391,22 +393,39 @@ def test_alchemy_status_all(monkeypatch):
         campaign="alchemy",
         project="testing",
     )
+    network_status = {"complete": 1, "running": 2, "waiting": 3}
+
+    def get_networks_status(*args, **kwargs):
+        """ ""We mock this as it changes the return on get scope status and get network status"""
+        return [network_status]
 
     def _get_resource(*args, **kwargs):
-        "We mock this as it changes the return on get scope status and get network status"
-        return {"complete": 1, "running": 2, "waiting": 3}
+        return network_status
 
     def get_network_keys(*args, **kwargs):
         """Mock a network key for a running network"""
-        return [network_key]
+        return [
+            network_key,
+        ]
 
     def get_actioned(*args, **kwargs):
-        assert kwargs["network"] == network_key
-        return [i for i in range(5)]
+        assert network_key in kwargs["networks"]
+        return [
+            [i for i in range(5)],
+        ]
 
-    monkeypatch.setattr(AlchemiscaleClient, "_get_resource", _get_resource)
+    def get_networks_weight(*args, **kwargs):
+        """Mock the network priority weight"""
+        return [
+            1,
+        ]
+
+    # mock the full call stack in the helper function
+    monkeypatch.setattr(AlchemiscaleClient, "get_networks_status", get_networks_status)
     monkeypatch.setattr(AlchemiscaleClient, "query_networks", get_network_keys)
-    monkeypatch.setattr(AlchemiscaleClient, "get_network_actioned_tasks", get_actioned)
+    monkeypatch.setattr(AlchemiscaleClient, "get_networks_actioned_tasks", get_actioned)
+    monkeypatch.setattr(AlchemiscaleClient, "get_networks_weight", get_networks_weight)
+    monkeypatch.setattr(AlchemiscaleClient, "_get_resource", _get_resource)
 
     runner = CliRunner()
 
@@ -417,7 +436,7 @@ def test_alchemy_status_all(monkeypatch):
         in result.stdout
     )
     assert (
-        "│ fakenetwork-asap-alchemy-testing │ 1   │ 2   │ 3   │ 0   │ 0    │ 0   │ 5    │"
+        "│ fakenetwork-asap-alchemy-testing │ 1   │ 2  │ 3   │ 0  │ 0   │ 0  │ 5   │ 1  │"
         in result.stdout
     )
 

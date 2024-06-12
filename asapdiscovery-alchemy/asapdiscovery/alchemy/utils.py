@@ -44,7 +44,9 @@ class AlchemiscaleHelper:
     A convenience class to handle alchemiscale submissions restarts and results gathering.
     """
 
-    def __init__(self, identifier: str, key: str, api_url: str = "https://api.alchemiscale.org"):
+    def __init__(
+        self, identifier: str, key: str, api_url: str = "https://api.alchemiscale.org"
+    ):
         """
         Create the client which will be used for the rest of the queries.
 
@@ -66,7 +68,11 @@ class AlchemiscaleHelper:
     def from_settings(cls, settings: Optional[AlchemiscaleSettings] = None):
         if settings is None:
             settings = AlchemiscaleSettings()
-        return cls(api_url=settings.ALCHEMISCALE_URL, key=settings.ALCHEMISCALE_KEY, identifier=settings.ALCHEMISCALE_ID)
+        return cls(
+            api_url=settings.ALCHEMISCALE_URL,
+            key=settings.ALCHEMISCALE_KEY,
+            identifier=settings.ALCHEMISCALE_ID,
+        )
 
     def create_network(
         self, planned_network: FreeEnergyCalculationNetwork, scope: Scope

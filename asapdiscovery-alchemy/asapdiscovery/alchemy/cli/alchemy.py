@@ -431,15 +431,24 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
         table.add_column(
             "Actioned", overflow="fold", style="orange_red1", header_style="orange_red1"
         )
-        for key in running_networks:
-            # get status
-            network_status = client._client.get_network_status(
-                network=key, visualize=False
-            )
-            running_tasks = client._client.get_network_actioned_tasks(network=key)
+        table.add_column(
+            "Priority",
+            overflow="fold",
+            style="dark_turquoise",
+            header_style="dark_turquoise",
+        )
+
+        networks_status = client._client.get_networks_status(networks=running_networks)
+        networks_actioned_tasks = client._client.get_networks_actioned_tasks(
+            networks=running_networks
+        )
+        network_weights = client._client.get_networks_weight(networks=running_networks)
+        for key, network_status, actioned_tasks, network_weight in zip(
+            running_networks, networks_status, networks_actioned_tasks, network_weights
+        ):
             if (
                 "running" in network_status or "waiting" in network_status
-            ) and running_tasks:
+            ) and actioned_tasks:
                 table.add_row(
                     str(key),
                     str(network_status.get("complete", 0)),
@@ -448,7 +457,8 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                     str(network_status.get("error", 0)),
                     str(network_status.get("invalid", 0)),
                     str(network_status.get("deleted", 0)),
-                    str(len(running_tasks)),
+                    str(len(actioned_tasks)),
+                    str(network_weight),
                 )
         status_breakdown.stop()
         console.print(table)

@@ -39,7 +39,8 @@ class AlchemiscaleSettings(BaseSettings):
         ..., description="Your personal alchemiscale Key used to login."
     )
     ALCHEMISCALE_URL: str = Field(
-        "https://api.alchemiscale.org", description="The address of the alchemiscale instance to connect to."
+        "https://api.alchemiscale.org",
+        description="The address of the alchemiscale instance to connect to.",
     )
 
 

@@ -63,7 +63,10 @@ class _AlchemyPrepBase(_SchemaBase):
         description="The number of experimental reference molecules we should try to generate "
         "poses for.",
     )
-    charge_method: Optional[OpenFFCharges] = Field(OpenFFCharges(charge_method="am1bccelf10"), description="The method which should be used to charge the ligands locally.")
+    charge_method: Optional[OpenFFCharges] = Field(
+        OpenFFCharges(charge_method="am1bccelf10"),
+        description="The method which should be used to charge the ligands locally.",
+    )
 
 
 class AlchemyDataSet(_AlchemyPrepBase):
@@ -435,10 +438,14 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
 
         # Generate charges locally if requested
         if self.charge_method is not None:
-            charge_status = console.status(f"Generating charges locally using {self.charge_method}")
+            charge_status = console.status(
+                f"Generating charges locally using {self.charge_method}"
+            )
             charge_status.start()
 
-            posed_ligands = self.charge_method.generate_charges(ligands=posed_ligands, processors=processors)
+            posed_ligands = self.charge_method.generate_charges(
+                ligands=posed_ligands, processors=processors
+            )
             provenance[self.charge_method.type] = self.charge_method.provenance()
 
             message = Padding(

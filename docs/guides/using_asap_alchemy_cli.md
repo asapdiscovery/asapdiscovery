@@ -22,7 +22,7 @@ Now lets walk through a typical application starting with `prep`.
 
 ## ASAP-Alchemy Prep
 
-`Prep` offers a pipeline of tools to prepare our ligand series for binding free energy calculations including state enumeration, 
+`Prep` offers a pipeline of tools to prepare our ligand series for binding free energy calculations including state enumeration,
 constrained pose and partial charge generation. To view the default prep workflow we can use the following command to write workflow to file
 where it can be edited although this is much easier using the API:
 
