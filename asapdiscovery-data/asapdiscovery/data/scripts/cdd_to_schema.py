@@ -12,38 +12,82 @@ python cdd_to_schema.py \
 -json cdd_downloaded_filtered.json
 """
 
-import argparse
+import click
+from pathlib import Path
 
-from asapdiscovery.data.util.utils import cdd_to_schema  # noqa: E402
-from asapdiscovery.data.util.utils import cdd_to_schema_pair  # noqa: E402
-
-
-def get_args():
-    parser = argparse.ArgumentParser(description="")
-
-    parser.add_argument("-i", required=True, help="CSV file input from CDD.")
-    parser.add_argument("-json", required=True, help="Output JSON file.")
-    parser.add_argument("-csv", help="Output CSV file.")
-    parser.add_argument(
-        "-type",
-        default="std",
-        help=(
-            "What type of data is " "being loaded (std: standard, ep: enantiomer pairs)"
-        ),
-    )
-
-    return parser.parse_args()
+from asapdiscovery.data.util.utils import cdd_to_schema, cdd_to_schema_pair
+from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 
 
-def main():
-    args = get_args()
-
-    if args.type.lower() == "std":
-        _ = cdd_to_schema(args.i, args.json, args.csv)
-    elif args.type.lower() == "ep":
-        _ = cdd_to_schema_pair(args.i, args.json, args.csv)
+@click.command()
+@click.option(
+    "-i",
+    "--in-file",
+    required=True,
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+    help="CSV file input from CDD.",
+)
+@click.option(
+    "-json",
+    "--out-json",
+    required=True,
+    type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+    help="Output JSON file.",
+)
+@click.option(
+    "-csv",
+    "--out-csv",
+    type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+    help="Output CSV file.",
+)
+@click.option(
+    "-type",
+    "--data-type",
+    default="std",
+    type=click.Choice(["std", "ep"], case_sensitive=False),
+    help="What type of data is being loaded (std: standard, ep: enantiomer pairs).",
+)
+@click.option(
+    "--frag-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    help=(
+        "Fragalysis directory. If passed, any compounds that are found to have a "
+        "crystal structure will have a Ligand object attached to their exp_data."
+    ),
+)
+def main(
+    in_file: Path,
+    out_json: Path,
+    out_csv: Path | None = None,
+    data_type: str = "std",
+    frag_dir: Path | None = None,
+):
+    if data_type.lower() == "std":
+        compounds = cdd_to_schema(in_file, out_json, out_csv)
+    elif data_type.lower() == "ep":
+        _ = cdd_to_schema_pair(in_file, out_json, out_csv)
+        return
     else:
-        raise ValueError(f"Unknown value for -type: {args.type}.")
+        raise ValueError(f"Unknown value for --data-type: {data_type}.")
+
+    # Add in Ligand objects from Fragalysis
+    if frag_dir and frag_dir.exists():
+        print("Loading data from Fragalysis", flush=True)
+        ff = FragalysisFactory(parent_dir=frag_dir)
+        complexes = ff.load()
+        lig_dict = {c.ligand.compound_name: c.ligand for c in complexes}
+
+        for c in compounds:
+            try:
+                lig = lig_dict[c.compound_id]
+            except KeyError:
+                continue
+
+            c.experimental_data["ligand"] = lig
+
+        n_added = sum(["ligand" in c.experimental_data for c in compounds])
+        print(f"Added {n_added} Ligands", flush=True)
+        out_json.write_text("[" + ", ".join([c.json() for c in compounds]) + "]")
 
 
 if __name__ == "__main__":

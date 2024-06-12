@@ -60,17 +60,14 @@ class Complex(ComplexBase):
         )
 
     @classmethod
-    def from_pdb(
+    def from_oemol(
         cls,
-        pdb_file: str | Path,
+        complex_mol: oechem.OEMol,
         target_chains=[],
         ligand_chain="",
         target_kwargs={},
         ligand_kwargs={},
     ) -> Complex:
-        # First load full complex molecule
-        complex_mol = load_openeye_pdb(pdb_file)
-
         # Split molecule into parts using given chains
         mol_filter = MoleculeFilter(
             protein_chains=target_chains, ligand_chain=ligand_chain
@@ -83,6 +80,26 @@ class Complex(ComplexBase):
 
         return cls(
             target=target, ligand=ligand, ligand_chain=split_dict["keep_lig_chain"]
+        )
+
+    @classmethod
+    def from_pdb(
+        cls,
+        pdb_file: str | Path,
+        target_chains=[],
+        ligand_chain="",
+        target_kwargs={},
+        ligand_kwargs={},
+    ) -> Complex:
+        # First load full complex molecule
+        complex_mol = load_openeye_pdb(pdb_file)
+
+        return cls.from_oemol(
+            complex_mol=complex_mol,
+            target_chains=target_chains,
+            ligand_chain=ligand_chain,
+            target_kwargs=target_kwargs,
+            ligand_kwargs=ligand_kwargs,
         )
 
     def to_pdb(self, pdb_file: str | Path):

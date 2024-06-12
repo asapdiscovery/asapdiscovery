@@ -35,7 +35,6 @@ from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterType,
     EarlyStoppingType,
-    LossFunctionType,
     OptimizerType,
 )
 from asapdiscovery.ml.trainer import Trainer
@@ -152,9 +151,9 @@ def build_gat(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -171,7 +170,6 @@ def build_gat(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -245,12 +243,10 @@ def build_gat(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -267,7 +263,9 @@ def build_gat(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -364,9 +362,9 @@ def build_schnet(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -383,7 +381,6 @@ def build_schnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -461,12 +458,10 @@ def build_schnet(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -483,7 +478,9 @@ def build_schnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -581,9 +578,9 @@ def build_e3nn(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -600,7 +597,6 @@ def build_e3nn(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -679,12 +675,10 @@ def build_e3nn(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -701,7 +695,9 @@ def build_e3nn(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -802,9 +798,9 @@ def build_visnet(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -821,7 +817,6 @@ def build_visnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -903,12 +898,10 @@ def build_visnet(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -925,7 +918,9 @@ def build_visnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -1019,9 +1014,9 @@ def build_and_train_gat(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -1038,7 +1033,6 @@ def build_and_train_gat(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1112,12 +1106,10 @@ def build_and_train_gat(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -1134,7 +1126,9 @@ def build_and_train_gat(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -1236,9 +1230,9 @@ def build_and_train_schnet(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -1255,7 +1249,6 @@ def build_and_train_schnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1333,12 +1326,10 @@ def build_and_train_schnet(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -1355,7 +1346,9 @@ def build_and_train_schnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -1458,9 +1451,9 @@ def build_and_train_e3nn(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -1477,7 +1470,6 @@ def build_and_train_e3nn(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1556,12 +1548,10 @@ def build_and_train_e3nn(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -1578,7 +1568,9 @@ def build_and_train_e3nn(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -1684,9 +1676,9 @@ def build_and_train_visnet(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -1703,7 +1695,6 @@ def build_and_train_visnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1786,12 +1777,10 @@ def build_and_train_visnet(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -1808,7 +1797,9 @@ def build_and_train_visnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -2150,6 +2141,11 @@ def _build_trainer(
                         if v is not None
                     }
                 )
+            elif isinstance(config_val, list) and (
+                len(trainer_kwargs[config_name]) == 0
+            ):
+                # If no values are passed to CLI keep config values
+                pass
             else:
                 config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 

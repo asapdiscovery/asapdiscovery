@@ -7,6 +7,7 @@ import mtenn
 import numpy as np
 import torch
 from asapdiscovery.data.backend.openeye import oechem, oemol_to_pdb_string
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.config import DatasetConfig
@@ -338,7 +339,15 @@ class StructuralInference(InferenceBase):
         if isinstance(pose, Path):
             pose = [pose]
 
-        pose = [DockedDataset._load_structure(p, None) for p in pose]
+        complexes = [
+            Complex.from_pdb(
+                pdb_file=p,
+                target_kwargs={"target_name": "pose"},
+                ligand_kwargs={"compound_name": str(i)},
+            )
+            for i, p in enumerate(pose)
+        ]
+        pose = [DockedDataset._complex_to_pose(c) for c in complexes]
         if for_e3nn:
             pose = [
                 p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
@@ -370,25 +379,25 @@ class StructuralInference(InferenceBase):
         np.ndarray or float
             Model prediction(s)
         """
-        from io import StringIO
-
         if isinstance(pose, oechem.OEMolBase):
             pose = [pose]
 
-        # Convert each pose OEMol to a string and open as StringIO handle
-        stringio_handles = [StringIO(oemol_to_pdb_string(p)) for p in pose]
-        # Load each structure from the StringIO handle
-        pose = [
-            DockedDataset._load_structure(p, ("pose", str(i)))
-            for i, p in enumerate(stringio_handles)
+        # Build each complex
+        complexes = [
+            Complex.from_oemol(
+                complex_mol=p,
+                target_kwargs={"target_name": "pose"},
+                ligand_kwargs={"compound_name": str(i)},
+            )
+            for i, p in enumerate(pose)
         ]
+
+        # Build each pose from complex
+        pose = [DockedDataset._complex_to_pose(c) for c in complexes]
         if for_e3nn:
             pose = [
                 p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
             ]
-        # Close all the handles
-        for h in stringio_handles:
-            h.close()
 
         # Make predictions
         preds = [self.predict(p) for p in pose]

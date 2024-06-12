@@ -489,7 +489,7 @@ class DatasetConfig(ConfigBase):
             print("loading from cache", flush=True)
             ds = pkl.loads(self.cache_file.read_bytes())
             if self.for_e3nn:
-                ds = DatasetConfig.fix_e3nn_labels(ds)
+                ds = DatasetConfig.fix_e3nn_labels(ds, grouped=self.grouped)
             return ds
 
         # Build directly from Complexes/Ligands
@@ -512,7 +512,7 @@ class DatasetConfig(ConfigBase):
                         self.input_data, exp_dict=self.exp_data
                     )
                 if self.for_e3nn:
-                    ds = DatasetConfig.fix_e3nn_labels(ds)
+                    ds = DatasetConfig.fix_e3nn_labels(ds, grouped=self.grouped)
             case other:
                 raise ValueError(f"Unknwon dataset type {other}.")
 
@@ -522,15 +522,25 @@ class DatasetConfig(ConfigBase):
         return ds
 
     @staticmethod
-    def fix_e3nn_labels(ds):
-        for _, pose in ds:
-            # Check if this pose has already been adjusted
-            if pose["z"].is_floating_point():
-                # Assume it'll only be floats if we've already run this function
-                continue
+    def fix_e3nn_labels(ds, grouped=False):
+        for _, data in ds:
+            if grouped:
+                for pose in data["poses"]:
+                    # Check if this pose has already been adjusted
+                    if pose["z"].is_floating_point():
+                        # Assume it'll only be floats if we've already run this function
+                        continue
 
-            pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
-            pose["z"] = pose["lig"].reshape((-1, 1)).float()
+                    pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
+                    pose["z"] = pose["lig"].reshape((-1, 1)).float()
+            else:
+                # Check if this data has already been adjusted
+                if data["z"].is_floating_point():
+                    # Assume it'll only be floats if we've already run this function
+                    continue
+
+                data["x"] = torch.nn.functional.one_hot(data["z"] - 1, 100).float()
+                data["z"] = data["lig"].reshape((-1, 1)).float()
 
         return ds
 
@@ -820,6 +830,8 @@ class LossFunctionType(StringEnum):
     gaussian = "gaussian"
     # Gaussian NLL loss (including semiquant values)
     gaussian_sq = "gaussian_sq"
+    # Squared difference penalty for pred outside range
+    range_penalty = "range"
 
 
 class LossFunctionConfig(ConfigBase):
@@ -844,8 +856,33 @@ class LossFunctionConfig(ConfigBase):
         ),
     )
 
+    # Range values for RangeLoss
+    range_lower_lim: float = Field(
+        None, description="Lower range of acceptable prediction values."
+    )
+    range_upper_lim: float = Field(
+        None, description="Upper range of acceptable prediction values."
+    )
+
+    @root_validator(pre=False)
+    def check_range_lims(cls, values):
+        if values["loss_type"] is not LossFunctionType.range_penalty:
+            return values
+
+        if (values["range_lower_lim"] is None) or (values["range_upper_lim"] is None):
+            raise ValueError(
+                "Values must be passed for range_lower_lim and range_upper_lim."
+            )
+
+        if values["range_lower_lim"] >= values["range_upper_lim"]:
+            raise ValueError(
+                "Value given for range_lower_lim >= value given for range_upper_lim."
+            )
+
+        return values
+
     def build(self):
-        from asapdiscovery.ml.loss import GaussianNLLLoss, MSELoss
+        from asapdiscovery.ml.loss import GaussianNLLLoss, MSELoss, RangeLoss
 
         match self.loss_type:
             case LossFunctionType.mse:
@@ -856,6 +893,10 @@ class LossFunctionConfig(ConfigBase):
                 return GaussianNLLLoss(keep_sq=False)
             case LossFunctionType.gaussian_sq:
                 return GaussianNLLLoss(keep_sq=True, semiquant_fill=self.semiquant_fill)
+            case LossFunctionType.range_penalty:
+                return RangeLoss(
+                    lower_lim=self.range_lower_lim, upper_lim=self.range_upper_lim
+                )
             case other:
                 raise ValueError(f"Unknown LossFunctionType {other}.")
 
