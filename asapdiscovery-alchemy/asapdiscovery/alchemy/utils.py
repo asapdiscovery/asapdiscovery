@@ -326,6 +326,25 @@ class AlchemiscaleHelper:
             canceled_tasks = []
         return canceled_tasks
 
+    def adjust_weight(self, network_key: ScopedKey, weight: float) -> float:
+        """
+        Adjust the weight of a network to influence how often its tasks get actioned
+        by the alchemiscale scheduler.
+
+        Args:
+            network_key: The alchemiscale network key that should have its weight adjusted.
+            weight: The weight (a float between 0.0 and 1.0) that should be assigned.
+
+        Returns:
+            The new weight that is assigned to the network.
+            The weight that was previously assigned to the network.
+        """
+        old_weight = self._client.get_network_weight(network_key)
+
+        self._client.set_network_weight(network_key, weight)
+
+        return self._client.get_network_weight(network_key), old_weight
+
 
 def select_reference_for_compounds(
     ligands: list["Ligand"],
