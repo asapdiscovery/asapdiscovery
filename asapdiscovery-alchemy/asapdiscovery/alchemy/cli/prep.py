@@ -231,8 +231,7 @@ def run(
 
         else:
             raise ValueError(f"Unrecognized file extension: {receptor_complex}.")
-        print("poep", ref_complex)
-        print(ref_complex.target)
+
         message = Padding(
             f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",
             (1, 0, 1, 0),
