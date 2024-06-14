@@ -123,7 +123,7 @@ def test_action_tasks(
     monkeypatch.setattr(client._client, "action_tasks", action_tasks)
     monkeypatch.setattr(client, "get_actioned_weights", actioned_weights)
 
-    tasks = client.action_network(planned_network=result_network, prioritize=priority)
+    tasks = client.action_network(planned_network=result_network)
 
     assert len(tasks) == (result_network.n_repeats + 1) * len(alchem_network.edges)
 
