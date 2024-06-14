@@ -219,16 +219,11 @@ def plan(
     help="The name of the project in alchemiscale the network should be submitted to.",
     required=True,
 )
-@click.option(
-    "-pr",
-    "--prioritize",
-    type=click.BOOL,
-    default=None,
-    help="Whether to prioritize the submitted network to have the highest priority of all currently running/waiting networks, or to de-prioritize it instead. Defaults to 0.5 which is the `alchemiscale` default network priority.",
-    show_default=True,
-)
 def submit(
-    network: str, organization: str, campaign: str, project: str, prioritize: bool
+    network: str,
+    organization: str,
+    campaign: str,
+    project: str,
 ):
     """
     Submit a local FreeEnergyCalculationNetwork to alchemiscale using the provided scope details. The network object
@@ -269,9 +264,7 @@ def submit(
     submitted_network.to_file(network)
     # now action the tasks
     click.echo("Creating and actioning FEC tasks on Alchemiscale...")
-    task_ids = client.action_network(
-        planned_network=submitted_network, prioritize=prioritize
-    )
+    task_ids = client.action_network(planned_network=submitted_network)
     # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)

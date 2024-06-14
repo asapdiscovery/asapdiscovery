@@ -134,15 +134,12 @@ class AlchemiscaleHelper:
     def action_network(
         self,
         planned_network: FreeEnergyCalculationNetwork,
-        prioritize: Optional[bool] = None,
     ) -> list[Optional[ScopedKey]]:
         """
         For the given network which is already stored on alchemiscale create and action tasks.
 
         Args:
             planned_network: The network which should action tasks for.
-            prioritize: Whether the network should be set to `high` or `low` priority. If undefined,
-                defaults to standard priority (0.5).
 
         Returns:
             A list of actioned tasks for this network.
@@ -156,17 +153,8 @@ class AlchemiscaleHelper:
                 self._client.create_tasks(tf_sk, count=planned_network.n_repeats + 1)
             )
 
-        # set the network weight based on the found network weights that are currently
-        # running while making sure the weight doesn't fall outside 0.1-1 as 0.0 turns of compute.
-        if prioritize is True:
-            weight = np.clip(max(self.get_actioned_weights()) + 0.01, 0.1, 1.0)
-        elif prioritize is False:
-            weight = np.clip(min(self.get_actioned_weights()) - 0.01, 0.1, 1.0)
-        else:
-            weight = 0.5
-
         # now action the tasks to ensure they are picked up by compute.
-        actioned_tasks = self._client.action_tasks(tasks, network_key, weight=weight)
+        actioned_tasks = self._client.action_tasks(tasks, network_key, weight=0.5)
         return actioned_tasks
 
     def network_status(
