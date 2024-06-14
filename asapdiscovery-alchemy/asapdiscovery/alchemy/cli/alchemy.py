@@ -436,8 +436,14 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
             networks=running_networks
         )
         network_weights = client._client.get_networks_weight(networks=running_networks)
-        for key, network_status, actioned_tasks, network_weight in zip(
+
+        # sort the networks by weight so that we get the ones with highest weights showing first in the table
+        networks_data = zip(
             running_networks, networks_status, networks_actioned_tasks, network_weights
+        )
+
+        for key, network_status, actioned_tasks, network_weight in sorted(
+            networks_data, key=lambda element: element[-1], reverse=True
         ):
             if (
                 "running" in network_status or "waiting" in network_status
