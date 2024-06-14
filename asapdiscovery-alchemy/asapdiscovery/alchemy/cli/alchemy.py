@@ -523,6 +523,59 @@ def restart(network: str, verbose: bool, tasks):
 
 @alchemy.command(
     help_priority=6,
+    short_help="Adjust a network's priority. The scheduler picks tasks to action by weight, if this network's weight"
+    + " is set to 0.99 it will be picked in 99% of queries if there is one other network that has a weight of 0.01.",
+)
+@click.option(
+    "-nk",
+    "--network-key",
+    type=click.STRING,
+    help="The network key of the network to be stopped. This can be found by running e.g. `asap-alchemy status -a`.",
+    required=True,
+)
+@click.option(
+    "-w",
+    "--weight",
+    type=click.FloatRange(min=0.0, max=1.0),
+    help="The weight that should be assigned to the network. Network weights can be found by running"
+    + " `asap-alchemy status -a`.",
+    required=True,
+)
+def prioritize(network_key: str, weight: float):
+    """Adjust a network's weight to influence how often its tasks will be actioned compared to other networks."""
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+    from rich import pretty
+    from rich.padding import Padding
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
+
+    client = AlchemiscaleHelper.from_settings()
+    cancel_status = console.status(
+        f"Changing weight of network {network_key} to {weight}"
+    )
+    cancel_status.start()
+    canceled_tasks = client.adjust_weight(network_key, weight)
+    # verify that the weight has been changed
+    if not client.get_network_weight(network_key) == weight:
+        raise ValueError(
+            f"Something went wrong during the weight change of network {network_key}:\nAttempted weight change "
+            + f"to {weight} but weight is {client.get_network_weight(network_key)}. "
+        )
+    cancel_status.stop()
+
+    message = Padding(
+        f"Adjusted weight to {client.get_network_weight(network_key)} for network {network_key}",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+
+@alchemy.command(
+    help_priority=7,
     short_help="Stop (i.e. set to 'error') a network's running and waiting tasks.",
 )
 @click.option(
@@ -560,7 +613,7 @@ def stop(network_key: str):
 
 
 @alchemy.command(
-    help_priority=7,
+    help_priority=8,
     short_help="Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the results to the relevant energy range.",
 )
 @click.option(
