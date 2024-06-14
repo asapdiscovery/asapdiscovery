@@ -3,6 +3,7 @@ from typing import Optional
 
 import click
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
+from asapdiscovery.data.schema.complex import Complex
 
 
 @click.group(
@@ -77,7 +78,7 @@ def create(filename: str, core_smarts: str):
     "-r",
     "--receptor-complex",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
-    help="The name of the JSON file which contains the prepared receptor complex including the crystal ligand.",
+    help="The name of the JSON or PDB file which contains the prepared receptor complex including the crystal ligand.",
 )
 @click.option(
     "-sd",
@@ -213,9 +214,25 @@ def run(
         console.print(message)
 
     else:
-        # always expect the JSON file
-        ref_complex = PreppedComplex.parse_file(receptor_complex)
+        # always expect the JSON or PDB file
+        if receptor_complex.endswith(".json"):
+            ref_complex = PreppedComplex.parse_file(receptor_complex)
+        elif receptor_complex.endswith(".pdb"):
+            message = Padding(
+                f"Warning: loading a receptor as PDB file rather than as a JSON file: make sure your PDB is prepped!",
+                (1, 0, 1, 0),
+            )
+            ref_complex = Complex.from_pdb(
+                receptor_complex,
+                target_kwargs={
+                    "target_name": receptor_complex.replace(".pdb", ""),
+                },
+            )
 
+        else:
+            raise ValueError(f"Unrecognized file extension: {receptor_complex}.")
+        print("poep", ref_complex)
+        print(ref_complex.target)
         message = Padding(
             f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",
             (1, 0, 1, 0),
