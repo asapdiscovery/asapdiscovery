@@ -187,7 +187,10 @@ def test_prep_workflow_ref_ligands(mac1_complex):
         for key, value in experimental_data.items():
             assert mol.tags[key] == value
 
-    assert "Injected ligand: ref_mol; SMILES: CC(C)[C@@H](c1ccc2c(c1)S(=O)(=O)CCC2)Nc3ccccc3" in capture.get()
+    assert (
+        "Injected ligand: ref_mol; SMILES: CC(C)[C@@H](c1ccc2c(c1)S(=O)(=O)CCC2)Nc3ccccc3"
+        in capture.get()
+    )
 
 
 def test_prep_with_charges(mac1_complex):
