@@ -430,7 +430,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             )
             for ref_ligand in posed_refs:
                 console.print(
-                    f"Ligand: {ref_ligand.to_rdkit().GetProp('_Name')}; SMILES: {ref_ligand.smiles}",
+                    f"Injected ligand: {ref_ligand.compound_name}; SMILES: {ref_ligand.smiles}",
                 )
             posed_ligands.extend(posed_refs)
 
