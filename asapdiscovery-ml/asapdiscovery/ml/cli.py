@@ -22,6 +22,7 @@ from asapdiscovery.ml.cli_args import (
     optim_args,
     output_dir,
     overwrite_args,
+    save_weights,
     schnet_args,
     struct_ds_args,
     trainer_args,
@@ -80,6 +81,7 @@ ml.add_command(sweep)
 
 @build.command(name="gat")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
@@ -96,6 +98,7 @@ ml.add_command(sweep)
 @overwrite_args
 def build_gat(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -278,6 +281,7 @@ def build_gat(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
@@ -289,6 +293,7 @@ def build_gat(
 
 @build.command(name="schnet")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
@@ -306,6 +311,7 @@ def build_gat(
 @overwrite_args
 def build_schnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -494,6 +500,7 @@ def build_schnet(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
@@ -505,6 +512,7 @@ def build_schnet(
 
 @build.command(name="e3nn")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
@@ -522,6 +530,7 @@ def build_schnet(
 @overwrite_args
 def build_e3nn(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -712,6 +721,7 @@ def build_e3nn(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
@@ -723,6 +733,7 @@ def build_e3nn(
 
 @build.command(name="visnet")
 @output_dir
+@save_weights
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -739,6 +750,7 @@ def build_e3nn(
 @overwrite_args
 def build_visnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -936,6 +948,7 @@ def build_visnet(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
@@ -947,6 +960,7 @@ def build_visnet(
 
 @build_and_train.command(name="gat")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
@@ -963,6 +977,7 @@ def build_visnet(
 @overwrite_args
 def build_and_train_gat(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -1145,6 +1160,7 @@ def build_and_train_gat(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
@@ -1161,6 +1177,7 @@ def build_and_train_gat(
 
 @build_and_train.command(name="schnet")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
@@ -1178,6 +1195,7 @@ def build_and_train_gat(
 @overwrite_args
 def build_and_train_schnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -1366,6 +1384,7 @@ def build_and_train_schnet(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
@@ -1382,6 +1401,7 @@ def build_and_train_schnet(
 
 @build_and_train.command("e3nn")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
@@ -1399,6 +1419,7 @@ def build_and_train_schnet(
 @overwrite_args
 def build_and_train_e3nn(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -1589,6 +1610,7 @@ def build_and_train_e3nn(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
@@ -1605,6 +1627,7 @@ def build_and_train_e3nn(
 
 @build_and_train.command(name="visnet")
 @output_dir
+@save_weights
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -1621,6 +1644,7 @@ def build_and_train_e3nn(
 @overwrite_args
 def build_and_train_visnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1819,6 +1843,7 @@ def build_and_train_visnet(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
