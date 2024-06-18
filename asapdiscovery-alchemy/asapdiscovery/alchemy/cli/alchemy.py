@@ -219,16 +219,11 @@ def plan(
     help="The name of the project in alchemiscale the network should be submitted to.",
     required=True,
 )
-@click.option(
-    "-pr",
-    "--prioritize",
-    type=click.BOOL,
-    default=None,
-    help="Whether to prioritize the submitted network to have the highest priority of all currently running/waiting networks, or to de-prioritize it instead. Defaults to 0.5 which is the `alchemiscale` default network priority.",
-    show_default=True,
-)
 def submit(
-    network: str, organization: str, campaign: str, project: str, prioritize: bool
+    network: str,
+    organization: str,
+    campaign: str,
+    project: str,
 ):
     """
     Submit a local FreeEnergyCalculationNetwork to alchemiscale using the provided scope details. The network object
@@ -269,9 +264,7 @@ def submit(
     submitted_network.to_file(network)
     # now action the tasks
     click.echo("Creating and actioning FEC tasks on Alchemiscale...")
-    task_ids = client.action_network(
-        planned_network=submitted_network, prioritize=prioritize
-    )
+    task_ids = client.action_network(planned_network=submitted_network)
     # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
@@ -443,8 +436,14 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
             networks=running_networks
         )
         network_weights = client._client.get_networks_weight(networks=running_networks)
-        for key, network_status, actioned_tasks, network_weight in zip(
+
+        # sort the networks by weight so that we get the ones with highest weights showing first in the table
+        networks_data = zip(
             running_networks, networks_status, networks_actioned_tasks, network_weights
+        )
+
+        for key, network_status, actioned_tasks, network_weight in sorted(
+            networks_data, key=lambda element: element[-1], reverse=True
         ):
             if (
                 "running" in network_status or "waiting" in network_status
@@ -530,6 +529,59 @@ def restart(network: str, verbose: bool, tasks):
 
 @alchemy.command(
     help_priority=6,
+    short_help="Adjust a network's priority. The scheduler picks tasks to action by weight, if this network's weight"
+    + " is set to 0.99 it will be picked in 99% of queries if there is one other network that has a weight of 0.01.",
+)
+@click.option(
+    "-nk",
+    "--network-key",
+    type=click.STRING,
+    help="The network key of the network to be stopped. This can be found by running e.g. `asap-alchemy status -a`.",
+    required=True,
+)
+@click.option(
+    "-w",
+    "--weight",
+    type=click.FloatRange(min=0.0, max=1.0),
+    help="The weight that should be assigned to the network. Network weights can be found by running"
+    + " `asap-alchemy status -a`.",
+    required=True,
+)
+def prioritize(network_key: str, weight: float):
+    """Adjust a network's weight to influence how often its tasks will be actioned compared to other networks."""
+    import rich
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+    from rich import pretty
+    from rich.padding import Padding
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
+
+    client = AlchemiscaleHelper.from_settings()
+    adjust_weight_status = console.status(
+        f"Changing weight of network {network_key} to {weight}"
+    )
+    adjust_weight_status.start()
+    new_weight, old_weight = client.adjust_weight(network_key, weight)
+    # verify that the weight has been changed
+    if not new_weight == weight:
+        raise ValueError(
+            f"Something went wrong during the weight change of network {network_key}:\nAttempted weight change "
+            f"to {weight} but weight is {new_weight}."
+        )
+    adjust_weight_status.stop()
+
+    message = Padding(
+        f"Adjusted weight from {old_weight} to {new_weight} for network {network_key}",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+
+@alchemy.command(
+    help_priority=7,
     short_help="Stop (i.e. set to 'error') a network's running and waiting tasks.",
 )
 @click.option(
@@ -567,7 +619,7 @@ def stop(network_key: str):
 
 
 @alchemy.command(
-    help_priority=7,
+    help_priority=8,
     short_help="Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the results to the relevant energy range.",
 )
 @click.option(
