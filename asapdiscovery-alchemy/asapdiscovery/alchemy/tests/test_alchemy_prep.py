@@ -135,6 +135,9 @@ def test_prep_deduplicate():
 
 def test_prep_workflow_ref_ligands(mac1_complex):
     """Test adding poses for experimental ligands while running the normal workflow."""
+    import rich
+
+    console = rich.get_console()
 
     # no access to epik so skip
     workflow = AlchemyPrepWorkflow(
@@ -148,29 +151,30 @@ def test_prep_workflow_ref_ligands(mac1_complex):
     )
 
     experimental_data = {"cdd_protocol": "my-protocol", "experimental": "True"}
-    alchemy_dataset = workflow.create_alchemy_dataset(
-        dataset_name="mac1-testing-dataset",
-        ligands=[
-            Ligand.from_smiles(
-                "Cc1c(cn(n1)C)c2cc3c([nH]2)ncnc3N[C@H](c4ccc5c(c4)S(=O)(=O)CCC5)C(C)C",
-                compound_name="stereo_mol",
-            )
-        ],
-        reference_complex=mac1_complex,
-        # add two experimental ligands one which overlaps and one unique
-        reference_ligands=[
-            Ligand.from_smiles(
-                "CC(C)[C@H](Nc1ccccc1)c3ccc2CCCS(=O)(=O)c2c3",
-                compound_name="ref_mol",
-                **experimental_data
-            ),
-            Ligand.from_smiles(
-                "Cc1c(cn(n1)C)c2cc3c([nH]2)ncnc3N[C@H](c4ccc5c(c4)S(=O)(=O)CCC5)C(C)C",
-                compound_name="ref_stereo_mol",
-                **experimental_data
-            ),
-        ],
-    )
+    with console.capture() as capture:
+        alchemy_dataset = workflow.create_alchemy_dataset(
+            dataset_name="mac1-testing-dataset",
+            ligands=[
+                Ligand.from_smiles(
+                    "Cc1c(cn(n1)C)c2cc3c([nH]2)ncnc3N[C@H](c4ccc5c(c4)S(=O)(=O)CCC5)C(C)C",
+                    compound_name="stereo_mol",
+                )
+            ],
+            reference_complex=mac1_complex,
+            # add two experimental ligands one which overlaps and one unique
+            reference_ligands=[
+                Ligand.from_smiles(
+                    "CC(C)[C@H](Nc1ccccc1)c3ccc2CCCS(=O)(=O)c2c3",
+                    compound_name="ref_mol",
+                    **experimental_data
+                ),
+                Ligand.from_smiles(
+                    "Cc1c(cn(n1)C)c2cc3c([nH]2)ncnc3N[C@H](c4ccc5c(c4)S(=O)(=O)CCC5)C(C)C",
+                    compound_name="ref_stereo_mol",
+                    **experimental_data
+                ),
+            ],
+        )
     assert len(alchemy_dataset.input_ligands) == 1
     # we should have the input molecule and the experimental molecule
     assert len(alchemy_dataset.posed_ligands) == 2
@@ -182,6 +186,11 @@ def test_prep_workflow_ref_ligands(mac1_complex):
     for mol in alchemy_dataset.posed_ligands:
         for key, value in experimental_data.items():
             assert mol.tags[key] == value
+
+    assert (
+        "Injected ligand: ref_mol; SMILES: CC(C)[C@@H](c1ccc2c(c1)S(=O)(=O)CCC2)Nc3ccccc3"
+        in capture.get()
+    )
 
 
 def test_prep_with_charges(mac1_complex):
