@@ -63,9 +63,7 @@ def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     assert status == {"complete": 1}
 
 
-def test_action_tasks(
-    monkeypatch, tyk2_fec_network, alchemiscale_helper
-):
+def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     """Make sure the helper can action tasks on alchemiscale."""
 
     client = alchemiscale_helper
