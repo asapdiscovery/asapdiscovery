@@ -19,6 +19,7 @@ class SymmetryExpander(BaseModel):
     """
 
     expand_ligand: bool = False
+    n_repeats: int = 8
 
     def expand(
         self,
@@ -75,12 +76,12 @@ class SymmetryExpander(BaseModel):
 
                 # reconstruct neighboring asymmetric units from the crystallographic experiment
                 p.cmd.symexp(
-                    "sym", "protein_obj", "(protein_obj)", 8
+                    "sym", "protein_obj", "(protein_obj)", self.n_repeats
                 )  # do a big expansion just to be sure
 
                 if self.expand_ligand:
                     p.cmd.symexp(
-                        "sym", "lig_obj", "(lig_obj)", 8
+                        "sym", "lig_obj", "(lig_obj)", self.n_repeats
                     )  # do a big expansion just to be sure
 
                 string = p.cmd.get_pdbstr(

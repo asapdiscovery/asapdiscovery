@@ -40,6 +40,7 @@ class ScoreType(str, Enum):
     schnet = "schnet"
     e3nn = "e3nn"
     INVALID = "INVALID"
+    clash = "clash"
 
 
 class ScoreUnits(str, Enum):
@@ -51,6 +52,7 @@ class ScoreUnits(str, Enum):
     kcal_mol = "kcal/mol"
     pIC50 = "pIC50"
     INVALID = "INVALID"
+    flag = "flag"
 
 
 # this can possibly be done with subclasses and some aliases, but will do for now
@@ -729,3 +731,10 @@ class MetaScorer(BaseModel):
             return Score._combine_and_pivot_scores_df(results)
 
         return np.ravel(results).tolist()
+
+class ClashScorer(ScorerBase):
+
+    score_type: ClassVar[ScoreType.clash] = ScoreType.clash
+    units: ClassVar[ScoreUnits.flag] = ScoreUnits.flag
+
+    

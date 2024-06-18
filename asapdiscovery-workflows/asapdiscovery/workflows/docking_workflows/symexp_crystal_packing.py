@@ -35,6 +35,8 @@ from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
+from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
+from asapdiscovery.docking.scorers import ClashScorer
 
 
 class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs): ...
@@ -247,7 +249,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     # score results using multiple scoring functions
     logger.info("Scoring expanded structures")
 
-    scorer = SymExpClashScorer()
+    scorer = ClashScorer()
 
     logger.info("Running scoring")
     scores_df = scorer.score(

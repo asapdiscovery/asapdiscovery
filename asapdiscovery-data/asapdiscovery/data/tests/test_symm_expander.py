@@ -15,8 +15,8 @@ def compl():
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
-def test_expander(compl, use_dask):
+def test_expander(compl, use_dask, tmp_path):
     se = SymmetryExpander()
-    exp = se.expand(compl)
+    exp = se.expand(compl, use_dask=use_dask)
     assert exp
-    exp[0].to_pdb("tst.pdb")
+    exp[0].to_pdb(tmp_path/"tst.pdb")
