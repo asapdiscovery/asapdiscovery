@@ -200,6 +200,12 @@ class MCSSelector(SelectorBase):
         pairs = []
 
         for ligand in ligands:
+
+            # If only one complex is available, skip the MCS search
+            if len(complexes) == 1:
+                pairs.append(pair_cls(ligand=ligand, complex=complexes[0]))
+                continue
+
             pattern_query = oechem.OEQMol(ligand.to_oemol())
             pattern_query.BuildExpressions(atomexpr, bondexpr)
             mcss = oechem.OEMCSSearch(pattern_query)

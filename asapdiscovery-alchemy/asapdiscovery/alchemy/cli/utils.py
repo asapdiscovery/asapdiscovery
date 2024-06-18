@@ -87,7 +87,7 @@ def upload_to_postera(
 
 
 def get_cdd_molecules(
-    protocol_name: str, defined_stereo_only: bool = True
+    protocol_name: str, defined_stereo_only: bool = True, remove_covalent: bool = True
 ) -> list["Ligand"]:
     """
     Search the CDD protocol for molecules with experimental values and return a list of asapdiscovery ligands.
@@ -98,12 +98,20 @@ def get_cdd_molecules(
     Args:
         protocol_name: The name of the experimental protocol in CDD we should extract molecules from.
         defined_stereo_only: Only return ligands which have fully defined stereochemistry
+        remove_covalent: If `True` remove potential covalent ligands from the protocol based on the presence of warheads
+            found via smarts matches.
 
     Returns:
         A list of molecules with experimental data.
     """
     from asapdiscovery.alchemy.predict import download_cdd_data
     from asapdiscovery.data.schema.ligand import Ligand
+    from openff.toolkit import Molecule
+    from openff.toolkit.utils.exceptions import (
+        RadicalsNotSupportedError,
+        UndefinedStereochemistryError,
+    )
+    from rdkit import Chem
 
     # get all molecules with data for the protocol
     cdd_data = download_cdd_data(protocol_name=protocol_name)
@@ -119,35 +127,76 @@ def get_cdd_molecules(
         asap_mol.tags["experimental"] = "True"
         ref_ligands.append(asap_mol)
 
-    if defined_stereo_only:
-        # remove ligands with undefined or non-absolute stereochemistry
-        defined_ligands = []
-        from openff.toolkit import Molecule
-        from openff.toolkit.utils.exceptions import UndefinedStereochemistryError
-        from rdkit import Chem
+    defined_ligands = []
+    for mol in ref_ligands:
+        try:
+            # this checks for any undefined stereo centers
+            _ = Molecule.from_smiles(mol.smiles)
+            # check for non-absolute centers using the enhanced stereo smiles
+            rdmol = Chem.MolFromSmiles(mol.tags["cxsmiles"])
+            groups = rdmol.GetStereoGroups()
+            for stereo_group in groups:
+                if stereo_group.GetGroupType() != Chem.StereoGroupType.STEREO_ABSOLUTE:
+                    raise UndefinedStereochemistryError("missing absolute stereo")
+            # if we make it through all checks add the molecule
+            defined_ligands.append(mol)
 
-        for mol in ref_ligands:
-            try:
-                # this checks for any undefined stereo centers
-                _ = Molecule.from_smiles(mol.smiles)
-                # check for non-absolute centers using the enhanced stereo smiles
-                rdmol = Chem.MolFromSmiles(mol.tags["cxsmiles"])
-                groups = rdmol.GetStereoGroups()
-                for stereo_group in groups:
-                    if (
-                        stereo_group.GetGroupType()
-                        != Chem.StereoGroupType.STEREO_ABSOLUTE
-                    ):
-                        raise UndefinedStereochemistryError("missing absolute stereo")
-                # if we make it through all checks add the molecule
+        except RadicalsNotSupportedError:
+            # always remove radicals
+            continue
+        except UndefinedStereochemistryError:
+            # only remove undefined stereo when requested
+            if not defined_stereo_only:
                 defined_ligands.append(mol)
-
-            except UndefinedStereochemistryError:
+            else:
                 continue
 
         ref_ligands = defined_ligands
 
+    if remove_covalent:
+        # remove any ligands which contain potential covalent warheads
+        non_covalent_ligands = []
+        for mol in ref_ligands:
+            if not has_warhead(ligand=mol):
+                non_covalent_ligands.append(mol)
+
+        ref_ligands = non_covalent_ligands
+
     return ref_ligands
+
+
+def has_warhead(ligand: "Ligand") -> bool:
+    """
+    Check if the molecule has a potential covalent warhead based on the presence of some simple SMARTS patterns.
+
+    Args:
+        ligand: The ligand which we should check for potential covalent warheads
+
+    Returns:
+        `True` if the ligand has a possible warhead else `False`.
+
+    Notes:
+        The list of possible warheads is not exhaustive and so the molecule may still be a covalent ligand.
+    """
+    from rdkit import Chem
+
+    covalent_warhead_smarts = {
+        "acrylamide": "[C;H2:1]=[C;H1]C(N)=O",
+        "acrylamide_adduct": "NC(C[C:1]S)=O",
+        "chloroacetamide": "Cl[C;H2:1]C(N)=O",
+        "chloroacetamide_adduct": "S[C:1]C(N)=O",
+        "vinylsulfonamide": "NS(=O)([C;H1]=[C;H2:1])=O",
+        "vinylsulfonamide_adduct": "NS(=O)(C[C:1]S)=O",
+        "nitrile": "N#[C:1]-[*]",
+        "nitrile_adduct": "C-S-[C:1](=N)",
+        "propiolamide": "NC(=O)C#C",
+        "sulfamate": "NS(=O)(=O)O",
+    }
+    rdkit_mol = ligand.to_rdkit()
+    for smarts in covalent_warhead_smarts.values():
+        if rdkit_mol.HasSubstructMatch(Chem.MolFromSmarts(smarts)):
+            return True
+    return False
 
 
 class SpecialHelpOrder(click.Group):

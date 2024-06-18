@@ -98,17 +98,15 @@ def main():
     logger.info(f"Starting from snapshot {start}")
 
     gif_visualiser = GIFVisualizer(
-        [traj],
-        [args.top],
-        [out],
-        args.target,
+        target=args.target,
         frames_per_ns=args.frames_per_ns,
         smooth=args.smooth,
         start=start,
         pse=True,
         pse_share=True,
+        output_dir=out.parent,
     )
-    gif_visualiser.write_traj_visualizations()
+    gif_visualiser.visualize(inputs=[(traj, top)], outpaths=[out])
 
     logger.info("Done")
 

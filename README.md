@@ -1,7 +1,6 @@
 asapdiscovery
 =============
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/choderalab/asapdiscovery/workflows/CI/badge.svg)](https://github.com/choderalab/asapdiscovery/actions?query=workflow%3ACI+branch%3Amain)
 [![codecov](https://codecov.io/gh/choderalab/asapdiscovery/branch/main/graph/badge.svg)](https://codecov.io/gh/choderalab/asapdiscovery/branch/main)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/choderalab/asapdiscovery/main.svg)](https://results.pre-commit.ci/latest/github/choderalab/asapdiscovery/main)
 [![Documentation Status](https://readthedocs.org/projects/asapdiscovery/badge/?version=latest)](https://asapdiscovery.readthedocs.io/en/latest/?badge=latest)

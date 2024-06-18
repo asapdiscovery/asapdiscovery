@@ -1,19 +1,17 @@
-from pathlib import Path
-
+import pytest
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 
 
-def test_gif_viz(traj, top, tmp_path):
-    gif_visualiser = GIFVisualizer(
-        [traj],
-        [top],
-        [tmp_path / "gif_viz.gif"],
-        "SARS-CoV-2-Mpro",  # just do a fast test with one target
-        frames_per_ns=200,
-        smooth=5,
-        start=0,
-        pse=False,
-        pse_share=False,
-    )
-    gif_visualiser.write_traj_visualizations()
-    assert Path(tmp_path / "gif_viz.gif").exists()
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_gif_viz(tmp_path, simulation_results, use_dask):
+    gv = GIFVisualizer(target="SARS-CoV-2-Mpro", output_dir=tmp_path)
+    vizs = gv.visualize(inputs=simulation_results, use_dask=use_dask)
+    assert len(vizs) == 1
+
+
+@pytest.mark.parametrize("use_dask", [True, False])
+@pytest.mark.parametrize("outpaths", [["my_sub_path/viz.gif"], None])
+def test_gif_viz_paths(tmp_path, traj, top, use_dask, outpaths):
+    gv = GIFVisualizer(target="SARS-CoV-2-Mpro", output_dir=tmp_path)
+    vizs = gv.visualize(inputs=[(traj, top)], use_dask=use_dask, outpaths=outpaths)
+    assert len(vizs) == 1

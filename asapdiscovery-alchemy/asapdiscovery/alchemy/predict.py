@@ -142,12 +142,15 @@ def shift_and_add_prediction_error(df: pd.DataFrame, point_type: str) -> pd.Data
         df: The dataframe we want to shift and add the prediction error to.
         point_type: Whether the points are absolute or relative. Can be "DG" or "DDG", resp.
     """
-    if point_type == "DG":
+    # shift if the mean is not Nan, this only happens when Nan is the only value in the column
+    if point_type == "DG" and not np.isnan(
+        exp_mean := df[f"{point_type} (kcal/mol) (EXPT)"].mean()
+    ):
         # shift the FECS predicted values to the mean of the experimental values.
         df[f"{point_type} (kcal/mol) (FECS)"] = (
             df[f"{point_type} (kcal/mol) (FECS)"]
             - df[f"{point_type} (kcal/mol) (FECS)"].mean()
-            + df[f"{point_type} (kcal/mol) (EXPT)"].mean()
+            + exp_mean
         )
 
     # calculate the prediction error.
@@ -467,7 +470,7 @@ def get_data_from_femap(
 
     # add experimental data if available
     experimental_data = None
-    if reference_dataset:
+    if reference_dataset is not None:
         experimental_data = extract_experimental_data(
             reference_csv=reference_dataset, assay_units=assay_units
         )
@@ -544,7 +547,7 @@ def plotmol_absolute(
     <div>
         <div>
             <span>@title</span>
-            <span><br>experimental:@experimental (kcal/mol)<br>calculated:@prediction (kcal/mol)</span>
+            <span><br>experimental pIC50: @experimental<br>calculated pIC50: @prediction</span>
             <img src="@image" ></img>
         </div>
     </div>
@@ -553,8 +556,8 @@ def plotmol_absolute(
     figure = bokeh.plotting.figure(
         tooltips=custom_tooltip_template,
         title="Predicted affinity",
-        x_axis_label="Experimental ΔG (kcal / mol)",
-        y_axis_label="Calculated ΔG (kcal / mol)",
+        x_axis_label="Experimental pIC50",
+        y_axis_label="Calculated pIC50",
         width=800,
         height=800,
     )
@@ -694,7 +697,7 @@ def plotmol_relative(
         <div>
             <div>
                 <span>StateA:@titleA → StateB:@titleB</span>
-                <span><br>experimental:@experimental (kcal/mol)<br>calculated:@prediction (kcal/mol)</span>
+                <span><br>experimental DpIC50: @experimental<br>calculated DpIC50: @prediction</span>
                 <img src="@image" ></img>
             </div>
         </div>
@@ -703,8 +706,8 @@ def plotmol_relative(
     figure = bokeh.plotting.figure(
         tooltips=custom_tooltip_template,
         title="Relative prediction",
-        x_axis_label="Experimental ΔΔG (kcal / mol)",
-        y_axis_label="Calculated ΔΔG (kcal / mol)",
+        x_axis_label="Experimental ΔpIC50",
+        y_axis_label="Calculated ΔpIC50",
         width=800,
         height=800,
     )
@@ -730,6 +733,23 @@ def plotmol_relative(
     )
 
 
+def add_pic50_columns(dataframe: pd.DataFrame):
+    """Adds pIC50 columns for all DG columns."""
+    pd.options.mode.chained_assignment = None  # turn off annoying + useless warning
+
+    for col, new_col in {
+        "DG (kcal/mol) (FECS)": "pIC50 (FECS)",
+        "uncertainty (kcal/mol) (FECS)": "uncertainty (pIC50) (FECS)",
+        "DG (kcal/mol) (EXPT)": "pIC50 (EXPT)",
+        "uncertainty (kcal/mol) (EXPT)": "uncertainty (pIC50) (EXPT)",
+        "prediction error (kcal/mol)": "prediction error (pIC50)",
+        "DDG (kcal/mol) (FECS)": "DpIC50 (FECS)",
+        "DDG (kcal/mol) (EXPT)": "DpIC50 (EXPT)",
+    }.items():
+        if col in dataframe.columns:
+            dataframe[new_col] = dG_to_pIC50(dataframe[col])
+
+
 def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     """
     Create a cinnabar style interactive report for the dataframe of absolute free energy predictions, this dataframe
@@ -750,23 +770,27 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     # add drawn molecule as a column
     mols = [draw_mol(smiles) for smiles in dataframe["SMILES"]]
     dataframe["Molecule"] = mols
+
+    # add pIC50 columns beside DG
+    add_pic50_columns(plotting_df)
+
     # create the DG plot
     fig = plotmol_absolute(
-        calculated=plotting_df["DG (kcal/mol) (FECS)"],
-        experimental=plotting_df["DG (kcal/mol) (EXPT)"],
+        calculated=plotting_df["pIC50 (FECS)"],
+        experimental=plotting_df["pIC50 (EXPT)"],
         smiles=plotting_df["SMILES"],
         titles=plotting_df["label"],
-        calculated_uncertainty=plotting_df["uncertainty (kcal/mol) (FECS)"],
-        experimental_uncertainty=plotting_df["uncertainty (kcal/mol) (EXPT)"],
+        calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
+        experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
     )
     # calculate the bootstrapped stats using cinnabar
     stats_data = []
     for statistic in ["RMSE", "MUE", "R2", "rho"]:
         s = stats.bootstrap_statistic(
-            plotting_df["DG (kcal/mol) (EXPT)"],
-            plotting_df["DG (kcal/mol) (FECS)"],
-            plotting_df["uncertainty (kcal/mol) (EXPT)"],
-            plotting_df["uncertainty (kcal/mol) (FECS)"],
+            plotting_df["pIC50 (EXPT)"],
+            plotting_df["pIC50 (FECS)"],
+            plotting_df["uncertainty (pIC50) (EXPT)"],
+            plotting_df["uncertainty (pIC50) (FECS)"],
             statistic=statistic,
             include_true_uncertainty=False,
             include_pred_uncertainty=False,
@@ -805,11 +829,11 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
             formatters={
                 "SMILES": "html",
                 "Molecule": "html",
-                "DG (kcal/mol) (FECS)": number_format,
-                "uncertainty (kcal/mol) (FECS)": number_format,
-                "DG (kcal/mol) (EXPT)": number_format,
-                "uncertainty (kcal/mol) (EXPT)": number_format,
-                "prediction error (kcal/mol)": number_format,
+                "pIC50 (FECS)": number_format,
+                "uncertainty (pIC50) (FECS)": number_format,
+                "pIC50 (EXPT)": number_format,
+                "uncertainty (pIC50) (EXPT)": number_format,
+                "prediction error (pIC50)": number_format,
             },
             configuration={"rowHeight": 300},
         ),
@@ -843,23 +867,27 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     # create a plotting dataframe which drops rows with nans
     plotting_df = dataframe.dropna(axis=0, inplace=False)
     plotting_df.reset_index(inplace=True)
-    # create the DG plot
+
+    # add pIC50 columns beside DG
+    add_pic50_columns(plotting_df)
+
+    # create the DDG plot
     fig = plotmol_relative(
-        calculated=plotting_df["DDG (kcal/mol) (FECS)"],
-        experimental=plotting_df["DDG (kcal/mol) (EXPT)"],
+        calculated=plotting_df["DpIC50 (FECS)"],
+        experimental=plotting_df["DpIC50 (EXPT)"],
         smiles=plotting_df["smiles"],
         titles=plotting_df["labels"],
-        calculated_uncertainty=plotting_df["uncertainty (kcal/mol) (FECS)"],
-        experimental_uncertainty=plotting_df["uncertainty (kcal/mol) (EXPT)"],
+        calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
+        experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
     )
     # calculate the bootstrapped stats using cinnabar
     stats_data = []
     for statistic in ["RMSE", "MUE", "R2", "rho"]:
         s = stats.bootstrap_statistic(
-            plotting_df["DDG (kcal/mol) (EXPT)"],
-            plotting_df["DDG (kcal/mol) (FECS)"],
-            plotting_df["uncertainty (kcal/mol) (EXPT)"],
-            plotting_df["uncertainty (kcal/mol) (FECS)"],
+            plotting_df["DpIC50 (EXPT)"],
+            plotting_df["DpIC50 (FECS)"],
+            plotting_df["uncertainty (pIC50) (EXPT)"],
+            plotting_df["uncertainty (pIC50) (FECS)"],
             statistic=statistic,
             include_true_uncertainty=False,
             include_pred_uncertainty=False,
@@ -898,11 +926,11 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
                 "SMILES_A": "html",
                 "SMILES_B": "html",
                 "Molecules": "html",
-                "DDG (kcal/mol) (FECS)": number_format,
-                "uncertainty (kcal/mol) (FECS)": number_format,
-                "DDG (kcal/mol) (EXPT)": number_format,
-                "uncertainty (kcal/mol) (EXPT)": number_format,
-                "prediction error (kcal/mol)": number_format,
+                "DpIC50 (FECS)": number_format,
+                "uncertainty (pIC50) (FECS)": number_format,
+                "DpIC50 (EXPT)": number_format,
+                "uncertainty (pIC50) (EXPT)": number_format,
+                "prediction error (pIC50)": number_format,
             },
             configuration={"rowHeight": 300},
         ),

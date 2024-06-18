@@ -11,6 +11,10 @@ dependencies:
   # docs
   - sphinx
   - sphinx_rtd_theme
+  - myst-parser
+  - nbsphinx
+  - nbsphinx-link
+  - pandoc
 
   # Testing
   - pytest
@@ -52,6 +56,7 @@ dependencies:
   - validators
   - pyyaml
   - sigfig
+  - multimethod
 
   # ml
   - pytorch

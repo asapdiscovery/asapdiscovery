@@ -5,7 +5,7 @@ from typing import Optional
 from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
-from asapdiscovery.data.util.dask_utils import DaskFailureMode
+from asapdiscovery.data.util.dask_utils import FailureMode
 from pydantic import BaseModel, Field, root_validator
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class MetaStructureFactory(BaseModel):
         self,
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+        failure_mode: FailureMode = FailureMode.SKIP,
     ) -> list[Complex]:
         # load complexes from a directory, from fragalysis or from a pdb file
         if self.structure_dir:
@@ -64,7 +64,7 @@ class MetaStructureFactory(BaseModel):
             complexes = structure_factory.load(
                 use_dask=use_dask,
                 dask_client=dask_client,
-                dask_failure_mode=dask_failure_mode,
+                failure_mode=failure_mode,
             )
         elif self.fragalysis_dir:
             logger.info(f"Loading structures from fragalysis: {self.fragalysis_dir}")
@@ -72,7 +72,7 @@ class MetaStructureFactory(BaseModel):
             complexes = fragalysis.load(
                 use_dask=use_dask,
                 dask_client=dask_client,
-                dask_failure_mode=dask_failure_mode,
+                failure_mode=failure_mode,
             )
 
         elif self.pdb_file:

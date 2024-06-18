@@ -252,7 +252,7 @@ def submit(
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
     # create the scope
     network_scope = Scope(org=organization, campaign=campaign, project=project)
     # load the network
@@ -316,7 +316,7 @@ def gather(network: str, allow_missing: bool):
 
     # launch the helper which will try to login
     click.echo("Connecting to Alchemiscale...")
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
 
     # load the network
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
@@ -396,7 +396,7 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
     print_header(console)
 
     # launch the helper which will try to login
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
     if all_networks:
         # show the results of all tasks in scope, this will print to terminal
         client._client.get_scope_status()
@@ -431,15 +431,24 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
         table.add_column(
             "Actioned", overflow="fold", style="orange_red1", header_style="orange_red1"
         )
-        for key in running_networks:
-            # get status
-            network_status = client._client.get_network_status(
-                network=key, visualize=False
-            )
-            running_tasks = client._client.get_network_actioned_tasks(network=key)
+        table.add_column(
+            "Priority",
+            overflow="fold",
+            style="dark_turquoise",
+            header_style="dark_turquoise",
+        )
+
+        networks_status = client._client.get_networks_status(networks=running_networks)
+        networks_actioned_tasks = client._client.get_networks_actioned_tasks(
+            networks=running_networks
+        )
+        network_weights = client._client.get_networks_weight(networks=running_networks)
+        for key, network_status, actioned_tasks, network_weight in zip(
+            running_networks, networks_status, networks_actioned_tasks, network_weights
+        ):
             if (
                 "running" in network_status or "waiting" in network_status
-            ) and running_tasks:
+            ) and actioned_tasks:
                 table.add_row(
                     str(key),
                     str(network_status.get("complete", 0)),
@@ -448,7 +457,8 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                     str(network_status.get("error", 0)),
                     str(network_status.get("invalid", 0)),
                     str(network_status.get("deleted", 0)),
-                    str(len(running_tasks)),
+                    str(len(actioned_tasks)),
+                    str(network_weight),
                 )
         status_breakdown.stop()
         console.print(table)
@@ -506,7 +516,7 @@ def restart(network: str, verbose: bool, tasks):
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
 
     tasks = [ScopedKey.from_str(task) for task in tasks]
@@ -541,7 +551,7 @@ def stop(network_key: str):
     console = rich.get_console()
     print_header(console)
 
-    client = AlchemiscaleHelper()
+    client = AlchemiscaleHelper.from_settings()
     cancel_status = console.status(f"Canceling actioned tasks on network {network_key}")
     cancel_status.start()
     canceled_tasks = client.cancel_actioned_tasks(network_key=network_key)
@@ -616,6 +626,7 @@ def predict(
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
+    import numpy as np
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header, upload_to_postera
     from asapdiscovery.alchemy.predict import (
@@ -713,7 +724,10 @@ def predict(
 
     # workout if any reference data was provided and if we should create the interactive reports
     has_ref_data = reference_dataset or protocol
-    if has_ref_data is not None:
+    if has_ref_data is not None and not np.isnan(
+        absolute_df["DG (kcal/mol) (EXPT)"].mean()
+    ):
+        # check we have experimental data for a ligand in the network
         report_status = console.status("Generating interactive reports")
         report_status.start()
         # we can only make these reports currently with experimental data

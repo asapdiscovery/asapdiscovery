@@ -9,16 +9,20 @@ from Bio import SeqIO
 from Bio.Blast import NCBIWWW, NCBIXML
 from pydantic import BaseModel, Field
 
-_E_VALUE_THRESH = 1e-20
 
-
-def parse_blast(results_file: str, verbose: bool = False) -> pd.DataFrame:
+def parse_blast(
+    results_file: str, e_val_thresh: float, user_email: str, verbose: bool = False
+) -> pd.DataFrame:
     """Parse data from BLAST xml file
 
     Parameters
     ----------
     results_file : str
         Path to BLAST results
+    e_val_thresh : float
+        Threshold to filter BLAST results
+    user_email : str
+        Email to use for the Entrez query
     verbose : bool, optional
         Whether to print information, by default False
 
@@ -37,7 +41,7 @@ def parse_blast(results_file: str, verbose: bool = False) -> pd.DataFrame:
                 print("query: %s" % query)
             for align in record.alignments:
                 for hsp in align.hsps:
-                    if hsp.expect < _E_VALUE_THRESH:
+                    if hsp.expect < e_val_thresh:
                         # Print sequence identity, title, and gapless sequence substring that aligns
                         hsps0 = align.hsps[0]
                         sequence_to_model = hsps0.sbjct.replace("-", "")
@@ -50,15 +54,23 @@ def parse_blast(results_file: str, verbose: bool = False) -> pd.DataFrame:
                         title = align.title
                         id = "".join(title.split(" ")[0])
                         description = " ".join(title.split(" ")[1:])
+                        virus_host = ""
+                        virus_organism = ""
+                        if len(user_email) > 0:
+                            virus_host, virus_organism = search_host(
+                                align.hit_id.split("|")[1], user_email
+                            )
                         if verbose:
                             print(
-                                f"length {hsps0.identities}, score {pidentity}: {align.title}"
+                                f"Record {virus_organism} of length {hsps0.identities} infecting host {virus_host}, score {pidentity}: {align.title}"
                             )
                         data = {
                             "query": [query],
                             "ID": [id],
                             "description": [description],
                             "sequence": [sequence_to_model],
+                            "host": [virus_host],
+                            "organism": [virus_organism],
                             "score": [pidentity],
                         }
                         df_row = pd.DataFrame(data)
@@ -75,10 +87,12 @@ def get_blast_seqs(
     input_type="fasta",
     nhits=100,
     nalign=500,
+    e_val_thresh=1e-20,
     database="refseq_protein",
     xml_file="results.xml",
     verbose=True,
     save_csv=None,
+    email="",
 ) -> pd.DataFrame:
     """Run a BLAST search on a protein sequence.
 
@@ -93,7 +107,9 @@ def get_blast_seqs(
     nhits : int, optional
         Number of hits, hitlist_size parameter in BLAST, by default 100
     nalign : int, optional
-        Number of alignments, alignments parameter in BLAST, by default 500
+        Number of alignments, alignments parameter in BLAST, by default 1e-20
+    e_val_thresh : float, optional
+        Threshold to filter BLAST results, by default 500
     database : str, optional
         Name of BLAST database, by default "refseq_protein"
     xml_file : str, optional
@@ -102,6 +118,8 @@ def get_blast_seqs(
         Whether to print info on BLAST search, by default True
     save_csv : Union[str, None], optional
         CSV file name to optionally save dataframe, by default None
+    email : str, optional
+        Email to use for the Entrez query, by default ""
 
     Returns
     -------
@@ -110,7 +128,9 @@ def get_blast_seqs(
     """
 
     if input_type == "pre-calc":
-        matches_df = parse_blast(seq_source, verbose)
+        matches_df = parse_blast(seq_source, e_val_thresh, email, verbose)
+        if save_csv:
+            matches_df.to_csv(save_folder / save_csv, index=False)
         return matches_df
     elif input_type == "fasta":
         # Input is file name
@@ -118,12 +138,28 @@ def get_blast_seqs(
     elif input_type == "sequence":
         # Input is sequence
         sequence = seq_source
+    elif input_type == "pdb":
+        # Input is a PDB file
+        seq_source = Path(seq_source)
+        seq, fasta_out = pdb_to_seq(seq_source, fasta_out=f"{seq_source.stem}.fasta")
+        sequence = open(fasta_out).read()
+        print(f"Sequence was extracted from PDB file and saved as {fasta_out}")
+
     else:  # Another source?
         raise ValueError("unknown input type")
 
+    print(
+        f"BLAST search with {nalign} alignments, expect {e_val_thresh}, {nhits} hitlist_size and {nhits} descriptions"
+    )
     # Retrieve blastp results
     result_handle = NCBIWWW.qblast(
-        "blastp", database, sequence, hitlist_size=nhits, alignments=nalign
+        "blastp",
+        database,
+        sequence,
+        hitlist_size=nhits,
+        alignments=nalign,
+        expect=e_val_thresh,
+        descriptions=nalign,
     )
 
     save_file = save_folder / xml_file
@@ -132,7 +168,7 @@ def get_blast_seqs(
         blast_results = result_handle.read()
         file.write(blast_results)
 
-    matches_df = parse_blast(save_file, verbose)
+    matches_df = parse_blast(save_file, e_val_thresh, email, verbose)
     if save_csv:
         matches_df.to_csv(save_folder / save_csv, index=False)
 
@@ -183,7 +219,6 @@ class PDBEntry(BaseModel):
         import prody
 
         record_name = "pdb_blast.xml"
-
         # Find pdb matching given sequence
         matches_df = get_blast_seqs(
             self.seq,
@@ -310,3 +345,76 @@ class PDBEntry(BaseModel):
             f"The best PDB entry is {best_pdb_record}, with match {best_match_percent}% and res {max_res}A"
         )
         return best_pdb_record
+
+
+def pdb_to_seq(pdb_input=Path, chain="A", fasta_out=None):
+    """Given a PDB file, extract the protein sequence
+
+    Parameters
+    ----------
+    pdb_input : Path, optional
+        Path to the input pdb file, by default Path
+    chaint : str, optional
+            Chain that will be extracted from the PDB, by default "A"
+    fasta_out : str, optional
+        Path to optionally save the output fasta sequence, by default None
+    """
+    from Bio import SeqIO
+    from Bio.PDB import PDBParser
+    from Bio.Seq import Seq
+    from Bio.SeqRecord import SeqRecord
+    from Bio.SeqUtils import seq1
+
+    # Extract sequence from PDB
+    pdbparser = PDBParser()
+    pdb_id = 00000
+    structure = pdbparser.get_structure(pdb_id, pdb_input)
+    chains = {
+        chain.id: seq1("".join(residue.resname for residue in chain))
+        for chain in structure.get_chains()
+    }
+    sequence = chains[chain]
+
+    # Save sequence as a SeqRecord
+    parts = pdb_input.stem.split("_")
+    entry_name = parts[0]
+    description = "No description"
+    if len(parts) > 1:
+        description = "_".join(parts[1:])
+    biop_sequence = Seq(sequence)
+    seq_record = SeqRecord(biop_sequence, id=entry_name, description=description)
+
+    # Save as fasta file
+    with open(fasta_out, "w") as output_handle:
+        SeqIO.write(seq_record, output_handle, "fasta")
+    return seq_record, fasta_out
+
+
+def search_host(hit_id, user_email):
+    from Bio import Entrez
+
+    Entrez.email = user_email
+    handle = Entrez.efetch(db="protein", id=hit_id, retmode="xml", rettype="gb")
+    record = Entrez.read(handle)[0]
+    handle.close()
+
+    # The Entrez output is a very illogical list of dictionaries so we have to search through it for the host
+    # It works. Don't ask.
+    search_key = "host"
+    host_value_key = "GBQualifier_value"
+    host = "Not found"
+    for d1 in record["GBSeq_feature-table"]:
+        for d2 in d1["GBFeature_quals"]:
+            if d2["GBQualifier_name"] == search_key:
+                host = d2[host_value_key]
+                break  # Stop if the key is found
+
+    # Search Organism name
+    search_key = "organism"
+    organism = "Not found"
+    for d1 in record["GBSeq_feature-table"]:
+        for d2 in d1["GBFeature_quals"]:
+            if d2["GBQualifier_name"] == search_key:
+                organism = d2[host_value_key]
+                break
+    return host, organism

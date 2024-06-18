@@ -46,10 +46,15 @@ class Sweeper(Trainer):
         # Load from file
         return yaml.safe_load(Path(v).read_text())
 
-    def start_continue_sweep(self):
+    def start_continue_sweep(self, start_only=False):
         """
         Check for existing sweep, and start one if not. This is the function to run
         when doing a sweep.
+
+        Parameters
+        ----------
+        start_only : bool, default=False
+            Don't start any sweep runs, just initialize
         """
 
         # If sweep_id_fn exists, load sweep_id from there
@@ -60,6 +65,9 @@ class Sweeper(Trainer):
         else:
             sweep_id = wandb.sweep(sweep=self.sweep_config, project=self.wandb_project)
             sweep_id_fn.write_text(sweep_id)
+
+        if start_only:
+            return
 
         # Set up partial function so we can pass this Sweeper object along to the
         #  dispatch function

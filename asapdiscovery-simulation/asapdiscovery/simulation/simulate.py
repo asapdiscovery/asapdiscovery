@@ -10,7 +10,7 @@ import openmm
 import pandas as pd
 from asapdiscovery.data.backend.openeye import save_openeye_pdb
 from asapdiscovery.data.util.dask_utils import (
-    DaskFailureMode,
+    FailureMode,
     actualise_dask_delayed_iterable,
 )
 from asapdiscovery.data.util.stringenum import StringEnum
@@ -84,7 +84,7 @@ class SimulatorBase(BaseModel):
         docking_results: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         **kwargs,
     ) -> pd.DataFrame:
         if use_dask:
@@ -93,7 +93,7 @@ class SimulatorBase(BaseModel):
                 out = dask.delayed(self._simulate)(docking_results=[res], **kwargs)
                 delayed_outputs.append(out)
             outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors=dask_failure_mode
+                delayed_outputs, dask_client, errors=failure_mode
             )
             outputs = [item for sublist in outputs for item in sublist]  # flatten
         else:
@@ -162,6 +162,11 @@ class VanillaMDSimulator(SimulatorBase):
     truncate_steps: bool = Field(
         True,
         description="Whether to truncate num_steps to multiple of reporting interval, used mostly for testing",
+    )
+
+    small_molecule_force_field: str = Field(
+        "openff-2.2.0",
+        description="The OpenFF small molecule force field which should be used for the ligand.",
     )
 
     @validator("rmsd_restraint_type")
@@ -252,7 +257,7 @@ class VanillaMDSimulator(SimulatorBase):
         length = (self.total_simulation_time).value_in_unit(unit.nanoseconds)
         return self.n_frames / length
 
-    def _to_openmm_units(self):
+    def _to_openmm_units(self) -> OpenMMPlatform:
         self._temperature = self.temperature * unit.kelvin
         self._pressure = self.pressure * unit.atmospheres
         self._collision_rate = self.collision_rate / unit.picoseconds
@@ -260,15 +265,16 @@ class VanillaMDSimulator(SimulatorBase):
         self.n_snapshots = int(self.num_steps / self.reporting_interval)
         self.num_steps = self.n_snapshots * self.reporting_interval
         # set platform
-        self._platform = OpenMMPlatform(self.openmm_platform).get_platform()
-        if self._platform.getName() == "CUDA" or self._platform.getName() == "OpenCL":
-            self._platform.setPropertyDefaultValue("Precision", "mixed")
+        _platform = OpenMMPlatform(self.openmm_platform).get_platform()
+        if _platform.getName() == "CUDA" or _platform.getName() == "OpenCL":
+            _platform.setPropertyDefaultValue("Precision", "mixed")
 
         if self.debug:
-            self._platform = OpenMMPlatform.CPU.get_platform()
+            _platform = OpenMMPlatform.CPU.get_platform()
+        return _platform
 
     def _simulate(self, docking_results: list[DockingResult]) -> list[SimulationResult]:
-        self._to_openmm_units()
+        _platform = self._to_openmm_units()
 
         results = []
         for result in docking_results:
@@ -295,7 +301,7 @@ class VanillaMDSimulator(SimulatorBase):
                 system_generator, modeller, mol_atom_indices, processed_ligand
             )
             simulation, context = self.setup_simulation(
-                modeller, system, output_indices, output_topology, outpath
+                modeller, system, output_indices, output_topology, outpath, _platform
             )
             simulation = self.equilibrate(simulation)
             retcode = self.run_production_simulation(
@@ -324,8 +330,7 @@ class VanillaMDSimulator(SimulatorBase):
         ligand_mol = Molecule(rdkitmolh)
         return ligand_mol
 
-    @staticmethod
-    def create_system_generator(ligand_mol):
+    def create_system_generator(self, ligand_mol):
         forcefield_kwargs = {
             "constraints": app.HBonds,
             "rigidWater": True,
@@ -335,7 +340,7 @@ class VanillaMDSimulator(SimulatorBase):
         periodic_forcefield_kwargs = {"nonbondedMethod": app.PME}
         system_generator = SystemGenerator(
             forcefields=["amber/ff14SB.xml", "amber/tip3p_standard.xml"],
-            small_molecule_forcefield="openff-1.3.1",
+            small_molecule_forcefield=self.small_molecule_force_field,
             molecules=[ligand_mol],
             cache=None,
             forcefield_kwargs=forcefield_kwargs,
@@ -399,7 +404,7 @@ class VanillaMDSimulator(SimulatorBase):
         return system, output_indices, output_topology
 
     def setup_simulation(
-        self, modeller, system, output_indices, output_topology, outpath
+        self, modeller, system, output_indices, output_topology, outpath, platform
     ):
         # Add barostat
 
@@ -443,7 +448,7 @@ class VanillaMDSimulator(SimulatorBase):
         )
 
         simulation = Simulation(
-            modeller.topology, system, integrator, platform=self._platform
+            modeller.topology, system, integrator, platform=platform
         )
         context = simulation.context
         context.setPositions(modeller.positions)

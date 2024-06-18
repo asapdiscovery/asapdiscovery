@@ -28,6 +28,18 @@ def output_dir(func):
     )(func)
 
 
+def save_weights(func):
+    return click.option(
+        "--save-weights",
+        type=click.Choice(["all", "recent", "final"], case_sensitive=False),
+        help=(
+            "How often to save weights during training."
+            'Options are to keep every epoch ("all"), only keep the most recent '
+            'epoch ("recent"), or only keep the final epoch ("final").'
+        ),
+    )(func)
+
+
 def trainer_config_cache(func):
     return click.option(
         "--trainer-config-cache",
@@ -921,7 +933,14 @@ def derivative(func):
 ################################################################################
 # Early stopping args
 def es_args(func):
-    for fn in [es_type, es_patience, es_n_check, es_divergence, es_config_cache]:
+    for fn in [
+        es_type,
+        es_patience,
+        es_n_check,
+        es_divergence,
+        es_burnin,
+        es_config_cache,
+    ]:
         func = fn(func)
 
     return func
@@ -944,7 +963,7 @@ def es_patience(func):
         type=int,
         help=(
             "Number of training epochs to allow with no improvement in val loss. "
-            "Used if --es_type is best."
+            "Used if --es_type is best or patient_converged."
         ),
     )(func)
 
@@ -955,7 +974,7 @@ def es_n_check(func):
         type=int,
         help=(
             "Number of past epoch losses to keep track of when determining "
-            "convergence. Used if --es_type is converged."
+            "convergence. Used if --es_type is converged or patient_converged."
         ),
     )(func)
 
@@ -966,7 +985,18 @@ def es_divergence(func):
         type=float,
         help=(
             "Max allowable difference from the mean of the losses as a fraction of the "
-            "average loss. Used if --es_type is converged."
+            "average loss. Used if --es_type is converged or patient_converged."
+        ),
+    )(func)
+
+
+def es_burnin(func):
+    return click.option(
+        "--es-burnin",
+        type=int,
+        help=(
+            "Minimum number of epochs to train for regardless of early "
+            "stopping criteria."
         ),
     )(func)
 
@@ -1069,7 +1099,7 @@ def ds_split_args(func):
         train_frac,
         val_frac,
         test_frac,
-        enforce_1,
+        enforce_one,
         ds_rand_seed,
         ds_split_config_cache,
     ]:
@@ -1113,7 +1143,7 @@ def test_frac(func):
     )(func)
 
 
-def enforce_1(func):
+def enforce_one(func):
     return click.option(
         "--enforce-one",
         type=bool,
@@ -1188,7 +1218,16 @@ def loss_config_cache(func):
 ################################################################################
 # Training args
 def trainer_args(func):
-    for fn in [start_epoch, n_epochs, batch_size, target_prop, cont, loss_dict, device]:
+    for fn in [
+        start_epoch,
+        n_epochs,
+        batch_size,
+        target_prop,
+        cont,
+        loss_dict,
+        device,
+        data_aug,
+    ]:
         func = fn(func)
     return func
 
@@ -1250,11 +1289,34 @@ def device(func):
     return click.option("--device", type=torch.device, help="Device to train on.")(func)
 
 
+def data_aug(func):
+    return click.option(
+        "--data-aug",
+        type=str,
+        multiple=True,
+        help=(
+            "Specifications for data augmentations to do. Multiple can be passed, and "
+            "they will be applied in the order they are specified on the command line. "
+            "Each individual aug config should be specified as a comma separated list "
+            "of <key>:<value> pairs, which will be passed directly to the "
+            "DataAugConfig class. For example, to add positional jittering that draws "
+            "noise from a fixed Gaussian with a std of 0.05, you would pass "
+            "--data-aug aug_type:jitter_fixed,jitter_fixed_std:0.05."
+        ),
+    )(func)
+
+
 ################################################################################
 
 
 ################################################################################
 # Sweep args
+def sweep_args(func):
+    for fn in [sweep_config, force_new_sweep, sweep_start_only]:
+        func = fn(func)
+    return func
+
+
 def sweep_config(func):
     return click.option(
         "--sweep-config",
@@ -1268,6 +1330,16 @@ def force_new_sweep(func):
         "--force-new-sweep",
         type=bool,
         help="Start a new sweep even if an existing sweep_id is present.",
+    )(func)
+
+
+def sweep_start_only(func):
+    return click.option(
+        "--start-only",
+        type=bool,
+        is_flag=True,
+        default=False,
+        help="Only start the sweep, don't run any training.",
     )(func)
 
 

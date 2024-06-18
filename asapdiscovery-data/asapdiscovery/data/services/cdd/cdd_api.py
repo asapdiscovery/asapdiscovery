@@ -108,7 +108,7 @@ class CDDAPI(_BaseWebAPI):
             protocol_names: The list of protocol names to search for, if not provided all protocols will be pulled.
 
         Returns:
-            A list of protocols associated with these molecules
+            A list of protocols associated with the given name
         """
         protocol_data = {}
         if protocol_names is not None:
