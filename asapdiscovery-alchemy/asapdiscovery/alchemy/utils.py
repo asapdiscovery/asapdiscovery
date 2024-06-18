@@ -328,7 +328,7 @@ class AlchemiscaleHelper:
 
     def adjust_weight(
         self, network_key: ScopedKey, weight: float
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """
         Adjust the weight of a network to influence how often its tasks get actioned
         by the alchemiscale scheduler.
