@@ -569,7 +569,7 @@ def prioritize(network_key: str, weight: float):
     if not new_weight == weight:
         raise ValueError(
             f"Something went wrong during the weight change of network {network_key}:\nAttempted weight change "
-            + f"to {weight} but weight is {new_weight}. "
+            f"to {weight} but weight is {new_weight}."
         )
     adjust_weight_status.stop()
 
