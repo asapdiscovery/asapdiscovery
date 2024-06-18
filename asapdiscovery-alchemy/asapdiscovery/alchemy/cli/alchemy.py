@@ -560,10 +560,10 @@ def prioritize(network_key: str, weight: float):
     print_header(console)
 
     client = AlchemiscaleHelper.from_settings()
-    cancel_status = console.status(
+    adjust_weight_status = console.status(
         f"Changing weight of network {network_key} to {weight}"
     )
-    cancel_status.start()
+    adjust_weight_status.start()
     new_weight, old_weight = client.adjust_weight(network_key, weight)
     # verify that the weight has been changed
     if not new_weight == weight:
@@ -571,7 +571,7 @@ def prioritize(network_key: str, weight: float):
             f"Something went wrong during the weight change of network {network_key}:\nAttempted weight change "
             + f"to {weight} but weight is {new_weight}. "
         )
-    cancel_status.stop()
+    adjust_weight_status.stop()
 
     message = Padding(
         f"Adjusted weight from {old_weight} to {new_weight} for network {network_key}",
