@@ -60,7 +60,7 @@ dependencies:
   - numpy
   - h5py
   - e3nn
-  - dgl
+  - dgl <=2.0.0
   - dgllife
   - pooch
   - mtenn >=0.5.1
