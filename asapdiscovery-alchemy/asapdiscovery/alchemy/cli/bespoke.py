@@ -12,7 +12,7 @@ def bespoke():
     pass
 
 @bespoke.command(
-    short_help="Submit a set of ligands in a local FreeEnergyCalculationNetwork to a bespokefit server."
+    short_help="Submit a set of ligands in a local FreeEnergyCalculationNetwork to a BespokeFit server.",
 )
 @click.option(
     "-n",
@@ -34,14 +34,14 @@ def bespoke():
     default="aimnet2",
     show_default=True,
     help="The name of the predefined ASAP-Alchemy BespokeFit protocol to use.",
-    choices=click.Choice(["aimnet2", "mace", "xtb"])
+    type=click.Choice(["aimnet2", "mace", "xtb"])
 )
 @click.option(
     "-pr",
     "--processors",
     default="auto",
     show_default=True,
-    help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), "
+    help="The number of processors which can be used to build the BespokeFit inputs. `auto` will use (all_cpus -1), "
     "`all` will use all or the exact number of cpus to use can be provided.",
 )
 def submit(
@@ -58,16 +58,20 @@ def submit(
     from rich import pretty
     from rich.padding import Padding
     from asapdiscovery.alchemy.cli.utils import print_header, get_cpus
-    from asapdiscovery.alchemy.interfaces import BespokeFitSettings
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from openff.bespokefit.workflows import BespokeWorkflowFactory
+    from openff.bespokefit.executor.client import BespokeFitClient
+    from openff.bespokefit.executor.services import current_settings
     from openff.toolkit import Molecule
 
     pretty.install()
     console = rich.get_console()
     print_header(console)
 
-    settings = BespokeFitSettings()
+    client = BespokeFitClient(settings=current_settings())
+    # make sure the client can be reached before we generate the bespokefit jobs
+    jobs = client.list_optimizations()
+    print(jobs)
 
     if factory_file is not None:
         bespoke_factory = BespokeWorkflowFactory.from_file(file_name=factory_file)
@@ -75,11 +79,11 @@ def submit(
 
     else:
         from openff.qcsubmit.common_structures import QCSpec
-        # create a factory using a protocol
+        # create a factory using pre-defined protocol
         protocols = {
-            "aimnet2": QCSpec(method="wb97m-d3", basis=None, program="aimnet2", spec_description="ASAP-Alchemy standard protocol"),
-            "mace": QCSpec(method="large", basis=None, program="mace", spec_description="ASAP-Alchemy standard protocol"),
-            "xtb": QCSpec(method="gfn2xtb", basis=None, program="xtb", spec_description="ASAP-Alchemy standard protocol")
+            "aimnet2": QCSpec(method="wb97m-d3", basis=None, program="aimnet2", spec_description="ASAP-Alchemy standard aimnet2 protocol"),
+            "mace": QCSpec(method="large", basis=None, program="mace", spec_description="ASAP-Alchemy standard mace protocol"),
+            "xtb": QCSpec(method="gfn2xtb", basis=None, program="xtb", spec_description="ASAP-Alchemy standard xtb protocol")
         }
         bespoke_factory = BespokeWorkflowFactory(default_qc_specs=[protocols[protocol]])
         message = f"Creating BespokeWorkflowFactory from {protocol} protocol"
@@ -108,7 +112,16 @@ def submit(
         molecules=[Molecule.from_rdkit(ligand.to_rdkit(), allow_undefined_stereo=True) for ligand in fec_network.network.ligands],
         processors=processors
     )
+    bespoke_prep_status.stop()
+    # now submit the jobs
 
+    submission_status = console.status("Submitting BespokeFit jobs")
+    submission_status.start()
+    for job in bespoke_jobs:
+        response = client.submit_optimisation(input_schema=job)
+        # save the id of the job into the ligand in the network so we can associate the parameters back later
+
+    submission_status.stop()
 
 
 

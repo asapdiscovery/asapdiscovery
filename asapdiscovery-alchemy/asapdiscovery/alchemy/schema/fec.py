@@ -27,23 +27,6 @@ if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
 
 
-class AlchemiscaleSettings(BaseSettings):
-    """
-    General settings class to capture Alchemiscale credentials from the environment.
-    """
-
-    ALCHEMISCALE_ID: str = Field(
-        ..., description="Your personal alchemiscale ID used to login."
-    )
-    ALCHEMISCALE_KEY: str = Field(
-        ..., description="Your personal alchemiscale Key used to login."
-    )
-    ALCHEMISCALE_URL: str = Field(
-        "https://api.alchemiscale.org",
-        description="The address of the alchemiscale instance to connect to.",
-    )
-
-
 class SolventSettings(_SchemaBase):
     """
     A settings class to encode the solvent used in the OpenFE FEC calculations.

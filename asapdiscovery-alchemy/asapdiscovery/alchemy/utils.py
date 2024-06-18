@@ -4,14 +4,14 @@ import numpy as np
 from alchemiscale import Scope, ScopedKey
 from openmm.app import ForceField, Modeller, PDBFile
 
-from .schema.fec import (
+from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleFailure,
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
     TransformationResult,
 )
-from .interfaces import AlchemiscaleSettings
-from .schema.forcefield import ForceFieldParams
+from asapdiscovery.alchemy.interfaces import AlchemiscaleSettings
+from asapdiscovery.alchemy.schema.forcefield import ForceFieldParams
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.complex import PreppedComplex
