@@ -154,7 +154,7 @@ class AlchemiscaleHelper:
             )
 
         # now action the tasks to ensure they are picked up by compute.
-        actioned_tasks = self._client.action_tasks(tasks, network_key, weight=0.5)
+        actioned_tasks = self._client.action_tasks(tasks, network_key)
         return actioned_tasks
 
     def network_status(
