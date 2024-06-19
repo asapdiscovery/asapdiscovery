@@ -17,6 +17,7 @@ from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from click.testing import CliRunner
 from rdkit import Chem
+import rich
 
 
 def test_alchemy_create(tmpdir):
@@ -843,6 +844,9 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
                 ["predict", "-rd", tyk2_reference_data, "-ru", "pIC50"],
                 catch_exceptions=False,  # let the exception buble up so pytest can check it
             )
+    # make sure to clean the console when an error is raised
+    console = rich.get_console()
+    console.clear_live()
 
 
 def test_prioritize_weight_not_set(monkeypatch):
@@ -885,3 +889,6 @@ def test_prioritize_weight_not_set(monkeypatch):
             ["prioritize", "-nk", network_key, "-w", 0.4],
             catch_exceptions=False,
         )
+
+    console = rich.get_console()
+    console.clear_live()
