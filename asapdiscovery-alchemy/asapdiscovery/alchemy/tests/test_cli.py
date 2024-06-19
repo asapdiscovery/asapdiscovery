@@ -853,7 +853,7 @@ def test_prioritize_weight_not_set(monkeypatch):
     # mock the env variables
     monkeypatch.setenv("CDD_API_KEY", "mykey")
     monkeypatch.setenv("CDD_VAULT_NUMBER", "1")
-    
+
     runner = CliRunner()
 
     # patch the calls to alchemiscale
