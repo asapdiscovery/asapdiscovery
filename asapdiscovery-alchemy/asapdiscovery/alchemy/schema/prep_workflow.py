@@ -3,6 +3,7 @@ from typing import Any, Literal, Optional, Union
 
 import rich
 from asapdiscovery.alchemy.schema.base import _SchemaBase
+from asapdiscovery.alchemy.schema.charge import OpenFFCharges
 from asapdiscovery.data.operators.state_expanders.protomer_expander import (
     EpikExpander,
     ProtomerExpander,
@@ -61,6 +62,10 @@ class _AlchemyPrepBase(_SchemaBase):
         3,
         description="The number of experimental reference molecules we should try to generate "
         "poses for.",
+    )
+    charge_method: Optional[OpenFFCharges] = Field(
+        OpenFFCharges(charge_method="am1bccelf10"),
+        description="The method which should be used to charge the ligands locally.",
     )
 
 
@@ -421,8 +426,12 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             pose_status.stop()
             console.print(
                 f"[[green]✓[/green]] Pose generation successful for {len(posed_refs)}/{self.n_references} experimental "
-                "ligands."
+                "ligands:"
             )
+            for ref_ligand in posed_refs:
+                console.print(
+                    f"Injected ligand: {ref_ligand.compound_name}; SMILES: {ref_ligand.smiles}",
+                )
             posed_ligands.extend(posed_refs)
 
         message = Padding(
@@ -430,6 +439,25 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             (1, 0, 1, 0),
         )
         console.print(message)
+
+        # Generate charges locally if requested
+        if self.charge_method is not None:
+            charge_status = console.status(
+                f"Generating charges locally using {self.charge_method}"
+            )
+            charge_status.start()
+
+            posed_ligands = self.charge_method.generate_charges(
+                ligands=posed_ligands, processors=processors
+            )
+            provenance[self.charge_method.type] = self.charge_method.provenance()
+
+            message = Padding(
+                "[[green]✓[/green]] Charges successfully generated.",
+                (1, 0, 1, 0),
+            )
+            charge_status.stop()
+            console.print(message)
 
         # gather the results
         return AlchemyDataSet(

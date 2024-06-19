@@ -5,7 +5,6 @@ from typing import Optional, Union
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
@@ -195,7 +194,7 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     logger.info(f"Loaded {len(complexes)} complexes")
 
     if not inputs.seqres_yaml:
-        logger.info(f"No seqres yaml specified")
+        logger.info("No seqres yaml specified")
     else:
         logger.info(f"Using seqres yaml: {inputs.seqres_yaml}")
     if inputs.align:

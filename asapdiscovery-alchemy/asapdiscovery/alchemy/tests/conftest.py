@@ -48,12 +48,9 @@ def tyk2_reference_data():
 
 
 @pytest.fixture(scope="function")
-def alchemiscale_helper(monkeypatch):
-    monkeypatch.setenv(name="ALCHEMISCALE_ID", value="asap")
-    monkeypatch.setenv(name="ALCHEMISCALE_KEY", value="key")
-
+def alchemiscale_helper():
     # use a fake api url for testing
-    client = AlchemiscaleHelper(api_url="")
+    client = AlchemiscaleHelper(api_url="", key="key", identifier="asap")
 
     # make sure the env variables were picked up
     assert client._client.identifier == "asap"
@@ -110,8 +107,17 @@ def mac1_complex():
 
 
 @pytest.fixture()
-def openeye_prep_workflow() -> AlchemyPrepWorkflow:
+def openeye_charged_prep_workflow() -> AlchemyPrepWorkflow:
     """Build an openeye pose generator for testing as its faster than rdkit."""
     return AlchemyPrepWorkflow(
         charge_expander=None, pose_generator=OpenEyeConstrainedPoseGenerator()
+    )
+
+
+@pytest.fixture()
+def openeye_prep_workflow() -> AlchemyPrepWorkflow:
+    return AlchemyPrepWorkflow(
+        charge_expander=None,
+        pose_generator=OpenEyeConstrainedPoseGenerator(),
+        charge_method=None,
     )

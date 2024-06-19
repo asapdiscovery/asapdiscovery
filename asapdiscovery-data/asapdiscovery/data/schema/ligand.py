@@ -28,7 +28,11 @@ from asapdiscovery.data.backend.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
-from asapdiscovery.data.schema.identifiers import LigandIdentifiers, LigandProvenance
+from asapdiscovery.data.schema.identifiers import (
+    ChargeProvenance,
+    LigandIdentifiers,
+    LigandProvenance,
+)
 from asapdiscovery.data.schema.schema_base import DataStorageType
 from pydantic import Field, root_validator, validator
 
@@ -114,6 +118,10 @@ class Ligand(DataModelAbstractBase):
         description="Expansion tag linking this ligand to its parent in a state expansion if needed",
     )
 
+    charge_provenance: Optional[ChargeProvenance] = Field(
+        None, description="The provenance information of the local charging method."
+    )
+
     tags: dict[str, str] = Field(
         {},
         description="Dictionary of SD tags. "
@@ -155,7 +163,7 @@ class Ligand(DataModelAbstractBase):
     @validator("tags")
     @classmethod
     def _validate_tags(cls, v):
-        # check that tags are not reserved attribute names
+        # check that tags are not reserved attribute names and format partial charges
         reser_attr_names = cls.__fields__.keys()
         for k in v.keys():
             if k in reser_attr_names:
@@ -252,6 +260,12 @@ class Ligand(DataModelAbstractBase):
         # dump the enum using value to get the str repr
         data["data_format"] = self.data_format.value
 
+        # add partial charges if present
+        if "atom.dprop.PartialCharge" in self.tags:
+            charges = self.tags["atom.dprop.PartialCharge"].split(" ")
+            for oe_atom in mol.GetAtoms():
+                oe_atom.SetPartialCharge(float(charges[oe_atom.GetIdx()]))
+
         # add high level tags to data
         data.update(self.tags)
 
@@ -293,6 +307,13 @@ class Ligand(DataModelAbstractBase):
         # dump tags as separate items
         if self.tags is not None:
             data.update({k: v for k, v in self.tags.items()})
+        # if we have partial charges set them on the atoms assuming the atom ordering is not changed
+        if "atom.dprop.PartialCharge" in self.tags:
+            for i, charge in enumerate(
+                self.tags["atom.dprop.PartialCharge"].split(" ")
+            ):
+                atom = rdkit_mol.GetAtomWithIdx(i)
+                atom.SetDoubleProp("PartialCharge", float(charge))
 
         # set the SD that is different for each conformer
         # convert to str first

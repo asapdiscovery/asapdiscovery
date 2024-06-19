@@ -107,6 +107,14 @@ class Trainer(BaseModel):
         None,
         description="Output using asapdiscovery.data.FileLogger in addition to stdout.",
     )
+    save_weights: str = Field(
+        "all",
+        description=(
+            "How often to save weights during training."
+            'Options are to keep every epoch ("all"), only keep the most recent '
+            'epoch ("recent"), or only keep the final epoch ("final").'
+        ),
+    )
 
     # W&B parameters
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
@@ -428,6 +436,18 @@ class Trainer(BaseModel):
 
         return extra_config
 
+    @validator("save_weights")
+    def check_save_weights(cls, v):
+        """
+        Just make sure the option is one of the valid ones.
+        """
+        v = v.lower()
+
+        if v not in {"all", "recent", "final"}:
+            raise ValueError(f'Invalid option for save_weights: "{v}"')
+
+        return v
+
     def wandb_init(self):
         """
         Initialize WandB, handling saving the run ID (for continuing the run later).
@@ -571,6 +591,8 @@ class Trainer(BaseModel):
             # Load model weights
             try:
                 weights_path = self.output_dir / f"{self.start_epoch - 1}.th"
+                if not weights_path.exists():
+                    weights_path = self.output_dir / "weights.th"
                 self.model_config = self.model_config.update(
                     {
                         "model_weights": torch.load(
@@ -581,7 +603,8 @@ class Trainer(BaseModel):
             except FileNotFoundError:
                 raise FileNotFoundError(
                     f"Found {self.start_epoch} epochs of training, but didn't find "
-                    f"{self.start_epoch - 1}.th weights file."
+                    f"{self.start_epoch - 1}.th weights file or weights.th weights "
+                    "file."
                 )
 
         print(
@@ -869,8 +892,16 @@ class Trainer(BaseModel):
                     }
                 )
             # Save states
-            torch.save(self.model.state_dict(), self.output_dir / f"{epoch_idx}.th")
-            torch.save(self.optimizer.state_dict(), self.output_dir / "optimizer.th")
+            if self.save_weights == "all":
+                torch.save(self.model.state_dict(), self.output_dir / f"{epoch_idx}.th")
+                torch.save(
+                    self.optimizer.state_dict(), self.output_dir / "optimizer.th"
+                )
+            elif self.save_weights == "recent":
+                torch.save(self.model.state_dict(), self.output_dir / "weights.th")
+                torch.save(
+                    self.optimizer.state_dict(), self.output_dir / "optimizer.th"
+                )
             (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
             # Stop if loss has gone to infinity or is NaN

@@ -28,6 +28,18 @@ def output_dir(func):
     )(func)
 
 
+def save_weights(func):
+    return click.option(
+        "--save-weights",
+        type=click.Choice(["all", "recent", "final"], case_sensitive=False),
+        help=(
+            "How often to save weights during training."
+            'Options are to keep every epoch ("all"), only keep the most recent '
+            'epoch ("recent"), or only keep the final epoch ("final").'
+        ),
+    )(func)
+
+
 def trainer_config_cache(func):
     return click.option(
         "--trainer-config-cache",

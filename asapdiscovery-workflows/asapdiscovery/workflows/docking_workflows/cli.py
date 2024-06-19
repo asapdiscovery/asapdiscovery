@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 import click
 from asapdiscovery.cli.cli_args import (
+    active_site_chain,
     cache_dir,
     dask_args,
     fragalysis_dir,
@@ -15,12 +16,11 @@ from asapdiscovery.cli.cli_args import (
     overwrite,
     pdb_file,
     postera_args,
+    ref_chain,
     save_to_cache,
     structure_dir,
     target,
     use_only_cache,
-    ref_chain,
-    active_site_chain,
 )
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags

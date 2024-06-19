@@ -24,7 +24,7 @@ from asapdiscovery.data.backend.plip import (
     make_color_res_fitness,
     make_color_res_subpockets,
 )
-from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.metadata.resources import active_site_chains, master_structures
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -46,8 +46,6 @@ from asapdiscovery.genetics.fitness import (
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 from multimethod import multimethod
 from pydantic import Field, root_validator
-from asapdiscovery.data.metadata.resources import active_site_chains
-
 
 logger = logging.getLogger(__name__)
 
@@ -230,12 +228,12 @@ class HTMLVisualizer(VisualizerBase):
 
                 # make dataframe with ligand name, target name, and path to HTML
                 row = {}
-                row[
-                    DockingResultCols.LIGAND_ID.value
-                ] = result.input_pair.ligand.compound_name
-                row[
-                    DockingResultCols.TARGET_ID.value
-                ] = result.input_pair.complex.target.target_name
+                row[DockingResultCols.LIGAND_ID.value] = (
+                    result.input_pair.ligand.compound_name
+                )
+                row[DockingResultCols.TARGET_ID.value] = (
+                    result.input_pair.complex.target.target_name
+                )
                 row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
                 row[self.get_tag_for_color_method()] = outpath
                 data.append(row)
