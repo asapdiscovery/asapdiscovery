@@ -843,3 +843,42 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
                 ["predict", "-rd", tyk2_reference_data, "-ru", "pIC50"],
                 catch_exceptions=False,  # let the exception buble up so pytest can check it
             )
+
+
+def test_prioritize_weight_not_set(monkeypatch):
+    """
+    Make sure an error is raised if the weight of the network is not
+    correctly set.
+    """
+
+    runner = CliRunner()
+
+    # patch the calls to alchemiscale
+    network_key = ScopedKey(
+        gufe_key="fakenetwork-12345",
+        org="asap",
+        campaign="alchemy",
+        project="testing",
+    )
+
+    def get_network_weight(self, network):
+        assert network == str(network_key)
+        # the default weight
+        return 0.5
+
+    def set_network_weight(self, network, weight):
+        # make sure the correct new weight is passed
+        assert network == str(network_key)
+        assert weight == 0.4
+    monkeypatch.setattr(AlchemiscaleClient, "get_network_weight", get_network_weight)
+    monkeypatch.setattr(AlchemiscaleClient, "set_network_weight", set_network_weight)
+
+    with pytest.raises(
+        ValueError,
+        match="Something went wrong during the weight change of network "
+    ):
+        runner.invoke(
+            alchemy,
+            ["prioritize", "-nk", network_key, "-w", 0.4],
+            catch_exceptions=False
+        )

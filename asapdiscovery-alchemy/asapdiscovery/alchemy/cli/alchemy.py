@@ -564,14 +564,15 @@ def prioritize(network_key: str, weight: float):
         f"Changing weight of network {network_key} to {weight}"
     )
     adjust_weight_status.start()
-    new_weight, old_weight = client.adjust_weight(network_key, weight)
+    new_weight, old_weight = client.adjust_weight(network_key=network_key, weight=weight)
+    adjust_weight_status.stop()
+
     # verify that the weight has been changed
     if not new_weight == weight:
         raise ValueError(
             f"Something went wrong during the weight change of network {network_key}:\nAttempted weight change "
             f"to {weight} but weight is {new_weight}."
         )
-    adjust_weight_status.stop()
 
     message = Padding(
         f"Adjusted weight from {old_weight} to {new_weight} for network {network_key}",
