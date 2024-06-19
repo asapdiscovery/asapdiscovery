@@ -36,7 +36,7 @@ from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
 from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
-from asapdiscovery.docking.scorers import ClashScorer
+from asapdiscovery.docking.scorer import ClashScorer
 
 
 class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs): ...
@@ -231,12 +231,12 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     logger.info("Symmetry expanding docked structures")
     expander = SymmetryExpander()
-
+    complexes = [result.to_posed_complex() for result in results]
     expanded_complexes = expander.expand(
-        results,
+        complexes,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        failure_mode=inputs.failure_mode,
+        failure_mode="raise",
     )
 
     logger.info("Writing expanded structures to PDB")

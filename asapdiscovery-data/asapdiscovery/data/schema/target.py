@@ -121,6 +121,13 @@ class Target(DataModelAbstractBase):
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
+    
+    @property
+    def crystal_symmetry(self):
+        """
+        Get the crystal symmetry of the target
+        """
+        return oechem.OEGetCrystalSymmetry(self.to_oemol())
 
     @property
     def hash(self):
@@ -157,6 +164,8 @@ class PreppedTarget(DataModelAbstractBase):
         description="A unique reproducible hash based on the contents of the pdb file which created the target.",
         allow_mutation=False,
     )
+
+    crystal_symmetry: Optional[Any] = Field(None, description="bounding box of the target, lost in oedu conversion so can be saved as attribute.")
 
     @root_validator(pre=True)
     @classmethod
@@ -198,11 +207,25 @@ class PreppedTarget(DataModelAbstractBase):
         ----------
         filename: The name of the pdb file the target should be writen to.
         """
-        oedu = self.to_oedu()
-        _, oe_receptor, _ = split_openeye_design_unit(du=oedu)
-        # As advised by Alex <https://github.com/choderalab/asapdiscovery/pull/608#discussion_r1388067468>
-        openeye_perceive_residues(oe_receptor)
-        save_openeye_pdb(oe_receptor, pdb_fn=filename)
+        oemol = self.to_oemol()
+        save_openeye_pdb(oemol, filename)
+
+
+    def to_oemol(self) -> oechem.OEMol:
+        """
+        Combine the target and ligand into a single oemol
+        """
+        oemol = oechem.OEMol()
+        self.to_oedu().GetComponents(oemol, oechem.OEDesignUnitComponents_All)
+        if self.crystal_symmetry:
+            print(self.crystal_symmetry)
+            p = oechem.OECrystalSymmetryParams(*self.crystal_symmetry)
+            retcode = oechem.OESetCrystalSymmetry(oemol, p, True)
+            if not retcode:
+                raise InvalidTargetError(
+                    f"Failed to set crystal symmetry {self.crystal_symmetry} on receptor"
+                )
+        return oemol
 
     @property
     def hash(self):

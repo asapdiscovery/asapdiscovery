@@ -59,11 +59,12 @@ class SymmetryExpander(BaseModel):
                     )
 
                     # check for a box
-                    has_box = all(u.trajectory.ts.dimensions[:3])
-                    if not has_box:
-                        raise ValueError(
-                            "Cannot perform expansion as Complex does not have bounding box"
-                        )
+                    logger.info(f"symmetry expansion with BOX:  {u.trajectory.ts.dimensions}")
+                    if u.trajectory.ts.dimensions is None:
+                        raise ValueError("No box found in PDB")
+                    elif not all(u.trajectory.ts.dimensions[:3]):
+                        raise ValueError("Box has zero volume")
+
                 # load each component into PyMOL
                 p.cmd.read_pdbstr(complex.target.data, "protein_obj")
                 p.cmd.read_pdbstr(

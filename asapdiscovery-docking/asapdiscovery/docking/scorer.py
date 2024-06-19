@@ -737,4 +737,29 @@ class ClashScorer(ScorerBase):
     score_type: ClassVar[ScoreType.clash] = ScoreType.clash
     units: ClassVar[ScoreUnits.flag] = ScoreUnits.flag
 
+
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
+    def _score(
+        self, inputs: Union[list[DockingResult], list[str], list[Ligand]]
+    ) -> list[Score]:
+        """
+        Score the inputs, dispatching based on type.
+        """
+        return self._dispatch(inputs)
     
+
+    @multimethod
+    def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
+        """
+        Dispatch for DockingResults
+        """
+        results = []
+        for inp in inputs:
+            clash_score = inp.clash_score
+            results.append(
+                Score.from_score_and_docking_result(
+                    clash_score, self.score_type, self.units, inp
+                )
+            )
+        return results

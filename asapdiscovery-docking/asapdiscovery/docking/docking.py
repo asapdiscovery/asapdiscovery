@@ -16,6 +16,8 @@ from asapdiscovery.data.backend.openeye import (
 )
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.target import Target
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
@@ -219,6 +221,19 @@ class DockingResult(BaseModel):
             Combined oemol
         """
         return combine_protein_ligand(self.to_protein(), self.posed_ligand.to_oemol())
+    
+    def to_posed_complex(self) -> Complex:
+        """
+        Return the complex from the original target
+
+        Returns
+        -------
+        Complex
+            Complex
+        """
+        target = Target.from_oemol(self.to_protein(), target_name=self.input_pair.complex.target.target_name, ids=self.input_pair.complex.target.ids)
+        return Complex(target=target, ligand=self.posed_ligand)
+
 
     def to_protein(self) -> oechem.OEMol:
         """
@@ -229,8 +244,7 @@ class DockingResult(BaseModel):
         oechem.OEMol
             Protein oemol
         """
-        _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
-        return prot
+        return self.input_pair.complex.target.to_oemol()["prot"]
 
     @property
     def unique_name(self):
