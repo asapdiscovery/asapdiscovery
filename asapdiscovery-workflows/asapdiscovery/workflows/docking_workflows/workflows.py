@@ -44,9 +44,8 @@ class WorkflowInputsBase(BaseModel):
     overwrite: bool = Field(
         False, description="Whether to overwrite existing output directory."
     )
-    
-    target: TargetTags = Field(None, description="The target to dock against.")
 
+    target: TargetTags = Field(None, description="The target to dock against.")
 
     class Config:
         arbitrary_types_allowed = True

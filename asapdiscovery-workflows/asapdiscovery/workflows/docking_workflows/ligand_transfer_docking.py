@@ -24,6 +24,8 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
 )
 from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
+from asapdiscovery.dataviz.gif_viz import GIFVisualizer
+from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
 from asapdiscovery.docking.docking import DockingInputMultiStructure
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
@@ -34,15 +36,18 @@ from asapdiscovery.docking.scorer import (
     MLModelScorer,
 )
 from asapdiscovery.modeling.protein_prep import LigandTransferProteinPrepper
-from asapdiscovery.dataviz.gif_viz import GIFVisualizer
-from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
-# from asapdiscovery.workflows.docking_workflows.workflows import WorkflowInputsBase
-from asapdiscovery.workflows.docking_workflows.workflows import DockingWorkflowInputsBase
-from pydantic import Field, PositiveInt, validator, root_validator
-
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 
-class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):#WorkflowInputsBase):
+# from asapdiscovery.workflows.docking_workflows.workflows import WorkflowInputsBase
+from asapdiscovery.workflows.docking_workflows.workflows import (
+    DockingWorkflowInputsBase,
+)
+from pydantic import Field, PositiveInt, root_validator, validator
+
+
+class LigandTransferDockingWorkflowInputs(
+    DockingWorkflowInputsBase
+):  # WorkflowInputsBase):
     target_structure_dir: Optional[Path] = Field(
         None,
         description="Path to a directory containing apo structures to transfer the ligands.",
@@ -138,6 +143,7 @@ class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):#WorkflowIn
     md_openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
+
     @classmethod
     @validator("ml_scorers")
     def ml_scorers_must_be_valid(cls, v):
@@ -356,6 +362,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         failure_mode=inputs.failure_mode,
     )
     import csv
+
     with open(data_intermediates / "docking_scores_raw.csv", "w", newline="") as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         for item in scores_list:
@@ -369,10 +376,10 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         output_dir=html_ouptut_dir,
     )
     pose_visualizatons = html_visualizer.visualize(
-    results,
-    use_dask=inputs.use_dask,
-    dask_client=dask_client,
-    failure_mode=inputs.failure_mode,
+        results,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        failure_mode=inputs.failure_mode,
     )
 
     if inputs.md:
@@ -409,11 +416,11 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
             use_dask=inputs.use_dask,
             dask_client=dask_client,
             failure_mode=inputs.failure_mode,
-        )    
+        )
 
         if local_cpu_client_gpu_override and inputs.use_dask:
             dask_client = make_dask_client_meta(DaskType.LOCAL)
-            
+
         gif_output_dir = output_dir / "gifs"
 
         # take the last ns, accounting for possible low number of frames

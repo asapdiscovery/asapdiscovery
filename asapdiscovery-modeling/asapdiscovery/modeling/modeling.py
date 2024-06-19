@@ -221,6 +221,7 @@ def make_design_unit(
         du = None
     return success, du
 
+
 def make_du_from_new_lig(
     protein: oechem.OEGraphMol,
     lig: oechem.OEGraphMol,
@@ -244,6 +245,7 @@ def make_du_from_new_lig(
     du = oechem.OEDesignUnit()
     success = oespruce.OEMakeDesignUnit(du, protein, lig, opts)
     return success, du
+
 
 def superpose_molecule(ref_mol, mobile_mol, ref_chain="A", mobile_chain="A"):
     """
