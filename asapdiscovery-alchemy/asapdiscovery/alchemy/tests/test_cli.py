@@ -850,7 +850,10 @@ def test_prioritize_weight_not_set(monkeypatch):
     Make sure an error is raised if the weight of the network is not
     correctly set.
     """
-
+    # mock the env variables
+    monkeypatch.setenv("CDD_API_KEY", "mykey")
+    monkeypatch.setenv("CDD_VAULT_NUMBER", "1")
+    
     runner = CliRunner()
 
     # patch the calls to alchemiscale
