@@ -870,15 +870,15 @@ def test_prioritize_weight_not_set(monkeypatch):
         # make sure the correct new weight is passed
         assert network == str(network_key)
         assert weight == 0.4
+
     monkeypatch.setattr(AlchemiscaleClient, "get_network_weight", get_network_weight)
     monkeypatch.setattr(AlchemiscaleClient, "set_network_weight", set_network_weight)
 
     with pytest.raises(
-        ValueError,
-        match="Something went wrong during the weight change of network "
+        ValueError, match="Something went wrong during the weight change of network "
     ):
         runner.invoke(
             alchemy,
             ["prioritize", "-nk", network_key, "-w", 0.4],
-            catch_exceptions=False
+            catch_exceptions=False,
         )
