@@ -851,8 +851,8 @@ def test_prioritize_weight_not_set(monkeypatch):
     correctly set.
     """
     # mock the env variables
-    monkeypatch.setenv("CDD_API_KEY", "mykey")
-    monkeypatch.setenv("CDD_VAULT_NUMBER", "1")
+    monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
+    monkeypatch.setenv("ALCHEMISCALE_KEY", "my-key")
 
     runner = CliRunner()
 
