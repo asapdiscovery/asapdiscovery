@@ -216,9 +216,10 @@ class PreppedTarget(DataModelAbstractBase):
         Combine the target and ligand into a single oemol
         """
         oemol = oechem.OEMol()
-        self.to_oedu().GetComponents(oemol, oechem.OEDesignUnitComponents_All)
+        lig, prot, _  = split_openeye_design_unit(self.to_oedu(), oemol)
+        oechem.OEAddMols(oemol, lig)
+        oechem.OEAddMols(oemol, prot)
         if self.crystal_symmetry:
-            print(self.crystal_symmetry)
             p = oechem.OECrystalSymmetryParams(*self.crystal_symmetry)
             retcode = oechem.OESetCrystalSymmetry(oemol, p, True)
             if not retcode:

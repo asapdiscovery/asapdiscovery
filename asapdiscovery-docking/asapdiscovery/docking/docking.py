@@ -21,7 +21,7 @@ from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
-from asapdiscovery.modeling.modeling import split_openeye_design_unit
+from asapdiscovery.modeling.modeling import split_openeye_mol
 from pydantic import BaseModel, Field, PositiveFloat
 
 logger = logging.getLogger(__name__)
@@ -244,7 +244,7 @@ class DockingResult(BaseModel):
         oechem.OEMol
             Protein oemol
         """
-        return self.input_pair.complex.target.to_oemol()["prot"]
+        return split_openeye_mol(self.input_pair.complex.target.to_oemol())["prot"]
 
     @property
     def unique_name(self):

@@ -37,6 +37,7 @@ from asapdiscovery.workflows.docking_workflows.workflows import (
 )
 from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
 from asapdiscovery.docking.scorer import ClashScorer
+from asapdiscovery.data.schema.complex import Complex
 
 
 class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs): ...
@@ -149,8 +150,9 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     logger.info("Prepping complexes")
     prepper = ProteinPrepper(
         cache_dir=inputs.cache_dir,
-        ref_chain="A",
-        active_site_chain="A",
+        align=None,
+        ref_chain=inputs.ref_chain,
+        active_site_chain=inputs.active_site_chain,
     )
     prepped_complexes = prepper.prep(
         complexes,
@@ -182,6 +184,11 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     n_pairs = len(pairs)
     logger.info(f"Selected {n_pairs} pairs for docking")
 
+    logger.info("Bounding boxes and space groups for selected pairs")
+    for pair in pairs:
+        logger.info(f"{pair.ligand.compound_name} {pair.complex.target.target_name} {pair.complex.target.crystal_symmetry}")
+
+
     del prepped_complexes
 
     # dock pairs
@@ -192,8 +199,19 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        failure_mode=inputs.failure_mode,
+        failure_mode="raise",
     )
+
+    logger.info("Docking complete")
+    logger.info("Bounding boxes and space groups for docked results")
+    for res in results:
+        logger.info(f"Docked {res.posed_ligand.compound_name} {res.input_pair.complex.target.target_name} {res.input_pair.complex.target.crystal_symmetry}")
+    
+    complexes = [result.to_posed_complex() for result in results]
+
+    logger.info("Bounding boxes and space groups for docked complexes")
+    for complex in complexes:
+        logger.info(f"Docked {complex.target.target_name} {complex.target.crystal_symmetry}")
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
@@ -231,7 +249,6 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     logger.info("Symmetry expanding docked structures")
     expander = SymmetryExpander()
-    complexes = [result.to_posed_complex() for result in results]
     expanded_complexes = expander.expand(
         complexes,
         use_dask=inputs.use_dask,
@@ -244,7 +261,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     expanded_pdb_dir = output_dir / "expanded_pdbs"
     expanded_pdb_dir.mkdir(exist_ok=True)
 
-    [c.to_pdb_file(expanded_pdb_dir / f"{c.hash}.pdb") for c in expanded_complexes]
+    [c.to_pdb(expanded_pdb_dir / f"{c.unique_name}.pdb") for c in expanded_complexes]
 
     # score results using multiple scoring functions
     logger.info("Scoring expanded structures")

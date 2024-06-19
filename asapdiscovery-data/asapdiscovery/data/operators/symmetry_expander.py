@@ -1,5 +1,6 @@
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.backend.openeye import oemol_to_pdb_string
+from asapdiscovery.data.backend.openeye import save_openeye_pdb, oechem
+from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import FailureMode, dask_vmap
 from pydantic import BaseModel
 import MDAnalysis as mda
@@ -9,6 +10,7 @@ import warnings
 import pymol2
 import tempfile
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -47,61 +49,74 @@ class SymmetryExpander(BaseModel):
         new_complexs = []
         for complex in complexes:
             try:
-                p = pymol2.PyMOL()
-                p.start()
-                # check if PDB has a box
-                with warnings.catch_warnings():
-                    warnings.simplefilter(
-                        "ignore"
-                    )  # hides MDA RunTimeWarning that complains about string IO
-                    u = mda.Universe(
-                        NamedStream(StringIO(complex.target.data), "complex.pdb")
-                    )
+                target_oemol = complex.target.to_oemol()
+                if oechem.OEGetCrystalSymmetry(target_oemol) is None:
+                    raise ValueError("No crystal symmetry found in target")
+                new = oechem.OEMol()
+                oechem.OEExpandCrystalSymmetry(new, target_oemol)
+                # combine
+                combined = oechem.OEMol()
+                for mol in new.GetConfs():
+                    oechem.OEAddMols(combined, mol)
 
-                    # check for a box
-                    logger.info(f"symmetry expansion with BOX:  {u.trajectory.ts.dimensions}")
-                    if u.trajectory.ts.dimensions is None:
-                        raise ValueError("No box found in PDB")
-                    elif not all(u.trajectory.ts.dimensions[:3]):
-                        raise ValueError("Box has zero volume")
+                t = Target.from_oemol(combined, target_name=complex.target.target_name, ids=complex.target.ids)
+                c = Complex(target=t, ligand=complex.ligand, ligand_chain=complex.ligand_chain)
+                new_complexs.append(c)
+      
+            # try:
+            #     p = pymol2.PyMOL()
+            #     p.start()
+            #     # check if PDB has a box
+            #     with warnings.catch_warnings():
+            #         warnings.simplefilter(
+            #             "ignore"
+            #         )  # hides MDA RunTimeWarning that complains about string IO
+            #         u = mda.Universe(
+            #             NamedStream(StringIO(complex.target.data), "complex.pdb")
+            #         )
 
-                # load each component into PyMOL
-                p.cmd.read_pdbstr(complex.target.data, "protein_obj")
-                p.cmd.read_pdbstr(
-                    oemol_to_pdb_string(complex.ligand.to_oemol()), "lig_obj"
-                )
+            #         # check for a box
+            #         logger.info(f"symmetry expansion with box:  {u.trajectory.ts.dimensions}")
+            #         if u.trajectory.ts.dimensions is None:
+            #             raise ValueError("No box found in PDB")
+            #         elif not all(u.trajectory.ts.dimensions[:3]):
+            #             raise ValueError("Box has zero volume")
 
-                # remove some solvent stuff to prevent occasional clashes with neighbors
-                p.cmd.remove("solvent")
-                p.cmd.remove("inorganic")
+            #     # load each component into PyMOL
+            #     p.cmd.read_pdbstr(complex.target.data, "protein_obj")
+            #     p.cmd.read_pdbstr(
+            #         oemol_to_pdb_string(complex.ligand.to_oemol()), "lig_obj"
+            #     )
 
-                # reconstruct neighboring asymmetric units from the crystallographic experiment
-                p.cmd.symexp(
-                    "sym", "protein_obj", "(protein_obj)", self.n_repeats
-                )  # do a big expansion just to be sure
+            #     # remove some solvent stuff to prevent occasional clashes with neighbors
+            #     p.cmd.remove("solvent")
+            #     p.cmd.remove("inorganic")
 
-                if self.expand_ligand:
-                    p.cmd.symexp(
-                        "sym", "lig_obj", "(lig_obj)", self.n_repeats
-                    )  # do a big expansion just to be sure
+            #     # reconstruct neighboring asymmetric units from the crystallographic experiment
+            #     p.cmd.symexp(
+            #         "sym", "protein_obj", "(protein_obj)", self.n_repeats
+            #     )  # do a big expansion just to be sure
 
-                string = p.cmd.get_pdbstr(
-                    "all", 0
-                )  # writes all states, so should be able to handle multi-ligand
-                p.stop()
+            #     if self.expand_ligand:
+            #         p.cmd.symexp(
+            #             "sym", "lig_obj", "(lig_obj)", self.n_repeats
+            #         )  # do a big expansion just to be sure
 
-                # tmp = tempfile.NamedTemporaryFile()
-                # with open(tmp.name, 'w') as f:
-                with open("tst.pdb", "w") as f:
+            #     string = p.cmd.get_pdbstr(
+            #         "all", 0
+            #     )  # writes all states, so should be able to handle multi-ligand
+            #     p.stop()
 
-                    f.write(string)
-                    cnew = Complex.from_pdb(
-                        "tst.pdb",
-                        target_kwargs={"target_name": "test"},
-                        ligand_kwargs={"compound_name": "test"},
-                    )
+            #     tmp = tempfile.NamedTemporaryFile()
+            #     with open(tmp.name, 'w') as f:
+            #         f.write(string)
+            #         cnew = Complex.from_pdb(
+            #             "tst.pdb",
+            #             target_kwargs={"target_name": "test"},
+            #             ligand_kwargs={"compound_name": "test"},
+            #         )
 
-                new_complexs.append(cnew)
+            #     new_complexs.append(cnew)
 
             except Exception as e:
                 if failure_mode == "skip":

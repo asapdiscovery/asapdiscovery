@@ -425,6 +425,7 @@ def split_openeye_mol(
     molecule_filter: Optional[Union[str, list[str], MoleculeFilter]] = None,
     prot_cutoff_len=10,
     keep_one_lig=True,
+    set_crystal_symmetry=True,
 ) -> dict:
     """
     Split an OpenEye-loaded molecule into protein, ligand, etc.
@@ -441,6 +442,8 @@ def split_openeye_mol(
         Minimum number of residues in a protein chain required in order to keep
     keep_one_lig : bool, default=True
         Only keep one copy of the ligand in lig_mol
+    set_crystal_symmetry : bool, default=True
+        Whether to set the crystal symmetry of the protein
 
     Returns
     -------
@@ -549,6 +552,14 @@ def split_openeye_mol(
                 # Delete all atoms that don't match
                 if oechem.OEAtomGetResidue(a).GetChainID() != keep_lig_chain:
                     lig_mol.DeleteAtom(a)
+
+    if set_crystal_symmetry:
+        # Set crystal symmetry
+        param = oechem.OEGetCrystalSymmetry(complex_mol)
+        if param is not None:
+            p = oechem.OECrystalSymmetryParams(*param)
+            oechem.OESetCrystalSymmetry(prot_mol, p, True)
+
 
     return {
         "prot": prot_mol,
