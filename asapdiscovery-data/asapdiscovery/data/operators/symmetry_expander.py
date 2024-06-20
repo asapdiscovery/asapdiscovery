@@ -1,5 +1,5 @@
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.backend.openeye import save_openeye_pdb, oechem, oemol_to_pdb_string
+from asapdiscovery.data.backend.openeye import save_openeye_pdb, oechem, oemol_to_pdb_string, pdb_string_to_oemol
 from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import FailureMode, dask_vmap
 from asapdiscovery.modeling.modeling import find_component_chains
@@ -17,11 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 
-def set_chain(mol, chain_code):
-    hv = oechem.OEHierView(mol)
-    for res in hv.GetResidues():
-        res.GetOEResidue().SetExtChainID(str(chain_code))
-    return mol
+
+
+        # get the chain ID
+        # chain_id = thisRes.GetChainID()
+        # # if the chain ID is different from the previous one
+        # if chain_id != prev_chain_id:
+        #     # increment the chain ID
+        #     chain_id = chr(ord(start_at) + 1)
+        
+        # thisRes.SetChainID(chain_id)
+        # oechem.OEAtomSetResidue(atom, thisRes)
 
         
 
@@ -63,23 +69,37 @@ class SymmetryExpander(BaseModel):
                 if oechem.OEGetCrystalSymmetry(target_oemol) is None:
                     raise ValueError("No crystal symmetry found in target")
                 new = oechem.OEMol()
-                oechem.OEExpandCrystalSymmetry(new, target_oemol, 40)
+                oechem.OEExpandCrystalSymmetry(new, target_oemol, 10)
                 # combine
                 # chains = find_component_chains(target_oemol, sort_by="alphabetical")
                 # logger.info(f"Found chains: {chains}")
                 # last_chain = chains[-1]
                 # logger.info(f"Last chain: {last_chain}")
-                combined = oechem.OEMol()
-                chain_code = 1
+                combined = oechem.OEGraphMol()
+                # hacky, forgive me 
+                universes = []
                 for i, mol in enumerate(new.GetConfs()):
-                    chain_code = chain_code +1
-                    # set chains ID on the new molecule
-                    # set_chain(mol, "X")
-                    save_openeye_pdb(mol, f"tmp_{i}.pdb")
-                    oechem.OEAddMols(combined, mol)
+                    save_openeye_pdb(mol, f"{i}_complex.pdb")
 
-                t = Target.from_oemol(combined, target_name=complex.target.target_name, ids=complex.target.ids)
-                c = Complex(target=t, ligand=complex.ligand, ligand_chain=complex.ligand_chain)
+                    oechem.OESetCrystalSymmetry(mol, oechem.OEGetCrystalSymmetry(target_oemol))
+                    u = mda.Universe( NamedStream(StringIO(oemol_to_pdb_string(mol)), "complex.pdb"))
+                    # set chain id
+                    print(u.atoms.chainIDs)
+                    # increment chain code
+                    u.atoms.chainIDs = ["X"] * len(u.atoms)
+                    universes.append(u)
+                
+                # merge
+                m = mda.Merge(*[u.atoms for u in universes])
+                print(m)
+                print(m.atoms)
+                m.atoms.write("tmp.pdb")
+
+                c = Complex.from_pdb(
+                    "tmp.pdb",
+                    target_kwargs={"target_name": "test"},
+                    ligand_kwargs={"compound_name": "test"},
+                )
                 new_complexs.append(c)
       
             # try:
