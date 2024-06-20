@@ -743,6 +743,8 @@ class SymClashScorer(ScorerBase):
     score_type: ClassVar[ScoreType.sym_clash] = ScoreType.sym_clash
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
 
+    count_clashing_pairs: bool = Field(False, description="Whether to count clashing distance pairs, rather than unique clashing ligand atoms")
+
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(self, inputs) -> list[Score]:
@@ -779,21 +781,27 @@ class SymClashScorer(ScorerBase):
 
             # check if distance for an atom pair is less than summed vdw radii
             num_clashes = 0
+            clashing_lig_at = set()
             for (i, j), dist in zip(pair_indices, pair_distances):
-
                 if (
                     dist
                     < (mda.topology.tables.vdwradii[lig.elements[i].upper()]
                     + mda.topology.tables.vdwradii[symmetry_expanded_prot.elements[j].upper()])
-                ):
+                ) and lig.elements[i] != "H" and symmetry_expanded_prot.elements[j] != "H":
                     print(i, j, dist)
                     print(mda.topology.tables.vdwradii[lig.elements[i].upper()])
                     print(mda.topology.tables.vdwradii[symmetry_expanded_prot.elements[j].upper()])
                     num_clashes += 1
+                    clashing_lig_at.add(i)
 
+            if self.count_clashing_pairs:
+                val = num_clashes
+            else:
+                val = len(clashing_lig_at)
+            
             results.append(
                 Score.from_score_and_complex(
-                    num_clashes, self.score_type, self.units, inp
+                    val, self.score_type, self.units, inp
                 )
             )
         print(results)
