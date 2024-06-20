@@ -79,24 +79,17 @@ class SymmetryExpander(BaseModel):
                 # hacky, forgive me 
                 universes = []
                 for i, mol in enumerate(new.GetConfs()):
+                    param = complex.target.crystal_symmetry
+                    if param is not None:
+                        p = oechem.OECrystalSymmetryParams(*param)
+                        oechem.OESetCrystalSymmetry(mol, p, True)
                     save_openeye_pdb(mol, f"{i}_complex.pdb")
-
-                    oechem.OESetCrystalSymmetry(mol, oechem.OEGetCrystalSymmetry(target_oemol))
-                    u = mda.Universe( NamedStream(StringIO(oemol_to_pdb_string(mol)), "complex.pdb"))
-                    # set chain id
-                    print(u.atoms.chainIDs)
-                    # increment chain code
-                    u.atoms.chainIDs = ["X"] * len(u.atoms)
-                    universes.append(u)
+                    oechem.OEAddMols(combined, mol)
+                save_openeye_pdb(combined, "combined.pdb")
                 
-                # merge
-                m = mda.Merge(*[u.atoms for u in universes])
-                print(m)
-                print(m.atoms)
-                m.atoms.write("tmp.pdb")
 
                 c = Complex.from_pdb(
-                    "tmp.pdb",
+                    "combined.pdb",
                     target_kwargs={"target_name": "test"},
                     ligand_kwargs={"compound_name": "test"},
                 )
