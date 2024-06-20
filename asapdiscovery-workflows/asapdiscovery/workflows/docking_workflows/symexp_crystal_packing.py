@@ -261,7 +261,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     expanded_pdb_dir = output_dir / "expanded_pdbs"
     expanded_pdb_dir.mkdir(exist_ok=True)
 
-    [c.to_pdb(expanded_pdb_dir / f"{c.unique_name}.pdb") for c in expanded_complexes]
+    [c.to_pdb(expanded_pdb_dir / f"{c.target.target_name}_expanded.pdb") for c in expanded_complexes]
 
     # score results using multiple scoring functions
     logger.info("Scoring expanded structures")

@@ -1,7 +1,8 @@
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.backend.openeye import save_openeye_pdb, oechem
+from asapdiscovery.data.backend.openeye import save_openeye_pdb, oechem, oemol_to_pdb_string
 from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import FailureMode, dask_vmap
+from asapdiscovery.modeling.modeling import find_component_chains
 from pydantic import BaseModel
 import MDAnalysis as mda
 from MDAnalysis.lib.util import NamedStream
@@ -15,13 +16,22 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+
+def set_chain(mol, chain_code):
+    hv = oechem.OEHierView(mol)
+    for res in hv.GetResidues():
+        res.GetOEResidue().SetExtChainID(str(chain_code))
+    return mol
+
+        
+
 class SymmetryExpander(BaseModel):
     """
     Expand symmetry of a unit cell to include multiple copies.
     """
 
     expand_ligand: bool = False
-    n_repeats: int = 8
+    n_repeats: int = 1
 
     def expand(
         self,
@@ -53,10 +63,19 @@ class SymmetryExpander(BaseModel):
                 if oechem.OEGetCrystalSymmetry(target_oemol) is None:
                     raise ValueError("No crystal symmetry found in target")
                 new = oechem.OEMol()
-                oechem.OEExpandCrystalSymmetry(new, target_oemol)
+                oechem.OEExpandCrystalSymmetry(new, target_oemol, 40)
                 # combine
+                # chains = find_component_chains(target_oemol, sort_by="alphabetical")
+                # logger.info(f"Found chains: {chains}")
+                # last_chain = chains[-1]
+                # logger.info(f"Last chain: {last_chain}")
                 combined = oechem.OEMol()
-                for mol in new.GetConfs():
+                chain_code = 1
+                for i, mol in enumerate(new.GetConfs()):
+                    chain_code = chain_code +1
+                    # set chains ID on the new molecule
+                    # set_chain(mol, "X")
+                    save_openeye_pdb(mol, f"tmp_{i}.pdb")
                     oechem.OEAddMols(combined, mol)
 
                 t = Target.from_oemol(combined, target_name=complex.target.target_name, ids=complex.target.ids)
@@ -111,7 +130,7 @@ class SymmetryExpander(BaseModel):
             #     with open(tmp.name, 'w') as f:
             #         f.write(string)
             #         cnew = Complex.from_pdb(
-            #             "tst.pdb",
+            #             tmp.name,
             #             target_kwargs={"target_name": "test"},
             #             ligand_kwargs={"compound_name": "test"},
             #         )
