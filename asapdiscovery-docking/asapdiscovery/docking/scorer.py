@@ -3,10 +3,12 @@ import logging
 from enum import Enum
 from pathlib import Path
 from typing import Any, ClassVar, Optional, Union
-
+import warnings
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.backend.openeye import oedocking
+import MDAnalysis as mda
+from io import StringIO
+from asapdiscovery.data.backend.openeye import oedocking, oemol_to_pdb_string
 from asapdiscovery.data.backend.plip import compute_fint_score
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
@@ -39,7 +41,9 @@ class ScoreType(str, Enum):
     GAT = "GAT"
     schnet = "schnet"
     e3nn = "e3nn"
+    sym_clash = "sym_clash"
     INVALID = "INVALID"
+
 
 
 class ScoreUnits(str, Enum):
@@ -729,3 +733,68 @@ class MetaScorer(BaseModel):
             return Score._combine_and_pivot_scores_df(results)
 
         return np.ravel(results).tolist()
+
+class SymClashScorer(ScorerBase):
+    """
+    Scoring, checking for clashes between ligand and target
+    in neighboring unit cells.
+    """
+
+    score_type: ClassVar[ScoreType.sym_clash] = ScoreType.sym_clash
+    units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
+
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
+    def _score(self, inputs) -> list[Score]:
+        """
+        Score the inputs, dispatching based on type.
+        """
+        return self._dispatch(inputs)
+
+    @multimethod
+    def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
+        """
+        Dispatch for Complex
+        """
+        results = []
+        warnings.warn("SymClashScorer relies on expanded protein units having chain X as constructed by SymmetryExpander")
+        for inp in inputs:
+            # load into MDA universe
+            print("loading universe")
+            u = mda.Universe(mda.lib.util.NamedStream(StringIO(oemol_to_pdb_string(inp.to_combined_oemol())), "complex.pdb"))
+            print("universe loaded")
+            lig = u.select_atoms("not protein")
+            print(lig.n_atoms)
+            symmetry_expanded_prot = u.select_atoms("chainID X")
+            print(symmetry_expanded_prot.n_atoms)
+            # check contacts less than
+            pair_indices, pair_distances = mda.lib.distances.capped_distance(
+            lig,
+            symmetry_expanded_prot,
+            8,
+            box=u.dimensions  # large cutoff to loop in a good amount of distances up to 8Å
+            )
+            print(pair_indices)
+            print(pair_distances)
+
+            # check if distance for an atom pair is less than summed vdw radii
+            num_clashes = 0
+            for (i, j), dist in zip(pair_indices, pair_distances):
+
+                if (
+                    dist
+                    < (mda.topology.tables.vdwradii[lig.elements[i].upper()]
+                    + mda.topology.tables.vdwradii[symmetry_expanded_prot.elements[j].upper()])
+                ):
+                    print(i, j, dist)
+                    print(mda.topology.tables.vdwradii[lig.elements[i].upper()])
+                    print(mda.topology.tables.vdwradii[symmetry_expanded_prot.elements[j].upper()])
+                    num_clashes += 1
+
+            results.append(
+                Score.from_score_and_complex(
+                    num_clashes, self.score_type, self.units, inp
+                )
+            )
+        print(results)
+        return results

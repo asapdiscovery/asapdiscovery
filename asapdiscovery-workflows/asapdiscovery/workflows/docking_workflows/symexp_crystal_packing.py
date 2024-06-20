@@ -30,7 +30,7 @@ from asapdiscovery.data.util.utils import check_empty_dataframe
 from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer import ChemGauss4Scorer
+from asapdiscovery.docking.scorer import SymClashScorer, ChemGauss4Scorer
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
@@ -265,7 +265,8 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     logger.info("Scoring expanded structures")
 
-    scorer = ClashScorer()
+    
+    scorer = SymClashScorer()
 
     logger.info("Running scoring")
     scores_df = scorer.score(
