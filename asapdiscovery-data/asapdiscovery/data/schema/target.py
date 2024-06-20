@@ -129,6 +129,12 @@ class Target(DataModelAbstractBase):
 
         return hashlib.sha256(self.data.encode()).hexdigest()
 
+    @property
+    def crystal_symmetry(self):
+        """
+        Get the crystal symmetry of the target
+        """
+        return oechem.OEGetCrystalSymmetry(self.to_oemol())
 
 class PreppedTarget(DataModelAbstractBase):
     """
@@ -157,6 +163,9 @@ class PreppedTarget(DataModelAbstractBase):
         description="A unique reproducible hash based on the contents of the pdb file which created the target.",
         allow_mutation=False,
     )
+
+    crystal_symmetry: Optional[Any] = Field(None, description="bounding box of the target, lost in oedu conversion so can be saved as attribute.")
+
 
     @root_validator(pre=True)
     @classmethod

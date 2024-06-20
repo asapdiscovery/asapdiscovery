@@ -16,6 +16,8 @@ from asapdiscovery.data.backend.openeye import (
 )
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
@@ -230,7 +232,25 @@ class DockingResult(BaseModel):
             Protein oemol
         """
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
+        param = self.input_pair.complex.target.crystal_symmetry
+        if param is not None:
+            p = oechem.OECrystalSymmetryParams(*param)
+            oechem.OESetCrystalSymmetry(prot, p, True)
         return prot
+
+    def to_posed_complex(self) -> Complex:
+        """
+        Return the complex from the original target
+        Returns
+        -------
+        Complex
+            Complex
+        """
+        prot = self.to_protein()
+        lig = self.posed_ligand.to_oemol()
+        t = Target.from_oemol(prot, target_name=self.input_pair.complex.target.target_name, ids=self.input_pair.complex.target.ids)
+        l = Ligand.from_oemol(lig, **self.input_pair.ligand.dict())
+        return Complex(target=t, ligand=l)
 
     @property
     def unique_name(self):
