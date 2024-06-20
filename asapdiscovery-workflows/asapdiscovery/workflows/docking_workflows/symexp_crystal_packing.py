@@ -263,19 +263,18 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     [c.to_pdb(expanded_pdb_dir / f"{c.target.target_name}_expanded.pdb") for c in expanded_complexes]
 
-    # score results using multiple scoring functions
     logger.info("Scoring expanded structures")
 
-    # scorer = ClashScorer()
+    scorer = ClashScorer()
 
-    # logger.info("Running scoring")
-    # scores_df = scorer.score(
-    #     expanded_complexes,
-    #     use_dask=inputs.use_dask,
-    #     dask_client=dask_client,
-    #     failure_mode=inputs.failure_mode,
-    #     return_df=True,
-    # )
+    logger.info("Running scoring")
+    scores_df = scorer.score(
+        expanded_complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        failure_mode=inputs.failure_mode,
+        return_df=True,
+    )
 
     # # set hit flag to False
     # scores_df[DockingResultCols.SYMEXP_CLASHING.value] = False

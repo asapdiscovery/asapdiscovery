@@ -145,22 +145,15 @@ class SymmetryExpander(BaseModel):
                 )  # writes all states, so should be able to handle multi-ligand
                 p.stop()
 
-
-                with open("fin.pdb", 'w') as f:
+                temp = NamedTemporaryFile(suffix=".pdb")
+                with open(temp.name, 'w') as f:
                     f.write(string)
                     cnew = Complex.from_pdb(
-                        "fin.pdb",
-                        target_kwargs={"target_name": "test"},
-                        ligand_kwargs={"compound_name": "test"},
+                        temp.name,
+                        target_kwargs=complex.target.dict(),
+                        ligand_kwargs=complex.ligand.dict(),
                     )
 
-                u = mda.Universe("fin.pdb")
-                cx = u.select_atoms("chainID X")
-                # save
-                cx.write("cx.pdb")
-                ncx = u.select_atoms("not chainID X")
-                # save
-                ncx.write("ncx.pdb")
                 new_complexs.append(cnew)
 
             except Exception as e:
