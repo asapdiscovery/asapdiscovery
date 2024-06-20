@@ -184,6 +184,7 @@ class DockingResult(BaseModel):
     probability: Optional[PositiveFloat] = Field(
         description="Probability"
     )  # not easy to get the probability from rescoring
+    pose_id: Optional[int] = Field(description="Nth returned pose from docking")
     provenance: dict[str, str] = Field(description="Provenance")
 
     def to_json_file(self, file: str | Path):
@@ -194,6 +195,12 @@ class DockingResult(BaseModel):
     def from_json_file(cls, file: str | Path) -> "DockingResult":
         with open(file) as f:
             return cls.parse_raw(f.read())
+
+    @abc.abstractmethod
+    def _get_single_pose_results(self) -> list["DockingResult"]: ...
+
+    def get_single_pose_results(self) -> list["DockingResult"]:
+        return self._get_single_pose_results()
 
     def get_output(self) -> dict:
         """
