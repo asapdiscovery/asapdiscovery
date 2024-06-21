@@ -100,7 +100,7 @@ def create(filename: str, core_smarts: str):
     "--clusterfiles-prefix",
     type=click.STRING,
     required=True,
-    help="The prefix to use as filename for the output cluster(s) CSV file(s).",
+    help="The prefix to use as filename for the output cluster(s) SDF file(s).",
 )
 def alchemize(
     ligands: Optional[str] = None,
@@ -125,7 +125,7 @@ def alchemize(
     max_transform: The maximum number of allowed heavy atoms changed compared to the MCS during outsider rescue
     outsider_number: The number of compounds at which a cluster is considered an outsider (at this value or below it,
         a cluster will not be processed into an AlchemicalNetwork)
-    clusterfiles_prefix: The prefix to use as filename for the output cluster(s) CSV file(s).
+    clusterfiles_prefix: The prefix to use as filename for the output cluster(s) SDF file(s).
     """
     import pathlib
     from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -138,6 +138,7 @@ def alchemize(
         report_alchemize_clusters,
     )
     from asapdiscovery.data.readers.molfile import MolFileFactory
+    from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
     from rdkit import Chem
     from rdkit.Chem import AllChem, rdFMCS
     from rdkit.Chem.Scaffolds import MurckoScaffold
@@ -192,6 +193,7 @@ def alchemize(
     # now group them together using the BBM scaffold as dict keys.
     bbm_groups = {}
     for mol, bbm_scaff_smi in mols_with_bbm:
+        mol.set_SD_data({"bajorath-bemis-murcko-scaffold": bbm_scaff_smi})
         bbm_groups.setdefault(bbm_scaff_smi, []).append(mol)
 
     outsiders = {}
@@ -317,12 +319,47 @@ def alchemize(
     message = Padding(
         f"After rescuing outsiders, a total of {report_alchemize_clusters(alchemical_clusters, outsiders)[-1]}"
         f" compounds are in an alchemical cluster. Summary \[clustersize/number of clusters]: "
-        f"{report_alchemize_clusters(alchemical_clusters, outsiders)[0]}",
+        f"{report_alchemize_clusters(alchemical_clusters, outsiders)[0]}. Writing to SDF file(s):",
         (1, 0, 1, 0),
     )
     console.print(message)
 
-    # now write each alchemical cluster to CSV
+    # write all clusters to individual files
+    for i, (bbm_cluster_smiles, ligands) in enumerate(alchemical_clusters.items()):
+        output_filename = f"{clusterfiles_prefix}_{i}.sdf"
+        # add bbm_cluster_smiles to each ligand as an SD tag. This way we can see both the ligand's BBM scaffold
+        # AND the BBM scaffold cluster the ligand has been assigned to.
+        [
+            lig.set_SD_data(
+                {"bajorath-bemis-murcko-scaffold-cluster": bbm_cluster_smiles}
+            )
+            for lig in ligands
+        ]
+        # print cluster smiles, size and output file
+
+        # write sdf
+        write_ligands_to_multi_sdf(output_filename, ligands, overwrite=True)
+
+        message = Padding(
+            f"Wrote cluster {i} ({len(ligands)} assigned to Bajorath-Bemis-Murcko scaffold {bbm_cluster_smiles}) "
+            f"to {output_filename}",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+
+    # also write all outsiders to a single SDF
+    outsider_ligands_nested = [lig for _, lig in outsiders.items()]
+    outsider_ligands = [lig for ligs in outsider_ligands_nested for lig in ligs]
+
+    output_filename_outsiders = f"{clusterfiles_prefix}_outsiders.sdf"
+    write_ligands_to_multi_sdf(
+        output_filename_outsiders, outsider_ligands, overwrite=True
+    )
+    message = Padding(
+        f"Wrote {len(outsider_ligands)} outsiders to {output_filename_outsiders}.",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
 
 
 @prep.command(
