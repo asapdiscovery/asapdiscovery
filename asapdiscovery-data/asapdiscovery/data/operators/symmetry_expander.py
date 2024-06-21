@@ -6,9 +6,7 @@ from tempfile import NamedTemporaryFile
 
 import MDAnalysis as mda
 import pymol2
-from asapdiscovery.data.backend.openeye import (
-    oemol_to_pdb_string,
-)
+from asapdiscovery.data.backend.openeye import oemol_to_pdb_string
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.util.dask_utils import FailureMode, dask_vmap
 from MDAnalysis.lib.util import NamedStream
