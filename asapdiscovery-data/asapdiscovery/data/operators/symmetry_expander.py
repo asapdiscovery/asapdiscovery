@@ -7,15 +7,10 @@ from tempfile import NamedTemporaryFile
 import MDAnalysis as mda
 import pymol2
 from asapdiscovery.data.backend.openeye import (
-    oechem,
     oemol_to_pdb_string,
-    pdb_string_to_oemol,
-    save_openeye_pdb,
 )
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import FailureMode, dask_vmap
-from asapdiscovery.modeling.modeling import find_component_chains
 from MDAnalysis.lib.util import NamedStream
 from pydantic import BaseModel
 

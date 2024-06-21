@@ -1,6 +1,5 @@
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional
 
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector

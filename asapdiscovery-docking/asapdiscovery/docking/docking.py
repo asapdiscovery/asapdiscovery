@@ -247,13 +247,13 @@ class DockingResult(BaseModel):
         """
         prot = self.to_protein()
         lig = self.posed_ligand.to_oemol()
-        t = Target.from_oemol(
+        tar = Target.from_oemol(
             prot,
             target_name=self.input_pair.complex.target.target_name,
             ids=self.input_pair.complex.target.ids,
         )
-        l = Ligand.from_oemol(lig, **self.input_pair.ligand.dict())
-        return Complex(target=t, ligand=l)
+        lig = Ligand.from_oemol(lig, **self.input_pair.ligand.dict())
+        return Complex(target=tar, ligand=lig)
 
     @property
     def unique_name(self):

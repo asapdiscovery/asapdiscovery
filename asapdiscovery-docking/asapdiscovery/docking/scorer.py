@@ -237,6 +237,7 @@ class ScorerBase(BaseModel):
         reconstruct_cls=None,
         return_df: bool = False,
         include_input: bool = False,
+        pivot: bool = True,
     ) -> list[Score]:
         """
         Score the inputs. Most of the work is done in the _score method, this method is in turn dispatched based on type to various methods.
@@ -260,6 +261,8 @@ class ScorerBase(BaseModel):
             Whether to return a dataframe, by default False
         include_input : bool, optional
             Whether to return the results, in the dataframe, by default False
+        pivot : bool, optional
+            Whether to pivot the dataframe, by default True
         """
         outputs = self._score(
             inputs=inputs,
@@ -271,9 +274,11 @@ class ScorerBase(BaseModel):
         )
 
         if return_df:
-            return Score._combine_and_pivot_scores_df(
-                [self.scores_to_df(outputs, include_input=include_input)]
-            )
+            df = self.scores_to_df(outputs, include_input=include_input)
+            if pivot:
+                return Score._combine_and_pivot_scores_df([df])
+            else:
+                return df
         else:
             return outputs
 
@@ -729,6 +734,7 @@ class MetaScorer(BaseModel):
                 reconstruct_cls=reconstruct_cls,
                 return_df=return_df,
                 include_input=include_input,
+                pivot=False,
             )
             results.append(vals)
 
