@@ -1,13 +1,14 @@
 import abc
 import logging
+import warnings
 from enum import Enum
+from io import StringIO
 from pathlib import Path
 from typing import Any, ClassVar, Optional, Union
-import warnings
+
+import MDAnalysis as mda
 import numpy as np
 import pandas as pd
-import MDAnalysis as mda
-from io import StringIO
 from asapdiscovery.data.backend.openeye import oedocking, oemol_to_pdb_string
 from asapdiscovery.data.backend.plip import compute_fint_score
 from asapdiscovery.data.schema.complex import Complex
@@ -222,8 +223,7 @@ class ScorerBase(BaseModel):
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
-    def _score() -> list[DockingResult]:
-        ...
+    def _score() -> list[DockingResult]: ...
 
     def score(
         self,

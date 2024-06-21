@@ -38,10 +38,9 @@ from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
     SmallScaleDockingInputs,
     small_scale_docking_workflow,
 )
-
 from asapdiscovery.workflows.docking_workflows.symexp_crystal_packing import (
     SymExpCrystalPackingInputs,
-    symexp_crystal_packing_workflow
+    symexp_crystal_packing_workflow,
 )
 
 
@@ -388,7 +387,6 @@ def small_scale(
     small_scale_docking_workflow(inputs)
 
 
-
 @docking.command()
 @target
 @click.option(
@@ -462,8 +460,6 @@ def symexp_crystal_packing(
         )
 
     symexp_crystal_packing_workflow(inputs)
-
-
 
 
 if __name__ == "__main__":
