@@ -261,7 +261,8 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     expanded_pdb_dir = output_dir / "expanded_pdbs"
     expanded_pdb_dir.mkdir(exist_ok=True)
 
-    [c.to_pdb(expanded_pdb_dir / f"{c.target.target_name}_expanded.pdb") for c in expanded_complexes]
+    # the PDBs are too big to hash with inchi so use name (not ideal but will work for now)
+    [c.to_pdb(expanded_pdb_dir / f"expanded_{c.target.target_name}_{c.ligand.compound_name}.pdb") for c in expanded_complexes]
 
     logger.info("Scoring expanded structures")
 
@@ -277,8 +278,12 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         return_df=True,
     )
 
+
+    scores_df.to_csv(scores_df / "symexp_scores_raw.csv", index=False)
+    
+
     # # set hit flag to False
-    # scores_df[DockingResultCols.SYMEXP_CLASHING.value] = False
+    # scores_df[SYMEXP_CLASHING.value] = False
 
     # # if clashing is greater than threshold, set hit flag to True
     # scores_df.loc[

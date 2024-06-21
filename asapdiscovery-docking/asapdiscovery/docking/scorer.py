@@ -766,39 +766,72 @@ class SymClashScorer(ScorerBase):
             u = mda.Universe(mda.lib.util.NamedStream(StringIO(oemol_to_pdb_string(inp.to_combined_oemol())), "complex.pdb"))
             print("universe loaded")
             lig = u.select_atoms("not protein")
+            lig.write("lig.pdb")
             print(lig.n_atoms)
-            symmetry_expanded_prot = u.select_atoms("chainID X")
+            symmetry_expanded_prot = u.select_atoms("protein and chainID X")
+            symmetry_expanded_prot.write("prot.pdb")
             print(symmetry_expanded_prot.n_atoms)
+            print(symmetry_expanded_prot.indices)
             # check contacts less than
+            # hacky but expand to real space with mega box
+            # multiply first 3 dimensions by 20
+            expanded_box = u.dimensions
+            expanded_box[:3] *= 20
+            print(expanded_box)
             pair_indices, pair_distances = mda.lib.distances.capped_distance(
             lig,
             symmetry_expanded_prot,
-            8,
-            box=u.dimensions  # large cutoff to loop in a good amount of distances up to 8Å
+            4,
+            box=expanded_box  # large cutoff to loop in a good amount of distances up to 8Å
             )
             print(pair_indices)
             print(pair_distances)
-
+            print(set(u.atoms.chainIDs))
             # check if distance for an atom pair is less than summed vdw radii
             num_clashes = 0
             clashing_lig_at = set()
-            for (i, j), dist in zip(pair_indices, pair_distances):
+            clashing_prot_at = set()
+
+            for k, [i, j] in enumerate(pair_indices):
+                lig_atom = lig[i]
+                prot_atom = symmetry_expanded_prot[j]
+                distance = pair_distances[k]
                 if (
-                    dist
-                    < (mda.topology.tables.vdwradii[lig.elements[i].upper()]
-                    + mda.topology.tables.vdwradii[symmetry_expanded_prot.elements[j].upper()])
-                ) and lig.elements[i] != "H" and symmetry_expanded_prot.elements[j] != "H":
-                    print(i, j, dist)
-                    print(mda.topology.tables.vdwradii[lig.elements[i].upper()])
-                    print(mda.topology.tables.vdwradii[symmetry_expanded_prot.elements[j].upper()])
+                    distance
+                    < (mda.topology.tables.vdwradii[lig_atom.element.upper()]
+                    + mda.topology.tables.vdwradii[prot_atom.element.upper()])
+                ) and lig_atom.element != "H" and prot_atom.element != "H":
+                    print(i, j, distance)
                     num_clashes += 1
                     clashing_lig_at.add(i)
+                    clashing_prot_at.add(j)
+
+            # for (i, j), dist in zip(pair_indices, pair_distances):
+            #     if (
+            #         dist
+            #         < (mda.topology.tables.vdwradii[lig.elements[i].upper()]
+            #         + mda.topology.tables.vdwradii[symmetry_expanded_prot.elements[j].upper()])
+            #     ) and lig.elements[i] != "H" and symmetry_expanded_prot.elements[j] != "H":
+            #         print(i, j, dist)
+            #         print(mda.topology.tables.vdwradii[lig.elements[i].upper()])
+            #         print(mda.topology.tables.vdwradii[symmetry_expanded_prot.elements[j].upper()])
+            #         num_clashes += 1
+            #         clashing_lig_at.add(i)
+            #         clashing_prot_at.add(j)
 
             if self.count_clashing_pairs:
                 val = num_clashes
             else:
-                val = len(clashing_lig_at)
+                val = len(clashing_lig_at) # seems ok as metric for now
             
+            # write atom groups to PDB for visualization
+            # subset_lig = lig[list(clashing_lig_at)]
+            # subset_prot = symmetry_expanded_prot[list(clashing_prot_at)]
+            # subset_lig.write("clashing_lig.pdb")
+            # subset_prot.write("clashing_prot.pdb")
+
+            # raise Exception
+
             results.append(
                 Score.from_score_and_complex(
                     val, self.score_type, self.units, inp
