@@ -37,8 +37,8 @@ from asapdiscovery.workflows.docking_workflows.workflows import (
 )
 
 
-class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs):
-    ...
+class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs): ...
+
 
 def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     """
@@ -300,10 +300,12 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     scores_df.to_csv(data_intermediates / "symexp_scores_combined.csv", index=False)
 
     # # split into clashing and non-clashing
-    clashing_df = scores_df[scores_df[DockingResultCols.SYMEXP_CLASHING.value] == True] # noqa: E712
+    clashing_df = scores_df[
+        scores_df[DockingResultCols.SYMEXP_CLASHING.value] == True
+    ]  # noqa: E712
 
     non_clashing_df = scores_df[
-        scores_df[DockingResultCols.SYMEXP_CLASHING.value] == False # noqa: E712
+        scores_df[DockingResultCols.SYMEXP_CLASHING.value] == False  # noqa: E712
     ]
 
     # write to csv
