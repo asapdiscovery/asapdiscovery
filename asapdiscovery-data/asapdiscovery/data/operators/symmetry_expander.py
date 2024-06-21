@@ -1,5 +1,4 @@
 import logging
-import tempfile
 import warnings
 from io import StringIO
 from tempfile import NamedTemporaryFile
