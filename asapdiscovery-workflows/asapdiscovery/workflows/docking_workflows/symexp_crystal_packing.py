@@ -270,7 +270,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     scorer = SymClashScorer()
 
     logger.info("Running scoring")
-    scores_df = scorer.score(
+    scores_df_exp = scorer.score(
         expanded_complexes,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
@@ -279,134 +279,148 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     )
 
 
-    scores_df.to_csv(scores_df / "symexp_scores_raw.csv", index=False)
-    
+    scores_df_exp.to_csv(data_intermediates / "symexp_scores_raw.csv", index=False)
 
-    # # set hit flag to False
-    # scores_df[SYMEXP_CLASHING.value] = False
 
-    # # if clashing is greater than threshold, set hit flag to True
-    # scores_df.loc[
-    #     scores_df[DockingResultCols.SYMEXP_CLASHING.value] > inputs.clash_threshold,
-    #     DockingResultCols.SYMEXP_CLASHING.value,
-    # ] = True
+    # set hit flag to False
+    scores_df_exp[DockingResultCols.SYMEXP_CLASHING.value] = False
 
-    # clashing_df = scores_df[  # noqa: E712
-    #     scores_df[DockingResultCols.SYMEXP_CLASHING.value] == True  # noqa: E712
-    # ]
+    print(scores_df_exp.head())
+    print(scores_df.head())
+    # if clashing is greater than threshold, set hit flag to True
+    scores_df_exp.loc[
+        scores_df_exp[DockingResultCols.SYMEXP_CLASH_NUM.value] > 0,
+        DockingResultCols.SYMEXP_CLASHING.value,
+    ] = True
 
-    # non_clashing_df = scores_df[
-    #     scores_df[DockingResultCols.SYMEXP_CLASHING.value] == False
-    # ]
 
-    # # write to csv
-    # clashing_df.to_csv(output_dir / "clashing.csv", index=False)
-    # non_clashing_df.to_csv(output_dir / "non_clashing.csv", index=False)
-    # scores_df.to_csv(output_dir / "raw_scores.csv", index=False)
+    # join with original scores
+    scores_df = scores_df.merge(
+        scores_df_exp,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="outer",
+    )
+
+    scores_df.to_csv(data_intermediates / "symexp_scores_combined.csv", index=False)
+
+    # # split into clashing and non-clashing
+    clashing_df = scores_df[scores_df[DockingResultCols.SYMEXP_CLASHING.value] == True]
+
+    non_clashing_df = scores_df[scores_df[DockingResultCols.SYMEXP_CLASHING.value] == False]
+
+
+    # write to csv
+    clashing_df.to_csv(output_dir / "clashing.csv", index=False)
+    non_clashing_df.to_csv(output_dir / "non_clashing.csv", index=False)
+
 
     # # run html visualiser to get web-ready vis of docked poses in expanded form
     # logger.info("Running HTML visualiser for poses")
-    # html_ouptut_dir = output_dir / "poses"
-    # html_visualizer = HTMLVisualizer(
-    #     color_method=ColorMethod.subpockets,
-    #     target=inputs.target,
-    #     output_dir=html_ouptut_dir,
-    # )
-    # pose_visualizatons = html_visualizer.visualize(
-    #     expanded_complexes,
-    #     use_dask=inputs.use_dask,
-    #     dask_client=dask_client,
-    #     failure_mode=inputs.failure_mode,
-    # )
+    html_ouptut_dir = output_dir / "poses"
+    html_visualizer = HTMLVisualizer(
+        color_method=ColorMethod.subpockets,
+        target=inputs.target,
+        output_dir=html_ouptut_dir,
+    )
+    pose_visualizatons = html_visualizer.visualize(
+        expanded_complexes,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        failure_mode=inputs.failure_mode,
+    )
 
-    # # rename visualisations target id column to POSIT structure tag so we can join
-    # pose_visualizatons.rename(
-    #     columns={
-    #         DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-    #     },
-    #     inplace=True,
-    # )
+    # rename visualisations target id column to POSIT structure tag so we can join
+    pose_visualizatons.rename(
+        columns={
+            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        },
+        inplace=True,
+    )
 
-    # # join the two dataframes on ligand_id, target_id and smiles
-    # combined_df = scores_df.merge(
-    #     pose_visualizatons,
-    #     on=[
-    #         DockingResultCols.LIGAND_ID.value,
-    #         DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
-    #         DockingResultCols.SMILES.value,
-    #     ],
-    #     how="outer",
-    # )
+    # join the two dataframes on ligand_id, target_id and smiles
+    combined_df = scores_df.merge(
+        pose_visualizatons,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="outer",
+    )
 
-    # # rename columns for manifold
-    # logger.info("Renaming columns for manifold")
+    # rename columns for manifold
+    logger.info("Renaming columns for manifold")
 
     # # deduplicate scores_df TODO
 
-    # # rename columns for manifold
-    # result_df = rename_output_columns_for_manifold(
-    #     combined_df,
-    #     inputs.target,
-    #     [DockingResultCols],
-    #     manifold_validate=True,
-    #     drop_non_output=True,
-    #     allow=[
-    #         DockingResultCols.LIGAND_ID.value,
-    #         DockingResultCols.HTML_PATH_POSE.value,
-    #     ],
-    # )
+    # rename columns for manifold
+    result_df = rename_output_columns_for_manifold(
+        combined_df,
+        inputs.target,
+        [DockingResultCols],
+        manifold_validate=True,
+        drop_non_output=True,
+        allow=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.HTML_PATH_POSE.value,
+        ],
+    )
 
-    # result_df.to_csv(output_dir / "symexp_final.csv", index=False)
+    result_df.to_csv(output_dir / "symexp_final.csv", index=False)
 
-    # if inputs.postera_upload:
-    #     logger.info("Uploading results to Postera")
-    #     posit_score_tag = map_output_col_to_manifold_tag(
-    #         DockingResultCols, inputs.target
-    #     )[DockingResultCols.DOCKING_SCORE_POSIT.value]
+    if inputs.postera_upload:
+        logger.info("Uploading results to Postera")
+        posit_score_tag = map_output_col_to_manifold_tag(
+            DockingResultCols, inputs.target
+        )[DockingResultCols.DOCKING_SCORE_POSIT.value]
 
-    #     postera_uploader = PosteraUploader(
-    #         settings=PosteraSettings(),
-    #         molecule_set_name=inputs.postera_molset_name,
-    #     )
-    #     # push the results to PostEra, making a new molecule set if necessary
-    #     # push the results to PostEra, making a new molecule set if necessary
-    #     manifold_data, molset_name, made_new_molset = postera_uploader.push(
-    #         result_df, sort_column=posit_score_tag, sort_ascending=True
-    #     )
+        postera_uploader = PosteraUploader(
+            settings=PosteraSettings(),
+            molecule_set_name=inputs.postera_molset_name,
+        )
+        # push the results to PostEra, making a new molecule set if necessary
+        # push the results to PostEra, making a new molecule set if necessary
+        manifold_data, molset_name, made_new_molset = postera_uploader.push(
+            result_df, sort_column=posit_score_tag, sort_ascending=True
+        )
 
-    #     combined = postera_uploader.join_with_manifold_data(
-    #         result_df,
-    #         manifold_data,
-    #         DockingResultCols.SMILES.value,
-    #         DockingResultCols.LIGAND_ID.value,
-    #         drop_no_uuid=True,
-    #     )
+        combined = postera_uploader.join_with_manifold_data(
+            result_df,
+            manifold_data,
+            DockingResultCols.SMILES.value,
+            DockingResultCols.LIGAND_ID.value,
+            drop_no_uuid=True,
+        )
 
-    #     if made_new_molset:
-    #         logger.info(f"Made new molecule set with name: {molset_name}")
-    #     else:
-    #         molset_name = inputs.postera_molset_name
+        if made_new_molset:
+            logger.info(f"Made new molecule set with name: {molset_name}")
+        else:
+            molset_name = inputs.postera_molset_name
 
-    #     logger.info("Uploading artifacts to PostEra")
+        logger.info("Uploading artifacts to PostEra")
 
-    #     # make an uploader for the poses and upload them
-    #     artifact_columns = [
-    #         DockingResultCols.HTML_PATH_POSE.value,
-    #     ]
-    #     artifact_types = [
-    #         ArtifactType.DOCKING_POSE_POSIT,
-    #     ]
+        # make an uploader for the poses and upload them
+        artifact_columns = [
+            DockingResultCols.HTML_PATH_POSE.value,
+        ]
+        artifact_types = [
+            ArtifactType.DOCKING_POSE_POSIT,
+        ]
 
-    #     # upload artifacts to S3 and link them to postera
-    #     uploader = ManifoldArtifactUploader(
-    #         target=inputs.target,
-    #         molecule_dataframe=combined,
-    #         molecule_set_name=molset_name,
-    #         bucket_name=aws_s3_settings.BUCKET_NAME,
-    #         artifact_types=artifact_types,
-    #         artifact_columns=artifact_columns,
-    #         moleculeset_api=MoleculeSetAPI.from_settings(postera_settings),
-    #         s3=S3.from_settings(aws_s3_settings),
-    #         cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
-    #     )
-    #     uploader.upload_artifacts(sort_column=posit_score_tag, sort_ascending=True)
+        # upload artifacts to S3 and link them to postera
+        uploader = ManifoldArtifactUploader(
+            target=inputs.target,
+            molecule_dataframe=combined,
+            molecule_set_name=molset_name,
+            bucket_name=aws_s3_settings.BUCKET_NAME,
+            artifact_types=artifact_types,
+            artifact_columns=artifact_columns,
+            moleculeset_api=MoleculeSetAPI.from_settings(postera_settings),
+            s3=S3.from_settings(aws_s3_settings),
+            cloudfront=CloudFront.from_settings(aws_cloudfront_settings),
+        )
+        uploader.upload_artifacts(sort_column=posit_score_tag, sort_ascending=True)

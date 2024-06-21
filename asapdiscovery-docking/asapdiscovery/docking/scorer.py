@@ -66,11 +66,13 @@ _SCORE_MANIFOLD_ALIAS = {
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
     ScoreType.e3nn: DockingResultCols.COMPUTED_E3NN_PIC50.value,
     ScoreType.INVALID: None,
+    ScoreType.sym_clash: DockingResultCols.SYMEXP_CLASH_NUM.value,
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
     "compound_name": DockingResultCols.LIGAND_ID.value,
     "smiles": DockingResultCols.SMILES.value,
     "ligand_inchikey": DockingResultCols.INCHIKEY.value,
     "probability": DockingResultCols.DOCKING_CONFIDENCE_POSIT.value,
+
 }
 
 
@@ -270,7 +272,7 @@ class ScorerBase(BaseModel):
         )
 
         if return_df:
-            return self.scores_to_df(outputs, include_input=include_input)
+            return Score._combine_and_pivot_scores_df([self.scores_to_df(outputs, include_input=include_input)])
         else:
             return outputs
 
