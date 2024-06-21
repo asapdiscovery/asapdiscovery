@@ -95,12 +95,20 @@ def create(filename: str, core_smarts: str):
     "will not be processed into an AlchemicalNetwork). Decreasing this number will increase the amount of compounds "
     "generated for an AlchemicalNetwork, but can result in small AlchemicalNetworks.",
 )
+@click.option(
+    "-n",
+    "--clusterfiles-prefix",
+    type=click.STRING,
+    required=True,
+    help="The prefix to use as filename for the output cluster(s) CSV file(s).",
+)
 def alchemize(
     ligands: Optional[str] = None,
     postera_molset_name: Optional[str] = None,
     processors: int = 1,
     max_transform: int = 8,
     outsider_number: int = 8,
+    clusterfiles_prefix: str = None,
 ):
     """
     Split a dataset of ligands into individual clusters that are individually suitable for AlchemicalNetworks because
@@ -117,6 +125,7 @@ def alchemize(
     max_transform: The maximum number of allowed heavy atoms changed compared to the MCS during outsider rescue
     outsider_number: The number of compounds at which a cluster is considered an outsider (at this value or below it,
         a cluster will not be processed into an AlchemicalNetwork)
+    clusterfiles_prefix: The prefix to use as filename for the output cluster(s) CSV file(s).
     """
     import pathlib
     from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -307,13 +316,13 @@ def alchemize(
 
     message = Padding(
         f"After rescuing outsiders, a total of {report_alchemize_clusters(alchemical_clusters, outsiders)[-1]}"
-        f" compounds are in an alchemical cluster. Summary [clustersize/number of clusters]: "
+        f" compounds are in an alchemical cluster. Summary \[clustersize/number of clusters]: "
         f"{report_alchemize_clusters(alchemical_clusters, outsiders)[0]}",
         (1, 0, 1, 0),
     )
     console.print(message)
 
-    # now write each alchemical cluster to CSV. Need to port input file naming as a flag.
+    # now write each alchemical cluster to CSV
 
 
 @prep.command(
