@@ -53,6 +53,270 @@ def create(filename: str, core_smarts: str):
 
 
 @prep.command(
+    short_help="From a set of compounds with diverse chemistry, create individual clusters of compounds suitable for ASAP-Alchemy."
+)
+@click.option(
+    "-l",
+    "--ligands",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="The file which contains the ligands to use in the planned network.",
+)
+@click.option(
+    "-pm",
+    "--postera-molset-name",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+    help="The name of the Postera molecule set to pull the input ligands from.",
+)
+@click.option(
+    "-p",
+    "--processors",
+    default=1,
+    show_default=True,
+    help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), "
+    "`all` will use all or the exact number of cpus to use can be provided.",
+)
+@click.option(
+    "-mt",
+    "--max-transform",
+    default=8,
+    show_default=True,
+    help="The maximum number of allowed heavy atoms changed compared to the MCS during outsider rescue. Increasing "
+    "this number will increase the chemical diversity in each cluster, but also decrease the number of compounds in "
+    "outsiders/singletons.",
+)
+@click.option(
+    "-onu",
+    "--outsider-number",
+    default=8,
+    show_default=True,
+    help="The number of compounds at which a cluster is considered an outsider (at this value or below it, a cluster "
+    "will not be processed into an AlchemicalNetwork). Decreasing this number will increase the amount of compounds "
+    "generated for an AlchemicalNetwork, but can result in small AlchemicalNetworks.",
+)
+def alchemize(
+    ligands: Optional[str] = None,
+    postera_molset_name: Optional[str] = None,
+    processors: int = 1,
+    max_transform: int = 8,
+    outsider_number: int = 8,
+):
+    """
+    Split a dataset of ligands into individual clusters that are individually suitable for AlchemicalNetworks because
+    they have minimal transformations between all members in the cluster. Clustering is done using Bajorath-Murcko
+    scaffolds and subsequent attempts at rescuing outsiders (singletons with size up to `outsider_number`) using
+    RDKit's FindMCS implementation.
+
+    Parameters
+    ----------
+    ligands: The name of the local file which contains the input ligands to be prepared in the workflow.
+    postera_molset_name: The name of the postera molecule set we should pull the data from instead of a local file.
+    processors: The number of processors which can be used to run the workflow in parallel. `auto` will use all
+        cpus -1, `all` will use all or the exact number of cpus to use can be provided.
+    max_transform: The maximum number of allowed heavy atoms changed compared to the MCS during outsider rescue
+    outsider_number: The number of compounds at which a cluster is considered an outsider (at this value or below it,
+        a cluster will not be processed into an AlchemicalNetwork)
+    """
+    import pathlib
+    from multiprocessing import cpu_count
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    import rich
+    from asapdiscovery.alchemy.cli.utils import (
+        print_header,
+        pull_from_postera,
+        report_alchemize_clusters,
+    )
+    from asapdiscovery.data.readers.molfile import MolFileFactory
+    from rich import pretty
+    from rich.padding import Padding
+
+    from tqdm import tqdm
+    from rdkit import Chem
+    from rdkit.Chem import AllChem, rdFMCS
+    from rdkit.Chem.Scaffolds import MurckoScaffold
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
+
+    # workout where the molecules are coming from
+    if postera_molset_name is not None:
+        postera_download = console.status(
+            f"Downloading molecules from Postera molecule set:{postera_molset_name}"
+        )
+        postera_download.start()
+        asap_ligands = pull_from_postera(molecule_set_name=postera_molset_name)
+        postera_download.stop()
+
+    else:
+        # load the molecules
+        asap_ligands = MolFileFactory(filename=ligands).load()
+
+    message = Padding(
+        f"Loaded {len(asap_ligands)} ligands from [repr.filename]{postera_molset_name or ligands}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    PATT = Chem.MolFromSmarts(
+        "[$([D1]=[*])]"
+    )  # selects any atoms that are not connected to another heavy atom
+
+    # STEP 1: cluster by Bajorath-Murcko scaffold (fast)
+    bm_scaffs = [
+        MurckoScaffold.GetScaffoldForMol(mol)
+        for mol in [lig.to_rdkit() for lig in asap_ligands]
+    ]  # first get regular Bemis-Murcko scaffolds
+
+    bbm_scaffs = [
+        AllChem.DeleteSubstructs(scaff, PATT) for scaff in bm_scaffs
+    ]  # make them into Bajorath-Bemis-Murcko scaffolds
+    bbm_scaffs_smi = [Chem.MolToSmiles(scaff) for scaff in bbm_scaffs]
+
+    # now embed back with original molecules
+    mols_with_bbm = [[mol, bbm] for mol, bbm in zip(asap_ligands, bbm_scaffs_smi)]
+
+    # sort so that we make sure that BBM scaffolds get grouped together nicely
+    mols_with_bbm = sorted(mols_with_bbm, key=lambda x: x[1], reverse=False)
+
+    # now group them together using the BBM scaffold as dict keys.
+    bbm_groups = {}
+    for mol, bbm_scaff_smi in mols_with_bbm:
+        bbm_groups.setdefault(bbm_scaff_smi, []).append(mol)
+
+    outsiders = {}
+    alchemical_clusters = {}
+    for bbm_scaff, mols in bbm_groups.items():
+        if len(mols) > outsider_number:
+            alchemical_clusters[bbm_scaff] = mols
+        else:
+            outsiders[bbm_scaff] = mols
+
+    message = Padding(
+        f"Placed {report_alchemize_clusters(alchemical_clusters, outsiders)[-1]} compounds into "
+        "alchemical clusters",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    # STEP 2: rescue outsiders by attempting to place them into Alchemical clusters (slow)
+    # workout the number of processes to use if auto or all
+    all_cpus = cpu_count()
+    if processors == "all":
+        processors = all_cpus
+    elif processors == "auto":
+        processors = all_cpus - 1
+    else:
+        # can be a string from click
+        processors = int(processors)
+    message = Padding(
+        f"Working to add outsiders into alchemical clusters using {processors} processor(s)",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    if processors > 1:  # TODO
+        raise NotImplementedError(
+            "Multiprocessing for rescuing outsiders is not yet implemented."
+        )
+
+    # TODO: find a home for the below functions:
+    def partial_sanitize(mol):
+        """Does the minimal number of steps for a molecule object to be workable by rdkit;
+        won't throw errors if the mol is funky."""
+        mol.UpdatePropertyCache(strict=False)
+        Chem.SanitizeMol(
+            mol,
+            Chem.SanitizeFlags.SANITIZE_FINDRADICALS
+            | Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
+            | Chem.SanitizeFlags.SANITIZE_SETCONJUGATION
+            | Chem.SanitizeFlags.SANITIZE_SETHYBRIDIZATION
+            | Chem.SanitizeFlags.SANITIZE_SYMMRINGS,
+            catchErrors=True,
+        )
+        return mol
+
+    def calc_mcs_residuals(mol1, mol2):
+        """Subtract the MCS from two molecules and return the number of heavy atoms remaining after removing the MCS from both"""
+        mcs = Chem.MolFromSmarts(
+            rdFMCS.FindMCS(
+                [mol1, mol2],
+                matchValences=False,
+                ringMatchesRingOnly=True,
+                completeRingsOnly=True,
+                matchChiralTag=False,
+            ).smartsString
+        )
+
+        return Chem.rdMolDescriptors.CalcNumHeavyAtoms(
+            AllChem.DeleteSubstructs(mol1, mcs)
+        ), Chem.rdMolDescriptors.CalcNumHeavyAtoms(AllChem.DeleteSubstructs(mol2, mcs))
+
+    def rescue_outsiders(outsiders, alchemical_clusters, max_transform):
+        # now for every singleton (which can have len() up to SINGLETON_NUMBER_THRESHOLD), try to
+        # find a suitable cluster to add it into
+        singletons_to_move = {}
+        for singleton_bbm_scaff, _ in tqdm(outsiders.items()):
+            singleton_bbm_scaff_ps = partial_sanitize(
+                Chem.MolFromSmiles(singleton_bbm_scaff, sanitize=False)
+            )
+
+            best_match_total_ha = max_transform * 2
+            best_match_cluster_bbm_scaff = None
+
+            # check every BBM scaffold in the clusters we've already found
+            for cluster_bbm_scaff, cluster_mols in alchemical_clusters.items():
+                cluster_bbm_scaff_ps = partial_sanitize(
+                    Chem.MolFromSmiles(cluster_bbm_scaff, sanitize=False)
+                )
+
+                cluster_mol_n_residual, singleton_mol_n_residual = calc_mcs_residuals(
+                    cluster_bbm_scaff_ps, singleton_bbm_scaff_ps
+                )
+
+                # first discard this match if any of the residuals are higher than the defined cutoff
+                if (
+                    cluster_mol_n_residual > max_transform
+                    or singleton_mol_n_residual > max_transform
+                ):
+                    continue
+                elif (
+                    cluster_mol_n_residual + singleton_mol_n_residual
+                    < best_match_total_ha
+                ):
+                    best_match_total_ha = (
+                        cluster_mol_n_residual + singleton_mol_n_residual
+                    )
+                    best_match_cluster_bbm_scaff = cluster_bbm_scaff
+
+            if best_match_cluster_bbm_scaff:
+                # we can add it to the right cluster and remove it from the singletons.
+                # need to do this outside loop to not break the dict iterator though
+                singletons_to_move[singleton_bbm_scaff] = best_match_cluster_bbm_scaff
+
+        for singleton_bbm_scaff, cluster_to_move_to in singletons_to_move.items():
+            # first copy the mols from the singleton over to the intended cluster
+            for singleton_mol in outsiders[singleton_bbm_scaff]:
+                alchemical_clusters[cluster_to_move_to].append(singleton_mol)
+
+            # then purge the singleton from the dict of singletons
+            outsiders.pop(singleton_bbm_scaff)
+
+    rescue_outsiders(outsiders, alchemical_clusters, max_transform)
+
+    message = Padding(
+        f"After rescuing outsiders, a total of {report_alchemize_clusters(alchemical_clusters, outsiders)[-1]}"
+        f" compounds are in an alchemical cluster. Summary [clustersize/number of clusters]: "
+        f"{report_alchemize_clusters(alchemical_clusters, outsiders)[0]}",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    # now write each alchemical cluster to CSV. Need to port input file naming as a flag.
+
+
+@prep.command(
     short_help="Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate constrained poses suitable for ASAP-Alchemy."
 )
 @click.option(
