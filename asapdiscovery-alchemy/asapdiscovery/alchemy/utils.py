@@ -341,11 +341,11 @@ class AlchemiscaleHelper:
             The new weight that is assigned to the network.
             The weight that was previously assigned to the network.
         """
-        old_weight = self._client.get_network_weight(network_key)
+        old_weight = self._client.get_network_weight(network=network_key)
 
-        self._client.set_network_weight(network_key, weight)
+        self._client.set_network_weight(network=network_key, weight=weight)
 
-        return self._client.get_network_weight(network_key), old_weight
+        return self._client.get_network_weight(network=network_key), old_weight
 
 
 def select_reference_for_compounds(
