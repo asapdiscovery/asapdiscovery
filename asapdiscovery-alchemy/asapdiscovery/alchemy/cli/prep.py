@@ -119,8 +119,9 @@ def alchemize(
         a cluster will not be processed into an AlchemicalNetwork)
     """
     import pathlib
-    from multiprocessing import cpu_count
     from concurrent.futures import ProcessPoolExecutor, as_completed
+    from multiprocessing import cpu_count
+
     import rich
     from asapdiscovery.alchemy.cli.utils import (
         print_header,
@@ -128,13 +129,12 @@ def alchemize(
         report_alchemize_clusters,
     )
     from asapdiscovery.data.readers.molfile import MolFileFactory
-    from rich import pretty
-    from rich.padding import Padding
-
-    from tqdm import tqdm
     from rdkit import Chem
     from rdkit.Chem import AllChem, rdFMCS
     from rdkit.Chem.Scaffolds import MurckoScaffold
+    from rich import pretty
+    from rich.padding import Padding
+    from tqdm import tqdm
 
     pretty.install()
     console = rich.get_console()
