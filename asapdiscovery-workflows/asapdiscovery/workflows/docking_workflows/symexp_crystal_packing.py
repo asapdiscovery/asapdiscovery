@@ -36,11 +36,10 @@ from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
 from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
-# from asapdiscovery.docking.scorer import ClashScorer
-from asapdiscovery.data.schema.complex import Complex
 
 
-class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs): ...
+class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs):
+    ...
 
 
 def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
@@ -178,16 +177,18 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
-        n_select=inputs.n_select,
+        n_select=1,
     )
 
     n_pairs = len(pairs)
     logger.info(f"Selected {n_pairs} pairs for docking")
 
     logger.info("Bounding boxes and space groups for selected pairs")
+    logger.info("Ligand, Target, Box")
     for pair in pairs:
-        logger.info(f"{pair.ligand.compound_name} {pair.complex.target.target_name} {pair.complex.target.crystal_symmetry}")
-
+        logger.info(
+            f"{pair.ligand.compound_name} {pair.complex.target.target_name} {pair.complex.target.crystal_symmetry}"
+        )
 
     del prepped_complexes
 
@@ -203,16 +204,8 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     )
 
     logger.info("Docking complete")
-    
-    logger.info("Bounding boxes and space groups for docked results")
-    for res in results:
-        logger.info(f"Docked {res.posed_ligand.compound_name} {res.input_pair.complex.target.target_name} {res.input_pair.complex.target.crystal_symmetry}")
-    
-    complexes = [result.to_posed_complex() for result in results]
 
-    logger.info("Bounding boxes and space groups for docked complexes")
-    for complex in complexes:
-        logger.info(f"Docked {complex.target.target_name} {complex.target.crystal_symmetry}")
+    complexes = [result.to_posed_complex() for result in results]
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
@@ -263,11 +256,16 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     expanded_pdb_dir.mkdir(exist_ok=True)
 
     # the PDBs are too big to hash with inchi so use name (not ideal but will work for now)
-    [c.to_pdb(expanded_pdb_dir / f"expanded_{c.target.target_name}_{c.ligand.compound_name}.pdb") for c in expanded_complexes]
+    [
+        c.to_pdb(
+            expanded_pdb_dir
+            / f"expanded_{c.target.target_name}_{c.ligand.compound_name}.pdb"
+        )
+        for c in expanded_complexes
+    ]
 
     logger.info("Scoring expanded structures")
 
-    
     scorer = SymClashScorer()
 
     logger.info("Running scoring")
@@ -279,21 +277,16 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         return_df=True,
     )
 
-
     scores_df_exp.to_csv(data_intermediates / "symexp_scores_raw.csv", index=False)
-
 
     # set hit flag to False
     scores_df_exp[DockingResultCols.SYMEXP_CLASHING.value] = False
 
-    print(scores_df_exp.head())
-    print(scores_df.head())
     # if clashing is greater than threshold, set hit flag to True
     scores_df_exp.loc[
         scores_df_exp[DockingResultCols.SYMEXP_CLASH_NUM.value] > 0,
         DockingResultCols.SYMEXP_CLASHING.value,
     ] = True
-
 
     # join with original scores
     scores_df = scores_df.merge(
@@ -311,13 +304,13 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     # # split into clashing and non-clashing
     clashing_df = scores_df[scores_df[DockingResultCols.SYMEXP_CLASHING.value] == True]
 
-    non_clashing_df = scores_df[scores_df[DockingResultCols.SYMEXP_CLASHING.value] == False]
-
+    non_clashing_df = scores_df[
+        scores_df[DockingResultCols.SYMEXP_CLASHING.value] == False
+    ]
 
     # write to csv
-    clashing_df.to_csv(output_dir / "clashing.csv", index=False)
-    non_clashing_df.to_csv(output_dir / "non_clashing.csv", index=False)
-
+    clashing_df.to_csv(data_intermediates / "clashing.csv", index=False)
+    non_clashing_df.to_csv(data_intermediates / "non_clashing.csv", index=False)
 
     # # run html visualiser to get web-ready vis of docked poses in expanded form
     # logger.info("Running HTML visualiser for poses")

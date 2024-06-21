@@ -1,5 +1,10 @@
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.backend.openeye import save_openeye_pdb, oechem, oemol_to_pdb_string, pdb_string_to_oemol
+from asapdiscovery.data.backend.openeye import (
+    save_openeye_pdb,
+    oechem,
+    oemol_to_pdb_string,
+    pdb_string_to_oemol,
+)
 from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import FailureMode, dask_vmap
 from asapdiscovery.modeling.modeling import find_component_chains
@@ -16,20 +21,16 @@ from tempfile import NamedTemporaryFile
 logger = logging.getLogger(__name__)
 
 
+# get the chain ID
+# chain_id = thisRes.GetChainID()
+# # if the chain ID is different from the previous one
+# if chain_id != prev_chain_id:
+#     # increment the chain ID
+#     chain_id = chr(ord(start_at) + 1)
 
+# thisRes.SetChainID(chain_id)
+# oechem.OEAtomSetResidue(atom, thisRes)
 
-
-        # get the chain ID
-        # chain_id = thisRes.GetChainID()
-        # # if the chain ID is different from the previous one
-        # if chain_id != prev_chain_id:
-        #     # increment the chain ID
-        #     chain_id = chr(ord(start_at) + 1)
-        
-        # thisRes.SetChainID(chain_id)
-        # oechem.OEAtomSetResidue(atom, thisRes)
-
-        
 
 class SymmetryExpander(BaseModel):
     """
@@ -47,7 +48,6 @@ class SymmetryExpander(BaseModel):
         failure_mode=FailureMode.SKIP,
         **kwargs,
     ):
-
         return self._expand(
             complexes=complexes,
             use_dask=use_dask,
@@ -64,41 +64,10 @@ class SymmetryExpander(BaseModel):
     ) -> list[Complex]:
         new_complexs = []
         for complex in complexes:
-            # try:
-                # target_oemol = complex.target.to_oemol()
-                # if oechem.OEGetCrystalSymmetry(target_oemol) is None:
-                #     raise ValueError("No crystal symmetry found in target")
-                # new = oechem.OEMol()
-                # oechem.OEExpandCrystalSymmetry(new, target_oemol, 10)
-                # # combine
-                # # chains = find_component_chains(target_oemol, sort_by="alphabetical")
-                # # logger.info(f"Found chains: {chains}")
-                # # last_chain = chains[-1]
-                # # logger.info(f"Last chain: {last_chain}")
-                # combined = oechem.OEGraphMol()
-                # # hacky, forgive me 
-                # universes = []
-                # for i, mol in enumerate(new.GetConfs()):
-                #     param = complex.target.crystal_symmetry
-                #     if param is not None:
-                #         p = oechem.OECrystalSymmetryParams(*param)
-                #         oechem.OESetCrystalSymmetry(mol, p, True)
-                #     save_openeye_pdb(mol, f"{i}_complex.pdb")
-                #     oechem.OEAddMols(combined, mol)
-                # save_openeye_pdb(combined, "combined.pdb")
-                
-
-                # c = Complex.from_pdb(
-                #     "combined.pdb",
-                #     target_kwargs={"target_name": "test"},
-                #     ligand_kwargs={"compound_name": "test"},
-                # )
-                # new_complexs.append(c)
-      
             try:
                 p = pymol2.PyMOL()
                 p.start()
-                # round trip through                
+                # round trip through
                 with warnings.catch_warnings():
                     warnings.simplefilter(
                         "ignore"
@@ -108,12 +77,13 @@ class SymmetryExpander(BaseModel):
                     )
 
                     # check for a box
-                    logger.info(f"symmetry expansion with box:  {u.trajectory.ts.dimensions}")
+                    logger.info(
+                        f"symmetry expansion with box:  {u.trajectory.ts.dimensions}"
+                    )
                     if u.trajectory.ts.dimensions is None:
                         raise ValueError("No box found")
                     elif not all(u.trajectory.ts.dimensions[:3]):
                         raise ValueError("Box has zero volume")
-
 
                 # load each component into PyMOL
                 p.cmd.read_pdbstr(complex.target.data, "protein_obj")
@@ -146,7 +116,7 @@ class SymmetryExpander(BaseModel):
                 p.stop()
 
                 temp = NamedTemporaryFile(suffix=".pdb")
-                with open(temp.name, 'w') as f:
+                with open(temp.name, "w") as f:
                     f.write(string)
                     cnew = Complex.from_pdb(
                         temp.name,
