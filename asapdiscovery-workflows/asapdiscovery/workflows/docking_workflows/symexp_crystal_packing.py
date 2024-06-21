@@ -199,10 +199,11 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         output_dir=output_dir / "docking_results",
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        failure_mode="raise",
+        failure_mode="skip",
     )
 
     logger.info("Docking complete")
+    
     logger.info("Bounding boxes and space groups for docked results")
     for res in results:
         logger.info(f"Docked {res.posed_ligand.compound_name} {res.input_pair.complex.target.target_name} {res.input_pair.complex.target.crystal_symmetry}")
@@ -382,7 +383,6 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
             settings=PosteraSettings(),
             molecule_set_name=inputs.postera_molset_name,
         )
-        # push the results to PostEra, making a new molecule set if necessary
         # push the results to PostEra, making a new molecule set if necessary
         manifold_data, molset_name, made_new_molset = postera_uploader.push(
             result_df, sort_column=posit_score_tag, sort_ascending=True
