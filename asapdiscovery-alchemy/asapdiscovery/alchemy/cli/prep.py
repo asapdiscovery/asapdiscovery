@@ -127,8 +127,6 @@ def alchemize(
         a cluster will not be processed into an AlchemicalNetwork)
     clusterfiles_prefix: The prefix to use as filename for the output cluster(s) SDF file(s).
     """
-    import pathlib
-    from concurrent.futures import ProcessPoolExecutor, as_completed
     from multiprocessing import cpu_count
 
     import rich
