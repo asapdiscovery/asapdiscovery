@@ -14,12 +14,11 @@ from asapdiscovery.data.backend.openeye import (
     oechem,
     save_openeye_pdb,
 )
-from asapdiscovery.data.schema.complex import PreppedComplex
+from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
+from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat
@@ -248,7 +247,11 @@ class DockingResult(BaseModel):
         """
         prot = self.to_protein()
         lig = self.posed_ligand.to_oemol()
-        t = Target.from_oemol(prot, target_name=self.input_pair.complex.target.target_name, ids=self.input_pair.complex.target.ids)
+        t = Target.from_oemol(
+            prot,
+            target_name=self.input_pair.complex.target.target_name,
+            ids=self.input_pair.complex.target.ids,
+        )
         l = Ligand.from_oemol(lig, **self.input_pair.ligand.dict())
         return Complex(target=t, ligand=l)
 

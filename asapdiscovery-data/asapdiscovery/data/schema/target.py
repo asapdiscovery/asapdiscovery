@@ -136,6 +136,7 @@ class Target(DataModelAbstractBase):
         """
         return oechem.OEGetCrystalSymmetry(self.to_oemol())
 
+
 class PreppedTarget(DataModelAbstractBase):
     """
     Schema for a PreppedTarget, wrapper around an OpenEye Design Unit
@@ -164,8 +165,10 @@ class PreppedTarget(DataModelAbstractBase):
         allow_mutation=False,
     )
 
-    crystal_symmetry: Optional[Any] = Field(None, description="bounding box of the target, lost in oedu conversion so can be saved as attribute.")
-
+    crystal_symmetry: Optional[Any] = Field(
+        None,
+        description="bounding box of the target, lost in oedu conversion so can be saved as attribute.",
+    )
 
     @root_validator(pre=True)
     @classmethod

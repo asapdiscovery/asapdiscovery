@@ -1,22 +1,23 @@
-from asapdiscovery.data.schema.complex import Complex
+import logging
+import tempfile
+import warnings
+from io import StringIO
+from tempfile import NamedTemporaryFile
+
+import MDAnalysis as mda
+import pymol2
 from asapdiscovery.data.backend.openeye import (
-    save_openeye_pdb,
     oechem,
     oemol_to_pdb_string,
     pdb_string_to_oemol,
+    save_openeye_pdb,
 )
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import FailureMode, dask_vmap
 from asapdiscovery.modeling.modeling import find_component_chains
-from pydantic import BaseModel
-import MDAnalysis as mda
 from MDAnalysis.lib.util import NamedStream
-from io import StringIO
-import warnings
-import pymol2
-import tempfile
-import logging
-from tempfile import NamedTemporaryFile
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

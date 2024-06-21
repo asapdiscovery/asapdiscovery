@@ -4,6 +4,7 @@ from typing import Optional
 
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
@@ -30,16 +31,14 @@ from asapdiscovery.data.util.utils import check_empty_dataframe
 from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
-from asapdiscovery.docking.scorer import SymClashScorer, ChemGauss4Scorer
+from asapdiscovery.docking.scorer import ChemGauss4Scorer, SymClashScorer
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
 
 
-class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs):
-    ...
+class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs): ...
 
 
 def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
