@@ -1,5 +1,6 @@
 import abc
 import logging
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
@@ -8,7 +9,7 @@ import yaml
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.schema.target import PreppedTarget
+from asapdiscovery.data.schema.target import PreppedTarget, Target
 from asapdiscovery.data.util.dask_utils import (
     FailureMode,
     actualise_dask_delayed_iterable,
@@ -22,7 +23,7 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 
 if TYPE_CHECKING:
     from distributed import Client
@@ -229,12 +230,9 @@ class ProteinPrepper(ProteinPrepperBase):
     align: Optional[Complex] = Field(
         None, description="Reference structure to align to."
     )
-    ref_chain: Optional[str] = Field(
-        None, description="Chain ID to align to in reference structure"
-    )
+    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
     active_site_chain: Optional[str] = Field(
-        None,
-        description="Active site chain ID to align to ref_chain in reference structure",
+        "A", description="Chain ID to align to reference."
     )
     seqres_yaml: Optional[Path] = Field(
         None, description="Path to seqres yaml to mutate to."
@@ -245,6 +243,21 @@ class ProteinPrepper(ProteinPrepperBase):
     oe_active_site_residue: Optional[str] = Field(
         None, description="OE formatted string of active site residue to use"
     )
+
+    @root_validator
+    @classmethod
+    def _check_align_and_chain_info(cls, values):
+        """
+        Check that align and chain info is provided correctly.
+        """
+        align = values.get("align")
+        ref_chain = values.get("ref_chain")
+        active_site_chain = values.get("active_site_chain")
+        if align and not ref_chain:
+            raise ValueError("Must provide ref_chain if align is provided")
+        if align and not active_site_chain:
+            raise ValueError("Must provide active_site_chain if align is provided")
+        return values
 
     def _prep(self, inputs: list[Complex], failure_mode="skip") -> list[PreppedComplex]:
         """
@@ -268,8 +281,6 @@ class ProteinPrepper(ProteinPrepperBase):
                 if self.seqres_yaml:
                     with open(self.seqres_yaml) as f:
                         seqres_dict = yaml.safe_load(f)
-                    if "SEQRES" not in seqres_dict:
-                        raise ValueError("No SEQRES found in YAML")
                     seqres = seqres_dict["SEQRES"]
                     res_list = seqres_to_res_list(seqres)
                     prot = mutate_residues(prot, res_list, place_h=True)
@@ -333,3 +344,117 @@ class ProteinPrepper(ProteinPrepperBase):
             "oechem": oechem.OEChemGetVersion(),
             "oespruce": oechem.OESpruceGetVersion(),
         }
+
+
+class LigandTransferProteinPrepper(ProteinPrepper):
+    """
+    Protein prepper class that uses OESpruce to prepare a protein for docking.
+    Creates a design unit by
+    1) first prepping the protein,
+    2) aligning it to the reference complex,
+    3) then copying the ligand from the reference to the prepped protein.
+    """
+
+    prepper_type: Literal["ProteinPrepper"] = Field(
+        "LigandTransferProteinPrepper", description="The type of prepper to use"
+    )
+
+    reference_complexes: list[Complex] = Field(
+        ..., description="A list of reference complexes to transfer ligands from."
+    )
+
+    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
+
+    active_site_chain: Optional[str] = Field(
+        "A", description="Chain ID to align to reference."
+    )
+    seqres_yaml: Optional[Path] = Field(
+        None, description="Path to seqres yaml to mutate to."
+    )
+    loop_db: Optional[Path] = Field(
+        None, description="Path to loop database to use for prepping"
+    )
+
+    def _prep(self, inputs: list[Complex], failure_mode="skip") -> list[PreppedComplex]:
+        """
+        Prepares a series of proteins for docking using OESpruce.
+        """
+        prepped_complexes = []
+        for complex in inputs:
+            # load protein
+            prot = complex.target.to_oemol()
+
+            # mutate residues
+            if self.seqres_yaml:
+                with open(self.seqres_yaml) as f:
+                    seqres_dict = yaml.safe_load(f)
+                seqres = seqres_dict["SEQRES"]
+                res_list = seqres_to_res_list(seqres)
+                prot = mutate_residues(prot, res_list, place_h=True)
+                protein_sequence = " ".join(res_list)
+            else:
+                seqres = None
+                protein_sequence = None
+
+            # spruce protein
+            success, spruce_error_message, spruced = spruce_protein(
+                initial_prot=prot,
+                protein_sequence=protein_sequence,
+                loop_db=self.loop_db,
+            )
+
+            if not success:
+                raise ValueError(
+                    f"Prep failed, with error message: {spruce_error_message}"
+                )
+
+            # For each reference complex, align and transfer the ligand to the prepped protein
+            for complex_ref in self.reference_complexes:
+                aligned, _ = superpose_molecule(
+                    complex_ref.to_combined_oemol(),
+                    spruced,
+                    self.ref_chain,
+                    self.active_site_chain,
+                )
+
+                ligand = complex_ref.ligand.to_oemol()
+
+                from asapdiscovery.modeling.modeling import make_du_from_new_lig
+
+                success, du = make_du_from_new_lig(
+                    aligned,
+                    ligand,
+                )
+                if not success:
+                    warnings.warn(
+                        f"Failed to make design unit for target {complex.target.target_name} and complex {complex.unique_name}."
+                    )
+                    continue
+
+                from asapdiscovery.data.backend.openeye import oedocking
+
+                success = oedocking.OEMakeReceptor(du)
+
+                if not success:
+                    warnings.warn(
+                        f"Made design unit, but failed to make receptor for target {complex.target.target_name} "
+                        f"and complex {complex.unique_name}."
+                    )
+                    continue
+
+                prepped_target = PreppedTarget.from_oedu(
+                    du,
+                    ids=complex.target.ids,
+                    target_name=complex.target.target_name,
+                    ligand_chain=self.active_site_chain,
+                    target_hash=complex_ref.hash,
+                )
+                # we need the ligand at the new translated coordinates
+                translated_oemol, _, _ = split_openeye_design_unit(du=du)
+                translated_lig = Ligand.from_oemol(
+                    translated_oemol, **complex_ref.ligand.dict(exclude={"data"})
+                )
+                pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
+                prepped_complexes.append(pc)
+
+        return prepped_complexes
