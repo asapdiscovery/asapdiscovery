@@ -216,9 +216,6 @@ def test_cross_docking_cli_structure_directory_du_cache(
     assert click_success(result)
 
 
-
-
-
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
