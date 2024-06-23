@@ -14,7 +14,6 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 
-
 class SymmetryExpander(BaseModel):
     """
     Expand symmetry of a unit cell to include multiple copies.
