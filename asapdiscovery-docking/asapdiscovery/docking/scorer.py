@@ -758,6 +758,8 @@ class SymClashScorer(ScorerBase):
         description="Whether to count clashing distance pairs, rather than unique clashing ligand atoms",
     )
 
+    vdw_radii_fudge_factor: float = Field(1.0, description="fudge factor multiplier for vdw radii, lower to decrease clash sensitivity, higher to increase")
+
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(self, inputs) -> list[Score]:
@@ -808,8 +810,8 @@ class SymClashScorer(ScorerBase):
                     (
                         distance
                         < (
-                            mda.topology.tables.vdwradii[lig_atom.element.upper()]
-                            + mda.topology.tables.vdwradii[prot_atom.element.upper()]
+                            (mda.topology.tables.vdwradii[lig_atom.element.upper()] * self.vdw_radii_fudge_factor)
+                            + (mda.topology.tables.vdwradii[prot_atom.element.upper()] * self.vdw_radii_fudge_factor)
                         )
                     )
                     and lig_atom.element != "H"

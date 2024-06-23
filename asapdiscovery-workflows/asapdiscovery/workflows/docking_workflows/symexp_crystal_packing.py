@@ -35,9 +35,11 @@ from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
+from pydantic import Field
 
 
-class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs): ...  # noqa: E701
+class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs):
+    vdw_radii_fudgefactor: float = Field(0.9, description="Fudge factor for VDW radii")
 
 
 def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):

@@ -390,10 +390,10 @@ def small_scale(
 @docking.command()
 @target
 @click.option(
-    "--n-select",
-    type=int,
-    default=1,
-    help="The number of targets to dock each ligand against, sorted by MCS",
+    "--vdw-radii-fudgefactor",
+    type=float,
+    default=0.9,
+    help="The fudge factor multiplier to apply to VDW radii",
 )
 @ligands
 @postera_args
@@ -409,7 +409,7 @@ def small_scale(
 @loglevel
 def symexp_crystal_packing(
     target: TargetTags,
-    n_select: int = 3,
+    vdw_radii_fudgefactor: float = 0.9,
     ligands: Optional[str] = None,
     postera: bool = False,
     postera_molset_name: Optional[str] = None,
@@ -441,11 +441,11 @@ def symexp_crystal_packing(
             postera=postera,
             postera_upload=postera_upload,
             target=target,
+            vdw_radii_fudgefactor=vdw_radii_fudgefactor,
             use_dask=use_dask,
             dask_type=dask_type,
             dask_n_workers=dask_n_workers,
             failure_mode=failure_mode,
-            n_select=n_select,
             ligands=ligands,
             pdb_file=pdb_file,
             fragalysis_dir=fragalysis_dir,
