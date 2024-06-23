@@ -14,16 +14,6 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 
-# get the chain ID
-# chain_id = thisRes.GetChainID()
-# # if the chain ID is different from the previous one
-# if chain_id != prev_chain_id:
-#     # increment the chain ID
-#     chain_id = chr(ord(start_at) + 1)
-
-# thisRes.SetChainID(chain_id)
-# oechem.OEAtomSetResidue(atom, thisRes)
-
 
 class SymmetryExpander(BaseModel):
     """
