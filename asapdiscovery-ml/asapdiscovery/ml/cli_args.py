@@ -74,6 +74,7 @@ def s3_path(func):
         help="S3 path to store the results.",
     )(func)
 
+
 def upload_to_s3(func):
     return click.option(
         "--upload-to-s3",
@@ -87,6 +88,7 @@ def s3_args(func):
         func = fn(func)
 
     return func
+
 
 ################################################################################
 # Overwrite flags
