@@ -64,6 +64,29 @@ def sweep_config_cache(func):
 
 ################################################################################
 
+# S3 args
+
+
+def s3_path(func):
+    return click.option(
+        "--s3-path",
+        type=str,
+        help="S3 path to store the results.",
+    )(func)
+
+def upload_to_s3(func):
+    return click.option(
+        "--upload-to-s3",
+        type=bool,
+        help="Whether to upload the results to S3.",
+    )(func)
+
+
+def s3_args(func):
+    for fn in [s3_path, upload_to_s3]:
+        func = fn(func)
+
+    return func
 
 ################################################################################
 # Overwrite flags

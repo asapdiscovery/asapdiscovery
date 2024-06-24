@@ -25,6 +25,7 @@ from asapdiscovery.ml.cli_args import (
     save_weights,
     schnet_args,
     struct_ds_args,
+    s3_args,
     trainer_args,
     trainer_config_cache,
     visnet_args,
@@ -96,6 +97,7 @@ ml.add_command(sweep)
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_gat(
     output_dir: Path | None = None,
     save_weights: str | None = None,
@@ -175,6 +177,8 @@ def build_gat(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -286,6 +290,8 @@ def build_gat(
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -390,6 +396,8 @@ def build_schnet(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -505,6 +513,8 @@ def build_schnet(
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -528,6 +538,7 @@ def build_schnet(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_e3nn(
     output_dir: Path | None = None,
     save_weights: str | None = None,
@@ -610,6 +621,8 @@ def build_e3nn(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -726,6 +739,8 @@ def build_e3nn(
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -748,6 +763,7 @@ def build_e3nn(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_visnet(
     output_dir: Path | None = None,
     save_weights: str | None = None,
@@ -834,6 +850,8 @@ def build_visnet(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -953,6 +971,8 @@ def build_visnet(
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -975,6 +995,7 @@ def build_visnet(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_and_train_gat(
     output_dir: Path | None = None,
     save_weights: str | None = None,
@@ -1054,6 +1075,8 @@ def build_and_train_gat(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1165,6 +1188,8 @@ def build_and_train_gat(
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
     }
 
     t = _build_trainer(
@@ -1193,6 +1218,7 @@ def build_and_train_gat(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_and_train_schnet(
     output_dir: Path | None = None,
     save_weights: str | None = None,
@@ -1274,6 +1300,8 @@ def build_and_train_schnet(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1389,6 +1417,8 @@ def build_and_train_schnet(
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
     }
 
     t = _build_trainer(
@@ -1417,6 +1447,7 @@ def build_and_train_schnet(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_and_train_e3nn(
     output_dir: Path | None = None,
     save_weights: str | None = None,
@@ -1499,6 +1530,8 @@ def build_and_train_e3nn(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1615,6 +1648,8 @@ def build_and_train_e3nn(
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
     }
 
     t = _build_trainer(
@@ -1642,6 +1677,7 @@ def build_and_train_e3nn(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_and_train_visnet(
     output_dir: Path | None = None,
     save_weights: str | None = None,
@@ -1728,6 +1764,8 @@ def build_and_train_visnet(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1848,6 +1886,8 @@ def build_and_train_visnet(
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
     }
 
     t = _build_trainer(
