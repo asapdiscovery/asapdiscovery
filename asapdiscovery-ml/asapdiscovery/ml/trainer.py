@@ -25,7 +25,13 @@ from mtenn.config import (
     SchNetModelConfig,
     ViSNetModelConfig,
 )
-from pydantic import BaseModel, Extra, Field, ValidationError, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, validator, root_validator
+
+from asapdiscovery.data.services.aws.s3 import S3
+
+from asapdiscovery.data.services.services_config import (
+    S3Settings,
+)
 
 
 class Trainer(BaseModel):
@@ -123,6 +129,11 @@ class Trainer(BaseModel):
     extra_config: dict | None = Field(
         None, description="Any extra config options to log to W&B."
     )
+
+    # artifact tracking options
+    upload_to_s3: bool = Field(False, description="Upload artifacts to S3.")
+    s3_settings: S3Settings | None = Field(None, description="S3 settings.")    
+    s3_path: str | None = Field(None, description="S3 location to upload artifacts.")
 
     # Tracker to make sure the optimizer and ML model are built before trying to train
     _is_initialized = False
@@ -447,6 +458,17 @@ class Trainer(BaseModel):
             raise ValueError(f'Invalid option for save_weights: "{v}"')
 
         return v
+    
+    @root_validator
+    def check_s3_settings(cls, values):
+        """
+        check that if we uploading to S3 that the S3 path is set
+        """
+        upload_to_s3 = values.get("upload_to_s3")
+        s3_path = values.get("s3_path")
+        if upload_to_s3 and not s3_path:
+            raise ValueError("Must provide an S3 path if uploading to S3.")
+        return values
 
     def wandb_init(self):
         """
@@ -517,6 +539,13 @@ class Trainer(BaseModel):
                 path=str(self.log_file.parent),
                 logfile=str(self.log_file.name),
             ).getLogger()
+
+        # check S3 settings so that 
+        if self.upload_to_s3:
+            try:
+                self.s3_settings = S3Settings()
+            except Exception as e:
+                raise ValueError(f"Error loading S3 settings: {e}")
 
         # Build dataset and split
         self.ds = self.ds_config.build()
@@ -994,11 +1023,31 @@ class Trainer(BaseModel):
                 for sp, sp_d in self.loss_dict.items()
             }
 
+
+        final_model_path = self.output_dir / "final.th"
+        torch.save(self.model.state_dict(), final_model_path)
+        (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
+
+        if self.upload_to_s3:
+            self.logger.info("Uploading to S3")
+            s3 = S3.from_settings(self.s3_settings)
+            s3.push_file(final_model_path,
+                    location=self.s3_path,
+                    content_type="application/octet-stream",
+                )
+            if self.use_wandb:
+                # track S3 artifacts
+                self.logger.info("Linking S3 artifacts to W&B")
+                model_artifact = wandb.Artifact(
+                    "model",
+                    type="model",
+                    description="trained model",
+                )
+                model_artifact.add_file(final_model_path)
+                wandb.log_artifact(model_artifact)
+
         if self.use_wandb:
             wandb.finish()
-
-        torch.save(self.model.state_dict(), self.output_dir / "final.th")
-        (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
     def _update_loss_dict(
         self,
