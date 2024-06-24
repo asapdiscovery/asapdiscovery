@@ -8,6 +8,8 @@ from time import time
 import numpy as np
 import torch
 import wandb
+from asapdiscovery.data.services.aws.s3 import S3
+from asapdiscovery.data.services.services_config import S3Settings
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.ml.config import (
     DataAugConfig,
@@ -25,13 +27,7 @@ from mtenn.config import (
     SchNetModelConfig,
     ViSNetModelConfig,
 )
-from pydantic import BaseModel, Extra, Field, ValidationError, validator, root_validator
-
-from asapdiscovery.data.services.aws.s3 import S3
-
-from asapdiscovery.data.services.services_config import (
-    S3Settings,
-)
+from pydantic import BaseModel, Extra, Field, ValidationError, root_validator, validator
 
 
 class Trainer(BaseModel):
@@ -132,7 +128,7 @@ class Trainer(BaseModel):
 
     # artifact tracking options
     upload_to_s3: bool = Field(False, description="Upload artifacts to S3.")
-    s3_settings: S3Settings | None = Field(None, description="S3 settings.")    
+    s3_settings: S3Settings | None = Field(None, description="S3 settings.")
     s3_path: str | None = Field(None, description="S3 location to upload artifacts.")
 
     # Tracker to make sure the optimizer and ML model are built before trying to train
@@ -458,7 +454,7 @@ class Trainer(BaseModel):
             raise ValueError(f'Invalid option for save_weights: "{v}"')
 
         return v
-    
+
     @root_validator
     def check_s3_settings(cls, values):
         """
@@ -540,7 +536,7 @@ class Trainer(BaseModel):
                 logfile=str(self.log_file.name),
             ).getLogger()
 
-        # check S3 settings so that 
+        # check S3 settings so that
         if self.upload_to_s3:
             try:
                 self.s3_settings = S3Settings()
@@ -1023,7 +1019,6 @@ class Trainer(BaseModel):
                 for sp, sp_d in self.loss_dict.items()
             }
 
-
         final_model_path = self.output_dir / "final.th"
         torch.save(self.model.state_dict(), final_model_path)
         (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
@@ -1031,10 +1026,11 @@ class Trainer(BaseModel):
         if self.upload_to_s3:
             print("Uploading to S3")
             s3 = S3.from_settings(self.s3_settings)
-            s3.push_file(final_model_path,
-                    location=self.s3_path,
-                    content_type="application/octet-stream",
-                )
+            s3.push_file(
+                final_model_path,
+                location=self.s3_path,
+                content_type="application/octet-stream",
+            )
             if self.use_wandb:
                 # track S3 artifacts
                 print("Linking S3 artifacts to W&B")
