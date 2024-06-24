@@ -77,7 +77,7 @@ def s3_path(func):
 def upload_to_s3(func):
     return click.option(
         "--upload-to-s3",
-        type=bool,
+        is_flag=True,
         help="Whether to upload the results to S3.",
     )(func)
 

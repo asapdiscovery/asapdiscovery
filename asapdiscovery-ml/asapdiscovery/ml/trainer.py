@@ -1029,7 +1029,7 @@ class Trainer(BaseModel):
         (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
         if self.upload_to_s3:
-            self.logger.info("Uploading to S3")
+            print("Uploading to S3")
             s3 = S3.from_settings(self.s3_settings)
             s3.push_file(final_model_path,
                     location=self.s3_path,
@@ -1037,7 +1037,7 @@ class Trainer(BaseModel):
                 )
             if self.use_wandb:
                 # track S3 artifacts
-                self.logger.info("Linking S3 artifacts to W&B")
+                print("Linking S3 artifacts to W&B")
                 model_artifact = wandb.Artifact(
                     "model",
                     type="model",
