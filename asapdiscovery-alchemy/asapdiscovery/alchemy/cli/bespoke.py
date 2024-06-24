@@ -36,18 +36,9 @@ def bespoke():
     help="The name of the predefined ASAP-Alchemy BespokeFit protocol to use.",
     type=click.Choice(["aimnet2", "mace", "xtb"])
 )
-@click.option(
-    "-pr",
-    "--processors",
-    default="auto",
-    show_default=True,
-    help="The number of processors which can be used to build the BespokeFit inputs. `auto` will use (all_cpus -1), "
-    "`all` will use all or the exact number of cpus to use can be provided.",
-)
 def submit(
     protocol: str,
     network: str,
-    processors: str | int,
     factory_file: Optional[str] = None,
 ):
     """
@@ -70,8 +61,8 @@ def submit(
 
     client = BespokeFitClient(settings=current_settings())
     # make sure the client can be reached before we generate the bespokefit jobs
-    jobs = client.list_optimizations()
-    print(jobs)
+    # an error is raised if we can not hit the client
+    _ = client.list_optimizations()
 
     if factory_file is not None:
         bespoke_factory = BespokeWorkflowFactory.from_file(file_name=factory_file)
@@ -97,31 +88,38 @@ def submit(
     )
     console.print(message)
 
-    # make sure the client can be reached before we generate the bespokefit jobs
-
-    bespoke_prep_status = console.status("Generating BespokeFit jobs")
-    bespoke_prep_status.start()
+    bespoke_sub_status = console.status("Submitting BespokeFit jobs")
+    bespoke_sub_status.start()
     # make sure the default force field matches our fec workflow
+    # bespokefit will automatically strip the constraints if present
     bespoke_factory.initial_force_field = fec_network.forcefield_settings.small_molecule_forcefield
+
     # we should probably save the bespokefit protocol into the network to make sure its consistent for all future runs
     # this should be set in network planning?
+    submitted_ligands = []
 
-    # workout how many processors to use
-    processors = get_cpus(processors)
-    bespoke_jobs = bespoke_factory.optimization_schemas_from_molecules(
-        molecules=[Molecule.from_rdkit(ligand.to_rdkit(), allow_undefined_stereo=True) for ligand in fec_network.network.ligands],
-        processors=processors
+    for ligand in fec_network.network.ligands:
+        # create the job schema
+        bespoke_job = bespoke_factory.optimization_schema_from_molecule(
+            molecule=Molecule.from_rdkit(ligand.to_rdkit()),
+            index=ligand.compound_name
+        )
+        # submit the job and save the task ID
+        response = client.submit_optimization(input_schema=bespoke_job)
+        ligand.tags["bespokefit_id"] = response
+        submitted_ligands.append(ligand)
+
+    # save the network back to file with the bespokefit ids
+    fec_network.to_file(filename=network)
+
+    bespoke_sub_status.stop()
+
+    message = Padding(
+        f"Saved FreeEnergyCalculationNetwork with BespokeFit ID's to [repr.filename]{network}[/repr.filename]",
+        (1, 0, 1, 0),
     )
-    bespoke_prep_status.stop()
-    # now submit the jobs
 
-    submission_status = console.status("Submitting BespokeFit jobs")
-    submission_status.start()
-    for job in bespoke_jobs:
-        response = client.submit_optimisation(input_schema=job)
-        # save the id of the job into the ligand in the network so we can associate the parameters back later
-
-    submission_status.stop()
+    console.print(message)
 
 
 
