@@ -715,6 +715,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         # process the ligands
         result_ligands = []
+        result_ligands_rdkit = []
         failed_ligands = []
 
         if processors > 1:
@@ -732,6 +733,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 ]
                 for work in as_completed(work_list):
                     target_ligand = work.result()
+                    result_ligands_rdkit.append(target_ligand)
                     off_mol = Molecule.from_rdkit(
                         target_ligand, allow_undefined_stereo=True
                     )
@@ -754,6 +756,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     core_ligand=core_ligand,
                     core_smarts=core_smarts,
                 )
+                result_ligands_rdkit.append(posed_ligand)
                 off_mol = Molecule.from_rdkit(posed_ligand, allow_undefined_stereo=True)
                 # we need to transfer the properties which would be lost
                 openeye_mol = off_mol.to_openeye()
@@ -768,6 +771,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 else:
                     failed_ligands.append(openeye_mol)
 
+        with Chem.SDWriter("docked.sdf") as w:
+            for m in result_ligands_rdkit:
+                w.write(m)
         # prue down the conformers
         oedu_receptor = prepared_complex.target.to_oedu()
         oe_receptor = oechem.OEGraphMol()
