@@ -540,12 +540,13 @@ class Trainer(BaseModel):
                 logfile=str(self.log_file.name),
             ).getLogger()
 
-        # check S3 settings so that 
+        # check S3 settings so that fail early if there is an issue
         if self.upload_to_s3:
-            try:
-                self.s3_settings = S3Settings()
-            except Exception as e:
-                raise ValueError(f"Error loading S3 settings: {e}")
+            if self.s3_settings is None:
+                try:
+                    self.s3_settings = S3Settings()
+                except Exception as e:
+                    raise ValueError(f"Error loading S3 settings: {e}")
 
         # Build dataset and split
         self.ds = self.ds_config.build()
@@ -1043,7 +1044,9 @@ class Trainer(BaseModel):
                     type="model",
                     description="trained model",
                 )
-                model_artifact.add_file(final_model_path)
+                uri = s3.to_uri(self.s3_path)
+                print(f"URI: {uri}")
+                model_artifact.add_reference(uri)
                 wandb.log_artifact(model_artifact)
 
         if self.use_wandb:

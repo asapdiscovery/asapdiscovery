@@ -125,3 +125,20 @@ class S3:
         self.resource.Bucket(self.bucket).upload_file(path, key, ExtraArgs=extra_args)
 
     def pull_file(self): ...
+
+
+    def to_uri(self, location: PathLike):
+        """Convert a location in the S3 bucket to a URI.
+
+        Parameters
+        ----------
+        location
+            Location in the S3 bucket to convert to a URI.
+
+        Returns
+        -------
+        str
+            URI for the object in the S3 bucket.
+
+        """
+        return f"s3://{self.bucket}/{os.path.join(self.prefix, location)}"
