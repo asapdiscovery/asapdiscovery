@@ -447,11 +447,15 @@ class BespokeFitHelper:
     """
 
     def __init__(self):
-        from openff.bespokefit.executor.client import Settings, BespokeFitClient
+        from openff.bespokefit.executor.client import BespokeFitClient, Settings
 
         self._client = BespokeFitClient(settings=Settings())
 
-    def submit_ligands(self, network: FreeEnergyCalculationNetwork, bespokefit_protocol: "BespokeWorkflowFactory") -> FreeEnergyCalculationNetwork:
+    def submit_ligands(
+        self,
+        network: FreeEnergyCalculationNetwork,
+        bespokefit_protocol: "BespokeWorkflowFactory",
+    ) -> FreeEnergyCalculationNetwork:
         """
         Submit the ligands from the network to a running BespokeFit server.
 
@@ -469,7 +473,8 @@ class BespokeFitHelper:
         for ligand in network.network.ligands:
             # create the job schema
             bespoke_job = bespokefit_protocol.optimization_schema_from_molecule(
-                molecule=Molecule.from_rdkit(ligand.to_rdkit()), index=ligand.compound_name
+                molecule=Molecule.from_rdkit(ligand.to_rdkit()),
+                index=ligand.compound_name,
             )
             # submit the job and save the task ID
             response = self._client.submit_optimization(input_schema=bespoke_job)
@@ -477,7 +482,9 @@ class BespokeFitHelper:
 
         return network
 
-    def gather_results(self, network: FreeEnergyCalculationNetwork) -> FreeEnergyCalculationNetwork:
+    def gather_results(
+        self, network: FreeEnergyCalculationNetwork
+    ) -> FreeEnergyCalculationNetwork:
         """
         Gather the bespoke parameters for the ligands in the network file from a BespokeFit server.
 
@@ -494,7 +501,9 @@ class BespokeFitHelper:
 
         for ligand in network.network.ligands:
             if "bespokefit_id" in ligand.tags:
-                bespoke_result = self._client.get_optimization(ligand.tags["bespokefit_id"])
+                bespoke_result = self._client.get_optimization(
+                    ligand.tags["bespokefit_id"]
+                )
                 # we can only save the parameters if the optimisation has finished
                 if bespoke_result.status == "success":
 

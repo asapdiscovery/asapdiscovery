@@ -115,7 +115,9 @@ def submit(
 
     bespoke_factory.initial_force_field = ff_name
 
-    fec_network = bespoke_client.submit_ligands(network=fec_network, bespokefit_protocol=bespoke_factory)
+    fec_network = bespoke_client.submit_ligands(
+        network=fec_network, bespokefit_protocol=bespoke_factory
+    )
 
     # save the network back to file with the bespokefit ids
     fec_network.to_file(filename=network)
@@ -182,12 +184,16 @@ def gather(network: str, allow_missing: bool):
     fec_network = bespoke_helper.gather_results(network=fec_network)
     gather_status.stop()
 
-    bespoke_status = [ligand.bespoke_parameters is None for ligand in fec_network.network.ligands]
+    bespoke_status = [
+        ligand.bespoke_parameters is None for ligand in fec_network.network.ligands
+    ]
     if all(bespoke_status):
         print_message(console=console, message="No bespoke optimizations found.")
 
     # workout if we have missing data
-    elif not allow_missing and any([ligand.bespoke_parameters is None for ligand in fec_network.network.ligands]):
+    elif not allow_missing and any(
+        [ligand.bespoke_parameters is None for ligand in fec_network.network.ligands]
+    ):
         raise RuntimeError(
             "Not all BespokeFit optimisations have finished, to collect the current parameters use the flag "
             "`--allow-missing`"

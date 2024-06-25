@@ -902,7 +902,10 @@ def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):
 
     def submit_optimization(self, input_schema) -> str:
         # make sure the program is set to mace as requested
-        assert input_schema.stages[0].targets[0].calculation_specification.program == "mace"
+        assert (
+            input_schema.stages[0].targets[0].calculation_specification.program
+            == "mace"
+        )
         return "testing_id"
 
     def list_optimizations(self):
@@ -918,15 +921,7 @@ def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):
 
         tyk2_fec_network.to_file("planned_network.json")
 
-        result = runner.invoke(
-            alchemy,
-            [
-                "bespoke",
-                "submit",
-                "-p",
-                "mace"
-            ]
-        )
+        result = runner.invoke(alchemy, ["bespoke", "submit", "-p", "mace"])
 
         assert result.exit_code == 0
         # load the network and check the bespokefit_id was saved
@@ -948,7 +943,7 @@ def test_bespoke_gather_missing(tyk2_fec_network, tmpdir):
             [
                 "bespoke",
                 "gather",
-            ]
+            ],
         )
 
     assert result.exit_code == 0
@@ -957,24 +952,31 @@ def test_bespoke_gather_missing(tyk2_fec_network, tmpdir):
 
 def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
     """Test gathering the parameters for molecules from a bespokefit server"""
-    from openff.bespokefit.executor.client import BespokeFitClient, BespokeExecutorOutput, BespokeExecutorStageOutput, BespokeOptimizationResults
+    from openff.bespokefit.executor.client import (
+        BespokeExecutorOutput,
+        BespokeExecutorStageOutput,
+        BespokeFitClient,
+        BespokeOptimizationResults,
+    )
     from openff.bespokefit.schema.smirnoff import ProperTorsionSMIRKS
-    from openff.units import unit
     from openff.toolkit import ForceField
+    from openff.units import unit
 
     refit_values = {
-            ProperTorsionSMIRKS(
-                # define a fake smirks which is not in the base ff to ensure it is added correctly
-                smirks="[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]",
-                attributes={"k1", "k2", "k3", "k4"}
-            ): {
-                "k1": 1.0 * unit.kilocalorie_per_mole,
-                "k2": 2.0 * unit.kilocalorie_per_mole,
-                "k3": 3.0 * unit.kilocalorie_per_mole,
-                "k4": 4.0 * unit.kilocalorie_per_mole
-            }
+        ProperTorsionSMIRKS(
+            # define a fake smirks which is not in the base ff to ensure it is added correctly
+            smirks="[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]",
+            attributes={"k1", "k2", "k3", "k4"},
+        ): {
+            "k1": 1.0 * unit.kilocalorie_per_mole,
+            "k2": 2.0 * unit.kilocalorie_per_mole,
+            "k3": 3.0 * unit.kilocalorie_per_mole,
+            "k4": 4.0 * unit.kilocalorie_per_mole,
         }
-    monkeypatch.setattr(BespokeOptimizationResults, "refit_parameter_values", refit_values)
+    }
+    monkeypatch.setattr(
+        BespokeOptimizationResults, "refit_parameter_values", refit_values
+    )
 
     def get_optimization(self, optimization_id):
         """Return some mock bespokefit data"""
@@ -982,12 +984,10 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
             smiles="CC",
             stages=[
                 BespokeExecutorStageOutput(
-                    type="fragmenter",
-                    status="success",
-                    error=None
+                    type="fragmenter", status="success", error=None
                 )
             ],
-            results=BespokeOptimizationResults()
+            results=BespokeOptimizationResults(),
         )
 
     # patch the client
@@ -1008,7 +1008,7 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
             [
                 "bespoke",
                 "gather",
-            ]
+            ],
         )
 
         assert result.exit_code == 0
@@ -1017,7 +1017,10 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
         fec_network = FreeEnergyCalculationNetwork.from_file("planned_network.json")
         for ligand in fec_network.network.ligands:
             assert ligand.bespoke_parameters is not None
-            assert ligand.bespoke_parameters.base_force_field == tyk2_fec_network.forcefield_settings.small_molecule_forcefield
+            assert (
+                ligand.bespoke_parameters.base_force_field
+                == tyk2_fec_network.forcefield_settings.small_molecule_forcefield
+            )
             parameter = ligand.bespoke_parameters.parameters[0]
             assert parameter.smirks == "[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]"
             assert parameter.interaction == "ProperTorsions"
@@ -1028,7 +1031,9 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
         ofe_network = fec_network.to_alchemical_network()
         # check the force field in the first edge has been updated
         transform = list(ofe_network.edges)[0]
-        ff = ForceField(transform.protocol.settings.forcefield_settings.small_molecule_forcefield)
+        ff = ForceField(
+            transform.protocol.settings.forcefield_settings.small_molecule_forcefield
+        )
         handler = ff.get_parameter_handler("ProperTorsions")
         # grab our new parameter
         parameter = handler["[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]"]
@@ -1043,7 +1048,12 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
 def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     """Make sure an error is raised if only some results can be gathered"""
 
-    from openff.bespokefit.executor.client import BespokeFitClient, BespokeExecutorOutput, BespokeExecutorStageOutput, BespokeOptimizationResults
+    from openff.bespokefit.executor.client import (
+        BespokeExecutorOutput,
+        BespokeExecutorStageOutput,
+        BespokeFitClient,
+        BespokeOptimizationResults,
+    )
     from openff.bespokefit.schema.smirnoff import ProperTorsionSMIRKS
     from openff.units import unit
 
@@ -1051,15 +1061,17 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
         ProperTorsionSMIRKS(
             # define a fake smirks which is not in the base ff to ensure it is added correctly
             smirks="[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]",
-            attributes={"k1", "k2", "k3", "k4"}
+            attributes={"k1", "k2", "k3", "k4"},
         ): {
             "k1": 1.0 * unit.kilocalorie_per_mole,
             "k2": 2.0 * unit.kilocalorie_per_mole,
             "k3": 3.0 * unit.kilocalorie_per_mole,
-            "k4": 4.0 * unit.kilocalorie_per_mole
+            "k4": 4.0 * unit.kilocalorie_per_mole,
         }
     }
-    monkeypatch.setattr(BespokeOptimizationResults, "refit_parameter_values", refit_values)
+    monkeypatch.setattr(
+        BespokeOptimizationResults, "refit_parameter_values", refit_values
+    )
 
     def get_optimization(self, optimization_id):
         """Return some mock bespokefit data"""
@@ -1067,12 +1079,10 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
             smiles="CC",
             stages=[
                 BespokeExecutorStageOutput(
-                    type="fragmenter",
-                    status="success",
-                    error=None
+                    type="fragmenter", status="success", error=None
                 )
             ],
-            results=BespokeOptimizationResults()
+            results=BespokeOptimizationResults(),
         )
 
     # patch the client
@@ -1085,15 +1095,18 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
         tyk2_fec_network.network.ligands[0].tags["bespokefit_id"] = "testing"
         tyk2_fec_network.to_file("planned_network.json")
 
-        with pytest.raises(RuntimeError, match="Not all BespokeFit optimisations have finished, to collect the current parameters use the flag "
-            "`--allow-missing`"):
+        with pytest.raises(
+            RuntimeError,
+            match="Not all BespokeFit optimisations have finished, to collect the current parameters use the flag "
+            "`--allow-missing`",
+        ):
             _ = runner.invoke(
                 alchemy,
                 [
                     "bespoke",
                     "gather",
                 ],
-                catch_exceptions=False
+                catch_exceptions=False,
             )
     # reset the console after an error
     console = rich.get_console()
@@ -1102,7 +1115,11 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
 
 def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
     """Test getting the status of some ligands in bespokefit"""
-    from openff.bespokefit.executor.client import BespokeFitClient, BespokeExecutorOutput, BespokeExecutorStageOutput
+    from openff.bespokefit.executor.client import (
+        BespokeExecutorOutput,
+        BespokeExecutorStageOutput,
+        BespokeFitClient,
+    )
 
     runner = CliRunner()
 
@@ -1114,9 +1131,7 @@ def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
             smiles="CC",
             stages=[
                 BespokeExecutorStageOutput(
-                    type="fragmenter",
-                    status="success",
-                    error=None
+                    type="fragmenter", status="success", error=None
                 )
             ],
         )
@@ -1132,13 +1147,7 @@ def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
 
         tyk2_fec_network.to_file("planned_network.json")
 
-        result = runner.invoke(
-            alchemy,
-            [
-                "bespoke",
-                "status"
-            ]
-        )
+        result = runner.invoke(alchemy, ["bespoke", "status"])
 
         assert result.exit_code == 0
         assert "│ success │ 10    │" in result.stdout
