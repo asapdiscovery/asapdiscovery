@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from asapdiscovery.data.schema.complex import PreppedComplex
     from asapdiscovery.data.schema.ligand import Ligand
     from asapdiscovery.data.schema.target import PreppedTarget
+    from openff.bespokefit.workflows import BespokeWorkflowFactory
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
@@ -438,3 +439,97 @@ def is_valid_receptor_system(target: "PreppedTarget") -> bool:
             return False
 
     return True
+
+
+class BespokeFitHelper:
+    """
+    A convenience class to handle BespokeFit submissions restarts and results gathering.
+    """
+
+    def __init__(self):
+        from openff.bespokefit.executor.client import Settings, BespokeFitClient
+
+        self._client = BespokeFitClient(settings=Settings())
+
+    def submit_ligands(self, network: FreeEnergyCalculationNetwork, bespokefit_protocol: "BespokeWorkflowFactory") -> FreeEnergyCalculationNetwork:
+        """
+        Submit the ligands from the network to a running BespokeFit server.
+
+        Notes:
+            We assume that relevant BespokeFit environment settings are exposed.
+
+        Args:
+            network: The network with ligands which should be submited.
+
+        Returns:
+            The network with the bespokefit_ids added as a tag on each ligand.
+        """
+        from openff.toolkit import Molecule
+
+        for ligand in network.network.ligands:
+            # create the job schema
+            bespoke_job = bespokefit_protocol.optimization_schema_from_molecule(
+                molecule=Molecule.from_rdkit(ligand.to_rdkit()), index=ligand.compound_name
+            )
+            # submit the job and save the task ID
+            response = self._client.submit_optimization(input_schema=bespoke_job)
+            ligand.tags["bespokefit_id"] = response
+
+        return network
+
+    def gather_results(self, network: FreeEnergyCalculationNetwork) -> FreeEnergyCalculationNetwork:
+        """
+        Gather the bespoke parameters for the ligands in the network file from a BespokeFit server.
+
+        Args:
+            network: The network with ligands who's results we should gather.
+
+        Returns:
+            The network with the bespoke parameters stored on the ligands.
+        """
+        from asapdiscovery.data.schema.identifiers import (
+            BespokeParameter,
+            BespokeParameters,
+        )
+
+        for ligand in network.network.ligands:
+            if "bespokefit_id" in ligand.tags:
+                bespoke_result = self._client.get_optimization(ligand.tags["bespokefit_id"])
+                # we can only save the parameters if the optimisation has finished
+                if bespoke_result.status == "success":
+
+                    refit_parameters = bespoke_result.results.refit_parameter_values
+                    # make sure we use the force field which we fit to
+                    # this was taken from the network originally
+                    bespoke_parameters = BespokeParameters(
+                        base_force_field=network.forcefield_settings.small_molecule_forcefield
+                    )
+                    for parameter, values in refit_parameters.items():
+                        bespoke_parameter = BespokeParameter(
+                            interaction=parameter.type,
+                            smirks=parameter.smirks,
+                            values={key: value.m for key, value in values.items()},
+                            units="kilocalories_per_mole",
+                        )
+                        bespoke_parameters.parameters.append(bespoke_parameter)
+                    # save the parameters back to the ligand
+                    ligand.bespoke_parameters = bespoke_parameters
+        return network
+
+    def status(self, network: FreeEnergyCalculationNetwork) -> dict[str, int]:
+        """
+        Gather the status of the parameter optimization for the ligands in the network.
+
+        Args:
+            network: The network with ligands that we want the status for.
+
+        Returns
+            A dictionary with the count per status type for the ligands in the network.
+        """
+        states = {"success": 0, "running": 0, "waiting": 0, "errored": 0}
+        for ligand in network.network.ligands:
+            if "bespokefit_id" in ligand.tags:
+                response = self._client.get_optimization(ligand.tags["bespokefit_id"])
+                states[response.status] += 1
+
+        return states
