@@ -25,6 +25,7 @@ def print_message(console: "rich.Console", message: str):
         message: The message to be printed.
     """
     from rich.padding import Padding
+
     message = Padding(message, (1, 0, 1, 0))
     console.print(message)
 
@@ -258,6 +259,7 @@ def get_cpus(cpus: Literal["auto", "all"] | int) -> int:
         The number of cpus to use.
     """
     from multiprocessing import cpu_count
+
     # workout the number of processes to use if auto or all
     all_cpus = cpu_count()
     if cpus == "all":

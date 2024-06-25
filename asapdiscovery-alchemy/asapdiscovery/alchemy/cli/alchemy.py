@@ -236,11 +236,11 @@ def submit(
         project: The name of the project this network should be submitted under.
     """
     import rich
-    from rich import pretty
-    from asapdiscovery.alchemy.cli.utils import print_header, print_message
     from alchemiscale import Scope
+    from asapdiscovery.alchemy.cli.utils import print_header, print_message
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+    from rich import pretty
 
     pretty.install()
     console = rich.get_console()
@@ -260,22 +260,32 @@ def submit(
     # load the network
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
     # create network on alchemiscale
-    print_message(console=console, message=(f"Creating network on Alchemiscale instance: {client._client.api_url} with scope {network_scope}"))
+    print_message(
+        console=console,
+        message=(
+            f"Creating network on Alchemiscale instance: {client._client.api_url} with scope {network_scope}"
+        ),
+    )
     submitted_network = client.create_network(
         planned_network=planned_network, scope=network_scope
     )
     # write the network with its key to file before we try and add compute incase we hit an issue
-    print_message(console=console, message="Network made; saving network key to network file")
+    print_message(
+        console=console, message="Network made; saving network key to network file"
+    )
     submitted_network.to_file(network)
     # now action the tasks
-    print_message(console=console, message="Creating and actioning FEC tasks on Alchemiscale")
-    task_ids = client.action_network(
-        planned_network=submitted_network
+    print_message(
+        console=console, message="Creating and actioning FEC tasks on Alchemiscale"
     )
+    task_ids = client.action_network(planned_network=submitted_network)
     # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
-    print_message(console=console,message=f"{total_tasks - missing_tasks}/{total_tasks} created. Status can be checked using `asap-alchemy status`")
+    print_message(
+        console=console,
+        message=f"{total_tasks - missing_tasks}/{total_tasks} created. Status can be checked using `asap-alchemy status`",
+    )
 
 
 @alchemy.command(

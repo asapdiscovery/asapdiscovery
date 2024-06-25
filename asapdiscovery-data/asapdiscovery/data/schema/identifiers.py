@@ -118,14 +118,19 @@ class BespokeParameter(BaseModel):
     type: Literal["BespokeParameter"] = "BespokeParameter"
 
     interaction: str = Field(
-        ..., description="The OpenFF interaction type this parameter corresponds to.")
+        ..., description="The OpenFF interaction type this parameter corresponds to."
+    )
     smirks: str = Field(..., description="The smirks associated with this parameter.")
-    values: dict[str, float] = Field({}, description="The bespoke force field parameters "
-                                                     "which should be added to the base force field.")
+    values: dict[str, float] = Field(
+        {},
+        description="The bespoke force field parameters "
+        "which should be added to the base force field.",
+    )
     units: Literal["kilocalories_per_mole"] = Field(
         "kilocalories_per_mole",
         description="The OpenFF units unit that should be attached to the values when adding the parameters "
-                    "to the force field.")
+        "to the force field.",
+    )
 
 
 class BespokeParameters(BaseModel):
@@ -136,5 +141,8 @@ class BespokeParameters(BaseModel):
     parameters: list[BespokeParameter] = Field(
         [], description="The list of bespoke parameters."
     )
-    base_force_field: str = Field(..., description="The name of the base force field these parameters were "
-                                                   "derived with.")
+    base_force_field: str = Field(
+        ...,
+        description="The name of the base force field these parameters were "
+        "derived with.",
+    )

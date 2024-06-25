@@ -147,7 +147,11 @@ def run(
 
     import pandas
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header, pull_from_postera, get_cpus
+    from asapdiscovery.alchemy.cli.utils import (
+        get_cpus,
+        print_header,
+        pull_from_postera,
+    )
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from asapdiscovery.data.readers.molfile import MolFileFactory
     from asapdiscovery.data.schema.complex import PreppedComplex

@@ -329,7 +329,9 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
             ff_string = self._inject_bespoke_parameters(edge=mapping)
             # make a copy of the protocol and add the bespoke force field
             edge_protocol = copy.deepcopy(protocol)
-            edge_protocol._settings.forcefield_settings.small_molecule_forcefield = ff_string
+            edge_protocol._settings.forcefield_settings.small_molecule_forcefield = (
+                ff_string
+            )
 
             for leg in ["solvent", "complex"]:
                 sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
@@ -379,9 +381,9 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         ff = ForceField(self.forcefield_settings.small_molecule_forcefield)
 
         # map the names to ligands to quickly find the parameters
-        names_to_ligands = dict(
-            (ligand.compound_name, ligand) for ligand in self.network.ligands
-        )
+        names_to_ligands = {
+            ligand.compound_name: ligand for ligand in self.network.ligands
+        }
 
         # torsion data to manually set the phase idivf and periodicity
         torsion_data = {
@@ -396,26 +398,29 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
             "periodicity1": 1,
             "periodicity2": 2,
             "periodicity3": 3,
-            "periodicity4": 4
+            "periodicity4": 4,
         }
 
         # track if we have any bespoke parameters
         bespoke_parameters = False
         for ofe_ligand in [edge.componentA, edge.componentB]:
-            if (edge_ligand := names_to_ligands[ofe_ligand.name]).bespoke_parameters is not None:
+            if (
+                edge_ligand := names_to_ligands[ofe_ligand.name]
+            ).bespoke_parameters is not None:
                 bespoke_parameters = True
                 for parameter in edge_ligand.bespoke_parameters.parameters:
                     handler = ff.get_parameter_handler(parameter.interaction)
-                    parameter_data = dict((key, value * getattr(unit, parameter.units)) for key, value in parameter.values.items())
+                    parameter_data = {
+                        key: value * getattr(unit, parameter.units)
+                        for key, value in parameter.values.items()
+                    }
                     parameter_data["smirks"] = parameter.smirks
                     parameter_data["id"] = f"bespokefit_{edge_ligand.compound_name}"
                     if parameter.interaction == "ProperTorsions":
                         parameter_data.update(torsion_data)
                     try:
                         # similar ligands will share parameters so make sure we don't add it twice
-                        handler.add_parameter(
-                            parameter_kwargs=parameter_data
-                        )
+                        handler.add_parameter(parameter_kwargs=parameter_data)
                     except DuplicateParameterError:
                         continue
 

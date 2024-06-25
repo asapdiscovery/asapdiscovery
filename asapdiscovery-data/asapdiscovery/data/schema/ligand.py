@@ -29,10 +29,10 @@ from asapdiscovery.data.backend.openeye import (
 )
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
 from asapdiscovery.data.schema.identifiers import (
+    BespokeParameters,
     ChargeProvenance,
     LigandIdentifiers,
     LigandProvenance,
-    BespokeParameters
 )
 from asapdiscovery.data.schema.schema_base import DataStorageType
 from pydantic import Field, root_validator, validator
@@ -124,7 +124,8 @@ class Ligand(DataModelAbstractBase):
     )
 
     bespoke_parameters: Optional[BespokeParameters] = Field(
-        None, description="The bespoke parameters for this ligand organised by interaction type."
+        None,
+        description="The bespoke parameters for this ligand organised by interaction type.",
     )
 
     tags: dict[str, str] = Field(
