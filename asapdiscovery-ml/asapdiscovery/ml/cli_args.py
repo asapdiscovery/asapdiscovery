@@ -47,6 +47,7 @@ def model_tag(func):
         help="Tag to name model weights files when saving.",
     )(func)
 
+
 def trainer_config_cache(func):
     return click.option(
         "--trainer-config-cache",

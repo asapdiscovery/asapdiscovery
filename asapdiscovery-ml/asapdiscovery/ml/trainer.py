@@ -35,7 +35,6 @@ class Trainer(BaseModel):
     Schema for training an ML model.
     """
 
-
     # Required parameters for building the training environment
     optimizer_config: OptimizerConfig = Field(
         ..., description="Config describing the optimizer to use in training."
@@ -132,8 +131,6 @@ class Trainer(BaseModel):
     s3_settings: S3Settings | None = Field(None, description="S3 settings.")
     s3_path: str | None = Field(None, description="S3 location to upload artifacts.")
     model_tag: str | None = Field(None, description="Tag for the model being trained.")
-
-
 
     # Tracker to make sure the optimizer and ML model are built before trying to train
     _is_initialized = False
@@ -469,7 +466,7 @@ class Trainer(BaseModel):
         if upload_to_s3 and not s3_path:
             raise ValueError("Must provide an S3 path if uploading to S3.")
         return values
-    
+
     @validator("s3_path", pre=True)
     def check_s3_path(cls, v):
         # check it is a folder path not a file path, cast to Path
@@ -1035,14 +1032,14 @@ class Trainer(BaseModel):
         final_model_path = self.output_dir / "final.th"
         torch.save(self.model.state_dict(), final_model_path)
         (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
-            
 
         # write to json
         model_config_path = self.output_dir / "model_config.json"
         model_config_path.write_text(self.model_config.json())
 
-                # copy over the final to tagged model if present
+        # copy over the final to tagged model if present
         import shutil
+
         if self.model_tag:
             final_model_path_tagged = self.output_dir / f"{self.model_tag}.th"
             shutil.copy(final_model_path, final_model_path_tagged)
