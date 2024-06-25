@@ -311,6 +311,8 @@ class ProteinPrepper(ProteinPrepperBase):
                     translated_oemol, **complex_target.ligand.dict(exclude={"data"})
                 )
                 pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
+                pc.target.crystal_symmetry = complex_target.target.crystal_symmetry
+
                 prepped_complexes.append(pc)
 
             except Exception as e:

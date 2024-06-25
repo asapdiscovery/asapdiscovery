@@ -38,6 +38,10 @@ from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
     SmallScaleDockingInputs,
     small_scale_docking_workflow,
 )
+from asapdiscovery.workflows.docking_workflows.symexp_crystal_packing import (
+    SymExpCrystalPackingInputs,
+    symexp_crystal_packing_workflow,
+)
 
 
 @click.group()
@@ -95,9 +99,9 @@ def docking():
 @active_site_chain
 def large_scale(
     target: TargetTags,
-    n_select: int = 5,
+    n_select: int = 10,
     top_n: int = 500,
-    posit_confidence_cutoff: float = 0.7,
+    posit_confidence_cutoff: float = 0.5,
     use_omega: bool = False,
     allow_posit_retries: bool = False,
     ligands: Optional[str] = None,
@@ -285,7 +289,7 @@ def cross_docking(
 @click.option(
     "--n-select",
     type=int,
-    default=3,
+    default=20,
     help="The number of targets to dock each ligand against, sorted by MCS",
 )
 @click.option("--allow-dask-cuda/--no-allow-dask-cuda", default=True)
@@ -314,7 +318,7 @@ def cross_docking(
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
-    n_select: int = 3,
+    n_select: int = 20,
     allow_dask_cuda: bool = True,
     no_omega: bool = False,
     ligands: Optional[str] = None,
@@ -381,6 +385,89 @@ def small_scale(
         )
 
     small_scale_docking_workflow(inputs)
+
+
+@docking.command()
+@target
+@click.option(
+    "--vdw-radii-fudgefactor",
+    type=float,
+    default=0.9,
+    help="The fudge factor multiplier to apply to VDW radii",
+)
+@click.option(
+    "--symexp-clash-thresh",
+    type=int,
+    default=0,
+    help="The number of clashes to consider a ligand as clashing",
+)
+@ligands
+@postera_args
+@pdb_file
+@fragalysis_dir
+@structure_dir
+@save_to_cache
+@cache_dir
+@dask_args
+@output_dir
+@overwrite
+@input_json
+@loglevel
+def symexp_crystal_packing(
+    target: TargetTags,
+    vdw_radii_fudgefactor: float = 0.9,
+    symexp_clash_thresh: int = 0,
+    ligands: Optional[str] = None,
+    postera: bool = False,
+    postera_molset_name: Optional[str] = None,
+    postera_upload: bool = False,
+    pdb_file: Optional[str] = None,
+    fragalysis_dir: Optional[str] = None,
+    structure_dir: Optional[str] = None,
+    save_to_cache: Optional[bool] = True,
+    cache_dir: Optional[str] = None,
+    output_dir: str = "output",
+    overwrite: bool = True,
+    input_json: Optional[str] = None,
+    use_dask: bool = False,
+    dask_type: DaskType = DaskType.LOCAL,
+    dask_n_workers: Optional[int] = None,
+    failure_mode: FailureMode = FailureMode.SKIP,
+    loglevel: Union[int, str] = logging.INFO,
+):
+    """
+    Check for overlaps between docked ligands and crystal neighbouts
+    """
+
+    if input_json is not None:
+        print("Loading inputs from json file... Will override all other inputs.")
+        inputs = SymExpCrystalPackingInputs.from_json_file(input_json)
+
+    else:
+        inputs = SymExpCrystalPackingInputs(
+            postera=postera,
+            postera_upload=postera_upload,
+            target=target,
+            vdw_radii_fudgefactor=vdw_radii_fudgefactor,
+            use_dask=use_dask,
+            dask_type=dask_type,
+            dask_n_workers=dask_n_workers,
+            failure_mode=failure_mode,
+            ligands=ligands,
+            pdb_file=pdb_file,
+            fragalysis_dir=fragalysis_dir,
+            structure_dir=structure_dir,
+            postera_molset_name=postera_molset_name,
+            cache_dir=cache_dir,
+            save_to_cache=save_to_cache,
+            ml_scorers=ml_scorer,
+            output_dir=output_dir,
+            overwrite=overwrite,
+            loglevel=loglevel,
+            symexp_clash_thresh=symexp_clash_thresh,
+        )
+
+    symexp_crystal_packing_workflow(inputs)
 
 
 if __name__ == "__main__":

@@ -234,7 +234,7 @@ class HTMLVisualizer(VisualizerBase):
                 row[DockingResultCols.TARGET_ID.value] = (
                     result.input_pair.complex.target.target_name
                 )
-                row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
+                row[DockingResultCols.SMILES.value] = result.posed_ligand.smiles
                 row[self.get_tag_for_color_method()] = outpath
                 data.append(row)
             except Exception as e:

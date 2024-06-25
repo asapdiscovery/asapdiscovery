@@ -1,12 +1,15 @@
 import abc
 import logging
+import warnings
 from enum import Enum
+from io import StringIO
 from pathlib import Path
 from typing import Any, ClassVar, Optional, Union
 
+import MDAnalysis as mda
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.backend.openeye import oedocking
+from asapdiscovery.data.backend.openeye import oedocking, oemol_to_pdb_string
 from asapdiscovery.data.backend.plip import compute_fint_score
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
@@ -39,6 +42,7 @@ class ScoreType(str, Enum):
     GAT = "GAT"
     schnet = "schnet"
     e3nn = "e3nn"
+    sym_clash = "sym_clash"
     INVALID = "INVALID"
 
 
@@ -62,6 +66,7 @@ _SCORE_MANIFOLD_ALIAS = {
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
     ScoreType.e3nn: DockingResultCols.COMPUTED_E3NN_PIC50.value,
     ScoreType.INVALID: None,
+    ScoreType.sym_clash: DockingResultCols.SYMEXP_CLASH_NUM.value,
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
     "compound_name": DockingResultCols.LIGAND_ID.value,
     "smiles": DockingResultCols.SMILES.value,
@@ -232,6 +237,7 @@ class ScorerBase(BaseModel):
         reconstruct_cls=None,
         return_df: bool = False,
         include_input: bool = False,
+        pivot: bool = True,
     ) -> list[Score]:
         """
         Score the inputs. Most of the work is done in the _score method, this method is in turn dispatched based on type to various methods.
@@ -255,6 +261,8 @@ class ScorerBase(BaseModel):
             Whether to return a dataframe, by default False
         include_input : bool, optional
             Whether to return the results, in the dataframe, by default False
+        pivot : bool, optional
+            Whether to pivot the dataframe, by default True
         """
         outputs = self._score(
             inputs=inputs,
@@ -266,7 +274,11 @@ class ScorerBase(BaseModel):
         )
 
         if return_df:
-            return self.scores_to_df(outputs, include_input=include_input)
+            df = self.scores_to_df(outputs, include_input=include_input)
+            if pivot:
+                return Score._combine_and_pivot_scores_df([df])
+            else:
+                return df
         else:
             return outputs
 
@@ -722,6 +734,7 @@ class MetaScorer(BaseModel):
                 reconstruct_cls=reconstruct_cls,
                 return_df=return_df,
                 include_input=include_input,
+                pivot=False,
             )
             results.append(vals)
 
@@ -729,3 +742,100 @@ class MetaScorer(BaseModel):
             return Score._combine_and_pivot_scores_df(results)
 
         return np.ravel(results).tolist()
+
+
+class SymClashScorer(ScorerBase):
+    """
+    Scoring, checking for clashes between ligand and target
+    in neighboring unit cells.
+    """
+
+    score_type: ClassVar[ScoreType.sym_clash] = ScoreType.sym_clash
+    units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
+
+    count_clashing_pairs: bool = Field(
+        False,
+        description="Whether to count clashing distance pairs, rather than unique clashing ligand atoms",
+    )
+
+    vdw_radii_fudge_factor: float = Field(
+        1.0,
+        description="fudge factor multiplier for vdw radii, lower to decrease clash sensitivity, higher to increase",
+    )
+
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
+    def _score(self, inputs) -> list[Score]:
+        """
+        Score the inputs, dispatching based on type.
+        """
+        return self._dispatch(inputs)
+
+    @multimethod
+    def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
+        """
+        Dispatch for Complex
+        """
+        results = []
+        warnings.warn(
+            "SymClashScorer relies on expanded protein units having chain X as constructed by SymmetryExpander"
+        )
+        for inp in inputs:
+            # load into MDA universe
+            u = mda.Universe(
+                mda.lib.util.NamedStream(
+                    StringIO(oemol_to_pdb_string(inp.to_combined_oemol())),
+                    "complex.pdb",
+                )
+            )
+            lig = u.select_atoms("not protein")
+            symmetry_expanded_prot = u.select_atoms("protein and chainID X")
+            # hacky but expand to real space with mega box
+            # multiply first 3 dimensions by 20
+            expanded_box = u.dimensions
+            expanded_box[:3] *= 20
+            pair_indices, pair_distances = mda.lib.distances.capped_distance(
+                lig,
+                symmetry_expanded_prot,
+                4,
+                box=expanded_box,  # large cutoff to loop in a good amount of distances up to 8Å
+            )
+            # check if distance for an atom pair is less than summed vdw radii
+            num_clashes = 0
+            clashing_lig_at = set()
+            clashing_prot_at = set()
+
+            for k, [i, j] in enumerate(pair_indices):
+                lig_atom = lig[i]
+                prot_atom = symmetry_expanded_prot[j]
+                distance = pair_distances[k]
+                if (
+                    (
+                        distance
+                        < (
+                            (
+                                mda.topology.tables.vdwradii[lig_atom.element.upper()]
+                                * self.vdw_radii_fudge_factor
+                            )
+                            + (
+                                mda.topology.tables.vdwradii[prot_atom.element.upper()]
+                                * self.vdw_radii_fudge_factor
+                            )
+                        )
+                    )
+                    and lig_atom.element != "H"
+                    and prot_atom.element != "H"
+                ):
+                    num_clashes += 1
+                    clashing_lig_at.add(i)
+                    clashing_prot_at.add(j)
+
+            if self.count_clashing_pairs:
+                val = num_clashes
+            else:
+                val = len(clashing_lig_at)  # seems ok as metric for now
+
+            results.append(
+                Score.from_score_and_complex(val, self.score_type, self.units, inp)
+            )
+        return results
