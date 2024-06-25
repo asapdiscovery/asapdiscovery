@@ -240,9 +240,16 @@ def submit(
         campaign: The name of the campaign this network should be submitted under.
         project: The name of the project this network should be submitted under.
     """
+    import rich
+    from rich import pretty
+    from asapdiscovery.alchemy.cli.utils import print_header, print_message
     from alchemiscale import Scope
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
 
     # make sure the org/campaign combination is valid
     if organization == "asap" and campaign not in ("public", "confidential"):
@@ -251,33 +258,29 @@ def submit(
         )
 
     # launch the helper which will try to login
-    click.echo("Connecting to Alchemiscale...")
+    print_message(console=console, message="Connecting to Alchemiscale")
     client = AlchemiscaleHelper.from_settings()
     # create the scope
     network_scope = Scope(org=organization, campaign=campaign, project=project)
     # load the network
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
     # create network on alchemiscale
-    click.echo(
-        f"Creating network on Alchemiscale instance: {client._client.api_url} with scope {network_scope}"
-    )
+    print_message(console=console, message=(f"Creating network on Alchemiscale instance: {client._client.api_url} with scope {network_scope}"))
     submitted_network = client.create_network(
         planned_network=planned_network, scope=network_scope
     )
     # write the network with its key to file before we try and add compute incase we hit an issue
-    click.echo("Network made; saving network key to network file")
+    print_message(console=console, message="Network made; saving network key to network file")
     submitted_network.to_file(network)
     # now action the tasks
-    click.echo("Creating and actioning FEC tasks on Alchemiscale...")
+    print_message(console=console, message="Creating and actioning FEC tasks on Alchemiscale")
     task_ids = client.action_network(
         planned_network=submitted_network, prioritize=prioritize
     )
     # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
-    click.echo(
-        f"{total_tasks - missing_tasks}/{total_tasks} created. Status can be checked using `asap-alchemy status`"
-    )
+    print_message(console=console,message=f"{total_tasks - missing_tasks}/{total_tasks} created. Status can be checked using `asap-alchemy status`")
 
 
 @alchemy.command(

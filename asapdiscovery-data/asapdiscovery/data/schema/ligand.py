@@ -32,6 +32,7 @@ from asapdiscovery.data.schema.identifiers import (
     ChargeProvenance,
     LigandIdentifiers,
     LigandProvenance,
+    BespokeParameters
 )
 from asapdiscovery.data.schema.schema_base import DataStorageType
 from pydantic import Field, root_validator, validator
@@ -120,6 +121,10 @@ class Ligand(DataModelAbstractBase):
 
     charge_provenance: Optional[ChargeProvenance] = Field(
         None, description="The provenance information of the local charging method."
+    )
+
+    bespoke_parameters: Optional[BespokeParameters] = Field(
+        None, description="The bespoke parameters for this ligand organised by interaction type."
     )
 
     tags: dict[str, str] = Field(

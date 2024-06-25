@@ -16,6 +16,19 @@ def print_header(console: "rich.Console"):
     console.line()
 
 
+def print_message(console: "rich.Console", message: str):
+    """
+    Print a padded message to the console using rich.
+
+    Args:
+        console: The console we should print the message to.
+        message: The message to be printed.
+    """
+    from rich.padding import Padding
+    message = Padding(message, (1, 0, 1, 0))
+    console.print(message)
+
+
 def pull_from_postera(molecule_set_name: str):
     """
     A convenience method with tucked imports to avoid importing Postera tools when not needed.

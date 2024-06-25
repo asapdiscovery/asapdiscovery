@@ -18,13 +18,14 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
 )
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
-from pydantic import BaseSettings, Field
+from pydantic import Field
 
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
+    from gufe.mapping import LigandAtomMapping
 
 
 class SolventSettings(_SchemaBase):
@@ -192,7 +193,7 @@ class _FreeEnergyBase(_SchemaBase):
     )
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
         settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.1.0"
+            small_molecule_forcefield="openff-2.1.0.offxml"
         ),
         description="The force field settings used to parameterize the systems.",
     )
@@ -313,6 +314,8 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         Returns:
             An openfe.AlchemicalNetwork created from the schema.
         """
+        import copy
+
         transformations = []
         # do all openfe conversions
         ligand_network = self.network.to_ligand_network()
@@ -322,6 +325,12 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
 
         # build the network
         for mapping in ligand_network.edges:
+            # returns the name of the ff if we have no bespoke parameters
+            ff_string = self._inject_bespoke_parameters(edge=mapping)
+            # make a copy of the protocol and add the bespoke force field
+            edge_protocol = copy.deepcopy(protocol)
+            edge_protocol._settings.forcefield_settings.small_molecule_forcefield = ff_string
+
             for leg in ["solvent", "complex"]:
                 sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
                 sys_b_dict = {"ligand": mapping.componentB, "solvent": solvent}
@@ -341,12 +350,80 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     stateA=system_a,
                     stateB=system_b,
                     mapping={"ligand": mapping},
-                    protocol=protocol,  # use protocol created above
+                    protocol=edge_protocol,  # use protocol created above
                     name=f"{system_a.name}_{system_b.name}",
                 )
                 transformations.append(transformation)
 
         return openfe.AlchemicalNetwork(edges=transformations, name=self.dataset_name)
+
+    def _inject_bespoke_parameters(self, edge: "LigandAtomMapping") -> str:
+        """
+        Inject the bespoke torsion parameters for the given edge into the base force field.
+
+        Args:
+            edge: The edge from the OpenFE alchemical network which we want the parameters for.
+
+        Returns:
+            The string of the force field with bespoke parameters added or the name of the base force field if no
+            bespoke parameters are found
+
+        Notes:
+            They will always be added in the order of the mapping (ligandA, ligandB)
+        """
+        from openff.toolkit import ForceField
+        from openff.toolkit.utils.exceptions import DuplicateParameterError
+        from openff.units import unit
+
+        ff_string = self.forcefield_settings.small_molecule_forcefield
+        ff = ForceField(self.forcefield_settings.small_molecule_forcefield)
+
+        # map the names to ligands to quickly find the parameters
+        names_to_ligands = dict(
+            (ligand.compound_name, ligand) for ligand in self.network.ligands
+        )
+
+        # torsion data to manually set the phase idivf and periodicity
+        torsion_data = {
+            "idivf1": 1.0,
+            "idivf2": 1.0,
+            "idivf3": 1.0,
+            "idivf4": 1.0,
+            "phase1": 0.0 * unit.degree,
+            "phase2": 180 * unit.degree,
+            "phase3": 0 * unit.degree,
+            "phase4": 180 * unit.degree,
+            "periodicity1": 1,
+            "periodicity2": 2,
+            "periodicity3": 3,
+            "periodicity4": 4
+        }
+
+        # track if we have any bespoke parameters
+        bespoke_parameters = False
+        for ofe_ligand in [edge.componentA, edge.componentB]:
+            if (edge_ligand := names_to_ligands[ofe_ligand.name]).bespoke_parameters is not None:
+                bespoke_parameters = True
+                for parameter in edge_ligand.bespoke_parameters.parameters:
+                    handler = ff.get_parameter_handler(parameter.interaction)
+                    parameter_data = dict((key, value * getattr(unit, parameter.units)) for key, value in parameter.values.items())
+                    parameter_data["smirks"] = parameter.smirks
+                    parameter_data["id"] = f"bespokefit_{edge_ligand.compound_name}"
+                    if parameter.interaction == "ProperTorsions":
+                        parameter_data.update(torsion_data)
+                    try:
+                        # similar ligands will share parameters so make sure we don't add it twice
+                        handler.add_parameter(
+                            parameter_kwargs=parameter_data
+                        )
+                    except DuplicateParameterError:
+                        continue
+
+        # if we found bespoke parameters return the new force field
+        if bespoke_parameters:
+            ff_string = ff.to_string()
+
+        return ff_string
 
 
 class FreeEnergyCalculationFactory(_FreeEnergyBase):

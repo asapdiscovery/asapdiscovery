@@ -105,3 +105,36 @@ class ChargeProvenance(BaseModel):
         ...,
         description="The versions of the software used to generate the local charges.",
     )
+
+
+class BespokeParameter(BaseModel):
+    """
+    Store the bespoke parameters in a molecule.
+
+    Note:
+        This is for torsions only so far as the units are fixed to kcal / mol.
+    """
+
+    type: Literal["BespokeParameter"] = "BespokeParameter"
+
+    interaction: str = Field(
+        ..., description="The OpenFF interaction type this parameter corresponds to.")
+    smirks: str = Field(..., description="The smirks associated with this parameter.")
+    values: dict[str, float] = Field({}, description="The bespoke force field parameters "
+                                                     "which should be added to the base force field.")
+    units: Literal["kilocalories_per_mole"] = Field(
+        "kilocalories_per_mole",
+        description="The OpenFF units unit that should be attached to the values when adding the parameters "
+                    "to the force field.")
+
+
+class BespokeParameters(BaseModel):
+    """A model to record the bespoke parameters for a ligand."""
+
+    type: Literal["BespokeParameters"] = "BespokeParameters"
+
+    parameters: list[BespokeParameter] = Field(
+        [], description="The list of bespoke parameters."
+    )
+    base_force_field: str = Field(..., description="The name of the base force field these parameters were "
+                                                   "derived with.")
