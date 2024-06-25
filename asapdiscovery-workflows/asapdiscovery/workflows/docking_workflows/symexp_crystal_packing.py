@@ -40,6 +40,7 @@ from pydantic import Field
 
 class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs):
     vdw_radii_fudgefactor: float = Field(0.9, description="Fudge factor for VDW radii")
+    symexp_clash_thresh: int = Field(0, description="Clash threshold for symmetry expansion to be considered clashing ( > thresh is clashing)")
 
 
 def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
@@ -284,7 +285,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     # if clashing is greater than threshold, set hit flag to True
     scores_df_exp.loc[
-        scores_df_exp[DockingResultCols.SYMEXP_CLASH_NUM.value] > 0,
+        scores_df_exp[DockingResultCols.SYMEXP_CLASH_NUM.value] > inputs.symexp_clash_thresh,
         DockingResultCols.SYMEXP_CLASHING.value,
     ] = True
 

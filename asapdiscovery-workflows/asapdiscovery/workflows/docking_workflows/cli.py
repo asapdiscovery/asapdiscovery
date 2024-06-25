@@ -395,6 +395,12 @@ def small_scale(
     default=0.9,
     help="The fudge factor multiplier to apply to VDW radii",
 )
+@click.option(
+    "--symexp-clash-thresh",
+    type=int,
+    default=0,
+    help="The number of clashes to consider a ligand as clashing",
+)
 @ligands
 @postera_args
 @pdb_file
@@ -410,6 +416,7 @@ def small_scale(
 def symexp_crystal_packing(
     target: TargetTags,
     vdw_radii_fudgefactor: float = 0.9,
+    symexp_clash_thresh: int = 0,
     ligands: Optional[str] = None,
     postera: bool = False,
     postera_molset_name: Optional[str] = None,
@@ -457,6 +464,7 @@ def symexp_crystal_packing(
             output_dir=output_dir,
             overwrite=overwrite,
             loglevel=loglevel,
+            symexp_clash_thresh=symexp_clash_thresh,
         )
 
     symexp_crystal_packing_workflow(inputs)
