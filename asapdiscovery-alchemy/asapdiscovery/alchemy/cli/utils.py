@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import click
 import pandas as pd
@@ -14,6 +14,20 @@ def print_header(console: "rich.Console"):
     console.line()
     console.rule("ASAP-Alchemy")
     console.line()
+
+
+def print_message(console: "rich.Console", message: str):
+    """
+    Print a padded message to the console using rich.
+
+    Args:
+        console: The console we should print the message to.
+        message: The message to be printed.
+    """
+    from rich.padding import Padding
+
+    message = Padding(message, (1, 0, 1, 0))
+    console.print(message)
 
 
 def pull_from_postera(molecule_set_name: str):
@@ -232,3 +246,27 @@ class SpecialHelpOrder(click.Group):
             return cmd
 
         return decorator
+
+
+def get_cpus(cpus: Literal["auto", "all"] | int) -> int:
+    """
+    Work out the number of cpus to use based on the request and the machine.
+
+    Args:
+        cpus: The number of cpus to use or a supported setting, "auto" or "all".
+
+    Returns:
+        The number of cpus to use.
+    """
+    from multiprocessing import cpu_count
+
+    # workout the number of processes to use if auto or all
+    all_cpus = cpu_count()
+    if cpus == "all":
+        processors = all_cpus
+    elif cpus == "auto":
+        processors = all_cpus - 1
+    else:
+        # can be a string from click
+        processors = int(cpus)
+    return processors
