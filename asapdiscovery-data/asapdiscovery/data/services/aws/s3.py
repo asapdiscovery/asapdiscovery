@@ -126,7 +126,6 @@ class S3:
 
     def pull_file(self): ...
 
-
     def to_uri(self, location: PathLike):
         """Convert a location in the S3 bucket to a URI.
 
