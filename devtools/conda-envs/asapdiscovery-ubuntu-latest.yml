@@ -24,6 +24,7 @@ dependencies:
   - appdirs
   - mdanalysis
   - openff-toolkit
+  - openff-bespokefit
   - openff-forcefields >=2024.04.0
   - openeye-toolkits <2023.2.3
   - openmmforcefields >= 0.13.0
@@ -101,3 +102,6 @@ dependencies:
   - rich
   - alchemiscale-client
   - cinnabar >=0.4.1
+
+  - pip:
+    - git+https://github.com/openforcefield/openff-bespokefit/@client

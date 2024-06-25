@@ -377,8 +377,11 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         from openff.toolkit.utils.exceptions import DuplicateParameterError
         from openff.units import unit
 
+        # get the name of the base ff and load it
         ff_string = self.forcefield_settings.small_molecule_forcefield
-        ff = ForceField(self.forcefield_settings.small_molecule_forcefield)
+        if ".offxml" not in ff_string:
+            ff_string += ".offxml"
+        ff = ForceField(ff_string)
 
         # map the names to ligands to quickly find the parameters
         names_to_ligands = {
