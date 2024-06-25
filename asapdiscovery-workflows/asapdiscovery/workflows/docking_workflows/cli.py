@@ -99,9 +99,9 @@ def docking():
 @active_site_chain
 def large_scale(
     target: TargetTags,
-    n_select: int = 5,
+    n_select: int = 10,
     top_n: int = 500,
-    posit_confidence_cutoff: float = 0.7,
+    posit_confidence_cutoff: float = 0.5,
     use_omega: bool = False,
     allow_posit_retries: bool = False,
     ligands: Optional[str] = None,
@@ -318,7 +318,7 @@ def cross_docking(
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
-    n_select: int = 3,
+    n_select: int = 20,
     allow_dask_cuda: bool = True,
     no_omega: bool = False,
     ligands: Optional[str] = None,
