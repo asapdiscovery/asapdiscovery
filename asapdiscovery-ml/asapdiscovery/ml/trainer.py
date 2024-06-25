@@ -465,6 +465,14 @@ class Trainer(BaseModel):
         if upload_to_s3 and not s3_path:
             raise ValueError("Must provide an S3 path if uploading to S3.")
         return values
+    
+    @validator("s3_path", pre=True)
+    def check_s3_path(cls, v):
+        # check it is a folder path not a file path, cast to Path
+        if v:
+            if Path(v).suffix:
+                raise ValueError("S3 path must be a folder path.")
+        return v
 
     def wandb_init(self):
         """
@@ -1024,13 +1032,25 @@ class Trainer(BaseModel):
         torch.save(self.model.state_dict(), final_model_path)
         (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
+        # write to json
+        model_config_path = self.output_dir / "model_config.json"
+        model_config_path.write_text(self.model_config.json())
+
+
         if self.upload_to_s3:
             print("Uploading to S3")
+            s3_final_model_path = self.s3_path + "/model.th"
+            s3_config_path = self.s3_path + "/model_config.json"
             s3 = S3.from_settings(self.s3_settings)
             s3.push_file(
                 final_model_path,
-                location=self.s3_path,
+                location=s3_final_model_path,
                 content_type="application/octet-stream",
+            )
+            s3.push_file(
+                model_config_path,
+                location=s3_config_path,
+                content_type="application/json",
             )
             if self.use_wandb:
                 # track S3 artifacts
@@ -1040,10 +1060,20 @@ class Trainer(BaseModel):
                     type="model",
                     description="trained model",
                 )
-                uri = s3.to_uri(self.s3_path)
-                print(f"URI: {uri}")
-                model_artifact.add_reference(uri)
+                model_uri = s3.to_uri(s3_final_model_path)
+                print(f"URI: {model_uri}")
+                model_artifact.add_reference(model_uri)
                 wandb.log_artifact(model_artifact)
+
+                config_artifact = wandb.Artifact(
+                    "model_config",
+                    type="model_config",
+                    description="model configuration",
+                )
+                config_uri = s3.to_uri(s3_config_path)
+                print(f"URI: {config_uri}")
+                config_artifact.add_reference(config_uri)
+                wandb.log_artifact(config_artifact)
 
         if self.use_wandb:
             wandb.finish()
