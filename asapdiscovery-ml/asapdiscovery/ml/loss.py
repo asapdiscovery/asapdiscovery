@@ -252,13 +252,16 @@ class PoseCrossEntropyLoss(TorchCrossEntropyLoss):
         torch.Tensor
             Calculated loss
         """
-        pose_free_energies = torch.cat(pose_preds).flatten()
+        if self.pre_converted:
+            prob_values = pose_preds
+        else:
+            pose_free_energies = torch.cat(pose_preds).flatten()
 
-        # Normalizing constant (using logsumexp for numerical stability)
-        log_Q = torch.logsumexp(-pose_free_energies, dim=0)
+            # Normalizing constant (using logsumexp for numerical stability)
+            log_Q = torch.logsumexp(-pose_free_energies, dim=0)
 
-        # We want p = exp(-g)/Q = exp(-g)/exp(log_Q) = exp(-g - log_Q)
-        prob_values = torch.exp(-pose_free_energies - log_Q)
+            # We want p = exp(-g)/Q = exp(-g)/exp(log_Q) = exp(-g - log_Q)
+            prob_values = torch.exp(-pose_free_energies - log_Q)
 
         return super().forward(
             prob_values,
