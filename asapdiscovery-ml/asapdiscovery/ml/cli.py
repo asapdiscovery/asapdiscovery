@@ -18,6 +18,7 @@ from asapdiscovery.ml.cli_args import (
     loss_args,
     model_config_cache,
     model_rand_seed,
+    model_tag,
     mtenn_args,
     optim_args,
     output_dir,
@@ -89,6 +90,7 @@ ml.add_command(sweep)
 @wandb_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @mtenn_args
 @gat_args
 @es_args
@@ -130,6 +132,7 @@ def build_gat(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     in_feats: int | None = None,
     num_layers: int | None = None,
     hidden_feats: str | None = None,
@@ -292,6 +295,7 @@ def build_gat(
         "extra_config": Trainer.parse_extra_config(extra_config),
         "s3_path": s3_path,
         "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -305,6 +309,7 @@ def build_gat(
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @schnet_args
@@ -347,6 +352,7 @@ def build_schnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     hidden_channels: int | None = None,
     num_filters: int | None = None,
     num_interactions: int | None = None,
@@ -515,6 +521,7 @@ def build_schnet(
         "extra_config": Trainer.parse_extra_config(extra_config),
         "s3_path": s3_path,
         "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -528,6 +535,7 @@ def build_schnet(
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @e3nn_args
@@ -571,6 +579,7 @@ def build_e3nn(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     num_atom_types: int | None = None,
     irreps_hidden: str | None = None,
     lig: bool | None = None,
@@ -741,6 +750,7 @@ def build_e3nn(
         "extra_config": Trainer.parse_extra_config(extra_config),
         "s3_path": s3_path,
         "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -753,6 +763,7 @@ def build_e3nn(
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @visnet_args
@@ -795,6 +806,7 @@ def build_visnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     lmax: int | None = None,
     vecnorm_type: str | None = None,
     trainable_vecnorm: bool | None = None,
@@ -973,6 +985,7 @@ def build_visnet(
         "extra_config": Trainer.parse_extra_config(extra_config),
         "s3_path": s3_path,
         "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -987,6 +1000,7 @@ def build_visnet(
 @wandb_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @mtenn_args
 @gat_args
 @es_args
@@ -1028,6 +1042,7 @@ def build_and_train_gat(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     in_feats: int | None = None,
     num_layers: int | None = None,
     hidden_feats: str | None = None,
@@ -1190,6 +1205,7 @@ def build_and_train_gat(
         "extra_config": Trainer.parse_extra_config(extra_config),
         "s3_path": s3_path,
         "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     t = _build_trainer(
@@ -1208,6 +1224,7 @@ def build_and_train_gat(
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @schnet_args
@@ -1419,6 +1436,7 @@ def build_and_train_schnet(
         "extra_config": Trainer.parse_extra_config(extra_config),
         "s3_path": s3_path,
         "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     t = _build_trainer(
@@ -1437,6 +1455,7 @@ def build_and_train_schnet(
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @e3nn_args
@@ -1480,6 +1499,7 @@ def build_and_train_e3nn(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     num_atom_types: int | None = None,
     irreps_hidden: str | None = None,
     lig: bool | None = None,
@@ -1650,6 +1670,7 @@ def build_and_train_e3nn(
         "extra_config": Trainer.parse_extra_config(extra_config),
         "s3_path": s3_path,
         "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     t = _build_trainer(
@@ -1667,6 +1688,7 @@ def build_and_train_e3nn(
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @visnet_args
@@ -1709,6 +1731,7 @@ def build_and_train_visnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     lmax: int | None = None,
     vecnorm_type: str | None = None,
     trainable_vecnorm: bool | None = None,
@@ -1888,6 +1911,7 @@ def build_and_train_visnet(
         "extra_config": Trainer.parse_extra_config(extra_config),
         "s3_path": s3_path,
         "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     t = _build_trainer(

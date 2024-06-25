@@ -35,6 +35,7 @@ class Trainer(BaseModel):
     Schema for training an ML model.
     """
 
+
     # Required parameters for building the training environment
     optimizer_config: OptimizerConfig = Field(
         ..., description="Config describing the optimizer to use in training."
@@ -130,6 +131,9 @@ class Trainer(BaseModel):
     upload_to_s3: bool = Field(False, description="Upload artifacts to S3.")
     s3_settings: S3Settings | None = Field(None, description="S3 settings.")
     s3_path: str | None = Field(None, description="S3 location to upload artifacts.")
+    model_tag: str | None = Field(None, description="Tag for the model being trained.")
+
+
 
     # Tracker to make sure the optimizer and ML model are built before trying to train
     _is_initialized = False
@@ -1031,15 +1035,25 @@ class Trainer(BaseModel):
         final_model_path = self.output_dir / "final.th"
         torch.save(self.model.state_dict(), final_model_path)
         (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
+            
 
         # write to json
         model_config_path = self.output_dir / "model_config.json"
         model_config_path.write_text(self.model_config.json())
 
+                # copy over the final to tagged model if present
+        import shutil
+        if self.model_tag:
+            final_model_path_tagged = self.output_dir / f"{self.model_tag}.th"
+            shutil.copy(final_model_path, final_model_path_tagged)
+            final_model_path = final_model_path_tagged
 
         if self.upload_to_s3:
             print("Uploading to S3")
-            s3_final_model_path = self.s3_path + "/model.th"
+            if self.model_tag:
+                s3_final_model_path = self.s3_path + f"/{self.model_tag}.th"
+            else:
+                s3_final_model_path = self.s3_path + "/model.th"
             s3_config_path = self.s3_path + "/model_config.json"
             s3 = S3.from_settings(self.s3_settings)
             s3.push_file(
@@ -1055,8 +1069,9 @@ class Trainer(BaseModel):
             if self.use_wandb:
                 # track S3 artifacts
                 print("Linking S3 artifacts to W&B")
+                tag = self.model_tag if self.model_tag else "model"
                 model_artifact = wandb.Artifact(
-                    "model",
+                    tag,
                     type="model",
                     description="trained model",
                 )
