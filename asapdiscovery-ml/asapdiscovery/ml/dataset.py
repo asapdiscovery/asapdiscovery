@@ -160,6 +160,7 @@ class DockedDataset(Dataset):
             "lig": all_lig,
             "x": all_one_hot,
             "b": all_b,
+            "ligand": comp.ligand,
         }
         if compound:
             pose["compound"] = compound
@@ -358,10 +359,9 @@ class GroupedDockedDataset(Dataset):
             )
 
             # Calculate RMSD to ref if available
-            if "ligand" in pose:
-                ref_lig = Ligand(**pose["ligand"])
+            if "xtal_ligand" in pose:
                 pose["ref_rmsd"] = calculate_rmsd_openeye(
-                    ref_lig.to_oemol(), comp.ligand.to_oemol()
+                    Ligand(**pose["xtal_ligand"]).to_oemol(), pose["ligand"].to_oemol()
                 )
 
             try:
@@ -369,14 +369,16 @@ class GroupedDockedDataset(Dataset):
             except KeyError:
                 # Take compound-level data from first pose
                 exp_data = {
-                    k: v for k, v in pose.items() if not isinstance(v, torch.Tensor)
+                    k: v
+                    for k, v in pose.items()
+                    if (not isinstance(v, torch.Tensor)) and (k != "ref_rmsd")
                 }
                 structures[comp.ligand.compound_name] = {"poses": [pose]} | exp_data
                 compound_ids.append(comp.ligand.compound_name)
 
         # Calculate which pose is closest to experiment
         for compound_id, data in structures.items():
-            if "ligand" not in data:
+            if "xtal_ligand" not in data:
                 continue
 
             # Get all RMSDs
