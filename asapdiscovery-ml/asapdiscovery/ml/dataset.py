@@ -389,6 +389,8 @@ class GroupedDockedDataset(Dataset):
             best_lab[np.argmin(pose_rmsds)] = 1
 
             data["best_pose_label"] = best_lab
+            # Normalize to probability, take inverse first so lower RMSDs are better
+            data["rmsd_probs"] = (1 / pose_rmsds) / (1 / pose_rmsds).sum()
 
         return cls(compound_ids=compound_ids, structures=structures)
 
