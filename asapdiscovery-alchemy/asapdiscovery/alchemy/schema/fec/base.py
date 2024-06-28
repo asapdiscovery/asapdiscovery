@@ -2,26 +2,15 @@ import warnings
 from collections import Counter
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
-import gufe
 import openfe
 from alchemiscale import ScopedKey
-from gufe import settings
 from gufe.tokenization import GufeKey
-from openfe.protocols.openmm_rfe.equil_rfe_settings import (
-    AlchemicalSamplerSettings,
-    AlchemicalSettings,
-    IntegratorSettings,
-    OpenMMEngineSettings,
-    SimulationSettings,
-    SolvationSettings,
-    SystemSettings,
-)
 from openff.models.types import FloatQuantity
-from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
 
-from .base import _SchemaBase, _SchemaBaseFrozen
-from .network import NetworkPlanner, PlannedNetwork
+from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
+from asapdiscovery.alchemy.schema.fec.protocols import OPENFE_PROTOCOLS, RelativeHybridTopologySettings
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
@@ -42,35 +31,6 @@ class AlchemiscaleSettings(BaseSettings):
         "https://api.alchemiscale.org",
         description="The address of the alchemiscale instance to connect to.",
     )
-
-
-class SolventSettings(_SchemaBase):
-    """
-    A settings class to encode the solvent used in the OpenFE FEC calculations.
-    """
-
-    type: Literal["SolventSettings"] = "SolventSettings"
-
-    smiles: str = Field("O", description="The smiles pattern of the solvent.")
-    positive_ion: str = Field(
-        "Na+",
-        description="The positive monoatomic ion which should be used to neutralize the system and to adjust the ionic concentration.",
-    )
-    negative_ion: str = Field(
-        "Cl-",
-        description="The negative monoatomic ion which should be used to neutralize the system and to adjust the ionic concentration.",
-    )
-    neutralize: bool = Field(
-        True,
-        description="If the net charge of the chemical system should be neutralized by the ions defined by `positive_ion` and `negative_ion`.",
-    )
-    ion_concentration: FloatQuantity["molar"] = Field(  # noqa: F821
-        0.15 * OFFUnit.molar,
-        description="The ionic concentration required in molar units.",
-    )
-
-    def to_solvent_component(self) -> gufe.SolventComponent:
-        return gufe.SolventComponent(**self.dict(exclude={"type"}))
 
 
 # TODO make base class with abstract methods to collect results.
@@ -203,84 +163,8 @@ class _FreeEnergyBase(_SchemaBase):
 
     type: Literal["_FreeEnergyBase"] = "_FreeEnergyBase"
 
-    solvent_settings: SolventSettings = Field(
-        SolventSettings(),
-        description="The solvent settings which should be used during the free energy calculations.",
-    )
-    forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
-        settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.1.0"
-        ),
-        description="The force field settings used to parameterize the systems.",
-    )
-    thermo_settings: settings.ThermoSettings = Field(
-        settings.ThermoSettings(
-            temperature=298.15 * OFFUnit.kelvin, pressure=1 * OFFUnit.bar
-        ),
-        description="The settings for thermodynamic parameters.",
-    )
-    system_settings: SystemSettings = Field(
-        SystemSettings(), description="The nonbonded system settings."
-    )
-    solvation_settings: SolvationSettings = Field(
-        SolvationSettings(),
-        description="Settings controlling how the systems should be solvated.",
-    )
-    alchemical_settings: AlchemicalSettings = Field(
-        AlchemicalSettings(), description="The alchemical protocol settings."
-    )
-    # note alchemical_sampler_settings.n_repeats specifies the number of times each transformation will be run
-    alchemical_sampler_settings: AlchemicalSamplerSettings = Field(
-        AlchemicalSamplerSettings(
-            n_repeats=1
-        ),  # Run one calculation in serial and parallise accross alchemiscale workers see n_repeats on the _FreeEnergyBase object
-        description="Settings for the Equilibrium Alchemical sampler, currently supporting either MultistateSampler, SAMSSampler or ReplicaExchangeSampler.",
-    )
-    engine_settings: OpenMMEngineSettings = Field(
-        OpenMMEngineSettings(), description="Openmm platform settings."
-    )
-    integrator_settings: IntegratorSettings = Field(
-        IntegratorSettings(),
-        description="Settings for the LangevinSplittingDynamicsMove integrator.",
-    )
-    simulation_settings: SimulationSettings = Field(
-        SimulationSettings(
-            equilibration_length=1.0 * OFFUnit.nanoseconds,
-            production_length=5.0 * OFFUnit.nanoseconds,
-        ),
-        description="Settings for simulation control, including lengths and writing to disk.",
-    )
-    protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
-        "RelativeHybridTopologyProtocol",
-        description="The name of the OpenFE alchemical protocol to use.",
-    )
-    n_repeats: int = Field(
-        2,
-        description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
-    )
-
-    def to_openfe_protocol(self):
-        """Build the corresponding OpenFE protocol from the settings defined in this schema."""
-        # TODO we need some way to link the settings to the protocol for when we have other options
-        if self.protocol == "RelativeHybridTopologyProtocol":
-            protocol_class = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol
-            settings_class = (
-                openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings
-            )
-
-        protocol_settings = settings_class(
-            # workaround type hint being base FF engine class
-            forcefield_settings=self.forcefield_settings,
-            thermo_settings=self.thermo_settings,
-            system_settings=self.system_settings,
-            solvation_settings=self.solvation_settings,
-            alchemical_settings=self.alchemical_settings,
-            alchemical_sampler_settings=self.alchemical_sampler_settings,
-            engine_settings=self.engine_settings,
-            integrator_settings=self.integrator_settings,
-            simulation_settings=self.simulation_settings,
-        )
-        return protocol_class(settings=protocol_settings)
+    protocol_settings: OPENFE_PROTOCOLS = Field(RelativeHybridTopologySettings(), description="The settings of the protocol which is to be"
+                                                                                              "used. The protocol is determined by the settings provided.")
 
 
 class FreeEnergyCalculationNetwork(_FreeEnergyBase):
@@ -335,7 +219,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         ligand_network = self.network.to_ligand_network()
         solvent = self.solvent_settings.to_solvent_component()
         receptor = self.to_openfe_receptor()
-        protocol = self.to_openfe_protocol()
+        protocol = self.protocol_settings.to_openfe_protocol()
 
         # build the network
         for mapping in ligand_network.edges:
