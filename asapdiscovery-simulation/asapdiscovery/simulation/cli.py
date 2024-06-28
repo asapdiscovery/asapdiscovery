@@ -2,6 +2,7 @@ import click
 import itertools
 import logging 
 from typing import Optional, Union
+from pathlib import Path
 
 from asapdiscovery.cli.cli_args import (
     use_dask,
@@ -41,7 +42,7 @@ def vanilla_md(
     use_dask: bool = False
     
 ):
-    print("Running vanilla MD simulation")
+    logger.info("Running vanilla MD simulation")
     
     logger = FileLogger(
         "",  # default root logger so that dask logging is forwarded
@@ -59,19 +60,41 @@ def vanilla_md(
     else:
         dask_client = None
 
-    # in case its a multisdf
-    ligs = MolFileFactory.from_file(ligands).read()
-    logger.info(f"Read {len(ligs)} ligands")
-
-    # save each ligand to a file
-    lig_paths = []
-    lig_dir = output_dir / "ligands"
-    for lig in ligs:
-        path = lig_dir / f"{lig.compound_name}.sdf"
-        lig.to_sdf(path)
-        lig_paths.append(path)
+    pdb_path = Path(pdb_file)
     
-    combo = list(itertools.product([pdb_file], lig_paths))
+    complex = Complex.from_pdb(
+                pdb_file,
+                target_kwargs={"target_name": pdb_path.stem},
+                ligand_kwargs={"compound_name": f"{pdb_path.stem}_ligand"},
+            )
+
+
+    if ligands:
+        # in case its a multisdf
+        ligs = MolFileFactory.from_file(ligands).read()
+        logger.info(f"Read {len(ligs)} ligands")
+
+        # save each ligand to a file
+        lig_paths = []
+        lig_dir = output_dir / "ligands"
+        for lig in ligs:
+            path = lig_dir / f"{lig.compound_name}.sdf"
+            lig.to_sdf(path)
+            lig_paths.append(path)
+
+    else:
+        # use the ligand that was in the pdb
+        if complex.ligand:
+            lig_path = output_dir / f"{pdb_path.stem}_ligand.sdf"
+            complex.ligand.to_sdf(lig_path)
+            lig_paths = [lig_path]
+        else:
+            raise ValueError("No ligands provided and none found in pdb")
+    
+    protein_processed_path = output_dir / f"{pdb_path.stem}_processed.pdb"
+    complex.to_pdb(protein_processed_path)
+
+    combo = list(itertools.product([protein_processed_path], lig_paths))
 
     simulator = VanillaMDSimulator(output_dir=output_dir, openmm_platform=md_openmm_platform, num_steps=md_steps)
 
