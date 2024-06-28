@@ -1,1 +1,4 @@
-from asapdiscovery.alchemy.schema.fec.base import FreeEnergyCalculationFactory, FreeEnergyCalculationNetwork
+from asapdiscovery.alchemy.schema.fec.base import (
+    FreeEnergyCalculationFactory,
+    FreeEnergyCalculationNetwork,
+)

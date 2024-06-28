@@ -4,13 +4,15 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import openfe
 from alchemiscale import ScopedKey
+from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.alchemy.schema.fec.protocols import (
+    OPENFE_PROTOCOLS,
+    RelativeHybridTopologySettings,
+)
+from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
 from gufe.tokenization import GufeKey
 from openff.models.types import FloatQuantity
 from pydantic import BaseSettings, Field
-
-from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
-from asapdiscovery.alchemy.schema.fec.protocols import OPENFE_PROTOCOLS, RelativeHybridTopologySettings
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
@@ -163,8 +165,11 @@ class _FreeEnergyBase(_SchemaBase):
 
     type: Literal["_FreeEnergyBase"] = "_FreeEnergyBase"
 
-    protocol_settings: OPENFE_PROTOCOLS = Field(RelativeHybridTopologySettings(), description="The settings of the protocol which is to be"
-                                                                                              "used. The protocol is determined by the settings provided.")
+    protocol_settings: OPENFE_PROTOCOLS = Field(
+        RelativeHybridTopologySettings(),
+        description="The settings of the protocol which is to be"
+        "used. The protocol is determined by the settings provided.",
+    )
 
 
 class FreeEnergyCalculationNetwork(_FreeEnergyBase):

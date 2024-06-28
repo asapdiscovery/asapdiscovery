@@ -1,9 +1,11 @@
 import abc
+from typing import Literal
 
+import gufe
 import openfe.protocols.openmm_rfe
 from asapdiscovery.alchemy.schema.fec.base import _SchemaBase
-from pydantic import Field
-from typing import Literal
+from feflow.settings import PeriodicNonequilibriumIntegratorSettings
+from gufe import settings
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSamplerSettings,
     AlchemicalSettings,
@@ -14,9 +16,7 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     SystemSettings,
 )
 from openff.units import unit as OFFUnit
-import gufe
-from gufe import settings
-from feflow.settings import PeriodicNonequilibriumIntegratorSettings
+from pydantic import Field
 
 
 class SolventSettings(_SchemaBase):
@@ -91,8 +91,7 @@ class _ProtocolBase(_SchemaBase, abc.ABC):
     )
 
     @abc.abstractmethod
-    def to_openfe_protocol(self):
-        ...
+    def to_openfe_protocol(self): ...
 
 
 class RelativeHybridTopologySettings(_ProtocolBase):
@@ -132,7 +131,9 @@ class RelativeHybridTopologySettings(_ProtocolBase):
             integrator_settings=self.integrator_settings,
             simulation_settings=self.simulation_settings,
         )
-        return openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol(settings=protocol_settings)
+        return openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol(
+            settings=protocol_settings
+        )
 
 
 class NonEquilibriumCyclingSettings(_ProtocolBase):
@@ -144,15 +145,16 @@ class NonEquilibriumCyclingSettings(_ProtocolBase):
         PeriodicNonequilibriumIntegratorSettings(),
         description="Settings for the periodic non-equilibrium integrator.",
     )
-    num_cycles: int = Field(100, description="The number of non-equilibrium cycles to run for this protocol.")
+    num_cycles: int = Field(
+        100,
+        description="The number of non-equilibrium cycles to run for this protocol.",
+    )
 
     def to_openfe_protocol(self):
-        from feflow.settings import NonEquilibriumCyclingSettings
         from feflow.protocols import NonEquilibriumCyclingProtocol
+        from feflow.settings import NonEquilibriumCyclingSettings
 
-        protocol_settings = NonEquilibriumCyclingSettings(
-
-        )
+        protocol_settings = NonEquilibriumCyclingSettings()
         return NonEquilibriumCyclingProtocol(settings=protocol_settings)
 
 
