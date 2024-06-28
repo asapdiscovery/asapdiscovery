@@ -83,9 +83,9 @@ def main(
             except KeyError:
                 continue
 
-            c.experimental_data["ligand"] = lig
+            c.experimental_data["xtal_ligand"] = lig
 
-        n_added = sum(["ligand" in c.experimental_data for c in compounds])
+        n_added = sum(["xtal_ligand" in c.experimental_data for c in compounds])
         print(f"Added {n_added} Ligands", flush=True)
         out_json.write_text("[" + ", ".join([c.json() for c in compounds]) + "]")
 
