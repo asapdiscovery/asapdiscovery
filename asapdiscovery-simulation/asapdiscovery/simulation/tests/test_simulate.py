@@ -3,19 +3,51 @@ import os
 import pytest
 from asapdiscovery.simulation.simulate import VanillaMDSimulator
 from openmm import unit
+from asapdiscovery.docking.openeye import POSITDockingResults
 
 
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-def test_actual_simulation(results, tmp_path):
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_actual_simulation(results, tmp_path, use_dask):
     vs = VanillaMDSimulator(
-        num_steps=1, equilibration_steps=1, output_dir=tmp_path, truncate_steps=False
+        num_steps=1, equilibration_steps=1, reporting_interval=1, output_dir=tmp_path, truncate_steps=False
     )
     assert vs.num_steps == 1
     assert vs.equilibration_steps == 1
-    simulation_results = vs.simulate(results)
+    simulation_results = vs.simulate(results, use_dask=use_dask, failure_mode="raise")
     assert simulation_results[0].success
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_actual_simulation_disk(results_path, tmp_path, use_dask):
+    vs = VanillaMDSimulator(
+        num_steps=1, equilibration_steps=1, reporting_interval=1, output_dir=tmp_path, truncate_steps=False
+    )
+    assert vs.num_steps == 1
+    assert vs.equilibration_steps == 1
+    simulation_results = vs.simulate(results_path, use_dask=use_dask, backend="disk", reconstruct_cls=POSITDockingResults, failure_mode="raise")
+    assert simulation_results[0].success
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+
+def test_actual_simulation_paths(prot, lig, tmp_path):
+    vs = VanillaMDSimulator(
+        num_steps=1, equilibration_steps=1, reporting_interval=1, output_dir=tmp_path, truncate_steps=False
+    )
+    assert vs.num_steps == 1
+    assert vs.equilibration_steps == 1
+    simulation_results = vs.simulate([(prot, lig)], outpaths=["test"], failure_mode="raise")
+    assert simulation_results[0].traj_path.exists()
+    assert simulation_results[0].success
+
 
 
 @pytest.mark.parametrize("restr_type", ["CA", "heavy"])
@@ -84,15 +116,18 @@ def test_properties(tmp_path):
     assert vs.frames_per_ns == 50000.0
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
 def test_multi_use(results, tmp_path):
     vs = VanillaMDSimulator(
-        num_steps=1, equilibration_steps=1, output_dir=tmp_path, truncate_steps=False
+        num_steps=1, equilibration_steps=1, reporting_interval=1,  output_dir=tmp_path, truncate_steps=False
     )
     assert vs.num_steps == 1
     assert vs.equilibration_steps == 1
-    simulation_results = vs.simulate(results)
+    simulation_results = vs.simulate(results, failure_mode="raise")
     assert simulation_results[0].success
 
-    simulation_results_parallel = vs.simulate(results, use_dask=True)
+    simulation_results_parallel = vs.simulate(results, use_dask=True, failure_mode="raise")
 
     assert simulation_results_parallel[0].success

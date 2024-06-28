@@ -293,7 +293,8 @@ class VanillaMDSimulator(SimulatorBase):
         return self._dispatch(inputs, outpaths=outpaths, **kwargs)
     
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], outpaths: Optional[list[Path]] = None, failure_mode: str = "skip"):
+    def _dispatch(self, inputs: list[DockingResult], failure_mode: str = "skip", **kwargs):
+        # outpaths is unused in this overload
         results = []
         for inp in inputs:
             try:
@@ -324,10 +325,13 @@ class VanillaMDSimulator(SimulatorBase):
     @_dispatch.register
     def _dispatch(self, inputs: list[tuple[Path, Path]], outpaths: Optional[list[Path]] = None, failure_mode: str = "skip"):
         results = []
-        for protein, ligand in inputs:
+        for protein, ligand, outpath in zip(inputs, outpaths):
             try:
                 tag = protein.stem + "_" + ligand.stem
-                outpath = self.output_dir / tag
+                if outpaths:
+                    outpath = outpaths / tag
+                else:
+                    outpath = self.output_dir /  tag
                 if not outpath.exists():
                     outpath.mkdir(parents=True)
                 res = self._simulate_loop(protein, ligand, outpath)

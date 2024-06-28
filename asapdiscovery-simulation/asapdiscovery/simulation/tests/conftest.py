@@ -10,8 +10,13 @@ def ligand_path():
 
 
 @pytest.fixture(scope="session")
-def results():
-    res = POSITDockingResults.from_json_file(fetch_test_file("docking_results.json"))
+def results_path():
+    return [fetch_test_file("docking_results.json")]
+
+
+@pytest.fixture(scope="session")
+def results(results_path):
+    res = POSITDockingResults.from_json_file(results_path[0])
     return [res]
 
 
