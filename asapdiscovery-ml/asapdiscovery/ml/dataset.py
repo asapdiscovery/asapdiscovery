@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex
@@ -339,7 +340,6 @@ class GroupedDockedDataset(Dataset):
         -------
         GroupedDockedDataset
         """
-        import numpy as np
         from asapdiscovery.docking.analysis import calculate_rmsd_openeye
 
         compound_ids = []
@@ -382,7 +382,7 @@ class GroupedDockedDataset(Dataset):
                 continue
 
             # Get all RMSDs
-            pose_rmsds = [pose["ref_rmsd"] for pose in data["poses"]]
+            pose_rmsds = np.asarray([pose["ref_rmsd"] for pose in data["poses"]])
 
             # Label of all zeros, except the one with the best pose (lowest ref RMSD)
             best_lab = np.zeros(len(data["poses"]))
