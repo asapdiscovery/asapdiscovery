@@ -800,6 +800,8 @@ class Trainer(BaseModel):
                 # convert to float to match other types
                 targets = [
                     torch.tensor([[pose[target_prop]]], device=self.device).float()
+                    if target_prop in pose
+                    else None
                     for target_prop in self.target_props
                 ]
                 in_ranges = [
@@ -850,12 +852,22 @@ class Trainer(BaseModel):
                             in_range,
                             uncertainty,
                         )
+                        if target is not None
+                        else torch.tensor([0])
                         for loss_func, target, in_range, uncertainty in zip(
                             self.loss_funcs, targets, in_ranges, uncertaintys
                         )
                     ]
                 )
-                loss = losses.flatten().dot(self.loss_weights)
+
+                # Temporarily update weights to handle missing targets
+                missing_idx = losses.isnan()
+                use_weights = self.loss_weights.clone().detach()
+                # Set to 0 so it doesn't affect dot product
+                use_weights[missing_idx] = 0
+                # Re-normalize weights
+                use_weights /= use_weights.sum()
+                loss = losses.flatten().dot(use_weights)
 
                 # Can just call loss.backward, grads will accumulate additively
                 loss.backward()
@@ -876,8 +888,10 @@ class Trainer(BaseModel):
                     in_ranges,
                     uncertaintys,
                     self.loss_configs,
-                    self.loss_weights,
+                    use_weights,
                 ):
+                    if target is None:
+                        continue
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
                         pose_predictions=[p.item() for p in pose_preds],
@@ -950,6 +964,8 @@ class Trainer(BaseModel):
                 # convert to float to match other types
                 targets = [
                     torch.tensor([[pose[target_prop]]], device=self.device).float()
+                    if target_prop in pose
+                    else None
                     for target_prop in self.target_props
                 ]
                 in_ranges = [
@@ -987,12 +1003,22 @@ class Trainer(BaseModel):
                             in_range,
                             uncertainty,
                         )
+                        if target is not None
+                        else torch.tensor([0])
                         for loss_func, target, in_range, uncertainty in zip(
                             self.loss_funcs, targets, in_ranges, uncertaintys
                         )
                     ]
                 )
-                loss = losses.flatten().dot(self.eval_loss_weights)
+
+                # Temporarily update weights to handle missing targets
+                missing_idx = losses.isnan()
+                use_weights = self.eval_loss_weights.clone().detach()
+                # Set to 0 so it doesn't affect dot product
+                use_weights[missing_idx] = 0
+                # Re-normalize weights
+                use_weights /= use_weights.sum()
+                loss = losses.flatten().dot(use_weights)
 
                 # Update pred_tracker
                 for (
@@ -1010,8 +1036,10 @@ class Trainer(BaseModel):
                     in_ranges,
                     uncertaintys,
                     self.loss_configs,
-                    self.eval_loss_weights,
+                    use_weights,
                 ):
+                    if target is None:
+                        continue
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
                         pose_predictions=[p.item() for p in pose_preds],
@@ -1041,6 +1069,8 @@ class Trainer(BaseModel):
                 # convert to float to match other types
                 targets = [
                     torch.tensor([[pose[target_prop]]], device=self.device).float()
+                    if target_prop in pose
+                    else None
                     for target_prop in self.target_props
                 ]
                 in_ranges = [
@@ -1078,12 +1108,22 @@ class Trainer(BaseModel):
                             in_range,
                             uncertainty,
                         )
+                        if target is not None
+                        else torch.tensor([0])
                         for loss_func, target, in_range, uncertainty in zip(
                             self.loss_funcs, targets, in_ranges, uncertaintys
                         )
                     ]
                 )
-                loss = losses.flatten().dot(self.eval_loss_weights)
+
+                # Temporarily update weights to handle missing targets
+                missing_idx = losses.isnan()
+                use_weights = self.eval_loss_weights.clone().detach()
+                # Set to 0 so it doesn't affect dot product
+                use_weights[missing_idx] = 0
+                # Re-normalize weights
+                use_weights /= use_weights.sum()
+                loss = losses.flatten().dot(use_weights)
 
                 # Update pred_tracker
                 for (
@@ -1101,8 +1141,10 @@ class Trainer(BaseModel):
                     in_ranges,
                     uncertaintys,
                     self.loss_configs,
-                    self.eval_loss_weights,
+                    use_weights,
                 ):
+                    if target is None:
+                        continue
                     self.pred_tracker.update_values(
                         prediction=pred.item(),
                         pose_predictions=[p.item() for p in pose_preds],
