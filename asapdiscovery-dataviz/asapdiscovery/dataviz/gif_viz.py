@@ -54,6 +54,8 @@ class GIFVisualizer(VisualizerBase):
         Whether to generate contact maps
     static_view_only : bool
         Whether to only generate static PSE for the trajectory
+    zoom_view : bool
+        Whether to zoom into the binding site on final output visualization
     start : PositiveInt
         Start frame - if not defined, will default to last 10% of default trajectory settings
     stop : int
@@ -78,6 +80,10 @@ class GIFVisualizer(VisualizerBase):
     contacts: bool = Field(True, description="Whether to generate contact maps")
     static_view_only: bool = Field(
         False, description="Whether to only generate static views"
+    )
+    zoom_view: bool = Field(
+        False,
+        description="Whether to zoom into the binding site on final output visualization",
     )
     start: PositiveInt = Field(
         1800,
@@ -117,6 +123,7 @@ class GIFVisualizer(VisualizerBase):
         smooth: int,
         contacts: bool,
         frames_per_ns: int,
+        zoom_view: bool,
         outpath: Optional[Path] = None,
         out_dir: Optional[Path] = None,
     ):
@@ -279,6 +286,8 @@ class GIFVisualizer(VisualizerBase):
         # Process the trajectory in a temporary directory
         from pygifsicle import gifsicle
 
+        if zoom_view:
+            p.cmd.zoom("binding_site")
         # now make the movie.
         p.cmd.set(
             "ray_trace_frames", 0
@@ -372,6 +381,7 @@ class GIFVisualizer(VisualizerBase):
                     smooth=self.smooth,
                     contacts=self.contacts,
                     frames_per_ns=self.frames_per_ns,
+                    zoom_view=self.zoom_view,
                     out_dir=self.output_dir,
                 )
                 row = {}
@@ -441,6 +451,7 @@ class GIFVisualizer(VisualizerBase):
                     smooth=self.smooth,
                     contacts=self.contacts,
                     frames_per_ns=self.frames_per_ns,
+                    zoom_view=self.zoom_view,
                     out_dir=self.output_dir,
                 )
                 row = {}
