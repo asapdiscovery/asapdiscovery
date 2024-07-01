@@ -832,6 +832,8 @@ class LossFunctionType(StringEnum):
     gaussian_sq = "gaussian_sq"
     # Squared difference penalty for pred outside range
     range_penalty = "range"
+    # Pose cross entropy loss
+    cross_entropy = "cross_entropy"
 
 
 class LossFunctionConfig(ConfigBase):
@@ -882,7 +884,12 @@ class LossFunctionConfig(ConfigBase):
         return values
 
     def build(self):
-        from asapdiscovery.ml.loss import GaussianNLLLoss, MSELoss, RangeLoss
+        from asapdiscovery.ml.loss import (
+            GaussianNLLLoss,
+            MSELoss,
+            RangeLoss,
+            PoseCrossEntropyLoss,
+        )
 
         match self.loss_type:
             case LossFunctionType.mse:
@@ -897,6 +904,8 @@ class LossFunctionConfig(ConfigBase):
                 return RangeLoss(
                     lower_lim=self.range_lower_lim, upper_lim=self.range_upper_lim
                 )
+            case LossFunctionType.cross_entropy:
+                return PoseCrossEntropyLoss()
             case other:
                 raise ValueError(f"Unknown LossFunctionType {other}.")
 
