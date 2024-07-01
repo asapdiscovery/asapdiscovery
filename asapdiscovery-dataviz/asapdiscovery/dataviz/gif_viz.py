@@ -82,7 +82,9 @@ class GIFVisualizer(VisualizerBase):
         False, description="Whether to only generate static views"
     )
     zoom_view: bool = Field(
-        False, description="Whether to zoom into the binding site on final output visualization")
+        False,
+        description="Whether to zoom into the binding site on final output visualization",
+    )
     start: PositiveInt = Field(
         1800,
         description="Start frame - if not defined, will default to last 10% of default trajectory settings",
@@ -283,6 +285,7 @@ class GIFVisualizer(VisualizerBase):
 
         # Process the trajectory in a temporary directory
         from pygifsicle import gifsicle
+
         if zoom_view:
             p.cmd.zoom("binding_site")
         # now make the movie.
