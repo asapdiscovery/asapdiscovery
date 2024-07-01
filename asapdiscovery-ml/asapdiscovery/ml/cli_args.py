@@ -1252,7 +1252,10 @@ def batch_size(func):
 
 def target_prop(func):
     return click.option(
-        "--target-prop", type=str, help="Target property to train against."
+        "--target-prop",
+        type=str,
+        multiple=True,
+        help="Target property to train against.",
     )(func)
 
 
