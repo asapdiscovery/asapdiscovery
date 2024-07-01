@@ -852,7 +852,7 @@ class Trainer(BaseModel):
                             self.loss_funcs, targets, in_ranges, uncertaintys
                         )
                     ]
-                )
+                ).to(self.device, dtype=torch.float32)
 
                 # Temporarily update weights to handle missing targets
                 missing_idx = losses.isnan()
@@ -864,7 +864,8 @@ class Trainer(BaseModel):
                 loss = losses.flatten().dot(use_weights)
 
                 # Can just call loss.backward, grads will accumulate additively
-                loss.backward()
+                if loss.requires_grad:
+                    loss.backward()
 
                 # Update pred_tracker
                 for (
@@ -997,7 +998,7 @@ class Trainer(BaseModel):
                             self.loss_funcs, targets, in_ranges, uncertaintys
                         )
                     ]
-                )
+                ).to(self.device, dtype=torch.float32)
 
                 # Temporarily update weights to handle missing targets
                 missing_idx = losses.isnan()
@@ -1096,7 +1097,7 @@ class Trainer(BaseModel):
                             self.loss_funcs, targets, in_ranges, uncertaintys
                         )
                     ]
-                )
+                ).to(self.device, dtype=torch.float32)
 
                 # Temporarily update weights to handle missing targets
                 missing_idx = losses.isnan()
