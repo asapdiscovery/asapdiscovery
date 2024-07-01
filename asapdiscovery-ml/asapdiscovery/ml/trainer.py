@@ -845,7 +845,9 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
                 losses = torch.cat(
                     [
-                        loss_func(pred, pose_preds, target, in_range, uncertainty)
+                        loss_func(
+                            pred, pose_preds, target, in_range, uncertainty
+                        ).reshape((1,))
                         if target is not None
                         else torch.tensor([0])
                         for loss_func, target, in_range, uncertainty in zip(
@@ -994,7 +996,9 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
                 losses = torch.cat(
                     [
-                        loss_func(pred, pose_preds, target, in_range, uncertainty)
+                        loss_func(
+                            pred, pose_preds, target, in_range, uncertainty
+                        ).reshape((1,))
                         if target is not None
                         else torch.tensor([0])
                         for loss_func, target, in_range, uncertainty in zip(
@@ -1093,7 +1097,9 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
                 losses = torch.cat(
                     [
-                        loss_func(pred, pose_preds, target, in_range, uncertainty)
+                        loss_func(
+                            pred, pose_preds, target, in_range, uncertainty
+                        ).reshape((1,))
                         if target is not None
                         else torch.tensor([0])
                         for loss_func, target, in_range, uncertainty in zip(
