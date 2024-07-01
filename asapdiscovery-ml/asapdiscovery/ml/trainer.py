@@ -863,10 +863,6 @@ class Trainer(BaseModel):
                 use_weights /= use_weights.sum()
                 loss = losses.flatten().dot(use_weights)
 
-                # Can just call loss.backward, grads will accumulate additively
-                if loss.requires_grad:
-                    loss.backward()
-
                 # Update pred_tracker
                 for (
                     loss_val,
@@ -901,6 +897,13 @@ class Trainer(BaseModel):
                         loss_config=loss_config,
                         loss_weight=loss_wt,
                     )
+
+                # If all target props were missing, there's no backprop to do
+                if not loss.requires_grad:
+                    continue
+
+                # Can just call loss.backward, grads will accumulate additively
+                loss.backward()
 
                 # Keep track of loss for each sample
                 tmp_loss.append(loss.item())
