@@ -799,14 +799,14 @@ class Trainer(BaseModel):
 
                 # convert to float to match other types
                 targets = [
-                    torch.tensor([[pose[target_prop]]], device=self.device).float()
+                    torch.tensor(pose[target_prop], device=self.device).float()
                     if target_prop in pose
                     else None
                     for target_prop in self.target_props
                 ]
                 in_ranges = [
                     torch.tensor(
-                        [[pose[f"{target_prop}_range"]]], device=self.device
+                        pose[f"{target_prop}_range"], device=self.device
                     ).float()
                     if f"{target_prop}_range" in pose
                     else None
@@ -814,7 +814,7 @@ class Trainer(BaseModel):
                 ]
                 uncertaintys = [
                     torch.tensor(
-                        [[pose[f"{target_prop}_stderr"]]],
+                        pose[f"{target_prop}_stderr"],
                         device=self.device,
                     ).float()
                     if f"{target_prop}_range" in pose
@@ -845,13 +845,7 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
                 losses = torch.cat(
                     [
-                        loss_func(
-                            pred.reshape(target.shape),
-                            pose_preds,
-                            target,
-                            in_range,
-                            uncertainty,
-                        )
+                        loss_func(pred, pose_preds, target, in_range, uncertainty)
                         if target is not None
                         else torch.tensor([0])
                         for loss_func, target, in_range, uncertainty in zip(
@@ -963,14 +957,14 @@ class Trainer(BaseModel):
 
                 # convert to float to match other types
                 targets = [
-                    torch.tensor([[pose[target_prop]]], device=self.device).float()
+                    torch.tensor(pose[target_prop], device=self.device).float()
                     if target_prop in pose
                     else None
                     for target_prop in self.target_props
                 ]
                 in_ranges = [
                     torch.tensor(
-                        [[pose[f"{target_prop}_range"]]], device=self.device
+                        pose[f"{target_prop}_range"], device=self.device
                     ).float()
                     if f"{target_prop}_range" in pose
                     else None
@@ -978,7 +972,7 @@ class Trainer(BaseModel):
                 ]
                 uncertaintys = [
                     torch.tensor(
-                        [[pose[f"{target_prop}_stderr"]]],
+                        pose[f"{target_prop}_stderr"],
                         device=self.device,
                     ).float()
                     if f"{target_prop}_range" in pose
@@ -996,13 +990,7 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
                 losses = torch.cat(
                     [
-                        loss_func(
-                            pred.reshape(target.shape),
-                            pose_preds,
-                            target,
-                            in_range,
-                            uncertainty,
-                        )
+                        loss_func(pred, pose_preds, target, in_range, uncertainty)
                         if target is not None
                         else torch.tensor([0])
                         for loss_func, target, in_range, uncertainty in zip(
@@ -1068,14 +1056,14 @@ class Trainer(BaseModel):
 
                 # convert to float to match other types
                 targets = [
-                    torch.tensor([[pose[target_prop]]], device=self.device).float()
+                    torch.tensor(pose[target_prop], device=self.device).float()
                     if target_prop in pose
                     else None
                     for target_prop in self.target_props
                 ]
                 in_ranges = [
                     torch.tensor(
-                        [[pose[f"{target_prop}_range"]]], device=self.device
+                        pose[f"{target_prop}_range"], device=self.device
                     ).float()
                     if f"{target_prop}_range" in pose
                     else None
@@ -1083,7 +1071,7 @@ class Trainer(BaseModel):
                 ]
                 uncertaintys = [
                     torch.tensor(
-                        [[pose[f"{target_prop}_stderr"]]],
+                        pose[f"{target_prop}_stderr"],
                         device=self.device,
                     ).float()
                     if f"{target_prop}_range" in pose
@@ -1101,13 +1089,7 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
                 losses = torch.cat(
                     [
-                        loss_func(
-                            pred.reshape(target.shape),
-                            pose_preds,
-                            target,
-                            in_range,
-                            uncertainty,
-                        )
+                        loss_func(pred, pose_preds, target, in_range, uncertainty)
                         if target is not None
                         else torch.tensor([0])
                         for loss_func, target, in_range, uncertainty in zip(
@@ -1295,6 +1277,9 @@ class Trainer(BaseModel):
                 row_data = [xtal_id, compound_id]
                 row_data += [d.get(col, np.nan) for col in table_cols[2:-1]]
                 row_data += [d.get("date_created", None)]
+                row_data = [
+                    str(d) if isinstance(d, np.ndarray) else d for d in row_data
+                ]
                 table.add_data(*row_data)
 
             ds_tables.append(table)
