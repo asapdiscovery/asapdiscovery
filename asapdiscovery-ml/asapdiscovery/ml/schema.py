@@ -3,6 +3,7 @@ import pandas
 from pydantic import BaseModel, Extra, Field, validator
 
 from asapdiscovery.ml.config import LossFunctionConfig
+import torch
 
 
 class TrainingPrediction(BaseModel):
@@ -16,7 +17,9 @@ class TrainingPrediction(BaseModel):
 
     # Target info
     target_prop: str = Field(..., description="Target property being predicted.")
-    target_val: float = Field(..., description="Target value to predict.")
+    target_val: float | torch.Tensor | None = Field(
+        ..., description="Target value to predict."
+    )
     in_range: int = Field(
         None,
         description=(
@@ -47,6 +50,14 @@ class TrainingPrediction(BaseModel):
     class Config:
         # Allow things to be added to the object after initialization/validation
         extra = Extra.allow
+
+        # Allow torch types
+        arbitrary_types_allowed = True
+
+        # Custom encoder to cast device to str before trying to serialize
+        json_encoders = {
+            torch.Tensor: lambda t: t.tolist(),
+        }
 
     def to_empty(self):
         """
@@ -81,6 +92,11 @@ class TrainingPredictionTracker(BaseModel):
     class Config:
         # Allow things to be added to the object after initialization/validation
         extra = Extra.allow
+
+        # Custom encoder to cast device to str before trying to serialize
+        json_encoders = {
+            torch.Tensor: lambda t: t.tolist(),
+        }
 
     @validator("split_dict", always=True)
     def init_split_dict(cls, split_dict):
