@@ -2,24 +2,25 @@ import abc
 import logging
 import warnings
 from pathlib import Path
-from typing import ClassVar, Optional  # noqa: F401
+from typing import Any, ClassVar, Optional  # noqa: F401
 from warnings import warn
+
 import dask
 import mdtraj
 import openmm
 import pandas as pd
 from asapdiscovery.data.backend.openeye import save_openeye_pdb
 from asapdiscovery.data.util.dask_utils import (
-    FailureMode,
     BackendType,
-    dask_vmap,
+    FailureMode,
     backend_wrapper,
+    dask_vmap,
 )
-from typing import Any
 from asapdiscovery.data.util.stringenum import StringEnum
 from asapdiscovery.docking.docking import DockingResult
 from mdtraj.core.residue_names import _SOLVENT_TYPES
 from mdtraj.reporters import XTCReporter
+from multimethod import multimethod
 from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
@@ -34,9 +35,7 @@ from pydantic import (
     validator,
 )
 from rdkit import Chem
-from multimethod import multimethod
 from tqdm import tqdm
-
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +94,7 @@ class SimulatorBase(BaseModel):
         reconstruct_cls=None,
         **kwargs,
     ) -> pd.DataFrame:
-        
+
         return self._simulate(
             inputs=inputs,
             use_dask=use_dask,
@@ -255,6 +254,7 @@ class VanillaMDSimulator(SimulatorBase):
     @property
     def total_simulation_time(self) -> openmm.unit.quantity.Quantity:
         return self.num_steps * self.timestep * unit.femtoseconds
+
     @property
     def frames_per_ns(self) -> unit.quantity.Quantity:
         # convert to ns
@@ -276,7 +276,6 @@ class VanillaMDSimulator(SimulatorBase):
         if self.debug:
             _platform = OpenMMPlatform.CPU.get_platform()
         return _platform
-    
 
     @dask_vmap(["inputs"], has_failure_mode=True)
     @backend_wrapper("inputs")
@@ -291,9 +290,11 @@ class VanillaMDSimulator(SimulatorBase):
                 raise ValueError("outpaths must be the same length as inputs")
 
         return self._dispatch(inputs, outpaths=outpaths, **kwargs)
-    
+
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], failure_mode: str = "skip", **kwargs):
+    def _dispatch(
+        self, inputs: list[DockingResult], failure_mode: str = "skip", **kwargs
+    ):
         # outpaths is unused in this overload
         results = []
         for inp in inputs:
@@ -307,13 +308,13 @@ class VanillaMDSimulator(SimulatorBase):
                 # write pdb to pre file
                 pre_pdb_path = outpath / "pre.pdb"
                 save_openeye_pdb(inp.to_protein(), pre_pdb_path)
-                res = self._simulate_loop(pre_pdb_path, posed_sdf_path, outpath, input_docking_result=inp)
+                res = self._simulate_loop(
+                    pre_pdb_path, posed_sdf_path, outpath, input_docking_result=inp
+                )
                 results.append(res)
             except Exception as e:
                 if failure_mode == "skip":
-                    logger.error(
-                        f"Error processing {inp.unique_name}: {e}"
-                    )
+                    logger.error(f"Error processing {inp.unique_name}: {e}")
                 elif failure_mode == "raise":
                     raise e
                 else:
@@ -321,9 +322,14 @@ class VanillaMDSimulator(SimulatorBase):
                         f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
                     )
         return results
-        
+
     @_dispatch.register
-    def _dispatch(self, inputs: list[tuple[Path, Path]], outpaths: Optional[list[Path]] = None, failure_mode: str = "skip"):
+    def _dispatch(
+        self,
+        inputs: list[tuple[Path, Path]],
+        outpaths: Optional[list[Path]] = None,
+        failure_mode: str = "skip",
+    ):
         results = []
         if not outpaths:
             outpaths = [None] * len(inputs)
@@ -333,16 +339,14 @@ class VanillaMDSimulator(SimulatorBase):
                 if outpath:
                     outpath = outpath / tag
                 else:
-                    outpath = self.output_dir /  tag
+                    outpath = self.output_dir / tag
                 if not outpath.exists():
                     outpath.mkdir(parents=True)
                 res = self._simulate_loop(protein, ligand, outpath)
                 results.append(res)
             except Exception as e:
                 if failure_mode == "skip":
-                    logger.error(
-                        f"Error processing {tag}: {e}"
-                    )
+                    logger.error(f"Error processing {tag}: {e}")
                 elif failure_mode == "raise":
                     raise e
                 else:
@@ -351,13 +355,17 @@ class VanillaMDSimulator(SimulatorBase):
                     )
         return results
 
-    def _simulate_loop(self, protein: Path, ligand: Path, outpath: Path, input_docking_result: Optional[DockingResult] = None) -> list[SimulationResult]:
+    def _simulate_loop(
+        self,
+        protein: Path,
+        ligand: Path,
+        outpath: Path,
+        input_docking_result: Optional[DockingResult] = None,
+    ) -> list[SimulationResult]:
         logger.info(f"Running simulation for {protein.stem} and {ligand.stem}")
         _platform = self._to_openmm_units()
         processed_ligand = self.process_ligand_rdkit(ligand)
-        system_generator, ligand_mol = self.create_system_generator(
-            processed_ligand
-        )
+        system_generator, ligand_mol = self.create_system_generator(processed_ligand)
         logger.debug("Created system generator")
         modeller, ligand_mol = self.get_complex_model(ligand_mol, protein)
 
