@@ -40,6 +40,14 @@ def save_weights(func):
     )(func)
 
 
+def model_tag(func):
+    return click.option(
+        "--model-tag",
+        type=str,
+        help="Tag to name model weights files when saving.",
+    )(func)
+
+
 def trainer_config_cache(func):
     return click.option(
         "--trainer-config-cache",
@@ -63,6 +71,31 @@ def sweep_config_cache(func):
 
 
 ################################################################################
+
+# S3 args
+
+
+def s3_path(func):
+    return click.option(
+        "--s3-path",
+        type=str,
+        help="S3 path to store the results.",
+    )(func)
+
+
+def upload_to_s3(func):
+    return click.option(
+        "--upload-to-s3",
+        is_flag=True,
+        help="Whether to upload the results to S3.",
+    )(func)
+
+
+def s3_args(func):
+    for fn in [s3_path, upload_to_s3]:
+        func = fn(func)
+
+    return func
 
 
 ################################################################################
