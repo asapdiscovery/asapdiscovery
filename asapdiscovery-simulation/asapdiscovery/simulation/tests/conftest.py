@@ -10,8 +10,28 @@ def ligand_path():
 
 
 @pytest.fixture(scope="session")
-def results():
-    res = POSITDockingResults.from_json_file(fetch_test_file("docking_results.json"))
+def protein_path():
+    return fetch_test_file("Mpro-x0071_0A_ERI-UCB-8c6b7d0d-1.pdb")
+
+
+@pytest.fixture(scope="session")
+def tyk2_protein():
+    return fetch_test_file("tyk2_protein.pdb")
+
+
+@pytest.fixture(scope="session")
+def tyk2_lig():
+    return fetch_test_file("tyk2_one_lig.sdf")
+
+
+@pytest.fixture(scope="session")
+def results_path():
+    return [fetch_test_file("docking_results.json")]
+
+
+@pytest.fixture(scope="session")
+def results(results_path):
+    res = POSITDockingResults.from_json_file(results_path[0])
     return [res]
 
 

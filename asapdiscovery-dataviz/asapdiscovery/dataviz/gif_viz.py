@@ -10,7 +10,7 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
     TargetTags,
 )
-from asapdiscovery.data.util.dask_utils import dask_vmap
+from asapdiscovery.data.util.dask_utils import backend_wrapper, dask_vmap
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.resources.fonts import opensans_regular
 from asapdiscovery.dataviz.show_contacts import show_contacts
@@ -91,6 +91,7 @@ class GIFVisualizer(VisualizerBase):
         arbitrary_types_allowed = True
 
     @dask_vmap(["inputs"], has_failure_mode=True)
+    @backend_wrapper("inputs")
     def _visualize(
         self, inputs: list[Any], outpaths: Optional[list[Path]] = None, **kwargs
     ) -> list[dict[str, str]]:
