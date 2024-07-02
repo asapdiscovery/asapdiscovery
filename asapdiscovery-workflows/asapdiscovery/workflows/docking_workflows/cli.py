@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 import click
 from asapdiscovery.cli.cli_args import (
+    active_site_chain,
     cache_dir,
     dask_args,
     fragalysis_dir,
@@ -15,15 +16,15 @@ from asapdiscovery.cli.cli_args import (
     overwrite,
     pdb_file,
     postera_args,
+    ref_chain,
     save_to_cache,
     structure_dir,
     target,
     use_only_cache,
-    walltime,
 )
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.workflows.docking_workflows.cross_docking import (
     CrossDockingWorkflowInputs,
@@ -36,6 +37,10 @@ from asapdiscovery.workflows.docking_workflows.large_scale_docking import (
 from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
     SmallScaleDockingInputs,
     small_scale_docking_workflow,
+)
+from asapdiscovery.workflows.docking_workflows.symexp_crystal_packing import (
+    SymExpCrystalPackingInputs,
+    symexp_crystal_packing_workflow,
 )
 
 
@@ -90,12 +95,13 @@ def docking():
 @input_json
 @ml_scorer
 @loglevel
-@walltime
+@ref_chain
+@active_site_chain
 def large_scale(
     target: TargetTags,
-    n_select: int = 5,
+    n_select: int = 10,
     top_n: int = 500,
-    posit_confidence_cutoff: float = 0.7,
+    posit_confidence_cutoff: float = 0.5,
     use_omega: bool = False,
     allow_posit_retries: bool = False,
     ligands: Optional[str] = None,
@@ -112,10 +118,12 @@ def large_scale(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
-    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+    dask_n_workers: Optional[int] = None,
+    failure_mode: FailureMode = FailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
     loglevel: Union[int, str] = logging.INFO,
-    walltime: Optional[str] = "72h",
+    ref_chain: Optional[str] = None,
+    active_site_chain: Optional[str] = None,
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -134,7 +142,8 @@ def large_scale(
             top_n=top_n,
             use_dask=use_dask,
             dask_type=dask_type,
-            dask_failure_mode=dask_failure_mode,
+            dask_n_workers=dask_n_workers,
+            failure_mode=failure_mode,
             posit_confidence_cutoff=posit_confidence_cutoff,
             use_omega=use_omega,
             allow_posit_retries=allow_posit_retries,
@@ -149,7 +158,8 @@ def large_scale(
             output_dir=output_dir,
             overwrite=overwrite,
             loglevel=loglevel,
-            walltime=walltime,
+            ref_chain=ref_chain,
+            active_site_chain=active_site_chain,
         )
 
     large_scale_docking_workflow(inputs)
@@ -206,7 +216,6 @@ def large_scale(
 @overwrite
 @input_json
 @loglevel
-@walltime
 def cross_docking(
     target: TargetTags,
     multi_reference: bool = False,
@@ -228,9 +237,9 @@ def cross_docking(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
-    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+    dask_n_workers: Optional[int] = None,
+    failure_mode: FailureMode = FailureMode.SKIP,
     loglevel: Union[int, str] = logging.INFO,
-    walltime: Optional[str] = "72h",
 ):
     """
     Run cross docking on a set of ligands, against a set of targets.
@@ -247,7 +256,8 @@ def cross_docking(
             structure_selector=structure_selector,
             use_dask=use_dask,
             dask_type=dask_type,
-            dask_failure_mode=dask_failure_mode,
+            dask_n_workers=dask_n_workers,
+            failure_mode=failure_mode,
             use_omega=use_omega,
             omega_dense=omega_dense,
             num_poses=num_poses,
@@ -263,7 +273,6 @@ def cross_docking(
             overwrite=overwrite,
             allow_final_clash=allow_final_clash,
             loglevel=loglevel,
-            walltime=walltime,
         )
 
     cross_docking_workflow(inputs)
@@ -276,6 +285,12 @@ def cross_docking(
     type=float,
     default=0.1,
     help="The confidence cutoff for POSIT results to be considered",
+)
+@click.option(
+    "--n-select",
+    type=int,
+    default=20,
+    help="The number of targets to dock each ligand against, sorted by MCS",
 )
 @click.option("--allow-dask-cuda/--no-allow-dask-cuda", default=True)
 @click.option(
@@ -298,10 +313,12 @@ def cross_docking(
 @ml_scorer
 @md_args
 @loglevel
-@walltime
+@ref_chain
+@active_site_chain
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
+    n_select: int = 20,
     allow_dask_cuda: bool = True,
     no_omega: bool = False,
     ligands: Optional[str] = None,
@@ -318,13 +335,15 @@ def small_scale(
     input_json: Optional[str] = None,
     use_dask: bool = False,
     dask_type: DaskType = DaskType.LOCAL,
-    dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+    dask_n_workers: Optional[int] = None,
+    failure_mode: FailureMode = FailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
     loglevel: Union[int, str] = logging.INFO,
-    walltime: Optional[str] = "72h",
+    ref_chain: Optional[str] = None,
+    active_site_chain: Optional[str] = None,
 ):
     """
     Run small scale docking on a set of ligands, against a set of targets.
@@ -341,8 +360,10 @@ def small_scale(
             target=target,
             use_dask=use_dask,
             dask_type=dask_type,
-            dask_failure_mode=dask_failure_mode,
+            dask_n_workers=dask_n_workers,
+            failure_mode=failure_mode,
             posit_confidence_cutoff=posit_confidence_cutoff,
+            n_select=n_select,
             allow_dask_cuda=allow_dask_cuda,
             use_omega=not no_omega,
             ligands=ligands,
@@ -359,10 +380,94 @@ def small_scale(
             md_steps=md_steps,
             md_openmm_platform=md_openmm_platform,
             loglevel=loglevel,
-            walltime=walltime,
+            ref_chain=ref_chain,
+            active_site_chain=active_site_chain,
         )
 
     small_scale_docking_workflow(inputs)
+
+
+@docking.command()
+@target
+@click.option(
+    "--vdw-radii-fudgefactor",
+    type=float,
+    default=0.9,
+    help="The fudge factor multiplier to apply to VDW radii",
+)
+@click.option(
+    "--symexp-clash-thresh",
+    type=int,
+    default=0,
+    help="The number of clashes to consider a ligand as clashing",
+)
+@ligands
+@postera_args
+@pdb_file
+@fragalysis_dir
+@structure_dir
+@save_to_cache
+@cache_dir
+@dask_args
+@output_dir
+@overwrite
+@input_json
+@loglevel
+def symexp_crystal_packing(
+    target: TargetTags,
+    vdw_radii_fudgefactor: float = 0.9,
+    symexp_clash_thresh: int = 0,
+    ligands: Optional[str] = None,
+    postera: bool = False,
+    postera_molset_name: Optional[str] = None,
+    postera_upload: bool = False,
+    pdb_file: Optional[str] = None,
+    fragalysis_dir: Optional[str] = None,
+    structure_dir: Optional[str] = None,
+    save_to_cache: Optional[bool] = True,
+    cache_dir: Optional[str] = None,
+    output_dir: str = "output",
+    overwrite: bool = True,
+    input_json: Optional[str] = None,
+    use_dask: bool = False,
+    dask_type: DaskType = DaskType.LOCAL,
+    dask_n_workers: Optional[int] = None,
+    failure_mode: FailureMode = FailureMode.SKIP,
+    loglevel: Union[int, str] = logging.INFO,
+):
+    """
+    Check for overlaps between docked ligands and crystal neighbouts
+    """
+
+    if input_json is not None:
+        print("Loading inputs from json file... Will override all other inputs.")
+        inputs = SymExpCrystalPackingInputs.from_json_file(input_json)
+
+    else:
+        inputs = SymExpCrystalPackingInputs(
+            postera=postera,
+            postera_upload=postera_upload,
+            target=target,
+            vdw_radii_fudgefactor=vdw_radii_fudgefactor,
+            use_dask=use_dask,
+            dask_type=dask_type,
+            dask_n_workers=dask_n_workers,
+            failure_mode=failure_mode,
+            ligands=ligands,
+            pdb_file=pdb_file,
+            fragalysis_dir=fragalysis_dir,
+            structure_dir=structure_dir,
+            postera_molset_name=postera_molset_name,
+            cache_dir=cache_dir,
+            save_to_cache=save_to_cache,
+            ml_scorers=ml_scorer,
+            output_dir=output_dir,
+            overwrite=overwrite,
+            loglevel=loglevel,
+            symexp_clash_thresh=symexp_clash_thresh,
+        )
+
+    symexp_crystal_packing_workflow(inputs)
 
 
 if __name__ == "__main__":

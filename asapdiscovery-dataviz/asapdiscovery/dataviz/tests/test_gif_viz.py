@@ -10,7 +10,7 @@ def test_gif_viz(tmp_path, simulation_results, use_dask):
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
-@pytest.mark.parametrize("outpaths", [["my_sub_path/gif.viz"], None])
+@pytest.mark.parametrize("outpaths", [["my_sub_path/viz.gif"], None])
 def test_gif_viz_paths(tmp_path, traj, top, use_dask, outpaths):
     gv = GIFVisualizer(target="SARS-CoV-2-Mpro", output_dir=tmp_path)
     vizs = gv.visualize(inputs=[(traj, top)], use_dask=use_dask, outpaths=outpaths)

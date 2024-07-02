@@ -3,6 +3,7 @@ Defines docking base schema.
 """
 
 import abc
+import json
 import logging
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
@@ -13,11 +14,12 @@ from asapdiscovery.data.backend.openeye import (
     oechem,
     save_openeye_pdb,
 )
-from asapdiscovery.data.schema.complex import PreppedComplex
+from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
-from asapdiscovery.data.util.dask_utils import BackendType, DaskFailureMode
+from asapdiscovery.data.schema.target import Target
+from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat
 
@@ -53,7 +55,7 @@ class DockingInputPair(CompoundStructurePair, DockingInputBase):
         return [self.complex.target.to_oedu()]
 
 
-class DockingInputMultiStructure(MultiStructureBase):
+class DockingInputMultiStructure(MultiStructureBase, DockingInputBase):
     """
     Schema for one ligand to many possible reference structures.
     """
@@ -89,7 +91,7 @@ class DockingBase(BaseModel):
         output_dir: Optional[Union[str, Path]] = None,
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         return_for_disk_backend: bool = False,
     ) -> list["DockingResult"]:
         """
@@ -106,8 +108,8 @@ class DockingBase(BaseModel):
             Whether to use dask, by default False
         dask_client : dask.distributed.Client, optional
             Dask client to use, by default None
-        dask_failure_mode : DaskFailureMode, optional
-            Dask failure mode, by default DaskFailureMode.SKIP
+        failure_mode : FailureMode, optional
+            Dask failure mode, by default FailureMode.SKIP
         return_for_disk_backend : bool, optional
             Whether to return the results for disk backend, by default False
 
@@ -125,7 +127,7 @@ class DockingBase(BaseModel):
             output_dir=output_dir,
             use_dask=use_dask,
             dask_client=dask_client,
-            dask_failure_mode=dask_failure_mode,
+            failure_mode=failure_mode,
             return_for_disk_backend=return_for_disk_backend,
         )
 
@@ -204,6 +206,10 @@ class DockingResult(BaseModel):
         dct.pop("type")
         return dct
 
+    @classmethod
+    def from_json(cls, json_str):
+        return cls.parse_obj(json.loads(json_str))
+
     def to_posed_oemol(self) -> oechem.OEMol:
         """
         Combine the original target and posed ligand into a single oemol
@@ -225,7 +231,29 @@ class DockingResult(BaseModel):
             Protein oemol
         """
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
+        param = self.input_pair.complex.target.crystal_symmetry
+        if param is not None:
+            p = oechem.OECrystalSymmetryParams(*param)
+            oechem.OESetCrystalSymmetry(prot, p, True)
         return prot
+
+    def to_posed_complex(self) -> Complex:
+        """
+        Return the complex from the original target
+        Returns
+        -------
+        Complex
+            Complex
+        """
+        prot = self.to_protein()
+        lig = self.posed_ligand.to_oemol()
+        tar = Target.from_oemol(
+            prot,
+            target_name=self.input_pair.complex.target.target_name,
+            ids=self.input_pair.complex.target.ids,
+        )
+        lig = Ligand.from_oemol(lig, **self.input_pair.ligand.dict())
+        return Complex(target=tar, ligand=lig)
 
     @property
     def unique_name(self):

@@ -28,6 +28,26 @@ def output_dir(func):
     )(func)
 
 
+def save_weights(func):
+    return click.option(
+        "--save-weights",
+        type=click.Choice(["all", "recent", "final"], case_sensitive=False),
+        help=(
+            "How often to save weights during training."
+            'Options are to keep every epoch ("all"), only keep the most recent '
+            'epoch ("recent"), or only keep the final epoch ("final").'
+        ),
+    )(func)
+
+
+def model_tag(func):
+    return click.option(
+        "--model-tag",
+        type=str,
+        help="Tag to name model weights files when saving.",
+    )(func)
+
+
 def trainer_config_cache(func):
     return click.option(
         "--trainer-config-cache",
@@ -51,6 +71,31 @@ def sweep_config_cache(func):
 
 
 ################################################################################
+
+# S3 args
+
+
+def s3_path(func):
+    return click.option(
+        "--s3-path",
+        type=str,
+        help="S3 path to store the results.",
+    )(func)
+
+
+def upload_to_s3(func):
+    return click.option(
+        "--upload-to-s3",
+        is_flag=True,
+        help="Whether to upload the results to S3.",
+    )(func)
+
+
+def s3_args(func):
+    for fn in [s3_path, upload_to_s3]:
+        func = fn(func)
+
+    return func
 
 
 ################################################################################
@@ -1087,7 +1132,7 @@ def ds_split_args(func):
         train_frac,
         val_frac,
         test_frac,
-        enforce_1,
+        enforce_one,
         ds_rand_seed,
         ds_split_config_cache,
     ]:
@@ -1131,7 +1176,7 @@ def test_frac(func):
     )(func)
 
 
-def enforce_1(func):
+def enforce_one(func):
     return click.option(
         "--enforce-one",
         type=bool,
@@ -1299,6 +1344,12 @@ def data_aug(func):
 
 ################################################################################
 # Sweep args
+def sweep_args(func):
+    for fn in [sweep_config, force_new_sweep, sweep_start_only]:
+        func = fn(func)
+    return func
+
+
 def sweep_config(func):
     return click.option(
         "--sweep-config",
@@ -1312,6 +1363,16 @@ def force_new_sweep(func):
         "--force-new-sweep",
         type=bool,
         help="Start a new sweep even if an existing sweep_id is present.",
+    )(func)
+
+
+def sweep_start_only(func):
+    return click.option(
+        "--start-only",
+        type=bool,
+        is_flag=True,
+        default=False,
+        help="Only start the sweep, don't run any training.",
     )(func)
 
 

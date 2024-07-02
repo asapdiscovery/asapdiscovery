@@ -6,7 +6,7 @@ gat_test:
   # The model type is used to determine which model class to use.
   type: GAT
   # The base url is used to determine where to look for the weights and config files
-  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/test/
+  base_url: https://asap-discovery-ml-weights.asapdata.org/test/
   # The weights key has the name of the weights file and the sha256 hash of the file.
   weights:
     # resource is the name of the file
@@ -37,7 +37,7 @@ gat_test:
 # new models trained with mtenn v0.5.0
 asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06:
   type: GAT
-  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/GAT/
+  base_url: https://asap-discovery-ml-weights.asapdata.org/production/GAT/
   weights:
     resource: asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06.th
     sha256hash: c1a6b3240b1a44aff558ea80983a895f18ab203111f366610bf88fbda6c904b2
@@ -52,7 +52,7 @@ asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06:
 
 asapdiscovery-SARS-CoV-2-Mac1-GAT-2024.02.06:
   type: GAT
-  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/GAT/
+  base_url: https://asap-discovery-ml-weights.asapdata.org/production/GAT/
   weights:
     resource: asapdiscovery-SARS-CoV-2-Mac1-GAT-2024.02.06.th
     sha256hash: 4a6494412089d390723b107a30361672f2d2711622eea016c33caf1d7c28e1a7
@@ -66,7 +66,7 @@ asapdiscovery-SARS-CoV-2-Mac1-GAT-2024.02.06:
 
 asapdiscovery-SARS-CoV-2-Mpro-schnet-2024.02.05:
   type: schnet
-  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/schnet/
+  base_url: https://asap-discovery-ml-weights.asapdata.org/production/schnet/
   weights:
     resource: asapdiscovery-SARS-CoV-2-Mpro-schnet-2024.02.05.th
     sha256hash: 41daaebc2f0820104154378fb972ee9a64a478bf3f4ea91f9c4b4844efce53e5
@@ -81,7 +81,7 @@ asapdiscovery-SARS-CoV-2-Mpro-schnet-2024.02.05:
 
 asapdiscovery-SARS-CoV-2-Mpro-e3nn-2024.02.06:
   type: e3nn
-  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/production/e3nn/
+  base_url: https://asap-discovery-ml-weights.asapdata.org/production/e3nn/
   weights:
     resource: asapdiscovery-SARS-CoV-2-Mpro-e3nn-2024.02.06.th
     sha256hash: 510cc7c327df3f7aa18f42925f5a2c059b44ab079d28eb5081ad8c17237a1ac4

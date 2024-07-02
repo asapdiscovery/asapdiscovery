@@ -22,6 +22,8 @@ class DockingResultCols(str, Enum):
     MD_PATH_TRAJ = "md_path_traj"
     MD_PATH_MIN_PDB = "md_path_min_pdb"
     MD_PATH_FINAL_PDB = "md_path_final_pdb"
+    SYMEXP_CLASHING = "symexp-clashing"  # postera
+    SYMEXP_CLASH_NUM = "symexp-clash-num"  # postera
 
     @classmethod
     def get_columns(cls) -> list[str]:

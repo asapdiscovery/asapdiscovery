@@ -1,12 +1,15 @@
 import abc
 import logging
+import warnings
 from enum import Enum
+from io import StringIO
 from pathlib import Path
-from typing import ClassVar, Optional, Union
+from typing import Any, ClassVar, Optional, Union
 
+import MDAnalysis as mda
 import numpy as np
 import pandas as pd
-from asapdiscovery.data.backend.openeye import oedocking
+from asapdiscovery.data.backend.openeye import oedocking, oemol_to_pdb_string
 from asapdiscovery.data.backend.plip import compute_fint_score
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
@@ -14,7 +17,7 @@ from asapdiscovery.data.schema.target import TargetIdentifiers
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import (
     BackendType,
-    DaskFailureMode,
+    FailureMode,
     backend_wrapper,
     dask_vmap,
 )
@@ -39,6 +42,7 @@ class ScoreType(str, Enum):
     GAT = "GAT"
     schnet = "schnet"
     e3nn = "e3nn"
+    sym_clash = "sym_clash"
     INVALID = "INVALID"
 
 
@@ -62,6 +66,7 @@ _SCORE_MANIFOLD_ALIAS = {
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
     ScoreType.e3nn: DockingResultCols.COMPUTED_E3NN_PIC50.value,
     ScoreType.INVALID: None,
+    ScoreType.sym_clash: DockingResultCols.SYMEXP_CLASH_NUM.value,
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
     "compound_name": DockingResultCols.LIGAND_ID.value,
     "smiles": DockingResultCols.SMILES.value,
@@ -87,6 +92,7 @@ class Score(BaseModel):
     complex_ligand_smiles: Optional[str]
     probability: Optional[float]
     units: ScoreUnits
+    input: Optional[Any] = None
 
     @classmethod
     def from_score_and_docking_result(
@@ -108,6 +114,7 @@ class Score(BaseModel):
             complex_ligand_smiles=docking_result.input_pair.complex.ligand.smiles,
             probability=docking_result.probability,
             units=units,
+            input=docking_result,
         )
 
     @classmethod
@@ -130,6 +137,7 @@ class Score(BaseModel):
             complex_ligand_smiles=complex.ligand.smiles,
             probability=None,
             units=units,
+            input=complex,
         )
 
     @classmethod
@@ -152,6 +160,7 @@ class Score(BaseModel):
             complex_ligand_smiles=None,
             probability=None,
             units=units,
+            input=smiles,
         )
 
     @classmethod
@@ -174,18 +183,32 @@ class Score(BaseModel):
             complex_ligand_smiles=None,
             probability=None,
             units=units,
+            input=ligand,
         )
 
     @staticmethod
     def _combine_and_pivot_scores_df(dfs: list[pd.DataFrame]) -> pd.DataFrame:
         """ """
         df = pd.concat(dfs)
+        made_json = False
+        if "input" in df.columns:
+            # find the type of the input and cast to the appropriate type
+            if isinstance(df["input"].iloc[0], str):
+                made_json = False  # already a string
+            else:  # cast to JSON
+                dtype = type(df["input"].iloc[0])
+                df["input"] = df["input"].apply(lambda x: x.json())
+                made_json = True
+
         indices = set(df.columns) - {"score_type", "score", "units"}
         df = df.pivot(
             index=indices,
-            columns="score_type",
+            columns=["score_type"],
             values="score",
         ).reset_index()
+
+        if made_json:
+            df["input"] = df["input"].apply(lambda x: dtype.from_json(x))
 
         df.rename(columns=_SCORE_MANIFOLD_ALIAS, inplace=True)
         return df
@@ -209,10 +232,12 @@ class ScorerBase(BaseModel):
         ],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
+        include_input: bool = False,
+        pivot: bool = True,
     ) -> list[Score]:
         """
         Score the inputs. Most of the work is done in the _score method, this method is in turn dispatched based on type to various methods.
@@ -226,32 +251,39 @@ class ScorerBase(BaseModel):
             Whether to use dask, by default False
         dask_client : dask.distributed.Client, optional
             Dask client to use, by default None
-        dask_failure_mode : DaskFailureMode, optional
-            How to handle dask failures, by default DaskFailureMode.SKIP
+        failure_mode : FailureMode, optional
+            How to handle dask failures, by default FailureMode.SKIP
         backend : BackendType, optional
             Backend to use, by default BackendType.IN_MEMORY
         reconstruct_cls : Optional[Callable], optional
             Function to use to reconstruct the inputs, by default None
         return_df : bool, optional
             Whether to return a dataframe, by default False
-
+        include_input : bool, optional
+            Whether to return the results, in the dataframe, by default False
+        pivot : bool, optional
+            Whether to pivot the dataframe, by default True
         """
         outputs = self._score(
             inputs=inputs,
             use_dask=use_dask,
             dask_client=dask_client,
-            dask_failure_mode=dask_failure_mode,
+            failure_mode=failure_mode,
             backend=backend,
             reconstruct_cls=reconstruct_cls,
         )
 
         if return_df:
-            return self.scores_to_df(outputs)
+            df = self.scores_to_df(outputs, include_input=include_input)
+            if pivot:
+                return Score._combine_and_pivot_scores_df([df])
+            else:
+                return df
         else:
             return outputs
 
     @staticmethod
-    def scores_to_df(scores: list[Score]) -> pd.DataFrame:
+    def scores_to_df(scores: list[Score], include_input: bool = False) -> pd.DataFrame:
         """
         Convert a list of scores to a dataframe.
 
@@ -269,10 +301,13 @@ class ScorerBase(BaseModel):
         data_list = []
         # flatten the list of scores
         scores = np.ravel(scores)
-
         for score in scores:
             dct = score.dict()
             dct["score_type"] = score.score_type.value  # convert to string
+            # we don't want the unpacked version of the input
+            dct.pop("input")
+            dct["input"] = score.input
+            # ok better
             data_list.append(dct)
         # convert to a dataframe
         df = pd.DataFrame(data_list)
@@ -679,10 +714,11 @@ class MetaScorer(BaseModel):
         inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
-        dask_failure_mode=DaskFailureMode.SKIP,
+        failure_mode=FailureMode.SKIP,
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
+        include_input: bool = False,
     ) -> list[Score]:
         """
         Score the inputs using all the scorers provided in the constructor
@@ -693,10 +729,12 @@ class MetaScorer(BaseModel):
                 inputs=inputs,
                 use_dask=use_dask,
                 dask_client=dask_client,
-                dask_failure_mode=dask_failure_mode,
+                failure_mode=failure_mode,
                 backend=backend,
                 reconstruct_cls=reconstruct_cls,
                 return_df=return_df,
+                include_input=include_input,
+                pivot=False,
             )
             results.append(vals)
 
@@ -704,3 +742,100 @@ class MetaScorer(BaseModel):
             return Score._combine_and_pivot_scores_df(results)
 
         return np.ravel(results).tolist()
+
+
+class SymClashScorer(ScorerBase):
+    """
+    Scoring, checking for clashes between ligand and target
+    in neighboring unit cells.
+    """
+
+    score_type: ClassVar[ScoreType.sym_clash] = ScoreType.sym_clash
+    units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
+
+    count_clashing_pairs: bool = Field(
+        False,
+        description="Whether to count clashing distance pairs, rather than unique clashing ligand atoms",
+    )
+
+    vdw_radii_fudge_factor: float = Field(
+        1.0,
+        description="fudge factor multiplier for vdw radii, lower to decrease clash sensitivity, higher to increase",
+    )
+
+    @dask_vmap(["inputs"])
+    @backend_wrapper("inputs")
+    def _score(self, inputs) -> list[Score]:
+        """
+        Score the inputs, dispatching based on type.
+        """
+        return self._dispatch(inputs)
+
+    @multimethod
+    def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
+        """
+        Dispatch for Complex
+        """
+        results = []
+        warnings.warn(
+            "SymClashScorer relies on expanded protein units having chain X as constructed by SymmetryExpander"
+        )
+        for inp in inputs:
+            # load into MDA universe
+            u = mda.Universe(
+                mda.lib.util.NamedStream(
+                    StringIO(oemol_to_pdb_string(inp.to_combined_oemol())),
+                    "complex.pdb",
+                )
+            )
+            lig = u.select_atoms("not protein")
+            symmetry_expanded_prot = u.select_atoms("protein and chainID X")
+            # hacky but expand to real space with mega box
+            # multiply first 3 dimensions by 20
+            expanded_box = u.dimensions
+            expanded_box[:3] *= 20
+            pair_indices, pair_distances = mda.lib.distances.capped_distance(
+                lig,
+                symmetry_expanded_prot,
+                4,
+                box=expanded_box,  # large cutoff to loop in a good amount of distances up to 8Å
+            )
+            # check if distance for an atom pair is less than summed vdw radii
+            num_clashes = 0
+            clashing_lig_at = set()
+            clashing_prot_at = set()
+
+            for k, [i, j] in enumerate(pair_indices):
+                lig_atom = lig[i]
+                prot_atom = symmetry_expanded_prot[j]
+                distance = pair_distances[k]
+                if (
+                    (
+                        distance
+                        < (
+                            (
+                                mda.topology.tables.vdwradii[lig_atom.element.upper()]
+                                * self.vdw_radii_fudge_factor
+                            )
+                            + (
+                                mda.topology.tables.vdwradii[prot_atom.element.upper()]
+                                * self.vdw_radii_fudge_factor
+                            )
+                        )
+                    )
+                    and lig_atom.element != "H"
+                    and prot_atom.element != "H"
+                ):
+                    num_clashes += 1
+                    clashing_lig_at.add(i)
+                    clashing_prot_at.add(j)
+
+            if self.count_clashing_pairs:
+                val = num_clashes
+            else:
+                val = len(clashing_lig_at)  # seems ok as metric for now
+
+            results.append(
+                Score.from_score_and_complex(val, self.score_type, self.units, inp)
+            )
+        return results

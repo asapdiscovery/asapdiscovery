@@ -57,7 +57,14 @@ class MLModelBase(BaseModel):
         the versions specified by the pins.
         """
 
-        cur_version = Version.parse(mtenn.__version__)
+        try:
+            cur_version = Version.parse(mtenn.__version__)
+        except AttributeError:
+            warnings.warn(
+                "No mtenn version found. Assuming compatibility, but note "
+                "that this may be incorrect."
+            )
+            return True
 
         # If no lower/upper pin has been set, set temp values here that will pass
         if self.mtenn_lower_pin is None:
@@ -218,6 +225,19 @@ class MLModelRegistry(BaseModel):
                 f"Target {target} not valid, must be one of {TargetTags.get_values()}"
             )
         return [model for model in self.models.values() if target in model.targets]
+
+    def get_targets_with_models(self) -> list[TargetTags]:
+        """
+        Get all targets with models
+
+        Returns
+        -------
+        List[TargetTags]
+            List of targets with models
+        """
+        return list(
+            {target.value for model in self.models.values() for target in model.targets}
+        )
 
     def get_latest_model_for_target_and_type(
         self, target: TargetTags, type: ModelType

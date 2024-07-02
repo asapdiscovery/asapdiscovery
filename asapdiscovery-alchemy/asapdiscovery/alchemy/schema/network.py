@@ -57,7 +57,7 @@ class MinimalSpanningPlanner(_NetworkPlannerMethod):
 class MinimalRedundantPlanner(_NetworkPlannerMethod):
     """Planing minimally spanning networks with configurable redundancy using openfe."""
 
-    type: Literal["MinimalRedundantPlanner"] = "MinimalSpanningPlanner"
+    type: Literal["MinimalRedundantPlanner"] = "MinimalRedundantPlanner"
 
     redundancy: int = Field(
         2,

@@ -5,17 +5,11 @@ from typing import Optional, Union
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.sequence import seqres_by_target
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import (
-    DaskType,
-    dask_cluster_from_type,
-    set_dask_config,
-)
+from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
-from distributed import Client
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
@@ -53,10 +47,6 @@ class ProteinPrepInputs(BaseModel):
         Whether to use dask for parallelism
     dask_type : DaskType
         Dask client to use for parallelism
-    dask_cluster_n_workers : PositiveInt
-        Number of workers to use as inital guess for Lilac dask cluster
-    dask_cluster_max_workers : PositiveInt
-        Maximum number of workers to use for Lilac dask cluster
     logname : str
         Name of the log file
     loglevel : int
@@ -108,14 +98,7 @@ class ProteinPrepInputs(BaseModel):
         DaskType.LOCAL, description="Dask client to use for parallelism."
     )
 
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as initial guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        40, description="Maximum number of workers to use for Lilac dask cluster"
-    )
+    dask_n_workers: Optional[PositiveInt] = Field(None, description="Number of workers")
 
     logname: str = Field("", description="Name of the log file.")
 
@@ -174,29 +157,11 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     inputs.to_json_file(output_dir / "protein_prep.json")
 
     if inputs.use_dask:
-        logger.info(f"Using dask for parallelism of type: {inputs.dask_type}")
-        set_dask_config()
-        dask_cluster = dask_cluster_from_type(
-            inputs.dask_type, loglevel=inputs.loglevel
+        dask_client = make_dask_client_meta(
+            inputs.dask_type,
+            loglevel=inputs.loglevel,
+            n_workers=inputs.dask_n_workers,
         )
-
-        if inputs.dask_type.is_lilac():
-            logger.info("Lilac HPC config selected, setting adaptive scaling")
-            dask_cluster.adapt(
-                minimum=1,
-                maximum=inputs.dask_cluster_max_workers,
-                wait_count=10,
-                interval="1m",
-            )
-            logger.info(f"Estimating {inputs.dask_cluster_n_workers} workers")
-            dask_cluster.scale(inputs.dask_cluster_n_workers)
-
-        dask_client = Client(dask_cluster)
-        dask_client.forward_logging(level=inputs.loglevel)
-        logger.info(f"Using dask client: {dask_client}")
-        logger.info(f"Using dask cluster: {dask_cluster}")
-        logger.info(f"Dask client dashboard: {dask_client.dashboard_link}")
-
     else:
         dask_client = None
 
@@ -229,11 +194,9 @@ def protein_prep_workflow(inputs: ProteinPrepInputs):
     logger.info(f"Loaded {len(complexes)} complexes")
 
     if not inputs.seqres_yaml:
-        logger.info(
-            f"No seqres yaml specified, selecting based on target: {inputs.target}"
-        )
-        inputs.seqres_yaml = seqres_by_target(inputs.target)
-
+        logger.info("No seqres yaml specified")
+    else:
+        logger.info(f"Using seqres yaml: {inputs.seqres_yaml}")
     if inputs.align:
         # load reference structure
         logger.info(f"Loading and aligning to reference structure: {inputs.align}")

@@ -10,7 +10,7 @@ from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.target import PreppedTarget
 from asapdiscovery.data.util.dask_utils import (
-    DaskFailureMode,
+    FailureMode,
     actualise_dask_delayed_iterable,
 )
 from asapdiscovery.data.util.stringenum import StringEnum
@@ -22,7 +22,7 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from distributed import Client
@@ -90,7 +90,7 @@ class ProteinPrepperBase(BaseModel):
         inputs: list[Complex],
         use_dask: bool = False,
         dask_client: Optional["Client"] = None,
-        dask_failure_mode: DaskFailureMode = DaskFailureMode.SKIP,
+        failure_mode: FailureMode = FailureMode.SKIP,
         cache_dir: Optional[str] = None,
         use_only_cache: bool = False,
     ) -> list[PreppedComplex]:
@@ -101,7 +101,7 @@ class ProteinPrepperBase(BaseModel):
         inputs: The list of complexs to prepare.
         use_dask: If dask should be used to distribute the jobs.
         dask_client: The dask client that should be used to submit the jobs.
-        dask_failure_mode: The failure mode for dask. Can be 'raise' or 'skip'.
+        failure_mode: The failure mode for dask. Can be 'raise' or 'skip'.
         cache_dir: The directory of previously cached PreppedComplexs which can be reused.
 
         Note
@@ -150,10 +150,10 @@ class ProteinPrepperBase(BaseModel):
                     out = dask.delayed(self._prep)(inputs=[inp])
                     delayed_outputs.append(out[0])  # flatten
                 outputs = actualise_dask_delayed_iterable(
-                    delayed_outputs, dask_client, errors=dask_failure_mode
+                    delayed_outputs, dask_client, errors=failure_mode
                 )  # skip here as some complexes may fail for various reasons
             else:
-                outputs = self._prep(inputs=inputs)
+                outputs = self._prep(inputs=inputs, failure_mode=failure_mode)
 
             outputs = [o for o in outputs if o is not None]
             # save the newly calculated outputs
@@ -229,9 +229,12 @@ class ProteinPrepper(ProteinPrepperBase):
     align: Optional[Complex] = Field(
         None, description="Reference structure to align to."
     )
-    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
+    ref_chain: Optional[str] = Field(
+        None, description="Chain ID to align to in reference structure"
+    )
     active_site_chain: Optional[str] = Field(
-        "A", description="Chain ID to align to reference."
+        None,
+        description="Active site chain ID to align to ref_chain in reference structure",
     )
     seqres_yaml: Optional[Path] = Field(
         None, description="Path to seqres yaml to mutate to."
@@ -243,84 +246,86 @@ class ProteinPrepper(ProteinPrepperBase):
         None, description="OE formatted string of active site residue to use"
     )
 
-    @root_validator
-    @classmethod
-    def _check_align_and_chain_info(cls, values):
-        """
-        Check that align and chain info is provided correctly.
-        """
-        align = values.get("align")
-        ref_chain = values.get("ref_chain")
-        active_site_chain = values.get("active_site_chain")
-        if align and not ref_chain:
-            raise ValueError("Must provide ref_chain if align is provided")
-        if align and not active_site_chain:
-            raise ValueError("Must provide active_site_chain if align is provided")
-        return values
-
-    def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]:
+    def _prep(self, inputs: list[Complex], failure_mode="skip") -> list[PreppedComplex]:
         """
         Prepares a series of proteins for docking using OESpruce.
         """
         prepped_complexes = []
         for complex_target in inputs:
-            # load protein
-            prot = complex_target.to_combined_oemol()
+            try:
+                # load protein
+                prot = complex_target.to_combined_oemol()
 
-            if self.align:
-                prot, _ = superpose_molecule(
-                    self.align.to_combined_oemol(),
-                    prot,
-                    self.ref_chain,
-                    self.active_site_chain,
+                if self.align:
+                    prot, _ = superpose_molecule(
+                        self.align.to_combined_oemol(),
+                        prot,
+                        self.ref_chain,
+                        self.active_site_chain,
+                    )
+
+                # mutate residues
+                if self.seqres_yaml:
+                    with open(self.seqres_yaml) as f:
+                        seqres_dict = yaml.safe_load(f)
+                    if "SEQRES" not in seqres_dict:
+                        raise ValueError("No SEQRES found in YAML")
+                    seqres = seqres_dict["SEQRES"]
+                    res_list = seqres_to_res_list(seqres)
+                    prot = mutate_residues(prot, res_list, place_h=True)
+                    protein_sequence = " ".join(res_list)
+                else:
+                    seqres = None
+                    protein_sequence = None
+
+                # spruce protein
+                success, spruce_error_message, spruced = spruce_protein(
+                    initial_prot=prot,
+                    protein_sequence=protein_sequence,
+                    loop_db=self.loop_db,
                 )
 
-            # mutate residues
-            if self.seqres_yaml:
-                with open(self.seqres_yaml) as f:
-                    seqres_dict = yaml.safe_load(f)
-                seqres = seqres_dict["SEQRES"]
-                res_list = seqres_to_res_list(seqres)
-                prot = mutate_residues(prot, res_list, place_h=True)
-                protein_sequence = " ".join(res_list)
-            else:
-                seqres = None
-                protein_sequence = None
+                if not success:
+                    raise ValueError(
+                        f"Prep failed, with error message: {spruce_error_message}"
+                    )
 
-            # spruce protein
-            success, spruce_error_message, spruced = spruce_protein(
-                initial_prot=prot,
-                protein_sequence=protein_sequence,
-                loop_db=self.loop_db,
-            )
-
-            if not success:
-                raise ValueError(
-                    f"Prep failed, with error message: {spruce_error_message}"
+                success, du = make_design_unit(
+                    spruced,
+                    site_residue=self.oe_active_site_residue,
+                    protein_sequence=protein_sequence,
                 )
+                if not success:
+                    raise ValueError("Failed to make design unit.")
 
-            success, du = make_design_unit(
-                spruced,
-                site_residue=self.oe_active_site_residue,
-                protein_sequence=protein_sequence,
-            )
-            if not success:
-                raise ValueError("Failed to make design unit.")
+                prepped_target = PreppedTarget.from_oedu(
+                    du,
+                    ids=complex_target.target.ids,
+                    target_name=complex_target.target.target_name,
+                    ligand_chain=complex_target.ligand_chain,
+                    target_hash=complex_target.target.hash,
+                )
+                # we need the ligand at the new translated coordinates
+                translated_oemol, _, _ = split_openeye_design_unit(du=du)
+                translated_lig = Ligand.from_oemol(
+                    translated_oemol, **complex_target.ligand.dict(exclude={"data"})
+                )
+                pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
+                pc.target.crystal_symmetry = complex_target.target.crystal_symmetry
 
-            prepped_target = PreppedTarget.from_oedu(
-                du,
-                ids=complex_target.target.ids,
-                target_name=complex_target.target.target_name,
-                ligand_chain=complex_target.ligand_chain,
-                target_hash=complex_target.target.hash,
-            )
-            # we need the ligand at the new translated coordinates
-            translated_oemol, _, _ = split_openeye_design_unit(du=du)
-            translated_lig = Ligand.from_oemol(
-                translated_oemol, **complex_target.ligand.dict(exclude={"data"})
-            )
-            pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
-            prepped_complexes.append(pc)
+                prepped_complexes.append(pc)
+
+            except Exception as e:
+                if failure_mode == "skip":
+                    logger.error(
+                        f"Failed to prep complex: {complex_target.target.target_name} - {e}"
+                    )
+                elif failure_mode == "raise":
+                    raise e
+                else:
+                    raise ValueError(
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                    )
 
         return prepped_complexes
 

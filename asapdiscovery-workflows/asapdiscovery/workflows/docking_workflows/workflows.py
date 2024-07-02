@@ -6,8 +6,9 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
+from asapdiscovery.data.metadata.resources import active_site_chains
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.data.util.dask_utils import DaskFailureMode, DaskType
+from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 
@@ -54,17 +55,10 @@ class DockingWorkflowInputsBase(BaseModel):
         DaskType.LOCAL, description="Dask client to use for parallelism."
     )
 
-    dask_failure_mode: DaskFailureMode = Field(
-        DaskFailureMode.SKIP, description="Dask failure mode."
-    )
+    dask_n_workers: Optional[PositiveInt] = Field(None, description="Number of workers")
 
-    dask_cluster_n_workers: PositiveInt = Field(
-        10,
-        description="Number of workers to use as inital guess for Lilac dask cluster",
-    )
-
-    dask_cluster_max_workers: PositiveInt = Field(
-        200, description="Maximum number of workers to use for Lilac dask cluster"
+    failure_mode: FailureMode = Field(
+        FailureMode.SKIP, description="Dask failure mode."
     )
 
     n_select: PositiveInt = Field(
@@ -81,8 +75,13 @@ class DockingWorkflowInputsBase(BaseModel):
     overwrite: bool = Field(
         False, description="Whether to overwrite existing output directory."
     )
-    walltime: str = Field(
-        "72h", description="Walltime for the workflow, used for dask-jobqueue"
+    ref_chain: Optional[str] = Field(
+        None,
+        description="Chain ID to align to in reference structure containing the active site",
+    )
+    active_site_chain: Optional[str] = Field(
+        None,
+        description="Active site chain ID to align to ref_chain in reference structure",
     )
 
     class Config:
@@ -120,6 +119,18 @@ class DockingWorkflowInputsBase(BaseModel):
                 "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
             )
 
+        return values
+
+    @root_validator(pre=True)
+    def check_and_set_chains(cls, values):
+        active_site_chain = values.get("active_site_chain")
+        ref_chain = values.get("ref_chain")
+        target = values.get("target")
+        if not active_site_chain:
+            values["active_site_chain"] = active_site_chains[target]
+        # set same chain for active site if not specified
+        if not ref_chain:
+            values["ref_chain"] = active_site_chains[target]
         return values
 
 

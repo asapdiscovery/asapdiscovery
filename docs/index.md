@@ -52,7 +52,6 @@ asapdiscovery is pre-alpha and is under very active development, we make no guar
 installation
 tutorials/index
 guides/index
-modules/index
 ecosystem/index
 future/index
 API/index
