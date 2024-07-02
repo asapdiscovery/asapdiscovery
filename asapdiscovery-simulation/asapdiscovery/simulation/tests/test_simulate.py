@@ -37,14 +37,14 @@ def test_actual_simulation_disk(results_path, tmp_path, use_dask):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
-
-def test_actual_simulation_paths(prot, lig, tmp_path):
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_actual_simulation_paths(tyk2_protein_path, tmp_path, tyk2_lig):
     vs = VanillaMDSimulator(
         num_steps=1, equilibration_steps=1, reporting_interval=1, output_dir=tmp_path, truncate_steps=False
     )
     assert vs.num_steps == 1
     assert vs.equilibration_steps == 1
-    simulation_results = vs.simulate([(prot, lig)], outpaths=["test"], failure_mode="raise")
+    simulation_results = vs.simulate([(tyk2_protein_path, tyk2_lig)], outpaths=["test"], failure_mode="raise")
     assert simulation_results[0].traj_path.exists()
     assert simulation_results[0].success
 

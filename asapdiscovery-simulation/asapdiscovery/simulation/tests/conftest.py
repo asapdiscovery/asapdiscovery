@@ -13,6 +13,11 @@ def ligand_path():
 def protein_path():
     return fetch_test_file("Mpro-x0071_0A_ERI-UCB-8c6b7d0d-1.pdb")
 
+
+@pytest.fixture(scope="session")
+def tyk2_protein_path():
+    return fetch_test_file("tyk2_protein.pdb")
+
 @pytest.fixture(scope="session")
 def results_path():
     return [fetch_test_file("docking_results.json")]
