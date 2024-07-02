@@ -4,7 +4,7 @@
 # or
 # openssl sha256 <file_name>
 
-base_url: https://asap-discovery-test-files.s3.amazonaws.com/
+base_url: https://asap-discovery-test-files.asapdata.org/
 
 files:
   # file for internal testing
