@@ -15,8 +15,13 @@ def protein_path():
 
 
 @pytest.fixture(scope="session")
-def tyk2_protein_path():
+def tyk2_protein():
     return fetch_test_file("tyk2_protein.pdb")
+
+@pytest.fixture(scope="session")
+def tyk2_lig():
+    return fetch_test_file("tyk2_one_lig.sdf")
+
 
 @pytest.fixture(scope="session")
 def results_path():
