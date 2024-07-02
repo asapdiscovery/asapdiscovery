@@ -35,6 +35,7 @@ from pydantic import (
 )
 from rdkit import Chem
 from multimethod import multimethod
+from tqdm import tqdm
 
 
 logger = logging.getLogger(__name__)
@@ -254,7 +255,6 @@ class VanillaMDSimulator(SimulatorBase):
     @property
     def total_simulation_time(self) -> openmm.unit.quantity.Quantity:
         return self.num_steps * self.timestep * unit.femtoseconds
-
     @property
     def frames_per_ns(self) -> unit.quantity.Quantity:
         # convert to ns
@@ -325,11 +325,13 @@ class VanillaMDSimulator(SimulatorBase):
     @_dispatch.register
     def _dispatch(self, inputs: list[tuple[Path, Path]], outpaths: Optional[list[Path]] = None, failure_mode: str = "skip"):
         results = []
-        for protein, ligand, outpath in zip(inputs, outpaths):
+        if not outpaths:
+            outpaths = [None] * len(inputs)
+        for (protein, ligand), outpath in zip(inputs, outpaths):
             try:
                 tag = protein.stem + "_" + ligand.stem
-                if outpaths:
-                    outpath = outpaths / tag
+                if outpath:
+                    outpath = outpath / tag
                 else:
                     outpath = self.output_dir /  tag
                 if not outpath.exists():
@@ -350,26 +352,34 @@ class VanillaMDSimulator(SimulatorBase):
         return results
 
     def _simulate_loop(self, protein: Path, ligand: Path, outpath: Path, input_docking_result: Optional[DockingResult] = None) -> list[SimulationResult]:
+        logger.info(f"Running simulation for {protein.stem} and {ligand.stem}")
         _platform = self._to_openmm_units()
         processed_ligand = self.process_ligand_rdkit(ligand)
         system_generator, ligand_mol = self.create_system_generator(
             processed_ligand
         )
-
+        logger.debug("Created system generator")
         modeller, ligand_mol = self.get_complex_model(ligand_mol, protein)
+
         modeller, mol_atom_indices = self.setup_and_solvate(
             system_generator, modeller, ligand_mol
         )
+        logger.debug("Setup and solvated system")
         system, output_indices, output_topology = self.create_system(
             system_generator, modeller, mol_atom_indices, processed_ligand
         )
+        logger.debug("Created system")
         simulation, context = self.setup_simulation(
             modeller, system, output_indices, output_topology, outpath, _platform
         )
+        logger.info("Setup simulation")
         simulation = self.equilibrate(simulation)
+        logger.info("Equilibrated")
+        logger.info("Running production simulation")
         retcode = self.run_production_simulation(
             simulation, context, output_indices, output_topology, outpath
         )
+        logger.debug("Finished production simulation")
 
         sim_result = SimulationResult(
             input_docking_result=input_docking_result,
@@ -563,8 +573,11 @@ class VanillaMDSimulator(SimulatorBase):
             )
         )
         logger.info(f"Running simulation for {self.num_steps} steps")
+        pbar = tqdm(total=self.num_steps)
         for _ in range(self.n_snapshots):
             simulation.step(self.reporting_interval)
+            pbar.update(self.reporting_interval)
+        pbar.close()
 
         output_positions = context.getState(
             getPositions=True, enforcePeriodicBox=False
