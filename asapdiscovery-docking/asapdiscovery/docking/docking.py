@@ -289,7 +289,6 @@ class DockingResult(BaseModel):
         """
         self._write_docking_files(self, output_dir)
 
-
     @staticmethod
     def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
         output_dir = Path(output_dir)

@@ -325,6 +325,7 @@ def _get_disk_path_from_docking_result(docking_result: DockingResult) -> Path:
         raise ValueError("DockingResult provenance does not have on_disk_location")
     return disk_path
 
+
 class ChemGauss4Scorer(ScorerBase):
     """
     Scoring using ChemGauss.
@@ -338,14 +339,23 @@ class ChemGauss4Scorer(ScorerBase):
 
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
-    def _score(self, inputs, return_for_disk_backend: bool=False, **kwargs) -> list[Score]:
+    def _score(
+        self, inputs, return_for_disk_backend: bool = False, **kwargs
+    ) -> list[Score]:
         """
         Score the inputs, dispatching based on type.
         """
-        return self._dispatch(inputs, return_for_disk_backend=return_for_disk_backend, **kwargs)
+        return self._dispatch(
+            inputs, return_for_disk_backend=return_for_disk_backend, **kwargs
+        )
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], return_for_disk_backend: bool=False, **kwargs) -> list[Score]:
+    def _dispatch(
+        self,
+        inputs: list[DockingResult],
+        return_for_disk_backend: bool = False,
+        **kwargs,
+    ) -> list[Score]:
         """
         Dispatch for DockingResults
         """
@@ -357,10 +367,10 @@ class ChemGauss4Scorer(ScorerBase):
             pose_scorer.Initialize(du)
             chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
 
-
             sc = Score.from_score_and_docking_result(
-                    chemgauss_score, self.score_type, self.units, inp)
-                
+                chemgauss_score, self.score_type, self.units, inp
+            )
+
             # overwrite the input with the path to the file
             if return_for_disk_backend:
                 sc.input = _get_disk_path_from_docking_result(inp)
@@ -427,15 +437,25 @@ class FINTScorer(ScorerBase):
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(
-        self, inputs: Union[list[DockingResult], list[Complex], list[Path]], return_for_disk_backend: bool=False
-    , **kwargs) -> list[Score]:
+        self,
+        inputs: Union[list[DockingResult], list[Complex], list[Path]],
+        return_for_disk_backend: bool = False,
+        **kwargs,
+    ) -> list[Score]:
         """
         Score the inputs, dispatching based on type.
         """
-        return self._dispatch(inputs, return_for_disk_backend=return_for_disk_backend, **kwargs)
+        return self._dispatch(
+            inputs, return_for_disk_backend=return_for_disk_backend, **kwargs
+        )
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], return_for_disk_backend: bool = False, **kwargs) -> list[Score]:
+    def _dispatch(
+        self,
+        inputs: list[DockingResult],
+        return_for_disk_backend: bool = False,
+        **kwargs,
+    ) -> list[Score]:
         """
         Dispatch for DockingResults
         """
@@ -445,15 +465,13 @@ class FINTScorer(ScorerBase):
                 inp.to_protein(), inp.posed_ligand.to_oemol(), self.target
             )
 
-
-            
-            sc =  Score.from_score_and_docking_result(
-                    fint_score, self.score_type, self.units, inp
-                )
+            sc = Score.from_score_and_docking_result(
+                fint_score, self.score_type, self.units, inp
+            )
             # overwrite the input with the path to the file
             if return_for_disk_backend:
                 sc.input = _get_disk_path_from_docking_result(inp)
-            
+
             results.append(sc)
 
         return results
@@ -579,23 +597,34 @@ class GATScorer(MLModelScorer):
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(
-        self, inputs: Union[list[DockingResult], list[str], list[Ligand]], return_for_disk_backend: bool=False
-    , **kwargs) -> list[Score]:
+        self,
+        inputs: Union[list[DockingResult], list[str], list[Ligand]],
+        return_for_disk_backend: bool = False,
+        **kwargs,
+    ) -> list[Score]:
         """
         Score the inputs, dispatching based on type.
         """
-        return self._dispatch(inputs, return_for_disk_backend=return_for_disk_backend, **kwargs)
+        return self._dispatch(
+            inputs, return_for_disk_backend=return_for_disk_backend, **kwargs
+        )
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], return_for_disk_backend: bool=False, **kwargs) -> list[Score]:
+    def _dispatch(
+        self,
+        inputs: list[DockingResult],
+        return_for_disk_backend: bool = False,
+        **kwargs,
+    ) -> list[Score]:
         """
         Dispatch for DockingResults
         """
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
-            sc =  Score.from_score_and_docking_result(
-                    gat_score, self.score_type, self.units, inp)
+            sc = Score.from_score_and_docking_result(
+                gat_score, self.score_type, self.units, inp
+            )
             # overwrite the input with the path to the file
             if return_for_disk_backend:
                 sc.input = _get_disk_path_from_docking_result(inp)
@@ -653,18 +682,29 @@ class E3MLModelScorer(MLModelScorer):
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(
-        self, inputs: Union[list[DockingResult], list[Complex], list[Path]], return_for_disk_backend: bool=False
-    , **kwargs) -> list[Score]:
-        return self._dispatch(inputs, return_for_disk_backend=return_for_disk_backend, **kwargs)
+        self,
+        inputs: Union[list[DockingResult], list[Complex], list[Path]],
+        return_for_disk_backend: bool = False,
+        **kwargs,
+    ) -> list[Score]:
+        return self._dispatch(
+            inputs, return_for_disk_backend=return_for_disk_backend, **kwargs
+        )
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], return_for_disk_backend: bool=False, **kwargs) -> list[Score]:
+    def _dispatch(
+        self,
+        inputs: list[DockingResult],
+        return_for_disk_backend: bool = False,
+        **kwargs,
+    ) -> list[Score]:
         results = []
         for inp in inputs:
             score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
-            
+
             sc = Score.from_score_and_docking_result(
-                    score, self.score_type, self.units, inp)
+                score, self.score_type, self.units, inp
+            )
             # overwrite the input with the path to the file
             if return_for_disk_backend:
                 sc.input = _get_disk_path_from_docking_result(inp)
@@ -745,7 +785,6 @@ class MetaScorer(BaseModel):
         reconstruct_cls=None,
         return_df: bool = False,
         return_for_disk_backend: bool = False,
-
     ) -> list[Score]:
         """
         Score the inputs using all the scorers provided in the constructor
