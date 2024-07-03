@@ -153,9 +153,7 @@ def test_project_support_docking_cli_pdb_file_dask(
 def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path, simulation_results):
     runner = CliRunner()
 
-    def _simulate_patch(
-        self, inputs: list[DockingResult]
-    ) -> list[SimulationResult]:
+    def _simulate_patch(self, inputs: list[DockingResult]) -> list[SimulationResult]:
         return [simulation_results]
 
     # NB: cannot use dask for below test as patch will not survive pickling and transfer to worker
