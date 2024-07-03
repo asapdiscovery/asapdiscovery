@@ -1,8 +1,8 @@
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.openeye import POSITDockingResults
-from asapdiscovery.simulation.szybki import SzybkiFreeformResult
 from asapdiscovery.simulation.simulate import SimulationResult
+from asapdiscovery.simulation.szybki import SzybkiFreeformResult
 
 
 @pytest.fixture(scope="session")

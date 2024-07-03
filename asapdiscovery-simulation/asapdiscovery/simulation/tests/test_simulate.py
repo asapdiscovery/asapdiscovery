@@ -1,15 +1,14 @@
 import os
-
-from unittest import mock
-import pytest
-from asapdiscovery.docking.openeye import POSITDockingResults
-from asapdiscovery.docking.docking import DockingResult
-from asapdiscovery.simulation.simulate import VanillaMDSimulator, SimulationResult
-from asapdiscovery.simulation.cli import simulation as cli
-
-from openmm import unit
-from click.testing import CliRunner
 import traceback
+from unittest import mock
+
+import pytest
+from asapdiscovery.docking.docking import DockingResult
+from asapdiscovery.docking.openeye import POSITDockingResults
+from asapdiscovery.simulation.cli import simulation as cli
+from asapdiscovery.simulation.simulate import SimulationResult, VanillaMDSimulator
+from click.testing import CliRunner
+from openmm import unit
 
 
 def click_success(result):
@@ -171,14 +170,14 @@ def test_multi_use(results, tmp_path):
     assert simulation_results_parallel[0].success
 
 
-
-
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 def test_simulation_cli(
-   tyk2_protein, tmp_path, tyk2_lig,
+    tyk2_protein,
+    tmp_path,
+    tyk2_lig,
 ):
     runner = CliRunner()
 
