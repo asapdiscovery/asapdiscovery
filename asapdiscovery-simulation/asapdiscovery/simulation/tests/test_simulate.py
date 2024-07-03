@@ -178,6 +178,7 @@ def test_simulation_cli(
     tyk2_protein,
     tmp_path,
     tyk2_lig,
+    simulation_results,
 ):
     runner = CliRunner()
 
