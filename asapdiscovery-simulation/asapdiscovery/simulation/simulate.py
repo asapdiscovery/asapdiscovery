@@ -341,7 +341,6 @@ class VanillaMDSimulator(SimulatorBase):
                 if outpath:
                     outpath = Path(outpath) / tag
                 else:
-                    print("there")
                     outpath = self.output_dir / tag
                 if not outpath.exists():
                     outpath.mkdir(parents=True)
