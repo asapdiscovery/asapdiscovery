@@ -1,25 +1,29 @@
-import click
 import itertools
-import logging 
-from typing import Optional, Union
+import logging
 from pathlib import Path
 from shutil import rmtree
+from typing import Optional, Union
 
+import click
 from asapdiscovery.cli.cli_args import (
-    use_dask,
     ligands,
-    md_steps,
+    loglevel,
     md_openmm_platform,
+    md_steps,
     output_dir,
     pdb_file,
-    loglevel,
+    use_dask,
 )
-from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
-from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta, BackendType
-from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.complex import Complex
-from openmm import  unit
+from asapdiscovery.data.util.dask_utils import (
+    BackendType,
+    DaskType,
+    make_dask_client_meta,
+)
+from asapdiscovery.data.util.logging import FileLogger
+from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
+from openmm import unit
 
 
 @click.group()
@@ -34,7 +38,7 @@ def simulation():
 @md_steps
 @md_openmm_platform
 @output_dir
-@loglevel   
+@loglevel
 @use_dask
 def vanilla_md(
     ligands: Optional[str] = None,
@@ -43,8 +47,7 @@ def vanilla_md(
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
     output_dir: str = "output",
     loglevel: Union[int, str] = logging.INFO,
-    use_dask: bool = False
-    
+    use_dask: bool = False,
 ):
 
     # make output directory
@@ -57,8 +60,7 @@ def vanilla_md(
 
     if not pdb_file:
         raise ValueError("Please provide a pdb file")
-    
-    
+
     logger = FileLogger(
         "",  # default root logger so that dask logging is forwarded
         path=output_dir,
@@ -66,8 +68,6 @@ def vanilla_md(
         stdout=True,
         level=loglevel,
     ).getLogger()
-
-
 
     logger.info("Running vanilla MD simulations")
     logger.info(f"Using {md_openmm_platform} as the OpenMM platform")
@@ -77,19 +77,17 @@ def vanilla_md(
 
     if use_dask:
         logger.info("Using dask")
-        dask_client = make_dask_client_meta(
-                DaskType.LOCAL_GPU, loglevel=loglevel
-            )
+        dask_client = make_dask_client_meta(DaskType.LOCAL_GPU, loglevel=loglevel)
     else:
         dask_client = None
 
     pdb_path = Path(pdb_file)
-    
+
     complex = Complex.from_pdb(
-                pdb_file,
-                target_kwargs={"target_name": pdb_path.stem},
-                ligand_kwargs={"compound_name": f"{pdb_path.stem}_ligand"},
-            )
+        pdb_file,
+        target_kwargs={"target_name": pdb_path.stem},
+        ligand_kwargs={"compound_name": f"{pdb_path.stem}_ligand"},
+    )
 
     if ligands:
         # in case its a multisdf
@@ -109,14 +107,16 @@ def vanilla_md(
         # use the ligand that was in the pdb
         if complex.ligand:
             if complex.ligand.to_rdkit().GetNumAtoms() == 0:
-                logger.info("Protein ligand has no atoms, will simulate only protein ...")
+                logger.info(
+                    "Protein ligand has no atoms, will simulate only protein ..."
+                )
             lig_path = output_dir / f"{pdb_path.stem}_ligand.sdf"
             complex.ligand.to_sdf(lig_path)
             lig_paths = [lig_path]
 
         else:
             raise ValueError("No ligands provided and none found in pdb")
-    
+
     protein_processed_path = output_dir / f"{pdb_path.stem}_processed.pdb"
     complex.to_pdb(protein_processed_path)
 
@@ -127,12 +127,13 @@ def vanilla_md(
     logger.info(f"Number of steps: {md_steps}")
     logger.info(f"OpenMM Platform: {md_openmm_platform}")
     logger.info(f"Time step (fs): {simulator.timestep}")
-    logger.info(f"Simulation length (ns): {simulator.total_simulation_time.value_in_unit(unit.nanoseconds)}")
+    logger.info(
+        f"Simulation length (ns): {simulator.total_simulation_time.value_in_unit(unit.nanoseconds)}"
+    )
 
     logger.info("running simulations ..., please wait")
     simulator.simulate(combo, use_dask=use_dask, dask_client=dask_client)
     logger.info("done")
-
 
 
 @simulation.command()
