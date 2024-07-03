@@ -61,8 +61,11 @@ class TrainingPrediction(BaseModel):
 
     @validator("target_val", pre=True, always=True)
     def cast_target_val(cls, v):
-        if isinstance(v, float) or isinstance(v, torch.Tensor):
+        if isinstance(v, float):
             return v
+
+        if isinstance(v, torch.Tensor):
+            return v.clone().detach()
 
         return torch.tensor(v)
 
