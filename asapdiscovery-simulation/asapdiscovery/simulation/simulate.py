@@ -148,6 +148,10 @@ class VanillaMDSimulator(SimulatorBase):
         description="Number of simulation steps, must be a multiple of reporting interval or will be truncated to nearest multiple of reporting interval",
     )
 
+    progressbar: bool = Field(
+        False, description="Whether to show a progress bar during simulation"
+    )
+
     rmsd_restraint: bool = Field(
         False, description="Whether to apply an RMSD restraint to the simulation"
     )
@@ -573,11 +577,14 @@ class VanillaMDSimulator(SimulatorBase):
             )
         )
         logger.info(f"Running simulation for {self.num_steps} steps")
-        pbar = tqdm(total=self.num_steps)
+        if self.progressbar:
+            pbar = tqdm(total=self.num_steps)
         for _ in range(self.n_snapshots):
             simulation.step(self.reporting_interval)
-            pbar.update(self.reporting_interval)
-        pbar.close()
+            if self.progressbar:
+                pbar.update(self.reporting_interval)
+        if self.progressbar:
+            pbar.close()
 
         output_positions = context.getState(
             getPositions=True, enforcePeriodicBox=False

@@ -122,7 +122,7 @@ def vanilla_md(
 
     combo = list(itertools.product([protein_processed_path], lig_paths))
 
-    simulator = VanillaMDSimulator(output_dir=output_dir, openmm_platform=md_openmm_platform, num_steps=md_steps)
+    simulator = VanillaMDSimulator(output_dir=output_dir, openmm_platform=md_openmm_platform, num_steps=md_steps, progressbar=True)
     logger.info(f"Simulator: {simulator}")
     logger.info(f"Number of steps: {md_steps}")
     logger.info(f"OpenMM Platform: {md_openmm_platform}")

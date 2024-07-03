@@ -326,7 +326,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         return_df=True,
         backend=BackendType.DISK,
         reconstruct_cls=docker.result_cls,
-        include_input=True,
+        return_for_disk_backend=True,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)

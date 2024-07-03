@@ -287,9 +287,7 @@ class DockingResult(BaseModel):
         output_dir : Union[str, Path]
             Output directory
         """
-        json_loc = self._write_docking_files(self, output_dir)
-        # get full path to json file
-        self.provenance["on_disk_location"] = str(json_loc.resolve())
+        self._write_docking_files(self, output_dir)
 
 
     @staticmethod
@@ -304,6 +302,7 @@ class DockingResult(BaseModel):
         result.posed_ligand.to_sdf(output_sdf_file)
         combined_oemol = result.to_posed_oemol()
         save_openeye_pdb(combined_oemol, output_pdb_file)
+        result.provenance["on_disk_location"] = str(output_json_file.resolve())
         result.to_json_file(output_json_file)
         return output_json_file
 
