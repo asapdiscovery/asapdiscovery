@@ -2,6 +2,7 @@ import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.openeye import POSITDockingResults
 from asapdiscovery.simulation.szybki import SzybkiFreeformResult
+from asapdiscovery.simulation.simulate import SimulationResult
 
 
 @pytest.fixture(scope="session")
@@ -44,3 +45,14 @@ def szybki_results():
         szybki_conformer_strain=0.1,
     )
     return res
+
+
+@pytest.fixture()
+def simulation_results(results):
+    return SimulationResult(
+        input_docking_result=results[0],
+        traj_path=fetch_test_file("example_traj.xtc"),
+        minimized_pdb_path=fetch_test_file("example_traj_top.pdb"),
+        final_pdb_path=fetch_test_file("example_traj_top.pdb"),
+        success=True,
+    )

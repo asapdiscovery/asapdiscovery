@@ -17,7 +17,6 @@ from asapdiscovery.cli.cli_args import (
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.util.dask_utils import (
-    BackendType,
     DaskType,
     make_dask_client_meta,
 )

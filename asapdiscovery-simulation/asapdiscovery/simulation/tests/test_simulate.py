@@ -1,9 +1,23 @@
 import os
 
+from unittest import mock
 import pytest
 from asapdiscovery.docking.openeye import POSITDockingResults
-from asapdiscovery.simulation.simulate import VanillaMDSimulator
+from asapdiscovery.docking.docking import DockingResult
+from asapdiscovery.simulation.simulate import VanillaMDSimulator, SimulationResult
+from asapdiscovery.simulation.cli import simulation as cli
+
 from openmm import unit
+from click.testing import CliRunner
+import traceback
+
+
+def click_success(result):
+    if result.exit_code != 0:  # -no-cov-  (only occurs on test error)
+        print(result.output)
+        traceback.print_tb(result.exc_info[2])
+        print(result.exc_info[0], result.exc_info[1])
+    return result.exit_code == 0
 
 
 @pytest.mark.skipif(
@@ -155,3 +169,35 @@ def test_multi_use(results, tmp_path):
     )
 
     assert simulation_results_parallel[0].success
+
+
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
+def test_simulation_cli(
+   tyk2_protein, tmp_path, tyk2_lig,
+):
+    runner = CliRunner()
+
+    def _simulate_patch(
+        self, docking_results: list[DockingResult]
+    ) -> list[SimulationResult]:
+        return [simulation_results]
+
+    # NB: cannot use dask for below test as patch will not survive pickling and transfer to worker
+
+    with mock.patch.object(VanillaMDSimulator, "_simulate", _simulate_patch):
+        args = [
+            "vanilla-md",
+            "--ligands",
+            tyk2_lig,
+            "--pdb-file",
+            tyk2_protein,
+            "--output-dir",
+            tmp_path,
+        ]
+        result = runner.invoke(cli, args)
+    assert click_success(result)

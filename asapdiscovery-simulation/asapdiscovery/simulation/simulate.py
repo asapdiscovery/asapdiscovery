@@ -3,9 +3,7 @@ import logging
 import warnings
 from pathlib import Path
 from typing import Any, ClassVar, Optional  # noqa: F401
-from warnings import warn
 
-import dask
 import mdtraj
 import openmm
 import pandas as pd
