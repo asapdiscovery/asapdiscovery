@@ -133,7 +133,7 @@ def vanilla_md(
     )
 
     logger.info("running simulations ..., please wait")
-    simulator.simulate(combo, use_dask=use_dask, dask_client=dask_client)
+    simulator.simulate(combo, use_dask=use_dask, dask_client=dask_client, failure_mode="skip")
     logger.info("done")
 
 

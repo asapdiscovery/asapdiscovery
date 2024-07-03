@@ -339,8 +339,9 @@ class VanillaMDSimulator(SimulatorBase):
             try:
                 tag = protein.stem + "_" + ligand.stem
                 if outpath:
-                    outpath = outpath / tag
+                    outpath = Path(outpath) / tag
                 else:
+                    print("there")
                     outpath = self.output_dir / tag
                 if not outpath.exists():
                     outpath.mkdir(parents=True)

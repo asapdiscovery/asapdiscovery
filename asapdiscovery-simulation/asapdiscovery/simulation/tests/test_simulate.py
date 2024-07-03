@@ -75,7 +75,7 @@ def test_actual_simulation_paths(tyk2_protein, tmp_path, tyk2_lig):
     assert vs.num_steps == 1
     assert vs.equilibration_steps == 1
     simulation_results = vs.simulate(
-        [(tyk2_protein, tyk2_lig)], outpaths=["test"], failure_mode="raise"
+        [(tyk2_protein, tyk2_lig)], outpaths=[tmp_path], failure_mode="raise"
     )
     assert simulation_results[0].traj_path.exists()
     assert simulation_results[0].success
@@ -183,7 +183,7 @@ def test_simulation_cli(
     runner = CliRunner()
 
     def _simulate_patch(
-        self, docking_results: list[DockingResult]
+        self, inputs: list[DockingResult], **kwargs
     ) -> list[SimulationResult]:
         return [simulation_results]
 
