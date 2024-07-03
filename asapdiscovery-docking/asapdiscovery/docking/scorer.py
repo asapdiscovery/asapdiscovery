@@ -236,8 +236,8 @@ class ScorerBase(BaseModel):
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
-        include_input: bool = False,
         pivot: bool = True,
+        return_for_disk_backend: bool = False,
     ) -> list[Score]:
         """
         Score the inputs. Most of the work is done in the _score method, this method is in turn dispatched based on type to various methods.
@@ -259,11 +259,12 @@ class ScorerBase(BaseModel):
             Function to use to reconstruct the inputs, by default None
         return_df : bool, optional
             Whether to return a dataframe, by default False
-        include_input : bool, optional
-            Whether to return the results, in the dataframe, by default False
         pivot : bool, optional
             Whether to pivot the dataframe, by default True
+        return_for_disk_backend : bool, optional
+            Whether to return paths to inputs for disk backend, by default False
         """
+
         outputs = self._score(
             inputs=inputs,
             use_dask=use_dask,
@@ -271,10 +272,11 @@ class ScorerBase(BaseModel):
             failure_mode=failure_mode,
             backend=backend,
             reconstruct_cls=reconstruct_cls,
+            return_for_disk_backend=return_for_disk_backend,
         )
 
         if return_df:
-            df = self.scores_to_df(outputs, include_input=include_input)
+            df = self.scores_to_df(outputs)
             if pivot:
                 return Score._combine_and_pivot_scores_df([df])
             else:
@@ -283,7 +285,7 @@ class ScorerBase(BaseModel):
             return outputs
 
     @staticmethod
-    def scores_to_df(scores: list[Score], include_input: bool = False) -> pd.DataFrame:
+    def scores_to_df(scores: list[Score]) -> pd.DataFrame:
         """
         Convert a list of scores to a dataframe.
 
@@ -315,6 +317,14 @@ class ScorerBase(BaseModel):
         return df
 
 
+def _get_disk_path_from_docking_result(docking_result: DockingResult) -> Path:
+    if docking_result.provenance is None:
+        raise ValueError("DockingResult does not have provenance")
+    disk_path = docking_result.provenance.get("on_disk_location", None)
+    if not disk_path:
+        raise ValueError("DockingResult provenance does not have on_disk_location")
+    return disk_path
+
 class ChemGauss4Scorer(ScorerBase):
     """
     Scoring using ChemGauss.
@@ -328,14 +338,14 @@ class ChemGauss4Scorer(ScorerBase):
 
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
-    def _score(self, inputs) -> list[Score]:
+    def _score(self, inputs, return_for_disk_backend: bool=False, **kwargs) -> list[Score]:
         """
         Score the inputs, dispatching based on type.
         """
-        return self._dispatch(inputs)
+        return self._dispatch(inputs, return_for_disk_backend=return_for_disk_backend, **kwargs)
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
+    def _dispatch(self, inputs: list[DockingResult], return_for_disk_backend: bool=False, **kwargs) -> list[Score]:
         """
         Dispatch for DockingResults
         """
@@ -346,11 +356,16 @@ class ChemGauss4Scorer(ScorerBase):
             du = inp.input_pair.complex.target.to_oedu()
             pose_scorer.Initialize(du)
             chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
-            results.append(
-                Score.from_score_and_docking_result(
-                    chemgauss_score, self.score_type, self.units, inp
-                )
-            )
+
+
+            sc = Score.from_score_and_docking_result(
+                    chemgauss_score, self.score_type, self.units, inp)
+                
+            # overwrite the input with the path to the file
+            if return_for_disk_backend:
+                sc.input = _get_disk_path_from_docking_result(inp)
+
+            results.append(sc)
         return results
 
     @_dispatch.register
@@ -412,15 +427,15 @@ class FINTScorer(ScorerBase):
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(
-        self, inputs: Union[list[DockingResult], list[Complex], list[Path]]
-    ) -> list[Score]:
+        self, inputs: Union[list[DockingResult], list[Complex], list[Path]], return_for_disk_backend: bool=False
+    , **kwargs) -> list[Score]:
         """
         Score the inputs, dispatching based on type.
         """
-        return self._dispatch(inputs)
+        return self._dispatch(inputs, return_for_disk_backend=return_for_disk_backend, **kwargs)
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
+    def _dispatch(self, inputs: list[DockingResult], return_for_disk_backend: bool = False, **kwargs) -> list[Score]:
         """
         Dispatch for DockingResults
         """
@@ -429,11 +444,18 @@ class FINTScorer(ScorerBase):
             _, fint_score = compute_fint_score(
                 inp.to_protein(), inp.posed_ligand.to_oemol(), self.target
             )
-            results.append(
-                Score.from_score_and_docking_result(
+
+
+            
+            sc =  Score.from_score_and_docking_result(
                     fint_score, self.score_type, self.units, inp
                 )
-            )
+            # overwrite the input with the path to the file
+            if return_for_disk_backend:
+                sc.input = _get_disk_path_from_docking_result(inp)
+            
+            results.append(sc)
+
         return results
 
     @_dispatch.register
@@ -468,7 +490,7 @@ class FINTScorer(ScorerBase):
             for p in inputs
         ]
 
-        return self._dispatch(complexes)
+        return self._dispatch(complexes, **kwargs)
 
 
 # keep track of all the ml scorers
@@ -557,26 +579,27 @@ class GATScorer(MLModelScorer):
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(
-        self, inputs: Union[list[DockingResult], list[str], list[Ligand]]
-    ) -> list[Score]:
+        self, inputs: Union[list[DockingResult], list[str], list[Ligand]], return_for_disk_backend: bool=False
+    , **kwargs) -> list[Score]:
         """
         Score the inputs, dispatching based on type.
         """
-        return self._dispatch(inputs)
+        return self._dispatch(inputs, return_for_disk_backend=return_for_disk_backend, **kwargs)
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
+    def _dispatch(self, inputs: list[DockingResult], return_for_disk_backend: bool=False, **kwargs) -> list[Score]:
         """
         Dispatch for DockingResults
         """
         results = []
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
-            results.append(
-                Score.from_score_and_docking_result(
-                    gat_score, self.score_type, self.units, inp
-                )
-            )
+            sc =  Score.from_score_and_docking_result(
+                    gat_score, self.score_type, self.units, inp)
+            # overwrite the input with the path to the file
+            if return_for_disk_backend:
+                sc.input = _get_disk_path_from_docking_result(inp)
+            results.append(sc)
         return results
 
     @_dispatch.register
@@ -630,20 +653,23 @@ class E3MLModelScorer(MLModelScorer):
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
     def _score(
-        self, inputs: Union[list[DockingResult], list[Complex], list[Path]]
-    ) -> list[Score]:
-        return self._dispatch(inputs)
+        self, inputs: Union[list[DockingResult], list[Complex], list[Path]], return_for_disk_backend: bool=False
+    , **kwargs) -> list[Score]:
+        return self._dispatch(inputs, return_for_disk_backend=return_for_disk_backend, **kwargs)
 
     @multimethod
-    def _dispatch(self, inputs: list[DockingResult], **kwargs) -> list[Score]:
+    def _dispatch(self, inputs: list[DockingResult], return_for_disk_backend: bool=False, **kwargs) -> list[Score]:
         results = []
         for inp in inputs:
             score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
-            results.append(
-                Score.from_score_and_docking_result(
-                    score, self.score_type, self.units, inp
-                )
-            )
+            
+            sc = Score.from_score_and_docking_result(
+                    score, self.score_type, self.units, inp)
+            # overwrite the input with the path to the file
+            if return_for_disk_backend:
+                sc.input = _get_disk_path_from_docking_result(inp)
+            results.append(sc)
+
         return results
 
     @_dispatch.register
@@ -667,7 +693,7 @@ class E3MLModelScorer(MLModelScorer):
             )
             for i, p in enumerate(inputs)
         ]
-        return self._dispatch(complexes)
+        return self._dispatch(complexes, **kwargs)
 
 
 @register_ml_scorer
@@ -718,7 +744,8 @@ class MetaScorer(BaseModel):
         backend=BackendType.IN_MEMORY,
         reconstruct_cls=None,
         return_df: bool = False,
-        include_input: bool = False,
+        return_for_disk_backend: bool = False,
+
     ) -> list[Score]:
         """
         Score the inputs using all the scorers provided in the constructor
@@ -733,8 +760,8 @@ class MetaScorer(BaseModel):
                 backend=backend,
                 reconstruct_cls=reconstruct_cls,
                 return_df=return_df,
-                include_input=include_input,
                 pivot=False,
+                return_for_disk_backend=return_for_disk_backend,
             )
             results.append(vals)
 
@@ -765,11 +792,11 @@ class SymClashScorer(ScorerBase):
 
     @dask_vmap(["inputs"])
     @backend_wrapper("inputs")
-    def _score(self, inputs) -> list[Score]:
+    def _score(self, inputs, **kwargs) -> list[Score]:
         """
         Score the inputs, dispatching based on type.
         """
-        return self._dispatch(inputs)
+        return self._dispatch(inputs, **kwargs)
 
     @multimethod
     def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
