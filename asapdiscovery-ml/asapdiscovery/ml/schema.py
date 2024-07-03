@@ -17,7 +17,7 @@ class TrainingPrediction(BaseModel):
 
     # Target info
     target_prop: str = Field(..., description="Target property being predicted.")
-    target_val: float | torch.Tensor | None = Field(
+    target_val: float | torch.Tensor = Field(
         ..., description="Target value to predict."
     )
     in_range: int = Field(
@@ -58,6 +58,13 @@ class TrainingPrediction(BaseModel):
         json_encoders = {
             torch.Tensor: lambda t: t.tolist(),
         }
+
+    @validator("target_val", pre=True, always=True)
+    def cast_target_val(cls, v):
+        if isinstance(v, float) or isinstance(v, torch.Tensor):
+            return v
+
+        return torch.tensor(v)
 
     def to_empty(self):
         """
