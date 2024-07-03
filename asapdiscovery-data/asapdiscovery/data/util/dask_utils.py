@@ -78,41 +78,6 @@ def actualise_dask_delayed_iterable(
     return dask_client.gather(futures, errors=errors)
 
 
-def duplicate_kwarg_for_disk_backend(kwargname, duplicate_to):
-    """
-    Decorator to duplicate a keyword argument to another keyword argument
-
-    Parameters
-    ----------
-    kwargname : str
-        The name of the keyword argument to duplicate
-    duplicate_to : str
-        The name of the keyword argument to duplicate to
-    """
-
-    def duplicate_kwarg_for_disk_backend_inner(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if kwargname not in kwargs:
-                raise ValueError(f"Missing keyword argument {kwargname}")
-            if duplicate_to in kwargs:
-                raise ValueError(f"Duplicate keyword argument {duplicate_to}")
-
-            backend = kwargs.get("backend", None)
-
-            if backend == BackendType.DISK:
-                kwargs[duplicate_to] = kwargs[kwargname]
-
-            else:
-                if not isinstance(kwargs[kwargname], list):
-                    raise ValueError("Expected a list of objects")
-                kwargs[duplicate_to] = [None] * len(kwargs[kwargname])
-
-            return func(*args, **kwargs)
-
-        return wrapper
-
-    return duplicate_kwarg_for_disk_backend_inner
 
 
 def backend_wrapper(kwargname, pop_kwargs=True):
