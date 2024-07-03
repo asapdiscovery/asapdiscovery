@@ -78,8 +78,6 @@ def actualise_dask_delayed_iterable(
     return dask_client.gather(futures, errors=errors)
 
 
-
-
 def backend_wrapper(kwargname, pop_kwargs=True):
     """
     Decorator to handle dask backend for passing data into a function from disk or in-memory
