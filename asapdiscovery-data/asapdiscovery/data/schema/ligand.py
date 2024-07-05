@@ -216,29 +216,28 @@ class Ligand(DataModelAbstractBase):
             key for key in kwargs.keys() if key not in cls.__fields__.keys()
         ]
 
-        tags = {}
+        tags = set()
+        # some keys will not be hashable, ignore them
         for key, value in kwargs.items():
             if key in keys_to_save:
-                if key not in tags:
-                    try:
-                        tags[key] = str(value)
-                    except TypeError:
-                        warnings.warn(
-                            f"Tag {key} with value {value} is not hashable and will not be saved"
-                        )
-                else:
+                try:
+                    tags.add((key, value))
+                except TypeError:
                     warnings.warn(
-                        f"Tag {key} is already present in the tags, skipping"
+                        f"Tag {key} with value {value} is not hashable and will not be saved"
                     )
+
+
+        # tags = {(key, value) for key, value in kwargs.items() if key in keys_to_save}
 
         kwargs["tags"] = tags
 
         # Do the same thing for the conformer tags, only keeping the ones in 'tags'
-        conf_tags_lst = []
+        conf_tags_lst = set()
         for key, value in conf_tags.items():
             if key in keys_to_save:
                 try:
-                    conf_tags_lst.append((key, value))
+                    conf_tags_lst.add((key, value))
                 except TypeError:
                     pass
 
