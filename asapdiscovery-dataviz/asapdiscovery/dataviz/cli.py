@@ -32,7 +32,7 @@ def visualization():
 
 @visualization.command()
 @click.option(
-    "--color-method",
+    "--colour-method",
     default="subpockets",
     help="Coloring method",
     type=click.Choice(["subpockets", "fitness"]),
@@ -63,12 +63,6 @@ def pose_html(
 
     output_dir.mkdir()
 
-    if use_dask:
-        logger.info("Using dask")
-        dask_client = make_dask_client_meta(DaskType.LOCAL_CPU, loglevel=loglevel)
-    else:
-        dask_client = None
-
     logger = FileLogger(
         "",  # default root logger so that dask logging is forwarded
         path=output_dir,
@@ -77,6 +71,13 @@ def pose_html(
         level=loglevel,
     ).getLogger()
     logger.info("Running HTML visualization")
+
+    if use_dask:
+        logger.info("Using dask")
+        dask_client = make_dask_client_meta(DaskType.LOCAL, loglevel=loglevel)
+    else:
+        dask_client = None
+
 
     # check all the required files exist
     ligands = Path(ligands)
@@ -112,10 +113,10 @@ def pose_html(
 @click.option('--traj', required=True, help='Path to the trajectory file.')
 @click.option('--top', required=True, help='Path to the topology file.')
 @output_dir
-@click.option('--start', default=None, type=int, help='Starting snapshot. Defaults to last 100 snapshots if not specified.')
+@click.option('--start', default=0, type=int, help='Starting snapshot. Defaults to last 100 snapshots if not specified.')
 @target
-@click.option('--frames_per_ns', default=10, type=int, help='Frames per nanosecond.')
-@click.option('--smooth', is_flag=True, help='Apply smoothing to the GIF.')
+@click.option('--frames_per_ns', default=200, type=int, help='Frames per nanosecond, default matches the default output frequency for VanillaMDSimulator')
+@click.option('--smooth', default=5, type=int, help='Number of frames to smooth over')
 @click.option('--pymol-debug', is_flag=True, help='PyMOL debugging, will produce pymol sessions rather than a GIF')
 def traj_gif(
     traj: str,
@@ -124,7 +125,7 @@ def traj_gif(
     start: int,
     target: TargetTags,
     frames_per_ns: int,
-    smooth: bool,
+    smooth: int,
     pymol_debug: bool,
     loglevel: Union[int, str] = logging.INFO):
     """Create a GIF from a trajectory."""    
@@ -193,11 +194,9 @@ def traj_gif(
             frames_per_ns=frames_per_ns,
             smooth=smooth,
             start=start,
-            pse=True,
-            pse_share=True,
             output_dir=output_dir,
         )
-        gif_visualiser.visualize(inputs=[(traj_path, top_path)])
+        gif_visualiser.visualize(inputs=[(traj_path, top_path)], outpaths=[output_dir/f"traj.gif"])
 
     logger.info("Done")
 
