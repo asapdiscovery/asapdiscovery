@@ -1,8 +1,5 @@
 import traceback
-
-import click
 import pytest
-from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.cli import visualization
 from click.testing import CliRunner
 

@@ -1,8 +1,7 @@
-import itertools
 import logging
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional, Union
+from typing import Union
 
 import click
 import mdtraj as md
@@ -212,7 +211,7 @@ def traj_gif(
             output_dir=output_dir,
         )
         gif_visualiser.visualize(
-            inputs=[(traj_path, top_path)], outpaths=[output_dir / f"traj.gif"]
+            inputs=[(traj_path, top_path)], outpaths=[output_dir / "traj.gif"]
         )
 
     logger.info("Done")
