@@ -3,25 +3,24 @@ import logging
 from pathlib import Path
 from shutil import rmtree
 from typing import Optional, Union
-import mdtraj as md
 
 import click
+import mdtraj as md
 from asapdiscovery.cli.cli_args import (
     ligands,
     loglevel,
     output_dir,
     pdb_file,
-    use_dask,
     target,
+    use_dask,
 )
-
-from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from asapdiscovery.dataviz.html_viz import HTMLVisualizer
+from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
+from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
+from asapdiscovery.dataviz.html_viz import HTMLVisualizer
 
 
 @click.group()
@@ -78,7 +77,6 @@ def pose_html(
     else:
         dask_client = None
 
-
     # check all the required files exist
     ligands = Path(ligands)
     if not ligands.exists():
@@ -105,19 +103,35 @@ def pose_html(
         ligand_kwargs={"compound_name": protein.stem + "_ligand"},
     )
 
-    html_visualizer.visualize(inputs=[(cmplx, ligs)], use_dask=use_dask, dask_client=dask_client)
+    html_visualizer.visualize(
+        inputs=[(cmplx, ligs)], use_dask=use_dask, dask_client=dask_client
+    )
     logger.info("Done")
 
 
 @visualization.command()
-@click.option('--traj', required=True, help='Path to the trajectory file.')
-@click.option('--top', required=True, help='Path to the topology file.')
+@click.option("--traj", required=True, help="Path to the trajectory file.")
+@click.option("--top", required=True, help="Path to the topology file.")
 @output_dir
-@click.option('--start', default=0, type=int, help='Starting snapshot. Defaults to last 100 snapshots if not specified.')
+@click.option(
+    "--start",
+    default=0,
+    type=int,
+    help="Starting snapshot. Defaults to last 100 snapshots if not specified.",
+)
 @target
-@click.option('--frames_per_ns', default=200, type=int, help='Frames per nanosecond, default matches the default output frequency for VanillaMDSimulator')
-@click.option('--smooth', default=5, type=int, help='Number of frames to smooth over')
-@click.option('--pymol-debug', is_flag=True, help='PyMOL debugging, will produce pymol sessions rather than a GIF')
+@click.option(
+    "--frames_per_ns",
+    default=200,
+    type=int,
+    help="Frames per nanosecond, default matches the default output frequency for VanillaMDSimulator",
+)
+@click.option("--smooth", default=5, type=int, help="Number of frames to smooth over")
+@click.option(
+    "--pymol-debug",
+    is_flag=True,
+    help="PyMOL debugging, will produce pymol sessions rather than a GIF",
+)
 def traj_gif(
     traj: str,
     top: str,
@@ -127,8 +141,9 @@ def traj_gif(
     frames_per_ns: int,
     smooth: int,
     pymol_debug: bool,
-    loglevel: Union[int, str] = logging.INFO):
-    """Create a GIF from a trajectory."""    
+    loglevel: Union[int, str] = logging.INFO,
+):
+    """Create a GIF from a trajectory."""
 
     # make output directory
     output_dir = Path(output_dir)
@@ -196,8 +211,8 @@ def traj_gif(
             start=start,
             output_dir=output_dir,
         )
-        gif_visualiser.visualize(inputs=[(traj_path, top_path)], outpaths=[output_dir/f"traj.gif"])
+        gif_visualiser.visualize(
+            inputs=[(traj_path, top_path)], outpaths=[output_dir / f"traj.gif"]
+        )
 
     logger.info("Done")
-
-    

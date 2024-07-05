@@ -1,6 +1,7 @@
-import pytest
-import click
 import traceback
+
+import click
+import pytest
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz.cli import visualization
 from click.testing import CliRunner
@@ -12,7 +13,6 @@ def click_success(result):
         traceback.print_tb(result.exc_info[2])
         print(result.exc_info[0], result.exc_info[1])
     return result.exit_code == 0
-
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
@@ -34,14 +34,13 @@ def test_viz_cli(tmp_path, pose, protein, use_dask, color_method, align):
         tmp_path,
         "--loglevel",
         "INFO",
-            ]
+    ]
     if align:
         args.append("--align")
     if use_dask:
         args.append("--use-dask")
     result = runner.invoke(visualization, args)
     assert click_success(result)
-
 
 
 @pytest.mark.parametrize("pymol_debug", [False, True])
@@ -62,4 +61,3 @@ def test_gif_cli(tmp_path, traj, top, pymol_debug):
         args.append("--pymol-debug")
     result = runner.invoke(visualization, args)
     assert click_success(result)
-
