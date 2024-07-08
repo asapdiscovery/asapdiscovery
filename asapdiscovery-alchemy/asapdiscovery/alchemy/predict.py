@@ -890,7 +890,7 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     )
     # calculate the bootstrapped stats using cinnabar
     n_samples = plotting_df.shape[0]
-    
+
     stats_data = []
     for statistic in ["RMSE", "MUE", "R2", "rho"]:
         if n_samples > 1:
@@ -912,12 +912,14 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
                 }
             )
         else:
-            stats_data.append({
-                "Statistic": statistic,
-                "value":0,
-                "lower bound": 0,
-                "upper bound": 0,
-            })
+            stats_data.append(
+                {
+                    "Statistic": statistic,
+                    "value": 0,
+                    "lower bound": 0,
+                    "upper bound": 0,
+                }
+            )
     stats_df = pd.DataFrame(stats_data)
     # create a format for numerical data in the tables
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
