@@ -774,40 +774,44 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     # add pIC50 columns beside DG
     add_pic50_columns(plotting_df)
 
-    # create the DG plot
-    fig = plotmol_absolute(
-        calculated=plotting_df["pIC50 (FECS)"],
-        experimental=plotting_df["pIC50 (EXPT)"],
-        smiles=plotting_df["SMILES"],
-        titles=plotting_df["label"],
-        calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
-        experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
-    )
-    # calculate the bootstrapped stats using cinnabar
-    stats_data = []
-    for statistic in ["RMSE", "MUE", "R2", "rho"]:
-        s = stats.bootstrap_statistic(
-            plotting_df["pIC50 (EXPT)"],
-            plotting_df["pIC50 (FECS)"],
-            plotting_df["uncertainty (pIC50) (EXPT)"],
-            plotting_df["uncertainty (pIC50) (FECS)"],
-            statistic=statistic,
-            include_true_uncertainty=False,
-            include_pred_uncertainty=False,
-        )
-        stats_data.append(
-            {
-                "Statistic": statistic,
-                "value": s["mle"],
-                "lower bound": s["low"],
-                "upper bound": s["high"],
-            }
-        )
-    stats_df = pd.DataFrame(stats_data)
-    # create a format for numerical data in the tables
+
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
-    stats_format = {col: number_format for col in stats_df.columns}
-    stats_format["Statistic"] = "html"
+
+    fig = plotmol_absolute(
+            calculated=plotting_df["pIC50 (FECS)"],
+            experimental=plotting_df["pIC50 (EXPT)"],
+            smiles=plotting_df["SMILES"],
+            titles=plotting_df["label"],
+            calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
+            experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
+        )
+    # calculate the bootstrapped stats using cinnabar
+    make_plots_stats = len(plotting_df) > 1
+    if make_plots_stats:
+        # create the DG plot
+        stats_data = []
+        for statistic in ["RMSE", "MUE", "R2", "rho"]:
+            s = stats.bootstrap_statistic(
+                plotting_df["pIC50 (EXPT)"],
+                plotting_df["pIC50 (FECS)"],
+                plotting_df["uncertainty (pIC50) (EXPT)"],
+                plotting_df["uncertainty (pIC50) (FECS)"],
+                statistic=statistic,
+                include_true_uncertainty=False,
+                include_pred_uncertainty=False,
+            )
+            stats_data.append(
+                {
+                    "Statistic": statistic,
+                    "value": s["mle"],
+                    "lower bound": s["low"],
+                    "upper bound": s["high"],
+                }
+            )
+        stats_df = pd.DataFrame(stats_data)
+        # create a format for numerical data in the tables
+        stats_format = {col: number_format for col in stats_df.columns}
+        stats_format["Statistic"] = "html"
     # construct the report
     layout = panel.Column(
         panel.Row(
@@ -819,7 +823,7 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
                 disabled=True,
                 formatters=stats_format,
                 configuration={"columnDefaults": {"headerSort": False}},
-            ),
+            ) if make_plots_stats else None,
         ),
         panel.widgets.Tabulator(
             # use full data frame including nans for table
@@ -871,44 +875,49 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     # add pIC50 columns beside DG
     add_pic50_columns(plotting_df)
 
-    # create the DDG plot
-    fig = plotmol_relative(
-        calculated=plotting_df["DpIC50 (FECS)"],
-        experimental=plotting_df["DpIC50 (EXPT)"],
-        smiles=plotting_df["smiles"],
-        titles=plotting_df["labels"],
-        calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
-        experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
-    )
-    # calculate the bootstrapped stats using cinnabar
-    stats_data = []
-    for statistic in ["RMSE", "MUE", "R2", "rho"]:
-        s = stats.bootstrap_statistic(
-            plotting_df["DpIC50 (EXPT)"],
-            plotting_df["DpIC50 (FECS)"],
-            plotting_df["uncertainty (pIC50) (EXPT)"],
-            plotting_df["uncertainty (pIC50) (FECS)"],
-            statistic=statistic,
-            include_true_uncertainty=False,
-            include_pred_uncertainty=False,
-        )
-        stats_data.append(
-            {
-                "Statistic": statistic,
-                "value": s["mle"],
-                "lower bound": s["low"],
-                "upper bound": s["high"],
-            }
-        )
-    stats_df = pd.DataFrame(stats_data)
-    # create a format for numerical data in the tables
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
-    stats_format = {col: number_format for col in stats_df.columns}
-    stats_format["Statistic"] = "html"
+    
+    make_plots_stats = len(plotting_df) > 1
+
+    if make_plots_stats:
+        # create the DDG plot
+        fig = plotmol_relative(
+            calculated=plotting_df["DpIC50 (FECS)"],
+            experimental=plotting_df["DpIC50 (EXPT)"],
+            smiles=plotting_df["smiles"],
+            titles=plotting_df["labels"],
+            calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
+            experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
+        )
+        # calculate the bootstrapped stats using cinnabar
+        stats_data = []
+        for statistic in ["RMSE", "MUE", "R2", "rho"]:
+            s = stats.bootstrap_statistic(
+                plotting_df["DpIC50 (EXPT)"],
+                plotting_df["DpIC50 (FECS)"],
+                plotting_df["uncertainty (pIC50) (EXPT)"],
+                plotting_df["uncertainty (pIC50) (FECS)"],
+                statistic=statistic,
+                include_true_uncertainty=False,
+                include_pred_uncertainty=False,
+            )
+            stats_data.append(
+                {
+                    "Statistic": statistic,
+                    "value": s["mle"],
+                    "lower bound": s["low"],
+                    "upper bound": s["high"],
+                }
+            )
+        stats_df = pd.DataFrame(stats_data)
+        # create a format for numerical data in the tables
+        stats_format = {col: number_format for col in stats_df.columns}
+        stats_format["Statistic"] = "html"
+
     # construct the report
     layout = panel.Column(
         panel.Row(
-            panel.pane.Bokeh(fig),
+            panel.pane.Bokeh(fig) if make_plots_stats else None,
             panel.widgets.Tabulator(
                 stats_df,
                 show_index=False,
@@ -916,7 +925,7 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
                 disabled=True,
                 formatters=stats_format,
                 configuration={"columnDefaults": {"headerSort": False}},
-            ),
+            ) if make_plots_stats else None,
         ),
         panel.widgets.Tabulator(
             dataframe.drop(columns=["labels", "smiles"]),
