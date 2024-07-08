@@ -6,14 +6,13 @@ import bokeh.models.widgets.tables
 import bokeh.palettes
 import bokeh.plotting
 import cinnabar
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import panel
 import plotmol
-import matplotlib.pyplot as plt
 from bokeh.models import Band, ColumnDataSource, Range1d, Whisker
 from bokeh.plotting import figure, output_file, save
-
 from cinnabar import stats
 from openff.units import unit
 from rdkit import Chem
@@ -789,7 +788,7 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     # calculate the bootstrapped stats using cinnabar
     stats_data = []
     n_samples = plotting_df.shape[0]
-        
+
     for statistic in ["RMSE", "MUE", "R2", "rho"]:
         if n_samples > 1:
             s = stats.bootstrap_statistic(
@@ -811,12 +810,7 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
             )
         else:
             stats_data.append(
-                {
-                    "Statistic": statistic,
-                    "value": 0,
-                    "lower bound": 0,
-                    "upper bound": 0
-                }
+                {"Statistic": statistic, "value": 0, "lower bound": 0, "upper bound": 0}
             )
     stats_df = pd.DataFrame(stats_data)
     # create a format for numerical data in the tables
