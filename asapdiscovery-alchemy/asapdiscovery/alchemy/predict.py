@@ -12,7 +12,6 @@ import pandas as pd
 import panel
 import plotmol
 from bokeh.models import Band, ColumnDataSource, Range1d, Whisker
-from bokeh.plotting import figure, output_file, save
 from cinnabar import stats
 from openff.units import unit
 from rdkit import Chem
