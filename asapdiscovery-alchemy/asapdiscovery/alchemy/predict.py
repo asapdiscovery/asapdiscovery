@@ -6,7 +6,6 @@ import bokeh.models.widgets.tables
 import bokeh.palettes
 import bokeh.plotting
 import cinnabar
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import panel
