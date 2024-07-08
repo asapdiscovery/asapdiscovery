@@ -227,7 +227,6 @@ class Ligand(DataModelAbstractBase):
                         f"Tag {key} with value {value} is not hashable and will not be saved"
                     )
 
-        # tags = {(key, value) for key, value in kwargs.items() if key in keys_to_save}
 
         kwargs["tags"] = tags
 
