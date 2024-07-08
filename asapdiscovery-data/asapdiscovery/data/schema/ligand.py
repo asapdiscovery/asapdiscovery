@@ -232,11 +232,11 @@ class Ligand(DataModelAbstractBase):
         kwargs["tags"] = tags
 
         # Do the same thing for the conformer tags, only keeping the ones in 'tags'
-        conf_tags_lst = set()
+        conf_tags_lst = []
         for key, value in conf_tags.items():
             if key in keys_to_save:
                 try:
-                    conf_tags_lst.add((key, value))
+                    conf_tags_lst.append((key, value))
                 except TypeError:
                     pass
 
