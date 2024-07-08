@@ -774,17 +774,16 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     # add pIC50 columns beside DG
     add_pic50_columns(plotting_df)
 
-
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
 
     fig = plotmol_absolute(
-            calculated=plotting_df["pIC50 (FECS)"],
-            experimental=plotting_df["pIC50 (EXPT)"],
-            smiles=plotting_df["SMILES"],
-            titles=plotting_df["label"],
-            calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
-            experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
-        )
+        calculated=plotting_df["pIC50 (FECS)"],
+        experimental=plotting_df["pIC50 (EXPT)"],
+        smiles=plotting_df["SMILES"],
+        titles=plotting_df["label"],
+        calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
+        experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
+    )
     # calculate the bootstrapped stats using cinnabar
     make_plots_stats = len(plotting_df) > 1
     if make_plots_stats:
@@ -816,14 +815,18 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     layout = panel.Column(
         panel.Row(
             panel.pane.Bokeh(fig),
-            panel.widgets.Tabulator(
-                stats_df,
-                show_index=False,
-                selectable=False,
-                disabled=True,
-                formatters=stats_format,
-                configuration={"columnDefaults": {"headerSort": False}},
-            ) if make_plots_stats else None,
+            (
+                panel.widgets.Tabulator(
+                    stats_df,
+                    show_index=False,
+                    selectable=False,
+                    disabled=True,
+                    formatters=stats_format,
+                    configuration={"columnDefaults": {"headerSort": False}},
+                )
+                if make_plots_stats
+                else None
+            ),
         ),
         panel.widgets.Tabulator(
             # use full data frame including nans for table
@@ -876,7 +879,7 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     add_pic50_columns(plotting_df)
 
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
-    
+
     make_plots_stats = len(plotting_df) > 1
 
     if make_plots_stats:
@@ -918,14 +921,18 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     layout = panel.Column(
         panel.Row(
             panel.pane.Bokeh(fig) if make_plots_stats else None,
-            panel.widgets.Tabulator(
-                stats_df,
-                show_index=False,
-                selectable=False,
-                disabled=True,
-                formatters=stats_format,
-                configuration={"columnDefaults": {"headerSort": False}},
-            ) if make_plots_stats else None,
+            (
+                panel.widgets.Tabulator(
+                    stats_df,
+                    show_index=False,
+                    selectable=False,
+                    disabled=True,
+                    formatters=stats_format,
+                    configuration={"columnDefaults": {"headerSort": False}},
+                )
+                if make_plots_stats
+                else None
+            ),
         ),
         panel.widgets.Tabulator(
             dataframe.drop(columns=["labels", "smiles"]),
