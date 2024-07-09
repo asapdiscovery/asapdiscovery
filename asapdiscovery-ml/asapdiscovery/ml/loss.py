@@ -211,26 +211,17 @@ class RangeLoss(torch.nn.Module):
 
 
 class PoseCrossEntropyLoss(TorchCrossEntropyLoss):
-    def __init__(self, pre_converted=False):
+    def __init__(self):
         """
         Class for calculating a cross entropy loss for per-pose delta G predictions
         in kT units compared to labels for pose closest to experimental structure.
-
-        Parameters
-        ----------
-        pre_converted : bool, default=False
-            Inputs are per-pose probabilities and don't need to be converted from
-            delta G prediction
         """
         super().__init__()
 
-        self.pre_converted = pre_converted
-
     def forward(self, pred, pose_preds, target, in_range, uncertainty):
         """
-        Convert delta G prediction inputs to per-pose (Boltzmann) probabilites, unless
-        self.pre_converted is False. delta G predictions are assumed to be in implicit
-        kT units, as that is the standard in mtenn.
+        Calculate cross-entropy loss for per-pose delta G predictions. These predictions
+        are assumed to be in implicit kT units, as that is the standard in mtenn.
 
         Parameters
         ----------
@@ -252,18 +243,14 @@ class PoseCrossEntropyLoss(TorchCrossEntropyLoss):
         torch.Tensor
             Calculated loss
         """
-        if self.pre_converted:
-            prob_values = pose_preds
-        else:
+        if not isinstance(pose_preds, torch.Tensor):
             pose_free_energies = torch.cat(pose_preds).flatten()
-
-            # Normalizing constant (using logsumexp for numerical stability)
-            log_Q = torch.logsumexp(-pose_free_energies, dim=0)
-
-            # We want p = exp(-g)/Q = exp(-g)/exp(log_Q) = exp(-g - log_Q)
-            prob_values = torch.exp(-pose_free_energies - log_Q)
+        else:
+            pose_free_energies = pose_preds.flatten()
 
         return super().forward(
-            prob_values,
-            target.flatten().to(device=prob_values.device, dtype=prob_values.dtype),
+            -pose_free_energies,
+            target.flatten().to(
+                device=pose_free_energies.device, dtype=pose_free_energies.dtype
+            ),
         )
