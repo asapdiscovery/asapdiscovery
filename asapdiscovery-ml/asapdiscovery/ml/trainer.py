@@ -843,18 +843,18 @@ class Trainer(BaseModel):
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
-                losses = torch.cat(
-                    [
-                        loss_func(
-                            pred, pose_preds, target, in_range, uncertainty
-                        ).reshape((1,))
-                        if target is not None
-                        else torch.tensor([0])
-                        for loss_func, target, in_range, uncertainty in zip(
-                            self.loss_funcs, targets, in_ranges, uncertaintys
-                        )
-                    ]
-                ).to(self.device, dtype=torch.float32)
+
+                losses = [
+                    loss_func(pred, pose_preds, target, in_range, uncertainty).reshape(
+                        (1,)
+                    )
+                    if target is not None
+                    else torch.tensor([0])
+                    for loss_func, target, in_range, uncertainty in zip(
+                        self.loss_funcs, targets, in_ranges, uncertaintys
+                    )
+                ]
+                losses = torch.cat(losses).to(self.device, dtype=torch.float32)
 
                 # Temporarily update weights to handle missing targets
                 missing_idx = losses.isnan()
