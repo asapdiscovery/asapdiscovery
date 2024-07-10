@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 import click
 from asapdiscovery.cli.cli_args import (
+    active_site_chain,
     cache_dir,
     dask_args,
     fragalysis_dir,
@@ -15,6 +16,7 @@ from asapdiscovery.cli.cli_args import (
     overwrite,
     pdb_file,
     postera_args,
+    ref_chain,
     save_to_cache,
     structure_dir,
     target,
@@ -93,11 +95,13 @@ def docking():
 @input_json
 @ml_scorer
 @loglevel
+@ref_chain
+@active_site_chain
 def large_scale(
     target: TargetTags,
-    n_select: int = 5,
+    n_select: int = 10,
     top_n: int = 500,
-    posit_confidence_cutoff: float = 0.7,
+    posit_confidence_cutoff: float = 0.5,
     use_omega: bool = False,
     allow_posit_retries: bool = False,
     ligands: Optional[str] = None,
@@ -118,6 +122,8 @@ def large_scale(
     failure_mode: FailureMode = FailureMode.SKIP,
     ml_scorer: Optional[list[str]] = None,
     loglevel: Union[int, str] = logging.INFO,
+    ref_chain: Optional[str] = None,
+    active_site_chain: Optional[str] = None,
 ):
     """
     Run large scale docking on a set of ligands, against a set of targets.
@@ -152,6 +158,8 @@ def large_scale(
             output_dir=output_dir,
             overwrite=overwrite,
             loglevel=loglevel,
+            ref_chain=ref_chain,
+            active_site_chain=active_site_chain,
         )
 
     large_scale_docking_workflow(inputs)
@@ -305,10 +313,12 @@ def cross_docking(
 @ml_scorer
 @md_args
 @loglevel
+@ref_chain
+@active_site_chain
 def small_scale(
     target: TargetTags,
     posit_confidence_cutoff: float = 0.1,
-    n_select: int = 3,
+    n_select: int = 20,
     allow_dask_cuda: bool = True,
     no_omega: bool = False,
     ligands: Optional[str] = None,
@@ -332,6 +342,8 @@ def small_scale(
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
     loglevel: Union[int, str] = logging.INFO,
+    ref_chain: Optional[str] = None,
+    active_site_chain: Optional[str] = None,
 ):
     """
     Run small scale docking on a set of ligands, against a set of targets.
@@ -368,9 +380,94 @@ def small_scale(
             md_steps=md_steps,
             md_openmm_platform=md_openmm_platform,
             loglevel=loglevel,
+            ref_chain=ref_chain,
+            active_site_chain=active_site_chain,
         )
 
     small_scale_docking_workflow(inputs)
+
+
+@docking.command()
+@target
+@click.option(
+    "--vdw-radii-fudgefactor",
+    type=float,
+    default=0.9,
+    help="The fudge factor multiplier to apply to VDW radii",
+)
+@click.option(
+    "--symexp-clash-thresh",
+    type=int,
+    default=0,
+    help="The number of clashes to consider a ligand as clashing",
+)
+@ligands
+@postera_args
+@pdb_file
+@fragalysis_dir
+@structure_dir
+@save_to_cache
+@cache_dir
+@dask_args
+@output_dir
+@overwrite
+@input_json
+@loglevel
+def symexp_crystal_packing(
+    target: TargetTags,
+    vdw_radii_fudgefactor: float = 0.9,
+    symexp_clash_thresh: int = 0,
+    ligands: Optional[str] = None,
+    postera: bool = False,
+    postera_molset_name: Optional[str] = None,
+    postera_upload: bool = False,
+    pdb_file: Optional[str] = None,
+    fragalysis_dir: Optional[str] = None,
+    structure_dir: Optional[str] = None,
+    save_to_cache: Optional[bool] = True,
+    cache_dir: Optional[str] = None,
+    output_dir: str = "output",
+    overwrite: bool = True,
+    input_json: Optional[str] = None,
+    use_dask: bool = False,
+    dask_type: DaskType = DaskType.LOCAL,
+    dask_n_workers: Optional[int] = None,
+    failure_mode: FailureMode = FailureMode.SKIP,
+    loglevel: Union[int, str] = logging.INFO,
+):
+    """
+    Check for overlaps between docked ligands and crystal neighbouts
+    """
+
+    if input_json is not None:
+        print("Loading inputs from json file... Will override all other inputs.")
+        inputs = SymExpCrystalPackingInputs.from_json_file(input_json)
+
+    else:
+        inputs = SymExpCrystalPackingInputs(
+            postera=postera,
+            postera_upload=postera_upload,
+            target=target,
+            vdw_radii_fudgefactor=vdw_radii_fudgefactor,
+            use_dask=use_dask,
+            dask_type=dask_type,
+            dask_n_workers=dask_n_workers,
+            failure_mode=failure_mode,
+            ligands=ligands,
+            pdb_file=pdb_file,
+            fragalysis_dir=fragalysis_dir,
+            structure_dir=structure_dir,
+            postera_molset_name=postera_molset_name,
+            cache_dir=cache_dir,
+            save_to_cache=save_to_cache,
+            ml_scorers=ml_scorer,
+            output_dir=output_dir,
+            overwrite=overwrite,
+            loglevel=loglevel,
+            symexp_clash_thresh=symexp_clash_thresh,
+        )
+
+    symexp_crystal_packing_workflow(inputs)
 
 
 @docking.command()
@@ -427,18 +524,8 @@ def small_scale(
 @ml_scorer
 @md_args
 @loglevel
-@click.option(
-    "--ref-chain",
-    type=str,
-    default="A",
-    help="Chain ID to align to",
-)
-@click.option(
-    "--active-site-chain",
-    type=str,
-    default="A",
-    help="Active site chain ID to align to",
-)
+@ref_chain
+@active_site_chain
 @click.option(
     "--seqres-yaml",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
@@ -486,7 +573,7 @@ def ligand_transfer_docking(
     target=target,
 ):
     """
-    Run cross docking on a set of ligands, against a set of targets.
+    Run ligand transfer docking on a set of ligands, against a set of targets.
     """
 
     if input_json is not None:

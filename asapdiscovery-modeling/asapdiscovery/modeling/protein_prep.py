@@ -9,7 +9,7 @@ import yaml
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.schema.target import PreppedTarget, Target
+from asapdiscovery.data.schema.target import PreppedTarget
 from asapdiscovery.data.util.dask_utils import (
     FailureMode,
     actualise_dask_delayed_iterable,
@@ -23,7 +23,7 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from distributed import Client
@@ -230,9 +230,12 @@ class ProteinPrepper(ProteinPrepperBase):
     align: Optional[Complex] = Field(
         None, description="Reference structure to align to."
     )
-    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
+    ref_chain: Optional[str] = Field(
+        None, description="Chain ID to align to in reference structure"
+    )
     active_site_chain: Optional[str] = Field(
-        "A", description="Chain ID to align to reference."
+        None,
+        description="Active site chain ID to align to ref_chain in reference structure",
     )
     seqres_yaml: Optional[Path] = Field(
         None, description="Path to seqres yaml to mutate to."
@@ -243,21 +246,6 @@ class ProteinPrepper(ProteinPrepperBase):
     oe_active_site_residue: Optional[str] = Field(
         None, description="OE formatted string of active site residue to use"
     )
-
-    @root_validator
-    @classmethod
-    def _check_align_and_chain_info(cls, values):
-        """
-        Check that align and chain info is provided correctly.
-        """
-        align = values.get("align")
-        ref_chain = values.get("ref_chain")
-        active_site_chain = values.get("active_site_chain")
-        if align and not ref_chain:
-            raise ValueError("Must provide ref_chain if align is provided")
-        if align and not active_site_chain:
-            raise ValueError("Must provide active_site_chain if align is provided")
-        return values
 
     def _prep(self, inputs: list[Complex], failure_mode="skip") -> list[PreppedComplex]:
         """
@@ -281,6 +269,8 @@ class ProteinPrepper(ProteinPrepperBase):
                 if self.seqres_yaml:
                     with open(self.seqres_yaml) as f:
                         seqres_dict = yaml.safe_load(f)
+                    if "SEQRES" not in seqres_dict:
+                        raise ValueError("No SEQRES found in YAML")
                     seqres = seqres_dict["SEQRES"]
                     res_list = seqres_to_res_list(seqres)
                     prot = mutate_residues(prot, res_list, place_h=True)
@@ -381,13 +371,15 @@ class LigandTransferProteinPrepper(ProteinPrepper):
         """
         prepped_complexes = []
         for complex in inputs:
-            # load protein
+        # load protein
             prot = complex.target.to_oemol()
 
-            # mutate residues
+        # mutate residues
             if self.seqres_yaml:
                 with open(self.seqres_yaml) as f:
                     seqres_dict = yaml.safe_load(f)
+                if "SEQRES" not in seqres_dict:
+                    raise ValueError("No SEQRES found in YAML")
                 seqres = seqres_dict["SEQRES"]
                 res_list = seqres_to_res_list(seqres)
                 prot = mutate_residues(prot, res_list, place_h=True)
@@ -426,21 +418,20 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                     ligand,
                 )
                 if not success:
-                    warnings.warn(
-                        f"Failed to make design unit for target {complex.target.target_name} and complex {complex.unique_name}."
-                    )
-                    continue
+                    raise ValueError(f"Failed to make design unit for target {complex.target.target_name} and complex {complex.unique_name}.")
+                    # continue
 
                 from asapdiscovery.data.backend.openeye import oedocking
 
                 success = oedocking.OEMakeReceptor(du)
 
                 if not success:
-                    warnings.warn(
+                    raise ValueError(
+                    # warnings.warn(
                         f"Made design unit, but failed to make receptor for target {complex.target.target_name} "
                         f"and complex {complex.unique_name}."
                     )
-                    continue
+                    # continue
 
                 prepped_target = PreppedTarget.from_oedu(
                     du,
