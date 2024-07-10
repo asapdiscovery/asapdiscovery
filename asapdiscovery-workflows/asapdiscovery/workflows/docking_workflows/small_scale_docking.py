@@ -8,7 +8,6 @@ from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_artifacts import (
@@ -27,11 +26,16 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import (
+    BackendType,
+    DaskType,
+    make_dask_client_meta,
+)
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer import (
@@ -283,6 +287,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
+        return_for_disk_backend=True,
     )
 
     n_results = len(results)
@@ -308,10 +313,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
-
     # score results with multiple scoring functions
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
@@ -321,7 +328,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
         return_df=True,
-        include_input=True,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
+        return_for_disk_backend=True,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -354,12 +363,16 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         output_dir=html_ouptut_dir,
         ref_chain=inputs.ref_chain,
         active_site_chain=inputs.ref_chain,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
     pose_visualizatons = html_visualizer.visualize(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -395,6 +408,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             use_dask=inputs.use_dask,
             dask_client=dask_client,
             failure_mode=inputs.failure_mode,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
         # duplicate target id column so we can join
@@ -493,6 +508,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             use_dask=inputs.use_dask,
             dask_client=dask_client,
             failure_mode=inputs.failure_mode,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
         if len(simulation_results) == 0:

@@ -241,6 +241,8 @@ class POSITDocker(DockingBase):
                             )
                         else:
                             omegaOpts = oeomega.OEOmegaOptions()
+                        # set stereochemistry to non-strict
+                        omegaOpts.SetStrictStereo(False)
                         omega = oeomega.OEOmega(omegaOpts)
                         omega_retcode = omega.Build(lig_oemol)
                         if omega_retcode:

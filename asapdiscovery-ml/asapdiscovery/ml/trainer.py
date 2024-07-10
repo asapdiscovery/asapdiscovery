@@ -8,6 +8,8 @@ from time import time
 import numpy as np
 import torch
 import wandb
+from asapdiscovery.data.services.aws.s3 import S3
+from asapdiscovery.data.services.services_config import S3Settings
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.ml.config import (
     DataAugConfig,
@@ -25,7 +27,7 @@ from mtenn.config import (
     SchNetModelConfig,
     ViSNetModelConfig,
 )
-from pydantic import BaseModel, Extra, Field, ValidationError, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, root_validator, validator
 
 
 class Trainer(BaseModel):
@@ -123,6 +125,12 @@ class Trainer(BaseModel):
     extra_config: dict | None = Field(
         None, description="Any extra config options to log to W&B."
     )
+
+    # artifact tracking options
+    upload_to_s3: bool = Field(False, description="Upload artifacts to S3.")
+    s3_settings: S3Settings | None = Field(None, description="S3 settings.")
+    s3_path: str | None = Field(None, description="S3 location to upload artifacts.")
+    model_tag: str | None = Field(None, description="Tag for the model being trained.")
 
     # Tracker to make sure the optimizer and ML model are built before trying to train
     _is_initialized = False
@@ -448,6 +456,25 @@ class Trainer(BaseModel):
 
         return v
 
+    @root_validator
+    def check_s3_settings(cls, values):
+        """
+        check that if we uploading to S3 that the S3 path is set
+        """
+        upload_to_s3 = values.get("upload_to_s3")
+        s3_path = values.get("s3_path")
+        if upload_to_s3 and not s3_path:
+            raise ValueError("Must provide an S3 path if uploading to S3.")
+        return values
+
+    @validator("s3_path", pre=True)
+    def check_s3_path(cls, v):
+        # check it is a folder path not a file path, cast to Path
+        if v:
+            if Path(v).suffix:
+                raise ValueError("S3 path must be a folder path.")
+        return v
+
     def wandb_init(self):
         """
         Initialize WandB, handling saving the run ID (for continuing the run later).
@@ -517,6 +544,14 @@ class Trainer(BaseModel):
                 path=str(self.log_file.parent),
                 logfile=str(self.log_file.name),
             ).getLogger()
+
+        # check S3 settings so that fail early if there is an issue
+        if self.upload_to_s3:
+            if self.s3_settings is None:
+                try:
+                    self.s3_settings = S3Settings()
+                except Exception as e:
+                    raise ValueError(f"Error loading S3 settings: {e}")
 
         # Build dataset and split
         self.ds = self.ds_config.build()
@@ -994,11 +1029,66 @@ class Trainer(BaseModel):
                 for sp, sp_d in self.loss_dict.items()
             }
 
+        final_model_path = self.output_dir / "final.th"
+        torch.save(self.model.state_dict(), final_model_path)
+        (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
+
+        # write to json
+        model_config_path = self.output_dir / "model_config.json"
+        model_config_path.write_text(self.model_config.json())
+
+        # copy over the final to tagged model if present
+        import shutil
+
+        if self.model_tag:
+            final_model_path_tagged = self.output_dir / f"{self.model_tag}.th"
+            shutil.copy(final_model_path, final_model_path_tagged)
+            final_model_path = final_model_path_tagged
+
+        if self.upload_to_s3:
+            print("Uploading to S3")
+            if self.model_tag:
+                s3_final_model_path = self.s3_path + f"/{self.model_tag}.th"
+            else:
+                s3_final_model_path = self.s3_path + "/model.th"
+            s3_config_path = self.s3_path + "/model_config.json"
+            s3 = S3.from_settings(self.s3_settings)
+            s3.push_file(
+                final_model_path,
+                location=s3_final_model_path,
+                content_type="application/octet-stream",
+            )
+            s3.push_file(
+                model_config_path,
+                location=s3_config_path,
+                content_type="application/json",
+            )
+            if self.use_wandb:
+                # track S3 artifacts
+                print("Linking S3 artifacts to W&B")
+                tag = self.model_tag if self.model_tag else "model"
+                model_artifact = wandb.Artifact(
+                    tag,
+                    type="model",
+                    description="trained model",
+                )
+                model_uri = s3.to_uri(s3_final_model_path)
+                print(f"URI: {model_uri}")
+                model_artifact.add_reference(model_uri)
+                wandb.log_artifact(model_artifact)
+
+                config_artifact = wandb.Artifact(
+                    "model_config",
+                    type="model_config",
+                    description="model configuration",
+                )
+                config_uri = s3.to_uri(s3_config_path)
+                print(f"URI: {config_uri}")
+                config_artifact.add_reference(config_uri)
+                wandb.log_artifact(config_artifact)
+
         if self.use_wandb:
             wandb.finish()
-
-        torch.save(self.model.state_dict(), self.output_dir / "final.th")
-        (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
 
     def _update_loss_dict(
         self,

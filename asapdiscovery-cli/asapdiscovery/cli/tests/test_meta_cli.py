@@ -21,7 +21,7 @@ def test_toplevel_runnable():
 
 
 @pytest.mark.parametrize(
-    "subcommand", ["protein-prep", "docking", "alchemy", "genetics", "ml"]
+    "subcommand", ["protein-prep", "docking", "alchemy", "genetics", "ml", "simulation"]
 )
 def test_subcommand_runnable(subcommand):
     runner = CliRunner()
