@@ -854,11 +854,13 @@ class Trainer(BaseModel):
                         self.loss_funcs, targets, in_ranges, uncertaintys
                     )
                 ]
-                losses = torch.cat(losses).to(self.device, dtype=torch.float32)
+                losses = torch.cat(
+                    [loss.to(self.device, dtype=torch.float32) for loss in losses]
+                )
 
                 # Temporarily update weights to handle missing targets
                 missing_idx = losses.isnan()
-                use_weights = self.loss_weights.clone().detach()
+                use_weights = self.loss_weights.clone().detach().to(self.device)
                 # Set to 0 so it doesn't affect dot product
                 use_weights[missing_idx] = 0
                 # Re-normalize weights
@@ -994,22 +996,23 @@ class Trainer(BaseModel):
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
+                losses = [
+                    loss_func(pred, pose_preds, target, in_range, uncertainty).reshape(
+                        (1,)
+                    )
+                    if target is not None
+                    else torch.tensor([0])
+                    for loss_func, target, in_range, uncertainty in zip(
+                        self.loss_funcs, targets, in_ranges, uncertaintys
+                    )
+                ]
                 losses = torch.cat(
-                    [
-                        loss_func(
-                            pred, pose_preds, target, in_range, uncertainty
-                        ).reshape((1,))
-                        if target is not None
-                        else torch.tensor([0])
-                        for loss_func, target, in_range, uncertainty in zip(
-                            self.loss_funcs, targets, in_ranges, uncertaintys
-                        )
-                    ]
-                ).to(self.device, dtype=torch.float32)
+                    [loss.to(self.device, dtype=torch.float32) for loss in losses]
+                )
 
                 # Temporarily update weights to handle missing targets
                 missing_idx = losses.isnan()
-                use_weights = self.eval_loss_weights.clone().detach()
+                use_weights = self.eval_loss_weights.clone().detach().to(self.device)
                 # Set to 0 so it doesn't affect dot product
                 use_weights[missing_idx] = 0
                 # Re-normalize weights
@@ -1095,22 +1098,23 @@ class Trainer(BaseModel):
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
+                losses = [
+                    loss_func(pred, pose_preds, target, in_range, uncertainty).reshape(
+                        (1,)
+                    )
+                    if target is not None
+                    else torch.tensor([0])
+                    for loss_func, target, in_range, uncertainty in zip(
+                        self.loss_funcs, targets, in_ranges, uncertaintys
+                    )
+                ]
                 losses = torch.cat(
-                    [
-                        loss_func(
-                            pred, pose_preds, target, in_range, uncertainty
-                        ).reshape((1,))
-                        if target is not None
-                        else torch.tensor([0])
-                        for loss_func, target, in_range, uncertainty in zip(
-                            self.loss_funcs, targets, in_ranges, uncertaintys
-                        )
-                    ]
-                ).to(self.device, dtype=torch.float32)
+                    [loss.to(self.device, dtype=torch.float32) for loss in losses]
+                )
 
                 # Temporarily update weights to handle missing targets
                 missing_idx = losses.isnan()
-                use_weights = self.eval_loss_weights.clone().detach()
+                use_weights = self.eval_loss_weights.clone().detach().to(self.device)
                 # Set to 0 so it doesn't affect dot product
                 use_weights[missing_idx] = 0
                 # Re-normalize weights
