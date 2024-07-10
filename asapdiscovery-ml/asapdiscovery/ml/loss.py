@@ -86,7 +86,7 @@ class MSELoss(TorchMSELoss):
         mask = torch.tensor(
             [
                 1.0 if r == 0 else ((r < 0) == (t < i))
-                for i, t, r in zip(pred, target, in_range)
+                for i, t, r in zip(pred.flatten(), target.flatten(), in_range.flatten())
             ]
         )
         mask = mask.to(pred.device)
