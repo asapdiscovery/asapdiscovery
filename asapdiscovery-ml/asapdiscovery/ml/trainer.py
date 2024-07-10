@@ -849,7 +849,7 @@ class Trainer(BaseModel):
                         (1,)
                     )
                     if target is not None
-                    else torch.tensor([0])
+                    else torch.tensor([np.nan])
                     for loss_func, target, in_range, uncertainty in zip(
                         self.loss_funcs, targets, in_ranges, uncertaintys
                     )
@@ -863,6 +863,7 @@ class Trainer(BaseModel):
                 use_weights = self.loss_weights.clone().detach().to(self.device)
                 # Set to 0 so it doesn't affect dot product
                 use_weights[missing_idx] = 0
+                losses[missing_idx] = 0
                 # Re-normalize weights
                 use_weights /= use_weights.sum()
                 loss = losses.flatten().dot(use_weights)
@@ -1001,7 +1002,7 @@ class Trainer(BaseModel):
                         (1,)
                     )
                     if target is not None
-                    else torch.tensor([0])
+                    else torch.tensor([np.nan])
                     for loss_func, target, in_range, uncertainty in zip(
                         self.loss_funcs, targets, in_ranges, uncertaintys
                     )
@@ -1015,6 +1016,7 @@ class Trainer(BaseModel):
                 use_weights = self.eval_loss_weights.clone().detach().to(self.device)
                 # Set to 0 so it doesn't affect dot product
                 use_weights[missing_idx] = 0
+                losses[missing_idx] = 0
                 # Re-normalize weights
                 use_weights /= use_weights.sum()
                 loss = losses.flatten().dot(use_weights)
@@ -1103,7 +1105,7 @@ class Trainer(BaseModel):
                         (1,)
                     )
                     if target is not None
-                    else torch.tensor([0])
+                    else torch.tensor([np.nan])
                     for loss_func, target, in_range, uncertainty in zip(
                         self.loss_funcs, targets, in_ranges, uncertaintys
                     )
@@ -1117,6 +1119,7 @@ class Trainer(BaseModel):
                 use_weights = self.eval_loss_weights.clone().detach().to(self.device)
                 # Set to 0 so it doesn't affect dot product
                 use_weights[missing_idx] = 0
+                losses[missing_idx] = 0
                 # Re-normalize weights
                 use_weights /= use_weights.sum()
                 loss = losses.flatten().dot(use_weights)
