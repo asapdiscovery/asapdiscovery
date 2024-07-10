@@ -301,7 +301,9 @@ class DockingResult(BaseModel):
         result.posed_ligand.to_sdf(output_sdf_file)
         combined_oemol = result.to_posed_oemol()
         save_openeye_pdb(combined_oemol, output_pdb_file)
+        result.provenance["on_disk_location"] = str(output_json_file.resolve())
         result.to_json_file(output_json_file)
+        return output_json_file
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, DockingResult):
