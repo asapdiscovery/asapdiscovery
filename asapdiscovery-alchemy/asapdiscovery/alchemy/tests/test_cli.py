@@ -782,13 +782,14 @@ def test_predict_missing_all_exp_data(
         result = runner.invoke(alchemy, ["predict", "-ep", protocol_name])
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
+        # make sure the interactive reports are still made they just won't have a figure
         assert (
             "Absolute report written to predictions-absolute-tyk2-small-test.html"
-            not in result.stdout
+            in result.stdout
         )
         assert (
             "Relative report written to predictions-relative-tyk2-small-test.html"
-            not in result.stdout
+            in result.stdout
         )
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")

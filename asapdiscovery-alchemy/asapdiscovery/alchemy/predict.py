@@ -762,32 +762,33 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
         A panel column containing an interactive plot and table of the free energy predictions.
 
     Notes:
-        Only plots molecules with experimental values
+        Only plots molecules with experimental values if no molecules have exp values the table is created.
     """
-    # create a plotting dataframe which drops rows with nans
-    plotting_df = dataframe.dropna(axis=0, inplace=False)
-    plotting_df.reset_index(inplace=True)
+
+    number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
+
     # add drawn molecule as a column
     mols = [draw_mol(smiles) for smiles in dataframe["SMILES"]]
     dataframe["Molecule"] = mols
 
-    # add pIC50 columns beside DG
-    add_pic50_columns(plotting_df)
+    # create a plotting dataframe which drops rows with nans
+    plotting_df = dataframe.dropna(axis=0, inplace=False)
+    plotting_df.reset_index(inplace=True)
+    if len(plotting_df) > 1:
 
-    number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
+        # add pIC50 columns beside DG
+        add_pic50_columns(plotting_df)
 
-    fig = plotmol_absolute(
-        calculated=plotting_df["pIC50 (FECS)"],
-        experimental=plotting_df["pIC50 (EXPT)"],
-        smiles=plotting_df["SMILES"],
-        titles=plotting_df["label"],
-        calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
-        experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
-    )
-    # calculate the bootstrapped stats using cinnabar
-    make_plots_stats = len(plotting_df) > 1
-    if make_plots_stats:
         # create the DG plot
+        fig = plotmol_absolute(
+            calculated=plotting_df["pIC50 (FECS)"],
+            experimental=plotting_df["pIC50 (EXPT)"],
+            smiles=plotting_df["SMILES"],
+            titles=plotting_df["label"],
+            calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
+            experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
+        )
+        # calculate the bootstrapped stats using cinnabar
         stats_data = []
         for statistic in ["RMSE", "MUE", "R2", "rho"]:
             s = stats.bootstrap_statistic(
@@ -811,9 +812,13 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
         # create a format for numerical data in the tables
         stats_format = {col: number_format for col in stats_df.columns}
         stats_format["Statistic"] = "html"
+    else:
+        stats_df, fig = None, None
+
     # construct the report
-    layout = panel.Column(
-        panel.Row(
+    layout = panel.Column(sizing_mode="stretch_width", scroll=True)
+    if stats_df is not None and fig is not None:
+        row_layout = panel.Row(
             panel.pane.Bokeh(fig),
             (
                 panel.widgets.Tabulator(
@@ -824,11 +829,12 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
                     formatters=stats_format,
                     configuration={"columnDefaults": {"headerSort": False}},
                 )
-                if make_plots_stats
-                else None
             ),
-        ),
-        panel.widgets.Tabulator(
+        )
+        layout.append(row_layout)
+
+    # add the table
+    layout.append(panel.widgets.Tabulator(
             # use full data frame including nans for table
             dataframe,
             show_index=False,
@@ -843,10 +849,7 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
                 "prediction error (pIC50)": number_format,
             },
             configuration={"rowHeight": 300},
-        ),
-        sizing_mode="stretch_width",
-        scroll=True,
-    )
+        ))
     return layout
 
 
