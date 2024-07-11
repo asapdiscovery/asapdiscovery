@@ -762,7 +762,7 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
         A panel column containing an interactive plot and table of the free energy predictions.
 
     Notes:
-        Only plots molecules with experimental values if no molecules have exp values the table is created.
+        Only plots molecules with experimental values, if no molecules have exp values only the table is created.
     """
 
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
@@ -774,7 +774,8 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     # create a plotting dataframe which drops rows with nans
     plotting_df = dataframe.dropna(axis=0, inplace=False)
     plotting_df.reset_index(inplace=True)
-    if len(plotting_df) > 1:
+    # only make the plot if we have exp data and more than one point
+    if len(plotting_df) > 1 and "DG (kcal/mol) (EXPT)" in plotting_df.columns:
 
         # add pIC50 columns beside DG
         add_pic50_columns(plotting_df)
@@ -862,7 +863,8 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
         dataframe: The dataframe of relative predictions to construct the report for.
 
     Returns:
-        A panel column containing an interactive plot and table of the free energy predictions.
+        A panel column containing an interactive plot and table of the free energy predictions if we have 2 or more exp
+        data points else only a table is created.
     """
 
     mols, combined_smiles, titles = [], [], []
@@ -882,8 +884,8 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     add_pic50_columns(plotting_df)
 
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
-
-    make_plots_stats = len(plotting_df) > 1
+    # only plot the graph if we have exp data and more than a single point
+    make_plots_stats = len(plotting_df) > 1 and "DDG (kcal/mol) (EXPT)" in plotting_df.columns
 
     if make_plots_stats:
         # create the DDG plot
