@@ -232,7 +232,6 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
         return_df=True,
-        include_input=False,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)

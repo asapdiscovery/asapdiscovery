@@ -154,7 +154,7 @@ def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path, simulation_resu
     runner = CliRunner()
 
     def _simulate_patch(
-        self, docking_results: list[DockingResult]
+        self, inputs: list[DockingResult], **kwargs
     ) -> list[SimulationResult]:
         return [simulation_results]
 
