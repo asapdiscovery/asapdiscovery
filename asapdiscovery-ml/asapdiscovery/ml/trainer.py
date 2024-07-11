@@ -277,6 +277,13 @@ class Trainer(BaseModel):
         """
         config_cls = field.type_
 
+        if isinstance(kwargs_list, dict):
+            # This will occur in the even of a Sweep, in which case the values will be
+            #  a dict mapping index in the list to a value
+            # Just need to extract the values in the correct order (cast indices to int
+            #  just in case)
+            kwargs_list = [kwargs_list[i] for i in sorted(kwargs_list, key=int)]
+
         configs = []
         for config_kwargs in kwargs_list:
             # If an instance of the actual config class is passed, there's no cache file so
@@ -501,6 +508,12 @@ class Trainer(BaseModel):
         # Fill with 1s if no values passed
         if len(v) == 0:
             v = [1] * len(values["loss_configs"])
+        elif isinstance(v, dict):
+            # This will occur in the even of a Sweep, in which case the values will be
+            #  a dict mapping index in the list to a value
+            # Just need to extract the values in the correct order (cast indices to int
+            #  just in case)
+            v = [v[i] for i in sorted(v, key=int)]
 
         # Cast to tensor (don't send to device in case we're building the Trainer on a
         #  CPU-only node)
@@ -530,6 +543,12 @@ class Trainer(BaseModel):
         # Fill with 1s if no values passed
         if len(v) == 0:
             return values["loss_weights"]
+        elif isinstance(v, dict):
+            # This will occur in the even of a Sweep, in which case the values will be
+            #  a dict mapping index in the list to a value
+            # Just need to extract the values in the correct order (cast indices to int
+            #  just in case)
+            v = [v[i] for i in sorted(v, key=int)]
 
         # Cast to tensor (don't send to device in case we're building the Trainer on a
         #  CPU-only node)
