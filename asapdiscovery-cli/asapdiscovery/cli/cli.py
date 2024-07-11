@@ -30,6 +30,11 @@ from asapdiscovery.genetics.cli import genetics  # noqa: F401, E402, F811
 
 cli.add_command(genetics)
 
+
+from asapdiscovery.dataviz.cli import visualization  # noqa: F401, E402, F811
+
+cli.add_command(visualization)
+
 from asapdiscovery.simulation.cli import simulation  # noqa: F401, E402, F811
 
 cli.add_command(simulation)
