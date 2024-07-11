@@ -887,8 +887,8 @@ class LossFunctionConfig(ConfigBase):
         from asapdiscovery.ml.loss import (
             GaussianNLLLoss,
             MSELoss,
-            RangeLoss,
             PoseCrossEntropyLoss,
+            RangeLoss,
         )
 
         match self.loss_type:

@@ -1,9 +1,8 @@
 import numpy as np
 import pandas
-from pydantic import BaseModel, Extra, Field, validator
-
-from asapdiscovery.ml.config import LossFunctionConfig
 import torch
+from asapdiscovery.ml.config import LossFunctionConfig
+from pydantic import BaseModel, Extra, Field, validator
 
 
 class TrainingPrediction(BaseModel):
@@ -480,11 +479,9 @@ class TrainingPredictionTracker(BaseModel):
                 try:
                     cur_d[idx[-1]].append(loss_vals)
                     print(
-                        (
                             "Multiple TrainingPrediction values found for "
                             f'compound_id="{tp.compound_id}" and '
                             f'loss_config="{tp.loss_config.json()}"'
-                        )
                     )
                 except KeyError:
                     cur_d[idx[-1]] = [loss_vals]

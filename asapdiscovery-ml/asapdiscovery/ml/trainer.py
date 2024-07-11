@@ -30,10 +30,10 @@ from mtenn.config import (
 )
 from pydantic import (
     BaseModel,
-    conlist,
     Extra,
     Field,
     ValidationError,
+    conlist,
     root_validator,
     validator,
 )
@@ -865,26 +865,32 @@ class Trainer(BaseModel):
 
                 # convert to float to match other types
                 targets = [
-                    torch.tensor(pose[target_prop], device=self.device).float()
-                    if target_prop in pose
-                    else None
+                    (
+                        torch.tensor(pose[target_prop], device=self.device).float()
+                        if target_prop in pose
+                        else None
+                    )
                     for target_prop in self.target_props
                 ]
                 in_ranges = [
-                    torch.tensor(
-                        pose[f"{target_prop}_range"], device=self.device
-                    ).float()
-                    if f"{target_prop}_range" in pose
-                    else None
+                    (
+                        torch.tensor(
+                            pose[f"{target_prop}_range"], device=self.device
+                        ).float()
+                        if f"{target_prop}_range" in pose
+                        else None
+                    )
                     for target_prop in self.target_props
                 ]
                 uncertaintys = [
-                    torch.tensor(
-                        pose[f"{target_prop}_stderr"],
-                        device=self.device,
-                    ).float()
-                    if f"{target_prop}_range" in pose
-                    else None
+                    (
+                        torch.tensor(
+                            pose[f"{target_prop}_stderr"],
+                            device=self.device,
+                        ).float()
+                        if f"{target_prop}_range" in pose
+                        else None
+                    )
                     for target_prop in self.target_props
                 ]
 
@@ -911,11 +917,13 @@ class Trainer(BaseModel):
                 pred, pose_preds = self.model(model_inp)
 
                 losses = [
-                    loss_func(pred, pose_preds, target, in_range, uncertainty).reshape(
-                        (1,)
+                    (
+                        loss_func(
+                            pred, pose_preds, target, in_range, uncertainty
+                        ).reshape((1,))
+                        if target is not None
+                        else torch.tensor([np.nan])
                     )
-                    if target is not None
-                    else torch.tensor([np.nan])
                     for loss_func, target, in_range, uncertainty in zip(
                         self.loss_funcs, targets, in_ranges, uncertaintys
                     )
@@ -1032,26 +1040,32 @@ class Trainer(BaseModel):
 
                 # convert to float to match other types
                 targets = [
-                    torch.tensor(pose[target_prop], device=self.device).float()
-                    if target_prop in pose
-                    else None
+                    (
+                        torch.tensor(pose[target_prop], device=self.device).float()
+                        if target_prop in pose
+                        else None
+                    )
                     for target_prop in self.target_props
                 ]
                 in_ranges = [
-                    torch.tensor(
-                        pose[f"{target_prop}_range"], device=self.device
-                    ).float()
-                    if f"{target_prop}_range" in pose
-                    else None
+                    (
+                        torch.tensor(
+                            pose[f"{target_prop}_range"], device=self.device
+                        ).float()
+                        if f"{target_prop}_range" in pose
+                        else None
+                    )
                     for target_prop in self.target_props
                 ]
                 uncertaintys = [
-                    torch.tensor(
-                        pose[f"{target_prop}_stderr"],
-                        device=self.device,
-                    ).float()
-                    if f"{target_prop}_range" in pose
-                    else None
+                    (
+                        torch.tensor(
+                            pose[f"{target_prop}_stderr"],
+                            device=self.device,
+                        ).float()
+                        if f"{target_prop}_range" in pose
+                        else None
+                    )
                     for target_prop in self.target_props
                 ]
 
@@ -1064,11 +1078,13 @@ class Trainer(BaseModel):
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
                 losses = [
-                    loss_func(pred, pose_preds, target, in_range, uncertainty).reshape(
-                        (1,)
+                    (
+                        loss_func(
+                            pred, pose_preds, target, in_range, uncertainty
+                        ).reshape((1,))
+                        if target is not None
+                        else torch.tensor([np.nan])
                     )
-                    if target is not None
-                    else torch.tensor([np.nan])
                     for loss_func, target, in_range, uncertainty in zip(
                         self.loss_funcs, targets, in_ranges, uncertaintys
                     )
@@ -1135,26 +1151,32 @@ class Trainer(BaseModel):
 
                 # convert to float to match other types
                 targets = [
-                    torch.tensor(pose[target_prop], device=self.device).float()
-                    if target_prop in pose
-                    else None
+                    (
+                        torch.tensor(pose[target_prop], device=self.device).float()
+                        if target_prop in pose
+                        else None
+                    )
                     for target_prop in self.target_props
                 ]
                 in_ranges = [
-                    torch.tensor(
-                        pose[f"{target_prop}_range"], device=self.device
-                    ).float()
-                    if f"{target_prop}_range" in pose
-                    else None
+                    (
+                        torch.tensor(
+                            pose[f"{target_prop}_range"], device=self.device
+                        ).float()
+                        if f"{target_prop}_range" in pose
+                        else None
+                    )
                     for target_prop in self.target_props
                 ]
                 uncertaintys = [
-                    torch.tensor(
-                        pose[f"{target_prop}_stderr"],
-                        device=self.device,
-                    ).float()
-                    if f"{target_prop}_range" in pose
-                    else None
+                    (
+                        torch.tensor(
+                            pose[f"{target_prop}_stderr"],
+                            device=self.device,
+                        ).float()
+                        if f"{target_prop}_range" in pose
+                        else None
+                    )
                     for target_prop in self.target_props
                 ]
 
@@ -1167,11 +1189,13 @@ class Trainer(BaseModel):
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
                 losses = [
-                    loss_func(pred, pose_preds, target, in_range, uncertainty).reshape(
-                        (1,)
+                    (
+                        loss_func(
+                            pred, pose_preds, target, in_range, uncertainty
+                        ).reshape((1,))
+                        if target is not None
+                        else torch.tensor([np.nan])
                     )
-                    if target is not None
-                    else torch.tensor([np.nan])
                     for loss_func, target, in_range, uncertainty in zip(
                         self.loss_funcs, targets, in_ranges, uncertaintys
                     )

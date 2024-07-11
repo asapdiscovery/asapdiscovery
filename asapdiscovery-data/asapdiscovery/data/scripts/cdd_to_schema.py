@@ -12,11 +12,11 @@ python cdd_to_schema.py \
 -json cdd_downloaded_filtered.json
 """
 
-import click
 from pathlib import Path
 
-from asapdiscovery.data.util.utils import cdd_to_schema, cdd_to_schema_pair
+import click
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
+from asapdiscovery.data.util.utils import cdd_to_schema, cdd_to_schema_pair
 
 
 @click.command()
