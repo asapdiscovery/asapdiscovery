@@ -887,7 +887,9 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
 
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
     # only plot the graph if we have exp data and more than a single point
-    make_plots_stats = len(plotting_df) > 1 and "DDG (kcal/mol) (EXPT)" in plotting_df.columns
+    make_plots_stats = (
+        len(plotting_df) > 1 and "DDG (kcal/mol) (EXPT)" in plotting_df.columns
+    )
 
     if make_plots_stats:
         # create the DDG plot
