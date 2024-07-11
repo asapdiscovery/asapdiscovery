@@ -6,7 +6,7 @@ import dgl
 import mtenn
 import numpy as np
 import torch
-from asapdiscovery.data.backend.openeye import oechem, oemol_to_pdb_string
+from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
