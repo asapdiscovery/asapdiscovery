@@ -44,19 +44,34 @@ class AlchemiscaleHelper:
     A convenience class to handle alchemiscale submissions restarts and results gathering.
     """
 
-    def __init__(self, api_url: str = "https://api.alchemiscale.org"):
+    def __init__(
+        self, identifier: str, key: str, api_url: str = "https://api.alchemiscale.org"
+    ):
         """
-        Create the client which will be used for the rest of the queries
+        Create the client which will be used for the rest of the queries.
+
+        Args:
+            identifier: Your personal alchemiscale ID used to login.
+            key: Your personal alchemiscale KEY used to login.
+            api_url: The URL of the alchemiscale instance to connect to.
         """
         from alchemiscale import AlchemiscaleClient
 
-        # load the settings from the environment
-        settings = AlchemiscaleSettings()
         # connect to the client
         self._client = AlchemiscaleClient(
             api_url=api_url,
-            identifier=settings.ALCHEMISCALE_ID,
+            identifier=identifier,
+            key=key,
+        )
+
+    @classmethod
+    def from_settings(cls, settings: Optional[AlchemiscaleSettings] = None):
+        if settings is None:
+            settings = AlchemiscaleSettings()
+        return cls(
+            api_url=settings.ALCHEMISCALE_URL,
             key=settings.ALCHEMISCALE_KEY,
+            identifier=settings.ALCHEMISCALE_ID,
         )
 
     def create_network(
@@ -119,15 +134,12 @@ class AlchemiscaleHelper:
     def action_network(
         self,
         planned_network: FreeEnergyCalculationNetwork,
-        prioritize: Optional[bool] = None,
     ) -> list[Optional[ScopedKey]]:
         """
         For the given network which is already stored on alchemiscale create and action tasks.
 
         Args:
             planned_network: The network which should action tasks for.
-            prioritize: Whether the network should be set to `high` or `low` priority. If undefined,
-                defaults to standard priority (0.5).
 
         Returns:
             A list of actioned tasks for this network.
@@ -141,17 +153,8 @@ class AlchemiscaleHelper:
                 self._client.create_tasks(tf_sk, count=planned_network.n_repeats + 1)
             )
 
-        # set the network weight based on the found network weights that are currently
-        # running while making sure the weight doesn't fall outside 0.1-1 as 0.0 turns of compute.
-        if prioritize is True:
-            weight = np.clip(max(self.get_actioned_weights()) + 0.01, 0.1, 1.0)
-        elif prioritize is False:
-            weight = np.clip(min(self.get_actioned_weights()) - 0.01, 0.1, 1.0)
-        else:
-            weight = 0.5
-
         # now action the tasks to ensure they are picked up by compute.
-        actioned_tasks = self._client.action_tasks(tasks, network_key, weight=weight)
+        actioned_tasks = self._client.action_tasks(tasks, network_key)
         return actioned_tasks
 
     def network_status(
@@ -322,6 +325,27 @@ class AlchemiscaleHelper:
         else:
             canceled_tasks = []
         return canceled_tasks
+
+    def adjust_weight(
+        self, network_key: ScopedKey, weight: float
+    ) -> tuple[float, float]:
+        """
+        Adjust the weight of a network to influence how often its tasks get actioned
+        by the alchemiscale scheduler.
+
+        Args:
+            network_key: The alchemiscale network key that should have its weight adjusted.
+            weight: The weight (a float between 0.0 and 1.0) that should be assigned.
+
+        Returns:
+            The new weight that is assigned to the network.
+            The weight that was previously assigned to the network.
+        """
+        old_weight = self._client.get_network_weight(network=network_key)
+
+        self._client.set_network_weight(network=network_key, weight=weight)
+
+        return self._client.get_network_weight(network=network_key), old_weight
 
 
 def select_reference_for_compounds(

@@ -2,11 +2,13 @@ from typing import TYPE_CHECKING, Optional
 
 import click
 from asapdiscovery.cli.cli_args import (
+    active_site_chain,
     dask_args,
     fragalysis_dir,
     input_json,
     output_dir,
     pdb_file,
+    ref_chain,
     save_to_cache,
     structure_dir,
     target,
@@ -29,18 +31,8 @@ def protein_prep():
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="Path to a reference structure to align to",
 )
-@click.option(
-    "--ref-chain",
-    type=str,
-    default="A",
-    help="Chain ID to align to",
-)
-@click.option(
-    "--active-site-chain",
-    type=str,
-    default="A",
-    help="Active site chain ID to align to",
-)
+@ref_chain
+@active_site_chain
 @click.option(
     "--seqres-yaml",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),

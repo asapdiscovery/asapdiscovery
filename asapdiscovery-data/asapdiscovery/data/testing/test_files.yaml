@@ -4,7 +4,7 @@
 # or
 # openssl sha256 <file_name>
 
-base_url: https://asap-discovery-test-files.s3.amazonaws.com/
+base_url: https://asap-discovery-test-files.asapdata.org/
 
 files:
   # file for internal testing
@@ -281,6 +281,15 @@ files:
     sha256hash: 5e73f6cf3b68defcffa5cf54c91ffb5ac1569688278a91c8032d4cd3426930cc
 
   # integration testing for ML
+  - resource: ml_testing/cdd_filtered_processed.csv
+    sha256hash: a3ac008167733a6473fe4ccdb6111d0802ad96fda0b9b7a6444710911701bfda
+
+  - resource: ml_testing/cdd_filtered_processed.json
+    sha256hash: 7a6753e33d52f4d1d5dcd07a8bfa85b542cd1b1c3718a582a56daee5fe246074
+
+  - resource: ml_testing/cdd_unfiltered.csv
+    sha256hash: 632e7067ef155349054405247396edcbd5c2aa19442e5626cb9ebb8ecb36874c
+
   - resource: ml_testing/exp_file.json
     sha256hash: d887d5bdc705b22b8dfb2be2f9fdd3ac2679be4d19d434fd61873b6497d6f36b
 
@@ -313,3 +322,12 @@ files:
 
   - resource: ml_testing/docked/AAR-RCN-845f9611-1_Mpro-P2005_0A_0_bound_best.pdb
     sha256hash: 028cb829b537906edf57f3ddafb5a1daad8d4e969669801aa27e01dac520adae
+
+  - resource: mpro_fragalysis-04-01-24_zipped.zip
+    sha256hash: 82c47271ce2f1035b6c00d3421f43b7beeebcb27aedfea3dba9f2def8194421b
+
+  - resource: zikv_nsb2_nsb3_literature_structure.pdb
+    sha256hash: 33cf1112975b5901f2510be1d42959f95d5601fd3befcc84768260ccb2a5c3e6
+
+  - resource: tyk2_one_lig.sdf
+    sha256hash: 182f6882a0160d041159ccedabc7fd3c7e74f07bf52d4e9974b91eb090f68485

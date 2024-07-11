@@ -14,10 +14,13 @@ from asapdiscovery.ml.cli_args import (
     loss_args,
     model_config_cache,
     model_rand_seed,
+    model_tag,
     mtenn_args,
     optim_args,
     output_dir,
     overwrite_args,
+    s3_args,
+    save_weights,
     schnet_args,
     struct_ds_args,
     sweep_args,
@@ -32,10 +35,10 @@ from asapdiscovery.ml.cli_args import (
 from asapdiscovery.ml.config import (
     DatasetSplitterType,
     EarlyStoppingType,
-    LossFunctionType,
     OptimizerType,
 )
 from asapdiscovery.ml.sweep import Sweeper
+from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
 
 
@@ -46,6 +49,7 @@ def sweep():
 
 @sweep.command(name="gat")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @sweep_config_cache
@@ -53,6 +57,7 @@ def sweep():
 @wandb_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @mtenn_args
 @gat_args
 @es_args
@@ -63,8 +68,10 @@ def sweep():
 @sweep_args
 @sweep_config_cache_overwrite
 @overwrite_args
+@s3_args
 def sweep_gat(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     sweep_config_cache: Path | None = None,
@@ -95,6 +102,7 @@ def sweep_gat(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     in_feats: int | None = None,
     num_layers: int | None = None,
     hidden_feats: str | None = None,
@@ -122,9 +130,9 @@ def sweep_gat(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -145,7 +153,8 @@ def sweep_gat(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -219,12 +228,10 @@ def sweep_gat(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -240,21 +247,27 @@ def sweep_gat(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
         "batch_size": batch_size,
-        "target_prop": target_prop,
+        "target_props": target_prop,
         "cont": cont,
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     sweep_kwargs = {
@@ -275,12 +288,14 @@ def sweep_gat(
 
 @sweep.command(name="schnet")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @sweep_config_cache
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @schnet_args
@@ -293,8 +308,10 @@ def sweep_gat(
 @sweep_args
 @sweep_config_cache_overwrite
 @overwrite_args
+@s3_args
 def sweep_schnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     sweep_config_cache: Path | None = None,
@@ -325,6 +342,7 @@ def sweep_schnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     hidden_channels: int | None = None,
     num_filters: int | None = None,
     num_interactions: int | None = None,
@@ -354,9 +372,9 @@ def sweep_schnet(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -377,7 +395,8 @@ def sweep_schnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -455,12 +474,10 @@ def sweep_schnet(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -476,21 +493,27 @@ def sweep_schnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
         "batch_size": batch_size,
-        "target_prop": target_prop,
+        "target_props": target_prop,
         "cont": cont,
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     sweep_kwargs = {
@@ -511,12 +534,14 @@ def sweep_schnet(
 
 @sweep.command("e3nn")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @sweep_config_cache
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @e3nn_args
@@ -529,8 +554,10 @@ def sweep_schnet(
 @sweep_args
 @sweep_config_cache_overwrite
 @overwrite_args
+@s3_args
 def sweep_e3nn(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     sweep_config_cache: Path | None = None,
@@ -561,6 +588,7 @@ def sweep_e3nn(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     num_atom_types: int | None = None,
     irreps_hidden: str | None = None,
     lig: bool | None = None,
@@ -591,9 +619,9 @@ def sweep_e3nn(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -614,7 +642,8 @@ def sweep_e3nn(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -693,12 +722,10 @@ def sweep_e3nn(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -714,21 +741,27 @@ def sweep_e3nn(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
         "batch_size": batch_size,
-        "target_prop": target_prop,
+        "target_props": target_prop,
         "cont": cont,
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     sweep_kwargs = {
@@ -749,12 +782,14 @@ def sweep_e3nn(
 
 @sweep.command(name="visnet")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @sweep_config_cache
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @visnet_args
@@ -767,8 +802,10 @@ def sweep_e3nn(
 @sweep_args
 @sweep_config_cache_overwrite
 @overwrite_args
+@s3_args
 def sweep_visnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     sweep_config_cache: Path | None = None,
@@ -799,6 +836,7 @@ def sweep_visnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     lmax: int | None = None,
     vecnorm_type: str | None = None,
     trainable_vecnorm: bool | None = None,
@@ -834,9 +872,9 @@ def sweep_visnet(
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -857,7 +895,8 @@ def sweep_visnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -941,12 +980,10 @@ def sweep_visnet(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
+    loss_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
+        for loss_str in loss
+    ]
     data_aug_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
         for aug_str in data_aug
@@ -962,21 +999,27 @@ def sweep_visnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
         "batch_size": batch_size,
-        "target_prop": target_prop,
+        "target_props": target_prop,
         "cont": cont,
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
-        "extra_config": extra_config,
+        "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     sweep_kwargs = {

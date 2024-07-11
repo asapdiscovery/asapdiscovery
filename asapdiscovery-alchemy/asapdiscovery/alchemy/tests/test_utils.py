@@ -63,18 +63,8 @@ def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     assert status == {"complete": 1}
 
 
-@pytest.mark.parametrize(
-    "priority, expected_weight",
-    [
-        pytest.param(None, 0.5, id="None"),
-        pytest.param(True, 0.51, id="True"),
-        pytest.param(False, 0.49, id="False"),
-    ],
-)
-def test_action_tasks(
-    monkeypatch, tyk2_fec_network, alchemiscale_helper, priority, expected_weight
-):
-    """Make sure the helper can action tasks on alchemiscale with the correct priority"""
+def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
+    """Make sure the helper can action tasks on alchemiscale."""
 
     client = alchemiscale_helper
 
@@ -105,25 +95,19 @@ def test_action_tasks(
             for _ in range(count)
         ]
 
-    def action_tasks(tasks, network, weight):
+    def action_tasks(tasks, network):
         "mock actioning tasks"
         # make sure we get the correct key for the submission
         assert network == network_key
-        # make sure we get the expected weight for this priority
-        assert weight == expected_weight
         return tasks
-
-    def actioned_weights():
-        return [0.5]
 
     monkeypatch.setattr(
         client._client, "get_network_transformations", get_network_transformations
     )
     monkeypatch.setattr(client._client, "create_tasks", create_tasks)
     monkeypatch.setattr(client._client, "action_tasks", action_tasks)
-    monkeypatch.setattr(client, "get_actioned_weights", actioned_weights)
 
-    tasks = client.action_network(planned_network=result_network, prioritize=priority)
+    tasks = client.action_network(planned_network=result_network)
 
     assert len(tasks) == (result_network.n_repeats + 1) * len(alchem_network.edges)
 
@@ -406,3 +390,32 @@ def test_get_cdd_molecules_util(monkeypatch, defined_only, n_ligands, remove_cov
     for ligand in molecules:
         assert ligand.tags["experimental"] == "True"
         assert ligand.tags["cdd_protocol"] == "my-protocol"
+
+
+def test_cdd_download_remove_radicals(monkeypatch):
+    """Make sure radical molecules are removed from downloaded protocols."""
+
+    import asapdiscovery.alchemy.predict
+
+    def get_cdd_data(protocol_name: str):
+        data = [
+            {"Smiles": "CCO", "Molecule Name": "ethanol", "CXSmiles": "CCO"},
+            {
+                "Smiles": "C[CH2]",
+                "Molecule Name": "radical",
+                "CXSmiles": "C[CH2]",
+            },
+        ]
+        return pandas.DataFrame(data)
+
+    monkeypatch.setattr(
+        asapdiscovery.alchemy.predict, "download_cdd_data", get_cdd_data
+    )
+
+    molecules = get_cdd_molecules(
+        protocol_name="my-protocol",
+        defined_stereo_only=True,
+        remove_covalent=True,
+    )
+    assert len(molecules) == 1
+    assert molecules[0].compound_name == "ethanol"

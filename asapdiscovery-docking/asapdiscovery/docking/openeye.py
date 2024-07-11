@@ -13,6 +13,7 @@ from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.dask_utils import dask_vmap
 from asapdiscovery.docking.docking import (
     DockingBase,
+    DockingInputBase,
     DockingInputMultiStructure,
     DockingInputPair,
     DockingResult,
@@ -192,12 +193,7 @@ class POSITDocker(DockingBase):
     @dask_vmap(["inputs"], has_failure_mode=True)
     def _dock(
         self,
-        inputs: list[
-            Union[
-                DockingInputPair,
-                DockingInputMultiStructure,
-            ]
-        ],
+        inputs: list[DockingInputBase],
         output_dir: Optional[Union[str, Path]] = None,
         failure_mode="skip",
         return_for_disk_backend=False,
@@ -229,9 +225,12 @@ class POSITDocker(DockingBase):
                         f"Docking result for {set.unique_name} already exists, reading from disk"
                     )
                     output_dir = Path(output_dir)
-                    docking_results.append(
-                        POSITDockingResults.from_json_file(docked_result_json_path)
-                    )
+                    if return_for_disk_backend:
+                        docking_results.append(docked_result_json_path)
+                    else:
+                        docking_results.append(
+                            POSITDockingResults.from_json_file(docked_result_json_path)
+                        )
                 else:
                     dus = set.to_design_units()
                     lig_oemol = oechem.OEMol(set.ligand.to_oemol())
@@ -242,6 +241,8 @@ class POSITDocker(DockingBase):
                             )
                         else:
                             omegaOpts = oeomega.OEOmegaOptions()
+                        # set stereochemistry to non-strict
+                        omegaOpts.SetStrictStereo(False)
                         omega = oeomega.OEOmega(omegaOpts)
                         omega_retcode = omega.Build(lig_oemol)
                         if omega_retcode:

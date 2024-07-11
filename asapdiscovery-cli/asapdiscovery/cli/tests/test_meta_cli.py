@@ -20,7 +20,18 @@ def test_toplevel_runnable():
     assert click_success(result)
 
 
-@pytest.mark.parametrize("subcommand", ["protein-prep", "docking", "alchemy"])
+@pytest.mark.parametrize(
+    "subcommand",
+    [
+        "protein-prep",
+        "docking",
+        "alchemy",
+        "genetics",
+        "ml",
+        "visualization",
+        "simulation",
+    ],
+)
 def test_subcommand_runnable(subcommand):
     runner = CliRunner()
     args = [subcommand, "--help"]

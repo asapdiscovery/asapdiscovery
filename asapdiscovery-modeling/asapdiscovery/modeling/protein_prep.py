@@ -22,7 +22,7 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from distributed import Client
@@ -229,9 +229,12 @@ class ProteinPrepper(ProteinPrepperBase):
     align: Optional[Complex] = Field(
         None, description="Reference structure to align to."
     )
-    ref_chain: Optional[str] = Field("A", description="Reference chain ID to align to.")
+    ref_chain: Optional[str] = Field(
+        None, description="Chain ID to align to in reference structure"
+    )
     active_site_chain: Optional[str] = Field(
-        "A", description="Chain ID to align to reference."
+        None,
+        description="Active site chain ID to align to ref_chain in reference structure",
     )
     seqres_yaml: Optional[Path] = Field(
         None, description="Path to seqres yaml to mutate to."
@@ -242,21 +245,6 @@ class ProteinPrepper(ProteinPrepperBase):
     oe_active_site_residue: Optional[str] = Field(
         None, description="OE formatted string of active site residue to use"
     )
-
-    @root_validator
-    @classmethod
-    def _check_align_and_chain_info(cls, values):
-        """
-        Check that align and chain info is provided correctly.
-        """
-        align = values.get("align")
-        ref_chain = values.get("ref_chain")
-        active_site_chain = values.get("active_site_chain")
-        if align and not ref_chain:
-            raise ValueError("Must provide ref_chain if align is provided")
-        if align and not active_site_chain:
-            raise ValueError("Must provide active_site_chain if align is provided")
-        return values
 
     def _prep(self, inputs: list[Complex], failure_mode="skip") -> list[PreppedComplex]:
         """
@@ -280,6 +268,8 @@ class ProteinPrepper(ProteinPrepperBase):
                 if self.seqres_yaml:
                     with open(self.seqres_yaml) as f:
                         seqres_dict = yaml.safe_load(f)
+                    if "SEQRES" not in seqres_dict:
+                        raise ValueError("No SEQRES found in YAML")
                     seqres = seqres_dict["SEQRES"]
                     res_list = seqres_to_res_list(seqres)
                     prot = mutate_residues(prot, res_list, place_h=True)
@@ -321,6 +311,8 @@ class ProteinPrepper(ProteinPrepperBase):
                     translated_oemol, **complex_target.ligand.dict(exclude={"data"})
                 )
                 pc = PreppedComplex(target=prepped_target, ligand=translated_lig)
+                pc.target.crystal_symmetry = complex_target.target.crystal_symmetry
+
                 prepped_complexes.append(pc)
 
             except Exception as e:

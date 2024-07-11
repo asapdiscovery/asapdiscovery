@@ -78,7 +78,7 @@ def actualise_dask_delayed_iterable(
     return dask_client.gather(futures, errors=errors)
 
 
-def backend_wrapper(kwargname):
+def backend_wrapper(kwargname, pop_kwargs=True):
     """
     Decorator to handle dask backend for passing data into a function from disk or in-memory
     kwargname is the name of the keyword argument that is being passed in from disk or in-memory
@@ -92,6 +92,8 @@ def backend_wrapper(kwargname):
         The backend type to use, either in-memory or disk
     reconstruct_cls : Callable
         The class to use to reconstruct the object from disk
+    pop_kwargs : bool, optional
+        Whether to pop the kwargs from the kwargs dict, by default True
     """
 
     def backend_wrapper_inner(func):
@@ -116,6 +118,11 @@ def backend_wrapper(kwargname):
 
                 # add the reconstructed object to the kwargs
                 kwargs[kwargname] = reconstructed
+
+                if not pop_kwargs:
+                    # restore the kwargs
+                    kwargs["backend"] = backend
+                    kwargs["reconstruct_cls"] = reconstruct_cls
 
             elif backend == BackendType.IN_MEMORY:
                 pass

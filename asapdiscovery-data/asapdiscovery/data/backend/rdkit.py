@@ -136,7 +136,7 @@ def sdf_str_to_rdkit_mol(sdf: str) -> Chem.Mol:
     from io import BytesIO
 
     bio = BytesIO(sdf.encode())
-    suppl = Chem.ForwardSDMolSupplier(bio)
+    suppl = Chem.ForwardSDMolSupplier(bio, removeHs=False)
 
     ref = next(suppl)
     for mol in suppl:

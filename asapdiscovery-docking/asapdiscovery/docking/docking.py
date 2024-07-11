@@ -14,10 +14,11 @@ from asapdiscovery.data.backend.openeye import (
     oechem,
     save_openeye_pdb,
 )
-from asapdiscovery.data.schema.complex import PreppedComplex
+from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
+from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
 from pydantic import BaseModel, Field, PositiveFloat
@@ -54,7 +55,7 @@ class DockingInputPair(CompoundStructurePair, DockingInputBase):
         return [self.complex.target.to_oedu()]
 
 
-class DockingInputMultiStructure(MultiStructureBase):
+class DockingInputMultiStructure(MultiStructureBase, DockingInputBase):
     """
     Schema for one ligand to many possible reference structures.
     """
@@ -230,7 +231,29 @@ class DockingResult(BaseModel):
             Protein oemol
         """
         _, prot, _ = split_openeye_design_unit(self.input_pair.complex.target.to_oedu())
+        param = self.input_pair.complex.target.crystal_symmetry
+        if param is not None:
+            p = oechem.OECrystalSymmetryParams(*param)
+            oechem.OESetCrystalSymmetry(prot, p, True)
         return prot
+
+    def to_posed_complex(self) -> Complex:
+        """
+        Return the complex from the original target
+        Returns
+        -------
+        Complex
+            Complex
+        """
+        prot = self.to_protein()
+        lig = self.posed_ligand.to_oemol()
+        tar = Target.from_oemol(
+            prot,
+            target_name=self.input_pair.complex.target.target_name,
+            ids=self.input_pair.complex.target.ids,
+        )
+        lig = Ligand.from_oemol(lig, **self.input_pair.ligand.dict())
+        return Complex(target=tar, ligand=lig)
 
     @property
     def unique_name(self):
@@ -278,7 +301,9 @@ class DockingResult(BaseModel):
         result.posed_ligand.to_sdf(output_sdf_file)
         combined_oemol = result.to_posed_oemol()
         save_openeye_pdb(combined_oemol, output_pdb_file)
+        result.provenance["on_disk_location"] = str(output_json_file.resolve())
         result.to_json_file(output_json_file)
+        return output_json_file
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, DockingResult):
