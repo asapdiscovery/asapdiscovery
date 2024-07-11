@@ -681,7 +681,6 @@ def predict(
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
-    import numpy as np
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header, upload_to_postera
     from asapdiscovery.alchemy.predict import (
