@@ -106,7 +106,10 @@ class Sweeper(Trainer):
             except AttributeError:
                 failed_configs.append(config_name)
 
-            setattr(self, config_name, orig_config.update(config_d))
+            if isinstance(orig_config, dict) and isinstance(config_d, dict):
+                setattr(self, config_name, orig_config.update(config_d))
+            else:
+                setattr(self, config_name, config_d)
 
         if len(failed_configs) > 0:
             raise AttributeError(
