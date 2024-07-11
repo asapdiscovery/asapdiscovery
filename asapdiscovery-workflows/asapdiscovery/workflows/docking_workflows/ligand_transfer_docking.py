@@ -37,16 +37,13 @@ from asapdiscovery.docking.scorer import (
 )
 from asapdiscovery.modeling.protein_prep import LigandTransferProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
-
 from asapdiscovery.workflows.docking_workflows.workflows import (
     DockingWorkflowInputsBase,
 )
 from pydantic import Field, PositiveInt, root_validator, validator
 
 
-class LigandTransferDockingWorkflowInputs(
-    DockingWorkflowInputsBase
-):  
+class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):
     target_structure_dir: Optional[Path] = Field(
         None,
         description="Path to a directory containing apo structures to transfer the ligands.",

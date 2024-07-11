@@ -373,10 +373,10 @@ class LigandTransferProteinPrepper(ProteinPrepper):
         """
         prepped_complexes = []
         for complex in inputs:
-        # load protein
+            # load protein
             prot = complex.target.to_oemol()
 
-        # mutate residues
+            # mutate residues
             if self.seqres_yaml:
                 with open(self.seqres_yaml) as f:
                     seqres_dict = yaml.safe_load(f)
@@ -420,7 +420,9 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                     ligand,
                 )
                 if not success:
-                    raise ValueError(f"Failed to make design unit for target {complex.target.target_name} and complex {complex.unique_name}.")
+                    raise ValueError(
+                        f"Failed to make design unit for target {complex.target.target_name} and complex {complex.unique_name}."
+                    )
                     # continue
 
                 from asapdiscovery.data.backend.openeye import oedocking
@@ -429,7 +431,7 @@ class LigandTransferProteinPrepper(ProteinPrepper):
 
                 if not success:
                     raise ValueError(
-                    # warnings.warn(
+                        # warnings.warn(
                         f"Made design unit, but failed to make receptor for target {complex.target.target_name} "
                         f"and complex {complex.unique_name}."
                     )
