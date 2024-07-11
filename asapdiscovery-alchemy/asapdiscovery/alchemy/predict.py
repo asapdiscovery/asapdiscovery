@@ -835,7 +835,8 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
         layout.append(row_layout)
 
     # add the table
-    layout.append(panel.widgets.Tabulator(
+    layout.append(
+        panel.widgets.Tabulator(
             # use full data frame including nans for table
             dataframe,
             show_index=False,
@@ -850,7 +851,8 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
                 "prediction error (pIC50)": number_format,
             },
             configuration={"rowHeight": 300},
-        ))
+        )
+    )
     return layout
 
 
