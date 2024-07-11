@@ -24,10 +24,6 @@ dependencies = []
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
 "Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
 
-[project.scripts]
-traj-to-viz = "asapdiscovery.dataviz.scripts.traj_to_viz:main"
-pose-to-viz = "asapdiscovery.dataviz.scripts.pose_to_viz:main"
-pose-to-viz-pymol = "asapdiscovery.dataviz.scripts.pose_to_viz_pymol:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

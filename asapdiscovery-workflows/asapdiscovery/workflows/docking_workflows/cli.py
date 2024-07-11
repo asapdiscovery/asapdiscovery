@@ -42,6 +42,10 @@ from asapdiscovery.workflows.docking_workflows.small_scale_docking import (
     SmallScaleDockingInputs,
     small_scale_docking_workflow,
 )
+from asapdiscovery.workflows.docking_workflows.symexp_crystal_packing import (
+    SymExpCrystalPackingInputs,
+    symexp_crystal_packing_workflow,
+)
 
 
 @click.group()
@@ -289,7 +293,7 @@ def cross_docking(
 @click.option(
     "--n-select",
     type=int,
-    default=3,
+    default=20,
     help="The number of targets to dock each ligand against, sorted by MCS",
 )
 @click.option("--allow-dask-cuda/--no-allow-dask-cuda", default=True)

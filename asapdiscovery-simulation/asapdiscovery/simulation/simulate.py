@@ -2,21 +2,23 @@ import abc
 import logging
 import warnings
 from pathlib import Path
-from typing import ClassVar, Optional  # noqa: F401
+from typing import Any, ClassVar, Optional  # noqa: F401
 
-import dask
 import mdtraj
 import openmm
 import pandas as pd
 from asapdiscovery.data.backend.openeye import save_openeye_pdb
 from asapdiscovery.data.util.dask_utils import (
+    BackendType,
     FailureMode,
-    actualise_dask_delayed_iterable,
+    backend_wrapper,
+    dask_vmap,
 )
 from asapdiscovery.data.util.stringenum import StringEnum
 from asapdiscovery.docking.docking import DockingResult
 from mdtraj.core.residue_names import _SOLVENT_TYPES
 from mdtraj.reporters import XTCReporter
+from multimethod import multimethod
 from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
@@ -31,6 +33,7 @@ from pydantic import (
     validator,
 )
 from rdkit import Chem
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -81,25 +84,24 @@ class SimulatorBase(BaseModel):
 
     def simulate(
         self,
-        docking_results: list[DockingResult],
+        inputs: list[DockingResult],
         use_dask: bool = False,
         dask_client=None,
         failure_mode=FailureMode.SKIP,
+        backend=BackendType.IN_MEMORY,
+        reconstruct_cls=None,
         **kwargs,
     ) -> pd.DataFrame:
-        if use_dask:
-            delayed_outputs = []
-            for res in docking_results:
-                out = dask.delayed(self._simulate)(docking_results=[res], **kwargs)
-                delayed_outputs.append(out)
-            outputs = actualise_dask_delayed_iterable(
-                delayed_outputs, dask_client, errors=failure_mode
-            )
-            outputs = [item for sublist in outputs for item in sublist]  # flatten
-        else:
-            outputs = self._simulate(docking_results=docking_results, **kwargs)
 
-        return outputs
+        return self._simulate(
+            inputs=inputs,
+            use_dask=use_dask,
+            dask_client=dask_client,
+            failure_mode=failure_mode,
+            backend=backend,
+            reconstruct_cls=reconstruct_cls,
+            **kwargs,
+        )
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, str]: ...
@@ -141,6 +143,10 @@ class VanillaMDSimulator(SimulatorBase):
     num_steps: PositiveInt = Field(
         2500000,
         description="Number of simulation steps, must be a multiple of reporting interval or will be truncated to nearest multiple of reporting interval",
+    )
+
+    progressbar: bool = Field(
+        False, description="Whether to show a progress bar during simulation"
     )
 
     rmsd_restraint: bool = Field(
@@ -273,52 +279,127 @@ class VanillaMDSimulator(SimulatorBase):
             _platform = OpenMMPlatform.CPU.get_platform()
         return _platform
 
-    def _simulate(self, docking_results: list[DockingResult]) -> list[SimulationResult]:
-        _platform = self._to_openmm_units()
+    @dask_vmap(["inputs"], has_failure_mode=True)
+    @backend_wrapper("inputs")
+    def _simulate(
+        self,
+        inputs: list[Any],
+        outpaths: Optional[list[Path]] = None,
+        **kwargs,
+    ) -> list[dict[str, str]]:
+        if outpaths:
+            if len(outpaths) != len(inputs):
+                raise ValueError("outpaths must be the same length as inputs")
 
+        return self._dispatch(inputs, outpaths=outpaths, **kwargs)
+
+    @multimethod
+    def _dispatch(
+        self, inputs: list[DockingResult], failure_mode: str = "skip", **kwargs
+    ):
+        # outpaths is unused in this overload
         results = []
-        for result in docking_results:
-            output_pref = result.unique_name
-            outpath = self.output_dir / output_pref
-            if not outpath.exists():
-                outpath.mkdir(parents=True)
-
-            posed_sdf_path = outpath / "posed_ligand.sdf"
-            result.posed_ligand.to_sdf(posed_sdf_path)
-            processed_ligand = self.process_ligand_rdkit(posed_sdf_path)
-            system_generator, ligand_mol = self.create_system_generator(
-                processed_ligand
-            )
-            # write pdb to pre file
-            pre_pdb_path = outpath / "pre.pdb"
-            save_openeye_pdb(result.to_protein(), pre_pdb_path)
-
-            modeller, ligand_mol = self.get_complex_model(ligand_mol, pre_pdb_path)
-            modeller, mol_atom_indices = self.setup_and_solvate(
-                system_generator, modeller, ligand_mol
-            )
-            system, output_indices, output_topology = self.create_system(
-                system_generator, modeller, mol_atom_indices, processed_ligand
-            )
-            simulation, context = self.setup_simulation(
-                modeller, system, output_indices, output_topology, outpath, _platform
-            )
-            simulation = self.equilibrate(simulation)
-            retcode = self.run_production_simulation(
-                simulation, context, output_indices, output_topology, outpath
-            )
-
-            sim_result = SimulationResult(
-                input_docking_result=result,
-                traj_path=outpath / "traj.xtc",
-                minimized_pdb_path=outpath / "minimized.pdb",
-                final_pdb_path=outpath / "final.pdb",
-                success=retcode,
-            )
-
-            results.append(sim_result)
-
+        for inp in inputs:
+            try:
+                output_pref = inp.unique_name
+                outpath = self.output_dir / output_pref
+                if not outpath.exists():
+                    outpath.mkdir(parents=True)
+                posed_sdf_path = outpath / "posed_ligand.sdf"
+                inp.posed_ligand.to_sdf(posed_sdf_path)
+                # write pdb to pre file
+                pre_pdb_path = outpath / "pre.pdb"
+                save_openeye_pdb(inp.to_protein(), pre_pdb_path)
+                res = self._simulate_loop(
+                    pre_pdb_path, posed_sdf_path, outpath, input_docking_result=inp
+                )
+                results.append(res)
+            except Exception as e:
+                if failure_mode == "skip":
+                    logger.error(f"Error processing {inp.unique_name}: {e}")
+                elif failure_mode == "raise":
+                    raise e
+                else:
+                    raise ValueError(
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                    )
         return results
+
+    @_dispatch.register
+    def _dispatch(
+        self,
+        inputs: list[tuple[Path, Path]],
+        outpaths: Optional[list[Path]] = None,
+        failure_mode: str = "skip",
+    ):
+        results = []
+        if not outpaths:
+            outpaths = [None] * len(inputs)
+        for (protein, ligand), outpath in zip(inputs, outpaths):
+            try:
+                tag = protein.stem + "_" + ligand.stem
+                if outpath:
+                    outpath = Path(outpath) / tag
+                else:
+                    outpath = self.output_dir / tag
+                if not outpath.exists():
+                    outpath.mkdir(parents=True)
+                res = self._simulate_loop(protein, ligand, outpath)
+                results.append(res)
+            except Exception as e:
+                if failure_mode == "skip":
+                    logger.error(f"Error processing {tag}: {e}")
+                elif failure_mode == "raise":
+                    raise e
+                else:
+                    raise ValueError(
+                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                    )
+        return results
+
+    def _simulate_loop(
+        self,
+        protein: Path,
+        ligand: Path,
+        outpath: Path,
+        input_docking_result: Optional[DockingResult] = None,
+    ) -> list[SimulationResult]:
+        logger.info(f"Running simulation for {protein.stem} and {ligand.stem}")
+        _platform = self._to_openmm_units()
+        processed_ligand = self.process_ligand_rdkit(ligand)
+        system_generator, ligand_mol = self.create_system_generator(processed_ligand)
+        logger.debug("Created system generator")
+        modeller, ligand_mol = self.get_complex_model(ligand_mol, protein)
+
+        modeller, mol_atom_indices = self.setup_and_solvate(
+            system_generator, modeller, ligand_mol
+        )
+        logger.debug("Setup and solvated system")
+        system, output_indices, output_topology = self.create_system(
+            system_generator, modeller, mol_atom_indices, processed_ligand
+        )
+        logger.debug("Created system")
+        simulation, context = self.setup_simulation(
+            modeller, system, output_indices, output_topology, outpath, _platform
+        )
+        logger.info("Setup simulation")
+        simulation = self.equilibrate(simulation)
+        logger.info("Equilibrated")
+        logger.info("Running production simulation")
+        retcode = self.run_production_simulation(
+            simulation, context, output_indices, output_topology, outpath
+        )
+        logger.debug("Finished production simulation")
+
+        sim_result = SimulationResult(
+            input_docking_result=input_docking_result,
+            traj_path=outpath / "traj.xtc",
+            minimized_pdb_path=outpath / "minimized.pdb",
+            final_pdb_path=outpath / "final.pdb",
+            success=retcode,
+        )
+
+        return sim_result
 
     @staticmethod
     def process_ligand_rdkit(sdf_path) -> Molecule:
@@ -502,8 +583,14 @@ class VanillaMDSimulator(SimulatorBase):
             )
         )
         logger.info(f"Running simulation for {self.num_steps} steps")
+        if self.progressbar:
+            pbar = tqdm(total=self.num_steps)
         for _ in range(self.n_snapshots):
             simulation.step(self.reporting_interval)
+            if self.progressbar:
+                pbar.update(self.reporting_interval)
+        if self.progressbar:
+            pbar.close()
 
         output_positions = context.getState(
             getPositions=True, enforcePeriodicBox=False
