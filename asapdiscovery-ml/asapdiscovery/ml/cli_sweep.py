@@ -1110,6 +1110,13 @@ def _build_sweeper(
                 overall_kwargs[config_name].update(
                     {k: v for k, v in config_val.items() if v is not None}
                 )
+            # If there's already a value and the sweep value is empty, keep original val
+            elif (
+                (config_name in overall_kwargs)
+                and (isinstance(config_val, list) or isinstance(config_val, tuple))
+                and len(config_val) == 0
+            ):
+                pass
             # Otherwise just overwrite
             else:
                 overall_kwargs[config_name] = config_val
@@ -1125,6 +1132,13 @@ def _build_sweeper(
             overall_kwargs[config_name].update(
                 {k: v for k, v in config_val.items() if v is not None}
             )
+        # If there's already a value and the sweep value is empty, keep original val
+        elif (
+            (config_name in overall_kwargs)
+            and (isinstance(config_val, list) or isinstance(config_val, tuple))
+            and len(config_val) == 0
+        ):
+            pass
         # Otherwise just overwrite
         else:
             overall_kwargs[config_name] = config_val
@@ -1140,6 +1154,13 @@ def _build_sweeper(
             overall_kwargs[config_name].update(
                 {k: v for k, v in config_val.items() if v is not None}
             )
+        # If there's already a value and the sweep value is empty, keep original val
+        elif (
+            (config_name in overall_kwargs)
+            and (isinstance(config_val, list) or isinstance(config_val, tuple))
+            and len(config_val) == 0
+        ):
+            pass
         # Otherwise just overwrite
         else:
             overall_kwargs[config_name] = config_val
