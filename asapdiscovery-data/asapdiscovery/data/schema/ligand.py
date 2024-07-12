@@ -235,7 +235,6 @@ class Ligand(DataModelAbstractBase):
             if key in keys_to_save:
                 conf_tags_list.append((key, value))
 
-
         kwargs["conf_tags"] = conf_tags_list
 
         # clean the sdf data for the internal model
