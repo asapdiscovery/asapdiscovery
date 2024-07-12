@@ -3,9 +3,7 @@ from pathlib import Path
 
 import wandb
 import yaml
-from asapdiscovery.ml.config import ConfigBase
 from asapdiscovery.ml.trainer import Trainer
-from mtenn.config import ModelConfigBase
 from pydantic import Field, validator
 
 
@@ -88,6 +86,9 @@ class Sweeper(Trainer):
         Parse the W&B sweep config and update the internal config objects appropriately.
         """
 
+        # Clone self into a dict so we can update stuff
+        new_trainer_dict = self.dict()
+
         # Decompose parameter names into nested dict
         config_update_dict = {}
         for k, v in wandb.config.items():
@@ -103,40 +104,21 @@ class Sweeper(Trainer):
         # Loop through keys and try to update configs
         failed_configs = []
         for config_name, config_d in config_update_dict.items():
-            try:
-                orig_config = getattr(self, config_name)
-            except AttributeError:
+            if config_name not in new_trainer_dict:
                 failed_configs.append(config_name)
+                continue
 
-            if isinstance(orig_config, ConfigBase) or isinstance(
-                orig_config, ModelConfigBase
-            ):
-                # Configs return a new object when they update
-                setattr(self, config_name, orig_config.update(config_d))
-            elif isinstance(orig_config, dict):
-                # Dicts update in place
-                orig_config.update(config_d)
-            elif config_name == "loss_weights":
-                # Need to manually call the validator to make sure it's a tensor
-                self.loss_weights = Trainer.check_loss_weights(
-                    config_d, {"loss_configs": self.loss_configs}
-                )
-            elif config_name == "eval_loss_weights":
-                # Need to manually call the validator to make sure it's a tensor
-                self.eval_loss_weights = Trainer.check_loss_weights(
-                    config_d,
-                    {
-                        "loss_configs": self.loss_configs,
-                        "loss_weights": self.loss_weights,
-                    },
-                )
-            else:
-                setattr(self, config_name, config_d)
+            try:
+                new_trainer_dict[config_name].update(config_d)
+            except AttributeError:
+                new_trainer_dict[config_name] = config_d
 
         if len(failed_configs) > 0:
             raise AttributeError(
                 f"Could not assign values for these keys: {failed_configs}"
             )
+
+        return Sweeper(**new_trainer_dict)
 
     @staticmethod
     def _sweep_dispatch(sweeper: "Sweeper"):
@@ -161,7 +143,7 @@ class Sweeper(Trainer):
         sweeper.output_dir = sweeper.output_dir / run_id
 
         # Update internal configs from sweep config
-        sweeper._update_from_wandb_config()
+        sweeper = sweeper._update_from_wandb_config()
 
         # Update W&B config to include everything from all the Trainer configs
         # Don't serialize input_data for confidentiality/size reasons
