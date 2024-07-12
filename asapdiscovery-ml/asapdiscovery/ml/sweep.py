@@ -3,7 +3,9 @@ from pathlib import Path
 
 import wandb
 import yaml
+from asapdiscovery.ml.config import ConfigBase
 from asapdiscovery.ml.trainer import Trainer
+from mtenn.config import ModelConfigBase
 from pydantic import Field, validator
 
 
@@ -106,8 +108,28 @@ class Sweeper(Trainer):
             except AttributeError:
                 failed_configs.append(config_name)
 
-            if isinstance(orig_config, dict) and isinstance(config_d, dict):
+            if isinstance(orig_config, ConfigBase) or isinstance(
+                orig_config, ModelConfigBase
+            ):
+                # Configs return a new object when they update
                 setattr(self, config_name, orig_config.update(config_d))
+            elif isinstance(orig_config, dict):
+                # Dicts update in place
+                orig_config.update(config_d)
+            elif config_name == "loss_weights":
+                # Need to manually call the validator to make sure it's a tensor
+                self.loss_weights = Trainer.check_loss_weights(
+                    config_d, {"loss_configs": self.loss_configs}
+                )
+            elif config_name == "eval_loss_weights":
+                # Need to manually call the validator to make sure it's a tensor
+                self.eval_loss_weights = Trainer.check_loss_weights(
+                    config_d,
+                    {
+                        "loss_configs": self.loss_configs,
+                        "loss_weights": self.loss_weights,
+                    },
+                )
             else:
                 setattr(self, config_name, config_d)
 
