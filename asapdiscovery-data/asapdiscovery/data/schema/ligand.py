@@ -230,15 +230,13 @@ class Ligand(DataModelAbstractBase):
         kwargs["tags"] = tags
 
         # Do the same thing for the conformer tags, only keeping the ones in 'tags'
-        conf_tags_lst = []
+        conf_tags_list = []
         for key, value in conf_tags.items():
             if key in keys_to_save:
-                try:
-                    conf_tags_lst.append((key, value))
-                except TypeError:
-                    pass
+                conf_tags_list.append((key, value))
 
-        kwargs["conf_tags"] = conf_tags_lst
+
+        kwargs["conf_tags"] = conf_tags_list
 
         # clean the sdf data for the internal model
         sdf_str = oemol_to_sdf_string(clear_SD_data(input_mol))
