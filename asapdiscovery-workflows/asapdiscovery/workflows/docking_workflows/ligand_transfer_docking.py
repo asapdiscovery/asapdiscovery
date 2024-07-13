@@ -294,9 +294,9 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
 
     # Here the only thing that makes sense is the self docking selector
     selector = StructureSelector.SELF_DOCKING.selector_cls()
-    
+
     # Assuming all complexes have the same transfer ligand, otherwise there will be duplicated entries
-    ligands =  [prepped_complexes[0].ligand] 
+    ligands = [prepped_complexes[0].ligand]
     pairs = selector.select(ligands, prepped_complexes)
 
     n_pairs = len(pairs)
