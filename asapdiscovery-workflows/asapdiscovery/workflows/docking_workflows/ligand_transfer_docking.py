@@ -12,30 +12,30 @@ The workflow is as follows:
 
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional, Union
+from typing import Optional
 
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
-from asapdiscovery.data.services.postera.manifold_data_validation import (
-    TargetProteinMap,
-    rename_output_columns_for_manifold,
+from asapdiscovery.data.util.dask_utils import (
+    BackendType,
+    DaskType,
+    make_dask_client_meta,
 )
-from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
+from asapdiscovery.data.util.utils import check_empty_dataframe
 from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
-from asapdiscovery.docking.docking import DockingInputMultiStructure
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer import (
     ChemGauss4Scorer,
-    FINTScorer,
     MetaScorer,
     MLModelScorer,
 )
 from asapdiscovery.modeling.protein_prep import LigandTransferProteinPrepper
+from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     DockingWorkflowInputsBase,
@@ -124,6 +124,12 @@ class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):
 
     # copied form SmallScaleDockingInputs
 
+    posit_confidence_cutoff: float = Field(
+        0.1,
+        le=1.0,
+        ge=0.0,
+        description="POSIT confidence cutoff used to filter docking results",
+    )
     ml_scorers: Optional[list[str]] = Field(
         None, description="The name of the ml scorers to use"
     )
@@ -293,12 +299,13 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
 
     # Here the only thing that makes sense is the self docking selector
     selector = StructureSelector.SELF_DOCKING.selector_cls()
-    ligands = [pc.ligand for pc in prepped_complexes]
+    # ligands = [pc.ligand for pc in prepped_complexes] # I'm not sure yet how to generalize to multiple ligands
+    ligands =  [prepped_complexes[0].ligand]
     pairs = selector.select(ligands, prepped_complexes)
 
     n_pairs = len(pairs)
     logger.info(
-        f"Selected {n_pairs} pairs for docking, from {len(ligands)} ligands and {n_prepped_complexes} compexes"
+        f"Selected {n_pairs} pairs for docking, from {len(ligands)} ligands and {n_prepped_complexes} complexes"
     )
     del prepped_complexes
 
@@ -321,6 +328,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
+        # return_for_disk_backend=True,
     )
 
     n_results = len(results)
@@ -340,29 +348,50 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
                 MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
             )
 
+    if inputs.write_final_sdf:
+        logger.info("Writing final docked poses to SDF file")
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.IN_MEMORY,
+            reconstruct_cls=docker.result_cls,
+        )
+
     # score results
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
-
-    if inputs.write_final_sdf:
-        logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
-        )
-    # NOTE: The return_df option doesn't work, the DataFrame.pivot() function fails. Fix is pending.
-    scores_list = scorer.score(
+    scores_df = scorer.score(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        return_df=False,
         failure_mode=inputs.failure_mode,
+        return_df=True,
+        backend=BackendType.IN_MEMORY,
+        reconstruct_cls=docker.result_cls,
+        return_for_disk_backend=True,
     )
-    import csv
 
-    with open(data_intermediates / "docking_scores_raw.csv", "w", newline="") as myfile:
-        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-        for item in scores_list:
-            wr.writerow([item])
+    scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
+
+    logger.info("Filtering docking results")
+    # filter for POSIT probability
+    scores_df = scores_df[
+        scores_df[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value]
+        > inputs.posit_confidence_cutoff
+    ]
+
+    n_posit_filtered = len(scores_df)
+    logger.info(
+        f"Filtered to {n_posit_filtered} / {n_results} docking results by POSIT confidence"
+    )
+
+    check_empty_dataframe(
+        scores_df,
+        logger=logger,
+        fail="raise",
+        tag="scores",
+        message="No docking results passed the POSIT confidence cutoff",
+    )
 
     logger.info("Running HTML visualiser for docked poses")
     html_ouptut_dir = output_dir / "poses"
@@ -376,6 +405,58 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
+    )
+
+    # rename visualisations target id column to POSIT structure tag so we can join
+    pose_visualizatons.rename(
+        columns={
+            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
+        },
+        inplace=True,
+    )
+
+    # join the two dataframes on ligand_id, target_id and smiles
+    combined_df = scores_df.merge(
+        pose_visualizatons,
+        on=[
+            DockingResultCols.LIGAND_ID.value,
+            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+            DockingResultCols.SMILES.value,
+        ],
+        how="outer",
+    )
+    if inputs.allow_final_clash:
+        n_clash_filtered = len(combined_df)
+    else: 
+        # filter out clashes (chemgauss4 score > 0)
+        combined_df = combined_df[combined_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
+        n_clash_filtered = len(combined_df)
+        logger.info(
+        f"Filtered to {n_clash_filtered} / {n_posit_filtered} docking results by clash filter"
+        )
+
+        check_empty_dataframe(
+        scores_df,
+        logger=logger,
+        fail="raise",
+        tag="scores",
+        message="No docking results passed the clash filter",
+        )
+
+    # then order by chemgauss4 score
+    combined_df = combined_df.sort_values(
+        DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
+    )
+    combined_df.to_csv(
+        data_intermediates / "docking_scores_filtered_sorted.csv", index=False
+    )
+
+    # re-extract the filtered input results
+    results = combined_df["input"].tolist()
+
+    n_duplicate_filtered = len(combined_df)
+    logger.info(
+        f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
     )
 
     if inputs.md:
@@ -412,7 +493,12 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
             use_dask=inputs.use_dask,
             dask_client=dask_client,
             failure_mode=inputs.failure_mode,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
+
+        if len(simulation_results) == 0:
+            raise ValueError("No MD simulation results generated, exiting")
 
         if local_cpu_client_gpu_override and inputs.use_dask:
             dask_client = make_dask_client_meta(DaskType.LOCAL)
@@ -440,3 +526,21 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         gifs[DockingResultCols.DOCKING_STRUCTURE_POSIT.value] = gifs[
             DockingResultCols.TARGET_ID.value
         ]
+
+        # join the two dataframes on ligand_id, target_id and smiles
+        combined_df = combined_df.merge(
+            gifs,
+            on=[
+                DockingResultCols.LIGAND_ID.value,
+                DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
+                DockingResultCols.SMILES.value,
+            ],
+            how="outer",
+        )
+
+    # rename columns for manifold
+    logger.info("Renaming columns for manifold")
+
+
+    combined_df.to_csv(output_dir / "docking_results_final.csv", index=False)
+

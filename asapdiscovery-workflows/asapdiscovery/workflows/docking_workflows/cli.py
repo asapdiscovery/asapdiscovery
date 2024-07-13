@@ -515,6 +515,12 @@ def symexp_crystal_packing(
     type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
     help="Path to a directory containing apo structures to dock to.",
 )
+@click.option(
+    "--posit-confidence-cutoff",
+    type=float,
+    default=0.1,
+    help="The confidence cutoff for POSIT results to be considered",
+)
 @pdb_file
 @fragalysis_dir
 @structure_dir
@@ -549,6 +555,7 @@ def ligand_transfer_docking(
     pdb_file: Optional[str] = None,
     fragalysis_dir: Optional[str] = None,
     structure_dir: Optional[str] = None,
+    posit_confidence_cutoff: float = 0.1,
     use_omega: bool = False,
     omega_dense: bool = False,
     num_poses: int = 1,
@@ -597,6 +604,7 @@ def ligand_transfer_docking(
             dask_type=dask_type,
             dask_n_workers=dask_n_workers,
             failure_mode=failure_mode,
+            posit_confidence_cutoff=posit_confidence_cutoff,
             use_omega=use_omega,
             omega_dense=omega_dense,
             num_poses=num_poses,
