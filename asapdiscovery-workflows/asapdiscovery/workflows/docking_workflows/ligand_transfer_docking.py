@@ -16,7 +16,6 @@ from typing import Optional
 
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.util.dask_utils import (
     BackendType,
     DaskType,
@@ -299,8 +298,9 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
 
     # Here the only thing that makes sense is the self docking selector
     selector = StructureSelector.SELF_DOCKING.selector_cls()
-    # ligands = [pc.ligand for pc in prepped_complexes] # I'm not sure yet how to generalize to multiple ligands
-    ligands =  [prepped_complexes[0].ligand]
+    
+    # Assuming all complexes have the same transfer ligand, otherwise there will be duplicated entries
+    ligands =  [prepped_complexes[0].ligand] 
     pairs = selector.select(ligands, prepped_complexes)
 
     n_pairs = len(pairs)

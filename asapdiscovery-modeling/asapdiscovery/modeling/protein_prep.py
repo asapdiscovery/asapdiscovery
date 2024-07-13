@@ -1,6 +1,5 @@
 import abc
 import logging
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
@@ -431,11 +430,9 @@ class LigandTransferProteinPrepper(ProteinPrepper):
 
                 if not success:
                     raise ValueError(
-                        # warnings.warn(
                         f"Made design unit, but failed to make receptor for target {complex.target.target_name} "
                         f"and complex {complex.unique_name}."
                     )
-                    # continue
 
                 prepped_target = PreppedTarget.from_oedu(
                     du,
