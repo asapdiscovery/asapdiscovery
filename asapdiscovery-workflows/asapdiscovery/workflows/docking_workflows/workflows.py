@@ -83,9 +83,6 @@ class DockingWorkflowInputsBase(BaseModel):
         None,
         description="Active site chain ID to align to ref_chain in reference structure",
     )
-    # walltime: str = Field(
-    #     "72h", description="Walltime for the workflow, used for dask-jobqueue"
-    # )
 
     class Config:
         arbitrary_types_allowed = True
