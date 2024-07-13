@@ -22,19 +22,15 @@ from asapdiscovery.data.util.dask_utils import (
     make_dask_client_meta,
 )
 from asapdiscovery.data.util.logging import FileLogger
-from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.data.util.utils import check_empty_dataframe
+from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
 from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
-from asapdiscovery.docking.scorer import (
-    ChemGauss4Scorer,
-    MetaScorer,
-    MLModelScorer,
-)
-from asapdiscovery.modeling.protein_prep import LigandTransferProteinPrepper
+from asapdiscovery.docking.scorer import ChemGauss4Scorer, MetaScorer, MLModelScorer
 from asapdiscovery.ml.models import ASAPMLModelRegistry
+from asapdiscovery.modeling.protein_prep import LigandTransferProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     DockingWorkflowInputsBase,
@@ -427,20 +423,22 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     )
     if inputs.allow_final_clash:
         n_clash_filtered = len(combined_df)
-    else: 
+    else:
         # filter out clashes (chemgauss4 score > 0)
-        combined_df = combined_df[combined_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0]
+        combined_df = combined_df[
+            combined_df[DockingResultCols.DOCKING_SCORE_POSIT] <= 0
+        ]
         n_clash_filtered = len(combined_df)
         logger.info(
-        f"Filtered to {n_clash_filtered} / {n_posit_filtered} docking results by clash filter"
+            f"Filtered to {n_clash_filtered} / {n_posit_filtered} docking results by clash filter"
         )
 
         check_empty_dataframe(
-        scores_df,
-        logger=logger,
-        fail="raise",
-        tag="scores",
-        message="No docking results passed the clash filter",
+            scores_df,
+            logger=logger,
+            fail="raise",
+            tag="scores",
+            message="No docking results passed the clash filter",
         )
 
     # then order by chemgauss4 score
@@ -536,6 +534,4 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
 
-
     combined_df.to_csv(output_dir / "docking_results_final.csv", index=False)
-
