@@ -454,11 +454,6 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     # re-extract the filtered input results
     results = combined_df["input"].tolist()
 
-    n_duplicate_filtered = len(combined_df)
-    logger.info(
-        f"Filtered to {n_duplicate_filtered} / {n_clash_filtered} docking results by duplicate ligand filter"
-    )
-
     if inputs.md:
         local_cpu_client_gpu_override = False
         if (
