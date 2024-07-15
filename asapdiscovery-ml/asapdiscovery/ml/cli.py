@@ -117,7 +117,7 @@ def build_gat(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -166,7 +166,7 @@ def build_gat(
     start_epoch: int | None = None,
     n_epochs: int | None = None,
     batch_size: int | None = None,
-    target_prop: str | None = None,
+    target_prop: tuple[str] = (),
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
@@ -337,7 +337,7 @@ def build_schnet(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -388,7 +388,7 @@ def build_schnet(
     start_epoch: int | None = None,
     n_epochs: int | None = None,
     batch_size: int | None = None,
-    target_prop: str | None = None,
+    target_prop: tuple[str] = (),
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
@@ -563,7 +563,7 @@ def build_e3nn(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -615,7 +615,7 @@ def build_e3nn(
     start_epoch: int | None = None,
     n_epochs: int | None = None,
     batch_size: int | None = None,
-    target_prop: str | None = None,
+    target_prop: tuple[str] = (),
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
@@ -791,7 +791,7 @@ def build_visnet(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -848,7 +848,7 @@ def build_visnet(
     start_epoch: int | None = None,
     n_epochs: int | None = None,
     batch_size: int | None = None,
-    target_prop: str | None = None,
+    target_prop: tuple[str] = (),
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
@@ -1028,7 +1028,7 @@ def build_and_train_gat(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -1077,7 +1077,7 @@ def build_and_train_gat(
     start_epoch: int | None = None,
     n_epochs: int | None = None,
     batch_size: int | None = None,
-    target_prop: str | None = None,
+    target_prop: tuple[str] = (),
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
@@ -1253,7 +1253,7 @@ def build_and_train_schnet(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -1304,7 +1304,7 @@ def build_and_train_schnet(
     start_epoch: int | None = None,
     n_epochs: int | None = None,
     batch_size: int | None = None,
-    target_prop: str | None = None,
+    target_prop: tuple[str] = (),
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
@@ -1484,7 +1484,7 @@ def build_and_train_e3nn(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -1536,7 +1536,7 @@ def build_and_train_e3nn(
     start_epoch: int | None = None,
     n_epochs: int | None = None,
     batch_size: int | None = None,
-    target_prop: str | None = None,
+    target_prop: tuple[str] = (),
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
@@ -1715,7 +1715,7 @@ def build_and_train_visnet(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -1772,7 +1772,7 @@ def build_and_train_visnet(
     start_epoch: int | None = None,
     n_epochs: int | None = None,
     batch_size: int | None = None,
-    target_prop: str | None = None,
+    target_prop: tuple[str] = (),
     cont: bool | None = None,
     loss_dict: dict | None = None,
     device: torch.device | None = None,
@@ -2162,7 +2162,11 @@ def _build_ds_config(
         "for_e3nn": for_e3nn,
         "overwrite": pkl_overwrite,
     }
-    config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}
+    config_kwargs = {
+        k: v
+        for k, v in config_kwargs.items()
+        if not ((v is None) or (isinstance(v, tuple) and len(v) == 0))
+    }
 
     # Pick correct DatasetType
     if is_structural:
@@ -2216,7 +2220,11 @@ def _build_trainer(
     """
 
     # Filter out None Trainer kwargs
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+    trainer_kwargs = {
+        k: v
+        for k, v in trainer_kwargs.items()
+        if not ((v is None) or (isinstance(v, tuple) and len(v) == 0))
+    }
 
     # If we got a config for the Trainer, load those args and merge with CLI args
     if trainer_config_cache and trainer_config_cache.exists():
@@ -2233,10 +2241,10 @@ def _build_trainer(
                     {
                         k: v
                         for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
+                        if not ((v is None) or (isinstance(v, tuple) and len(v) == 0))
                     }
                 )
-            elif isinstance(config_val, list) and (
+            elif (isinstance(config_val, list) or isinstance(config_val, tuple)) and (
                 len(trainer_kwargs[config_name]) == 0
             ):
                 # If no values are passed to CLI keep config values
