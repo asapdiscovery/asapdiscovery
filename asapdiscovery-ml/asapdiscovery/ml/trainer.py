@@ -301,9 +301,9 @@ class Trainer(BaseModel):
                     continue
 
                 # Parse into dict
-                config_kwargs = {
-                    k: v for kvp in config_kwargs.split(",") for k, v in kvp.split(":")
-                }
+                config_kwargs = dict(
+                    [kvp.split(":") for kvp in config_kwargs.split(",")]
+                )
 
             # Get config cache file and overwrite option (if given). Defaults to no cache
             #  file and not overwriting
