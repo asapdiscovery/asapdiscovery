@@ -403,7 +403,9 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                 )
 
             # For each reference complex, align and transfer the ligand to the prepped protein
-            logger.info(f"Prepping with ligands from {len(self.reference_complexes)} reference complexes")
+            logger.info(
+                f"Prepping with ligands from {len(self.reference_complexes)} reference complexes"
+            )
             for complex_ref in self.reference_complexes:
                 aligned, _ = superpose_molecule(
                     complex_ref.to_combined_oemol(),

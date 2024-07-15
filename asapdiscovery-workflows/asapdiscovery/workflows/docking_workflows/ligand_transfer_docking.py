@@ -307,7 +307,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
                 unique_ligands.append(ligand)
         return unique_ligands
 
-    ligands = get_unique_ligands(prepped_complexes) #[prepped_complexes[0].ligand]
+    ligands = get_unique_ligands(prepped_complexes)  # [prepped_complexes[0].ligand]
     pairs = selector.select(ligands, prepped_complexes)
 
     n_pairs = len(pairs)
