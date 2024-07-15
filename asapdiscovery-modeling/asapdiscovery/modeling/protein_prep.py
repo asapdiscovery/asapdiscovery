@@ -1,5 +1,6 @@
 import abc
 import logging
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
@@ -402,6 +403,7 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                 )
 
             # For each reference complex, align and transfer the ligand to the prepped protein
+            logger.info(f"Prepping with ligands from {len(self.reference_complexes)} reference complexes")
             for complex_ref in self.reference_complexes:
                 aligned, _ = superpose_molecule(
                     complex_ref.to_combined_oemol(),
@@ -419,20 +421,21 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                     ligand,
                 )
                 if not success:
-                    raise ValueError(
-                        f"Failed to make design unit for target {complex.target.target_name} and complex {complex.unique_name}."
+                    warnings.warn(
+                        f"Failed to make design unit for target {complex.target.target_name} and complex {complex_ref.unique_name}."
                     )
-                    # continue
+                    continue
 
                 from asapdiscovery.data.backend.openeye import oedocking
 
                 success = oedocking.OEMakeReceptor(du)
 
                 if not success:
-                    raise ValueError(
+                    warnings.warn(
                         f"Made design unit, but failed to make receptor for target {complex.target.target_name} "
                         f"and complex {complex.unique_name}."
                     )
+                    continue
 
                 prepped_target = PreppedTarget.from_oedu(
                     du,
