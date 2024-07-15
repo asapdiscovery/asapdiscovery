@@ -261,7 +261,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     n_ref_complexes = len(ref_complexes)
     logger.info(f"Loaded {n_ref_complexes} reference complexes")
     n_targets = len(targets)
-    logger.info(f"Loaded {n_targets} complexes")
+    logger.info(f"Loaded {n_targets} target complexes")
 
     # prep complexes
     logger.info("Prepping complexes")
@@ -272,7 +272,6 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         seqres_yaml=inputs.seqres_yaml,
         loop_db=inputs.loop_db,
     )
-    logger.info("Prepping complexes")
     prepped_complexes = prepper.prep(
         targets,
         use_dask=inputs.use_dask,
@@ -295,8 +294,20 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     # Here the only thing that makes sense is the self docking selector
     selector = StructureSelector.SELF_DOCKING.selector_cls()
 
-    # Assuming all complexes have the same transfer ligand, otherwise there will be duplicated entries
-    ligands = [prepped_complexes[0].ligand]
+    # If the same reference is used for multiple targets, we will have duplicated ligands. This give problems when calling df.pivot()
+    def get_unique_ligands(complex_list):
+        # Check if a list of complexes have repeated ligands by comparing smiles
+        seen = set()
+        unique_ligands = []
+        for comp in complex_list:
+            ligand = comp.ligand
+            smiles = ligand.smiles
+            if smiles not in seen:
+                seen.add(smiles)
+                unique_ligands.append(ligand)
+        return unique_ligands
+
+    ligands = get_unique_ligands(prepped_complexes) #[prepped_complexes[0].ligand]
     pairs = selector.select(ligands, prepped_complexes)
 
     n_pairs = len(pairs)
