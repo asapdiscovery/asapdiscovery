@@ -293,7 +293,9 @@ class Trainer(BaseModel):
                 continue
 
             # Just skip any Nones
-            if config_kwargs is None:
+            if (config_kwargs is None) or (
+                isinstance(config_kwargs, str) and len(config_kwargs) == 0
+            ):
                 continue
 
             # Get config cache file and overwrite option (if given). Defaults to no cache
