@@ -293,10 +293,17 @@ class Trainer(BaseModel):
                 continue
 
             # Just skip any Nones
-            if (config_kwargs is None) or (
-                isinstance(config_kwargs, str) and len(config_kwargs) == 0
-            ):
+            if config_kwargs is None:
                 continue
+
+            if isinstance(config_kwargs, str):
+                if len(config_kwargs) == 0:
+                    continue
+
+                # Parse into dict
+                config_kwargs = {
+                    k: v for kvp in config_kwargs.split(",") for k, v in kvp.split(":")
+                }
 
             # Get config cache file and overwrite option (if given). Defaults to no cache
             #  file and not overwriting
