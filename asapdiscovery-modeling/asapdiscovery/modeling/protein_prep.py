@@ -251,7 +251,8 @@ class ProteinPrepper(ProteinPrepperBase):
         Prepares a series of proteins for docking using OESpruce.
         """
         prepped_complexes = []
-        for complex_target in inputs:
+        for i, complex_target in enumerate(inputs):
+            logger.debug(f"Prepping complex: {complex_target.target.target_name} index: {i}")
             try:
                 # load protein
                 prot = complex_target.to_combined_oemol()
