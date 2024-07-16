@@ -153,11 +153,22 @@ class Sweeper(Trainer):
         config["ds_config"] = ds_config
         wandb.config.update(config)
 
+        # Get Trainer config dict (before initialization so we don't have extra stuff)
+        trainer_config_dict = sweeper.dict()
+        # Get rid of Sweeper-specific args
+        del trainer_config_dict["sweep_config"]
+        del trainer_config_dict["force_new_sweep"]
+
         # Temporarily un-set use_wandb flag to avoid confusing the initialize method
         sweeper.use_wandb = False
         # Run initialize to build all the objects
         sweeper.initialize()
         sweeper.use_wandb = True
+
+        # Update output directory to save in sweep run id dir
+        trainer_config_dict["output_dir"] = sweeper.output_dir
+        t = Trainer(**trainer_config_dict)
+        (sweeper.output_dir / "trainer.json").write_text(t.json())
 
         # Log dataset splits
         for split, table in zip(
