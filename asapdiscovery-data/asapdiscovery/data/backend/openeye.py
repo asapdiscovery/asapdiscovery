@@ -664,7 +664,6 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     rmol = oechem.OEMol()
     ims.SetConfTest(oechem.OEOmegaConfTest())
     if ims.openstring(sdf_str):
-
         for mol in ims.GetOEMols():
             rmol = mol.CreateCopy()
             break  # only return the first molecule
@@ -913,7 +912,6 @@ def get_SD_data(mol: oechem.OEMolBase) -> dict[str, list]:
     # we'll add to all the conformers and return that dict of lists.
 
     if isinstance(mol, oechem.OEMol):
-
         # Get the data from the molecule
         molecule_tags = _get_SD_data(mol)
 
@@ -1075,3 +1073,127 @@ def bytes64_to_oedu(bytes: bytes) -> oechem.OEDesignUnit:
     if not retcode:
         oechem.OEThrow.Fatal("Cannot read DesignUnit from bytes")
     return du
+
+
+def featurize_oemol(mol: oechem.OEMol, self_edges=True):
+    """
+    Featurize an OE molecule for use in ML. Returns a feature tensor of shape
+    (n_atoms, n_features) and an edge index tensor, which will have one of two shapes:
+        * (2, 2 * n_bonds) if self_edges==False
+        * (2, 2 * n_bonds + n_atoms) otherwise
+    Each bond gives 2 edges because each atom can be a source or destination node.
+
+    The featurization scheme closely matches that of DGL-LifeSci, with the main
+    difference being the size of the atom type one-hot encoding.
+
+
+    Parameters
+    ----------
+    mol: oechem.OEMol
+        Molecule to featurize
+    self_edges: bool, default=True
+        Should we include edges going from each atom to itself
+
+    Returns
+    -------
+    torch.Tensor
+        Feature tensor of shape (n_atom, n_features)
+    torch.Tensor
+        Edge index tensor of shape (2, 2 * n_bonds) or (2, 2 * n_bonds + n_atoms)
+    """
+    import torch
+
+    # Make a copy of the molecule so we don't modify the original
+    mol = mol.CreateCopy()
+
+    # Theoretically any GNN that you use should be permutation-invariant, but just for
+    #  some semblance of determinism
+    oechem.OECanonicalOrderAtoms(mol)
+    oechem.OECanonicalOrderBonds(mol)
+
+    # Gather all relevant info
+    atom_info = [
+        (
+            a.GetAtomicNum(),
+            a.GetDegree(),
+            a.GetImplicitHCount(),
+            a.GetFormalCharge(),
+            a.GetHyb(),
+            a.IsAromatic(),
+            a.GetTotalHCount(),
+        )
+        for a in mol.GetAtoms()
+    ]
+
+    # Split out into individual lists
+    (
+        atom_types,
+        atom_degrees,
+        atom_implicit_h,
+        atom_formal_charges,
+        atom_hyb,
+        atom_aromatic,
+        atom_total_h,
+    ) = zip(*atom_info)
+
+    # Atom type one-hot encoding
+    atom_types_one_hot = torch.nn.functional.one_hot(
+        torch.tensor(atom_types), num_classes=oechem.OEElemNo_MAXELEM
+    )
+
+    # Atom degrees
+    atom_degrees_one_hot = torch.nn.functional.one_hot(
+        torch.tensor(atom_degrees), 11
+    )  # 11 comes from dgl-lifesci
+
+    # Implicit Hs
+    atom_implicit_h_one_hot = torch.nn.functional.one_hot(
+        torch.tensor(atom_implicit_h), 7
+    )  # 7 comes from dgl-lifesci
+
+    # Formal charges
+    atom_formal_charges = torch.tensor(atom_formal_charges)
+
+    # Hybridization states
+    atom_hyb_one_hot = torch.nn.functional.one_hot(
+        torch.tensor(atom_hyb), 6
+    )  # 6 comes from number of hybridization states in OE
+
+    # Aromaticity
+    atom_aromatic = torch.tensor(atom_aromatic)
+
+    # Total Hs
+    atom_total_h_one_hot = torch.nn.functional.one_hot(
+        torch.tensor(atom_total_h), 5
+    )  # 7 comes from dgl-lifesci
+
+    # Combine all features
+    feature_tensor = torch.hstack(
+        [
+            atom_types_one_hot,
+            atom_degrees_one_hot,
+            atom_implicit_h_one_hot,
+            atom_formal_charges,
+            atom_hyb_one_hot,
+            atom_aromatic,
+            atom_total_h_one_hot,
+        ]
+    ).to(dtype=torch.float)
+
+    # Bonds (make sure we get both directions)
+    bond_list = [
+        atom_pair
+        for bond in mol.GetBonds()
+        for atom_pair in (
+            (bond.GetBgnIdx(), bond.GetEndIdx()),
+            (bond.GetEndIdx(), bond.GetBgnIdx()),
+        )
+    ]
+
+    # Add in self-edges if desired
+    bond_list += [(a.GetIdx(), a.GetIdx()) for a in mol.GetAtoms()]
+
+    # Cast bonds to tensor and transpose so order is correct
+    bond_list_tensor = torch.tensor(bond_list).T
+
+    return feature_tensor, bond_list_tensor
