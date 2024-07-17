@@ -12,6 +12,7 @@ from asapdiscovery.ml.pretrained_models import asap_models_yaml
 from mtenn.config import ModelType
 from pydantic import BaseModel, Field, HttpUrl, validator
 from semver import Version
+import requests
 
 
 class MLModelBase(BaseModel):
@@ -38,6 +39,8 @@ class MLModelBase(BaseModel):
     mtenn_upper_pin: Version | None = Field(
         None, description="Upper bound on compatible mtenn versions (exclusive)."
     )
+    # class variable ensemble = False
+
 
     @validator("mtenn_lower_pin", "mtenn_upper_pin", pre=True)
     def cast_versions(cls, v):
@@ -148,6 +151,183 @@ class MLModelSpec(MLModelBase):
             mtenn_lower_pin=self.mtenn_lower_pin,
             mtenn_upper_pin=self.mtenn_upper_pin,
         )
+
+
+class EnsembleMLModelSpec(BaseModel):
+    models: List[MLModelSpec] = Field(
+        ..., description="List of model specs for ensemble models"
+    )
+
+    @validator("models")
+    @classmethod
+    def check_all_types(cls, models):
+        """
+        Check that all models in the ensemble are of the same type
+        """
+        if len(set([model.type for model in models])) > 1:
+            raise ValueError("All models in an ensemble must be of the same type")
+        return models
+
+
+    
+    @validator("models")
+    @classmethod
+    def check_all_mtenn_versions(cls, models):
+        """
+        Check that all models in the ensemble are compatible with the same mtenn version
+        """
+        if len(set([model.mtenn_lower_pin for model in models])) > 1:
+            raise ValueError("All models in an ensemble must have the same mtenn_lower_pin")
+        if len(set([model.mtenn_upper_pin for model in models])) > 1:
+            raise ValueError("All models in an ensemble must have the same mtenn_upper_pin")
+        return models
+
+    @validator("models")
+    @classmethod
+    def check_all_last_updated(cls, models):
+        """
+        Check that all models in the ensemble have the same last_updated
+        """
+        if len(set([model.last_updated for model in models])) > 1:
+            raise ValueError("All models in an ensemble must have the same last_updated")
+        return models
+
+    # guaranteed due to validator
+    @property
+    def type(self):
+        return self.models[0].type
+
+    @property
+    def targets(self):
+        return self.models[0].targets
+
+    @property
+    def mtenn_lower_pin(self):
+        return self.models[0].mtenn_lower_pin
+    
+    @property
+    def mtenn_upper_pin(self):
+        return self.models[0].mtenn_upper_pin
+    
+
+    def pull(self, local_dir: Union[Path, str] = None) -> "list[LocalMLModelSpec]":
+        """
+        Pull ensemble model from S3
+
+        Parameters
+        ----------
+        local_dir : Union[Path, str], optional
+            Local directory to store model files, by default None, meaning they will be stored in pooch.os_cache
+
+        Returns
+        -------
+        List[LocalMLModelSpec]
+            List of local model specs
+        """
+        return [model.pull(local_dir) for model in self.models]
+
+
+def _url_to_yaml(url: str) -> dict:
+    # Retrieve the file content from the URL
+    response = requests.get(url, allow_redirects=True)
+    response.raise_for_status()
+    # Convert bytes to string
+    try:
+        content = response.content.decode("utf-8")
+    except:
+        raise ValueError(f"Failed to decode content from {url}")
+    # Load the yaml
+    return yaml.safe_load(content)
+
+class RemoteEnsembleHelper(BaseModel):
+    """
+    Helper class for remote ensemble models
+
+    Parses manifests of the form 
+
+    asapdiscovery-GAT-ensemble-test:
+    type: GAT
+    base_url: https://asap-discovery-ml-weights.asapdata.org/production/GAT/
+    ensemble: True
+
+    weights:
+        - asapdiscovery-GAT-X:
+            resource: asapdiscovery-GAT-X.th
+            sha256hash: 0b1
+        - asapdiscovery-GAT-Y:
+            resource: asapdiscovery-GAT-Y.th
+            sha256hash: 0b2
+        - asapdiscovery-GAT-Z:
+            resource: asapdiscovery-GAT-Z.th
+            sha256hash: 0b3
+    config:
+        resource: asapdiscovery-SARS-CoV-2-Mpro.json
+    targets:
+        - SARS-CoV-2-Mpro
+        - MERS-CoV-Mpro
+    mtenn_lower_pin: "0.5.0"
+
+    """
+
+    manifest_url: HttpUrl = Field(..., description="Remote ensemble model url")
+
+   
+    def to_ensemble_spec(self) -> EnsembleMLModelSpec:
+        """
+        Convert remote ensemble model to ensemble model spec
+
+        Returns
+        -------
+        EnsembleMLModelSpec
+            Ensemble model spec
+        """
+        manifest = _url_to_yaml(self.manifest_url)
+        
+        ensemble_models = {}
+        for model in manifest:
+            model_data = manifest[model]
+            models = []
+            for submodel in model_data["weights"]:
+                if len(submodel) > 1:
+                    raise ValueError("Submodel should have only one key")
+                # get the name of the submodel
+                subname = list(submodel.keys())[0]
+                models.append(
+                    MLModelSpec(
+                        name=model + "_ens_" + subname,
+                        type=model_data["type"],
+                        base_url=model_data["base_url"],
+                        weights_resource= submodel[subname]["resource"],
+                        weights_sha256hash=submodel[subname]["sha256hash"],
+                        config_resource=model_data["config"]["resource"],
+                        config_sha256hash=model_data["config"]["sha256hash"],
+                        last_updated=model_data["last_updated"] if "last_updated" in model_data else "2024-02-06",
+                        targets=set(model_data["targets"]),
+                        mtenn_lower_pin=(
+                            model_data["mtenn_lower_pin"]
+                            if "mtenn_lower_pin" in model_data
+                            else None
+                        ),
+                        mtenn_upper_pin=(
+                            model_data["mtenn_upper_pin"]
+                            if "mtenn_upper_pin" in model_data
+                            else None
+                        ),
+                    )
+                )
+            # create ensemble model
+            # check all re
+            ens = EnsembleMLModelSpec(models=models)
+
+            ensemble_models[model] = ens
+
+
+        return ensemble_models
+
+
+        
+        
+
 
 
 class LocalMLModelSpec(MLModelBase):
@@ -317,31 +497,37 @@ class MLModelRegistry(BaseModel):
         for model in spec:
             model_data = spec[model]
             has_config = "config" in model_data
-            models[model] = MLModelSpec(
-                name=model,
-                type=model_data["type"],
-                base_url=model_data["base_url"],
-                weights_resource=model_data["weights"]["resource"],
-                weights_sha256hash=model_data["weights"]["sha256hash"],
-                config_resource=(
-                    model_data["config"]["resource"] if has_config else None
-                ),
-                config_sha256hash=(
-                    model_data["config"]["sha256hash"] if has_config else None
-                ),
-                last_updated=model_data["last_updated"],
-                targets=set(model_data["targets"]),
-                mtenn_lower_pin=(
-                    model_data["mtenn_lower_pin"]
-                    if "mtenn_lower_pin" in model_data
-                    else None
-                ),
-                mtenn_upper_pin=(
-                    model_data["mtenn_upper_pin"]
-                    if "mtenn_upper_pin" in model_data
-                    else None
-                ),
-            )
+            is_ensemble = "remote_ensemble" in model_data and model_data["remote_ensemble"]
+            if is_ensemble:
+                models[model] = RemoteEnsembleHelper.to_ensemble_spec()
+
+            else:
+                # is a single model
+                models[model] = MLModelSpec(
+                    name=model,
+                    type=model_data["type"],
+                    base_url=model_data["base_url"],
+                    weights_resource=model_data["weights"]["resource"],
+                    weights_sha256hash=model_data["weights"]["sha256hash"],
+                    config_resource=(
+                        model_data["config"]["resource"] if has_config else None
+                    ),
+                    config_sha256hash=(
+                        model_data["config"]["sha256hash"] if has_config else None
+                    ),
+                    last_updated=model_data["last_updated"],
+                    targets=set(model_data["targets"]),
+                    mtenn_lower_pin=(
+                        model_data["mtenn_lower_pin"]
+                        if "mtenn_lower_pin" in model_data
+                        else None
+                    ),
+                    mtenn_upper_pin=(
+                        model_data["mtenn_upper_pin"]
+                        if "mtenn_upper_pin" in model_data
+                        else None
+                    ),
+                )
 
         return cls(models=models)
 

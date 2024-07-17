@@ -50,7 +50,11 @@ class InferenceBase(BaseModel):
         ..., description="Local model spec used to create Model to use"
     )
     device: str = Field("cpu", description="Device to use for inference")
-    model: Optional[torch.nn.Module] = Field(..., description="PyTorch model")
+    models: list[Optional[torch.nn.Module]] = Field(..., description="PyTorch model")
+
+    @property
+    def is_ensemble(self):
+        return len(self.models) > 1
 
     @classmethod
     def from_latest_by_target(
@@ -197,10 +201,10 @@ class InferenceBase(BaseModel):
             model_spec=model_spec,
             local_model_spec=local_model_spec,
             device=device,
-            model=model,
+            models=models,
         )
 
-    def predict(self, input_data):
+    def predict(self, input_data, aggfunc=np.mean, errfunc=np.std):
         """Predict on data, needs to be overloaded in child classes most of
         the time
 
@@ -208,18 +212,36 @@ class InferenceBase(BaseModel):
         ----------
 
         input_data: pytorch.Tensor
+            Input data to predict on.
+        aggfunc: function, default=np.mean
+            Function to aggregate predictions from multiple models.
+        errfunc: function, default=np.std
+            Function to calculate error from multiple models.
 
         Returns
         -------
         np.ndarray
             Prediction from model.
+        float
+            Error from model.
         """
-        # feed in data in whatever format is required by the model
         with torch.no_grad():
-            input_tensor = torch.tensor(input_data).to(self.device)
-            output_tensor = self.model(input_tensor)[0]
-            return output_tensor.cpu().numpy().ravel()
 
+            # feed in data in whatever format is required by the model
+            # for model ensemble, we need to loop through each model and get the
+            # prediction from each, then aggregate
+            input_tensor = torch.tensor(input_data).to(self.device)
+            
+            aggregate_preds = []
+            for model in self.models:
+                output_tensor = model(input_tensor)[0].cpu().numpy().ravel()
+                aggregate_preds.append(output_tensor)
+            if self.is_ensemble:
+                aggregate_preds = np.array(aggregate_preds)
+                return aggfunc(aggregate_preds, axis=0), errfunc(aggregate_preds, axis=0)
+            else:
+                # iterates only once, just return the prediction
+                return output_tensor, 0
 
 class GATInference(InferenceBase):
     model_type: ClassVar[ModelType.GAT] = ModelType.GAT
@@ -241,10 +263,7 @@ class GATInference(InferenceBase):
         np.ndarray
             Predictions for each graph.
         """
-        with torch.no_grad():
-            output_tensor = self.model({"g": g})[0]
-            # we ravel to always get a 1D array
-            return output_tensor.cpu().numpy().ravel()
+        return super().predict({"g": g})
 
     def predict_from_smiles(
         self,

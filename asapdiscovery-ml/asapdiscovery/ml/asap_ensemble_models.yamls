@@ -1,0 +1,30 @@
+
+asapdiscovery-GAT-ensemble-test:
+  type: GAT
+  base_url: https://asap-discovery-ml-skynet.asapdata.org/test_manifests/endpoint
+  ensemble: True
+
+  weights:
+    - member1:
+        resource: member1.th
+        sha256hash: 15b887764a3b3f8fb4a6fe60c409b42ea4040df78f31bf62a8714ebf71f48bf0
+    - member2:
+        resource: member2.th
+        sha256hash: 15b887764a3b3f8fb4a6fe60c409b42ea4040df78f31bf62a8714ebf71f48bf0
+    - member3:
+        resource: member3.th
+        sha256hash: 15b887764a3b3f8fb4a6fe60c409b42ea4040df78f31bf62a8714ebf71f48bf0
+    - member4:
+        resource: member4.th
+        sha256hash: 15b887764a3b3f8fb4a6fe60c409b42ea4040df78f31bf62a8714ebf71f48bf0
+    - member5:
+        resource: member5.th
+        sha256hash: 15b887764a3b3f8fb4a6fe60c409b42ea4040df78f31bf62a8714ebf71f48bf0
+
+  config:
+    resource: asapdiscovery-SARS-CoV-2-Mpro.json
+    sha256hash: d26f278c189eb897607b9b3a2c61ed6c82fbcd7590683631dc9afd7fa010f256
+  targets:
+    - SARS-CoV-2-Mpro
+    - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.5.0"
