@@ -130,17 +130,17 @@ def alchemize(
     from multiprocessing import cpu_count
 
     import rich
+    from asapdiscovery.alchemy.alchemize import (
+        compute_clusters,
+        rescue_outsiders,
+        write_clusters,
+    )
     from asapdiscovery.alchemy.cli.utils import (
         print_header,
         pull_from_postera,
         report_alchemize_clusters,
     )
     from asapdiscovery.data.readers.molfile import MolFileFactory
-    from asapdiscovery.alchemy.alchemize import (
-        compute_clusters,
-        rescue_outsiders,
-        write_clusters,
-    )
     from rich import pretty
     from rich.padding import Padding
 
