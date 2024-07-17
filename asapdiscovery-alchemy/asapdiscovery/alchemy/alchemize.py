@@ -147,7 +147,7 @@ def rescue_outsiders(
 
 
 def write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders, console=None):
-    """Stores clusters to individual SDF files using the clusterfiles prefix variable"""
+    """Stores clusters to individual SDF files using the clusterfiles prefix variable. Useful for CLI."""
     for i, (bbm_cluster_smiles, ligands) in enumerate(alchemical_clusters.items()):
         output_filename = f"{clusterfiles_prefix}_{i}.sdf"
         # add bbm_cluster_smiles to each ligand as an SD tag. This way we can see both the ligand's BBM scaffold
