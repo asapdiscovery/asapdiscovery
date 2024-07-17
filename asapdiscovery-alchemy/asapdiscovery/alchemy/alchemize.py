@@ -1,6 +1,4 @@
-from asapdiscovery.alchemy.cli.utils import (
-    report_alchemize_clusters,
-)
+from asapdiscovery.alchemy.cli.utils import report_alchemize_clusters
 from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFMCS

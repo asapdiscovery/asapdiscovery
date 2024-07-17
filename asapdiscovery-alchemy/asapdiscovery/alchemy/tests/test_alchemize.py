@@ -1,16 +1,14 @@
 import tempfile
 from glob import glob
 
-from asapdiscovery.data.schema.ligand import Ligand
-
 from asapdiscovery.alchemy.alchemize import (
-    compute_clusters,
     calc_mcs_residuals,
+    compute_clusters,
     partial_sanitize,
     rescue_outsiders,
     write_clusters,
 )
-
+from asapdiscovery.data.schema.ligand import Ligand
 from rdkit import Chem
 
 TEST_LIGANDS = [
