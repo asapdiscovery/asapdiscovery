@@ -1152,7 +1152,7 @@ def featurize_oemol(mol: oechem.OEMol, self_edges=True):
     )  # 7 comes from dgl-lifesci
 
     # Formal charges
-    atom_formal_charges = torch.tensor(atom_formal_charges)
+    atom_formal_charges = torch.tensor(atom_formal_charges).reshape((-1, 1))
 
     # Hybridization states
     atom_hyb_one_hot = torch.nn.functional.one_hot(
@@ -1160,7 +1160,7 @@ def featurize_oemol(mol: oechem.OEMol, self_edges=True):
     )  # 6 comes from number of hybridization states in OE
 
     # Aromaticity
-    atom_aromatic = torch.tensor(atom_aromatic)
+    atom_aromatic = torch.tensor(atom_aromatic).reshape((-1, 1))
 
     # Total Hs
     atom_total_h_one_hot = torch.nn.functional.one_hot(
