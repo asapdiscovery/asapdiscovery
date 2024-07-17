@@ -17,6 +17,7 @@ from asapdiscovery.ml.models import (
     MLModelRegistry,
     MLModelSpec,
 )
+import warnings
 
 # static import of models from base yaml here
 from dgllife.utils import CanonicalAtomFeaturizer
@@ -55,6 +56,10 @@ class InferenceBase(BaseModel):
     @property
     def is_ensemble(self):
         return len(self.models) > 1
+
+    @property
+    def ensemble_size(self):
+        return len(self.models)
 
     @classmethod
     def from_latest_by_target(
@@ -180,19 +185,22 @@ class InferenceBase(BaseModel):
             case other:
                 raise ValueError(f"Can't instantiate model config for type {other}.")
 
-        try:
-            config_kwargs = json.loads(local_model_spec.config_file.read_text())
-        except AttributeError:
-            config_kwargs = {}
+        models = []
 
-        existing_model_weights = config_kwargs.get("model_weights", None)
-        if (existing_model_weights is None) and local_model_spec.weights_file:
+        for model in local_model_spec.models:
+            
+            config_kwargs = json.loads(model.config_file.read_text())
+            print(config_kwargs)
+
+            # warnings.warn(f"failed to parse model config file, {model.config_file}")
+            # config_kwargs = {}
             config_kwargs["model_weights"] = torch.load(
-                local_model_spec.weights_file, map_location=device
+                model.weights_file, map_location=device
             )
+            model = config_cls(**config_kwargs).build()
+            model.eval()
+            models.append(model)
 
-        model = config_cls(**config_kwargs).build()
-        model.eval()
 
         return cls(
             targets=local_model_spec.targets,

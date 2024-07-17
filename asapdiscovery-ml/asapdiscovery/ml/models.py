@@ -194,8 +194,11 @@ class EnsembleMLModelSpec(MLModelBase):
             raise ValueError("All models in an ensemble must have the same last_updated")
         return models
 
-    
+    @property
+    def ensemble_size(self):
+        return len(self.models)
 
+    
     def pull(self, local_dir: Union[Path, str] = None) -> "LocalEnsembleMLModelSpec":
         """
         Pull ensemble model from S3
@@ -328,10 +331,12 @@ class RemoteEnsembleHelper(BaseModel):
 
         
         
+class LocalMLModelSpecBase(MLModelBase):
+    """Base class for local model specs"""
 
+    ensemble = False
 
-
-class LocalMLModelSpec(MLModelBase):
+class LocalMLModelSpec(LocalMLModelSpecBase):
     """
     Model spec for a model instantiated locally, containing file paths to model files
     """
@@ -343,11 +348,20 @@ class LocalMLModelSpec(MLModelBase):
         description="Local directory for model files, otherwise defaults to pooch.os_cache",
     )
 
-class LocalEnsembleMLModelSpec(MLModelBase):
+
+
+class LocalEnsembleMLModelSpec(LocalMLModelSpecBase):
+    """
+    Model spec for an ensemble model instantiated locally, containing file paths to model files
+    """
+    ensemble = True
     models: List[LocalMLModelSpec] = Field(
         ..., description="List of local model specs for ensemble models"
     )
     
+    @property
+    def ensemble_size(self):
+        return len(self.models)
 
 
 class MLModelRegistry(BaseModel):
