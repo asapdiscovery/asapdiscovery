@@ -167,49 +167,6 @@ def alchemize(
     )
     console.print(message)
 
-    PATT = Chem.MolFromSmarts(
-        "[$([D1]=[*])]"
-    )  # selects any atoms that are not connected to another heavy atom
-
-    # STEP 1: cluster by Bajorath-Murcko scaffold (fast)
-    bm_scaffs = [
-        MurckoScaffold.GetScaffoldForMol(mol)
-        for mol in [lig.to_rdkit() for lig in asap_ligands]
-    ]  # first get regular Bemis-Murcko scaffolds
-
-    bbm_scaffs = [
-        AllChem.DeleteSubstructs(scaff, PATT) for scaff in bm_scaffs
-    ]  # make them into Bajorath-Bemis-Murcko scaffolds
-    bbm_scaffs_smi = [Chem.MolToSmiles(scaff) for scaff in bbm_scaffs]
-
-    # now embed back with original molecules
-    mols_with_bbm = [[mol, bbm] for mol, bbm in zip(asap_ligands, bbm_scaffs_smi)]
-
-    # sort so that we make sure that BBM scaffolds get grouped together nicely
-    mols_with_bbm = sorted(mols_with_bbm, key=lambda x: x[1], reverse=False)
-
-    # now group them together using the BBM scaffold as dict keys.
-    bbm_groups = {}
-    for mol, bbm_scaff_smi in mols_with_bbm:
-        mol.set_SD_data({"bajorath-bemis-murcko-scaffold": bbm_scaff_smi})
-        bbm_groups.setdefault(bbm_scaff_smi, []).append(mol)
-
-    outsiders = {}
-    alchemical_clusters = {}
-    for bbm_scaff, mols in bbm_groups.items():
-        if len(mols) > outsider_number:
-            alchemical_clusters[bbm_scaff] = mols
-        else:
-            outsiders[bbm_scaff] = mols
-
-    message = Padding(
-        f"Placed {report_alchemize_clusters(alchemical_clusters, outsiders)[-1]} compounds into "
-        "alchemical clusters",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
-
-    # STEP 2: rescue outsiders by attempting to place them into Alchemical clusters (slow)
     # workout the number of processes to use if auto or all
     all_cpus = cpu_count()
     if processors == "all":
@@ -219,18 +176,56 @@ def alchemize(
     else:
         # can be a string from click
         processors = int(processors)
-    message = Padding(
-        f"Working to add outsiders into alchemical clusters using {processors} processor(s)",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
 
     if processors > 1:  # TODO
         raise NotImplementedError(
             "Multiprocessing for rescuing outsiders is not yet implemented."
         )
 
-    # TODO: find a home for the below functions:
+    def compute_clusters(asap_ligands, outsider_number):
+        # STEP 1: cluster by Bajorath-Murcko scaffold (fast)
+        PATT = Chem.MolFromSmarts(
+            "[$([D1]=[*])]"
+        )  # selects any atoms that are not connected to another heavy atom
+        bm_scaffs = []  # first get regular Bemis-Murcko scaffolds
+
+        for lig in tqdm(asap_ligands, desc="Computing Murcko scaffolds"):
+            bm_scaffs.append(MurckoScaffold.GetScaffoldForMol(lig.to_rdkit()))
+
+        bbm_scaffs_smi = [
+            Chem.MolToSmiles(AllChem.DeleteSubstructs(scaff, PATT))
+            for scaff in bm_scaffs
+        ]  # make them into Bajorath-Bemis-Murcko scaffolds
+
+        # now embed back with original molecules
+        mols_with_bbm = [[mol, bbm] for mol, bbm in zip(asap_ligands, bbm_scaffs_smi)]
+
+        # sort so that we make sure that BBM scaffolds get grouped together nicely
+        mols_with_bbm = sorted(mols_with_bbm, key=lambda x: x[1], reverse=False)
+
+        # now group them together using the BBM scaffold as dict keys.
+        bbm_groups = {}
+        for mol, bbm_scaff_smi in mols_with_bbm:
+            mol.set_SD_data({"bajorath-bemis-murcko-scaffold": bbm_scaff_smi})
+            bbm_groups.setdefault(bbm_scaff_smi, []).append(mol)
+
+        outsiders = {}
+        alchemical_clusters = {}
+        for bbm_scaff, mols in bbm_groups.items():
+            if len(mols) > outsider_number:
+                alchemical_clusters[bbm_scaff] = mols
+            else:
+                outsiders[bbm_scaff] = mols
+
+        message = Padding(
+            f"Placed {report_alchemize_clusters(alchemical_clusters, outsiders)[-1]} compounds into "
+            "alchemical clusters",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+
+        return outsiders, alchemical_clusters
+
     def partial_sanitize(mol):
         """Does the minimal number of steps for a molecule object to be workable by rdkit;
         won't throw errors if the mol is funky."""
@@ -263,10 +258,18 @@ def alchemize(
         ), Chem.rdMolDescriptors.CalcNumHeavyAtoms(AllChem.DeleteSubstructs(mol2, mcs))
 
     def rescue_outsiders(outsiders, alchemical_clusters, max_transform):
+        # STEP 2: rescue outsiders by attempting to place them into Alchemical clusters (slow)
         # now for every singleton (which can have len() up to SINGLETON_NUMBER_THRESHOLD), try to
         # find a suitable cluster to add it into
+        message = Padding(
+            f"Working to add outsiders into alchemical clusters using {processors} processor(s)",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
         singletons_to_move = {}
-        for singleton_bbm_scaff, _ in tqdm(outsiders.items()):
+        for singleton_bbm_scaff, _ in tqdm(
+            outsiders.items(), desc="Rescuing outsiders"
+        ):
             singleton_bbm_scaff_ps = partial_sanitize(
                 Chem.MolFromSmiles(singleton_bbm_scaff, sanitize=False)
             )
@@ -312,7 +315,52 @@ def alchemize(
             # then purge the singleton from the dict of singletons
             outsiders.pop(singleton_bbm_scaff)
 
-    rescue_outsiders(outsiders, alchemical_clusters, max_transform)
+        return outsiders, alchemical_clusters
+
+    def write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders):
+        """Stores clusters to individual SDF files using the clusterfiles prefix variable"""
+        for i, (bbm_cluster_smiles, ligands) in enumerate(alchemical_clusters.items()):
+            output_filename = f"{clusterfiles_prefix}_{i}.sdf"
+            # add bbm_cluster_smiles to each ligand as an SD tag. This way we can see both the ligand's BBM scaffold
+            # AND the BBM scaffold cluster the ligand has been assigned to.
+            [
+                lig.set_SD_data(
+                    {"bajorath-bemis-murcko-scaffold-cluster": bbm_cluster_smiles}
+                )
+                for lig in ligands
+            ]
+
+            # write sdf
+            write_ligands_to_multi_sdf(output_filename, ligands, overwrite=True)
+
+            message = Padding(
+                f"Wrote cluster {i} ({len(ligands)} assigned to Bajorath-Bemis-Murcko scaffold {bbm_cluster_smiles}) "
+                f"to {output_filename}",
+                (1, 0, 1, 0),
+            )
+            console.print(message)
+
+        # also write all outsiders to a single SDF
+        outsider_ligands_nested = [lig for _, lig in outsiders.items()]
+        outsider_ligands = [lig for ligs in outsider_ligands_nested for lig in ligs]
+
+        output_filename_outsiders = f"{clusterfiles_prefix}_outsiders.sdf"
+        write_ligands_to_multi_sdf(
+            output_filename_outsiders, outsider_ligands, overwrite=True
+        )
+        message = Padding(
+            f"Wrote {len(outsider_ligands)} outsiders to {output_filename_outsiders}.",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+
+    # step 1: attempt to create alchemical clusters. Some outliers/singletons ("outsiders") are likely
+    outsiders, alchemical_clusters = compute_clusters(asap_ligands, outsider_number)
+
+    # step 2: rescue outsiders by attempting to place them into clusters given some lenience level
+    outsiders, alchemical_clusters = rescue_outsiders(
+        outsiders, alchemical_clusters, max_transform
+    )
 
     message = Padding(
         f"After rescuing outsiders, a total of {report_alchemize_clusters(alchemical_clusters, outsiders)[-1]}"
@@ -322,42 +370,10 @@ def alchemize(
     )
     console.print(message)
 
-    # write all clusters to individual files
-    for i, (bbm_cluster_smiles, ligands) in enumerate(alchemical_clusters.items()):
-        output_filename = f"{clusterfiles_prefix}_{i}.sdf"
-        # add bbm_cluster_smiles to each ligand as an SD tag. This way we can see both the ligand's BBM scaffold
-        # AND the BBM scaffold cluster the ligand has been assigned to.
-        [
-            lig.set_SD_data(
-                {"bajorath-bemis-murcko-scaffold-cluster": bbm_cluster_smiles}
-            )
-            for lig in ligands
-        ]
-        # print cluster smiles, size and output file
+    # now write to file
+    write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders)
 
-        # write sdf
-        write_ligands_to_multi_sdf(output_filename, ligands, overwrite=True)
-
-        message = Padding(
-            f"Wrote cluster {i} ({len(ligands)} assigned to Bajorath-Bemis-Murcko scaffold {bbm_cluster_smiles}) "
-            f"to {output_filename}",
-            (1, 0, 1, 0),
-        )
-        console.print(message)
-
-    # also write all outsiders to a single SDF
-    outsider_ligands_nested = [lig for _, lig in outsiders.items()]
-    outsider_ligands = [lig for ligs in outsider_ligands_nested for lig in ligs]
-
-    output_filename_outsiders = f"{clusterfiles_prefix}_outsiders.sdf"
-    write_ligands_to_multi_sdf(
-        output_filename_outsiders, outsider_ligands, overwrite=True
-    )
-    message = Padding(
-        f"Wrote {len(outsider_ligands)} outsiders to {output_filename_outsiders}.",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
+    return alchemical_clusters, clusterfiles_prefix, outsiders
 
 
 @prep.command(
