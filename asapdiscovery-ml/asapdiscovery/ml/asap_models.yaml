@@ -95,9 +95,3 @@ asapdiscovery-SARS-CoV-2-Mpro-e3nn-2024.02.06:
   mtenn_lower_pin: "0.5.0"
 
 
-# asapdiscovery-remote-SARS-CoV-2-Mpro-pIC50:
-#   type: GAT
-#   ensemble: True
-#   remote_updating: True
-#   manifest_url: https://asap-discovery-ml-weights.asapdata.org/remote_updating/GAT/asapdiscovery-remote-SARS-CoV-2-Mpro-pIC50.yaml
-

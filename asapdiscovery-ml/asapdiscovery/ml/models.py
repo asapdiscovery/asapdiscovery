@@ -284,6 +284,7 @@ class RemoteEnsembleHelper(BaseModel):
         manifest = _url_to_yaml(self.manifest_url)
         
         ensemble_models = {}
+
         for model in manifest:
             model_data = manifest[model]
             models = []
