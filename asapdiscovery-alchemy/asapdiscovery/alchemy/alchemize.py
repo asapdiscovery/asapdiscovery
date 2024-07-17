@@ -9,7 +9,7 @@ from rich.padding import Padding
 from tqdm import tqdm
 
 
-def compute_clusters(asap_ligands, outsider_number, console):
+def compute_clusters(asap_ligands, outsider_number, console=None):
     # STEP 1: cluster by Bajorath-Murcko scaffold (fast)
     PATT = Chem.MolFromSmarts(
         "[$([D1]=[*])]"
@@ -48,7 +48,8 @@ def compute_clusters(asap_ligands, outsider_number, console):
         "alchemical clusters",
         (1, 0, 1, 0),
     )
-    console.print(message)
+    if console:
+        console.print(message)
 
     return outsiders, alchemical_clusters
 
@@ -87,7 +88,7 @@ def calc_mcs_residuals(mol1, mol2):
 
 
 def rescue_outsiders(
-    outsiders, alchemical_clusters, max_transform, processors, console
+    outsiders, alchemical_clusters, max_transform, processors, console=None
 ):
     # STEP 2: rescue outsiders by attempting to place them into Alchemical clusters (slow)
     # now for every singleton (which can have len() up to SINGLETON_NUMBER_THRESHOLD), try to
@@ -96,7 +97,8 @@ def rescue_outsiders(
         f"Working to add outsiders into alchemical clusters using {processors} processor(s)",
         (1, 0, 1, 0),
     )
-    console.print(message)
+    if console:
+        console.print(message)
     singletons_to_move = {}
     for singleton_bbm_scaff, _ in tqdm(outsiders.items(), desc="Rescuing outsiders"):
         singleton_bbm_scaff_ps = partial_sanitize(
@@ -144,7 +146,7 @@ def rescue_outsiders(
     return outsiders, alchemical_clusters
 
 
-def write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders):
+def write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders, console=None):
     """Stores clusters to individual SDF files using the clusterfiles prefix variable"""
     for i, (bbm_cluster_smiles, ligands) in enumerate(alchemical_clusters.items()):
         output_filename = f"{clusterfiles_prefix}_{i}.sdf"
@@ -165,7 +167,8 @@ def write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders):
             f"to {output_filename}",
             (1, 0, 1, 0),
         )
-        console.print(message)
+        if console:
+            console.print(message)
 
     # also write all outsiders to a single SDF
     outsider_ligands_nested = [lig for _, lig in outsiders.items()]
@@ -179,4 +182,5 @@ def write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders):
         f"Wrote {len(outsider_ligands)} outsiders to {output_filename_outsiders}.",
         (1, 0, 1, 0),
     )
-    console.print(message)
+    if console:
+        console.print(message)
