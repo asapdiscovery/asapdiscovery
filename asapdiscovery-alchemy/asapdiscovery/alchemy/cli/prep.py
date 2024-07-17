@@ -194,7 +194,7 @@ def alchemize(
 
     message = Padding(
         f"After rescuing outsiders, a total of {report_alchemize_clusters(alchemical_clusters, outsiders)[-1]}"
-        f" compounds are in an alchemical cluster. Summary \[clustersize/number of clusters]: "
+        f" compounds are in an alchemical cluster. Summary (clustersize/number of clusters): "
         f"{report_alchemize_clusters(alchemical_clusters, outsiders)[0]}. Writing to SDF file(s):",
         (1, 0, 1, 0),
     )

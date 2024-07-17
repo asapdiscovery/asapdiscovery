@@ -245,6 +245,13 @@ def report_alchemize_clusters(alchemical_clusters, outsiders):
         Counter([len(v) for _, v in alchemical_clusters.items()])
     )
     outsider_cluster_sizes = dict(Counter([len(v) for _, v in outsiders.items()]))
+
+    # sort the dicts for easier interpretation of reports
+    alchemical_cluster_sizes = dict(
+        sorted(alchemical_cluster_sizes.items(), reverse=True)
+    )
+    outsider_cluster_sizes = dict(sorted(outsider_cluster_sizes.items(), reverse=True))
+
     alchemical_num_in_clusters = sum(
         [
             cluster_size * num_clusters
