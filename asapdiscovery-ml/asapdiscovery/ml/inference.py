@@ -16,6 +16,8 @@ from asapdiscovery.ml.models import (
     LocalMLModelSpec,
     MLModelRegistry,
     MLModelSpec,
+    LocalMLModelSpecBase,
+    MLModelSpecBase,
 )
 import warnings
 
@@ -44,10 +46,10 @@ class InferenceBase(BaseModel):
     )
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
-    model_spec: Optional[MLModelSpec] = Field(
+    model_spec: Optional[MLModelSpecBase] = Field(
         ..., description="Model spec used to create Model to use"
     )
-    local_model_spec: LocalMLModelSpec = Field(
+    local_model_spec: LocalMLModelSpecBase = Field(
         ..., description="Local model spec used to create Model to use"
     )
     device: str = Field("cpu", description="Device to use for inference")
@@ -135,7 +137,7 @@ class InferenceBase(BaseModel):
     @classmethod
     def from_local_model_spec(
         cls,
-        local_model_spec: LocalMLModelSpec,
+        local_model_spec: LocalMLModelSpecBase,
         device: str = "cpu",
         model_spec: Optional[MLModelSpec] = None,
         build_model_kwargs: Optional[dict] = {},
@@ -190,7 +192,6 @@ class InferenceBase(BaseModel):
         for model in local_model_spec.models:
             
             config_kwargs = json.loads(model.config_file.read_text())
-            print(config_kwargs)
 
             # warnings.warn(f"failed to parse model config file, {model.config_file}")
             # config_kwargs = {}
@@ -242,19 +243,20 @@ class InferenceBase(BaseModel):
             
             aggregate_preds = []
             for model in self.models:
-                output_tensor = model(input_tensor)[0].cpu().numpy().ravel()
+                output_tensor = model(input_tensor)[0].cpu().numpy().flatten()
                 aggregate_preds.append(output_tensor)
             if self.is_ensemble:
+
                 aggregate_preds = np.array(aggregate_preds)
                 return aggfunc(aggregate_preds, axis=0), errfunc(aggregate_preds, axis=0)
             else:
                 # iterates only once, just return the prediction
-                return output_tensor, 0
+                return output_tensor, np.nan
 
 class GATInference(InferenceBase):
     model_type: ClassVar[ModelType.GAT] = ModelType.GAT
 
-    def predict(self, g: dgl.DGLGraph):
+    def predict(self, g: dgl.DGLGraph, aggfunc=np.mean, errfunc=np.std):
         """Predict on a graph, requires a DGLGraph object with the `ndata`
         attribute `h` containing the node features. This is done by constucting
         the `GraphDataset` with the node_featurizer=`dgllife.utils.CanonicalAtomFeaturizer()`
@@ -265,13 +267,30 @@ class GATInference(InferenceBase):
         ----------
         g : dgl.DGLGraph
             DGLGraph object.
+        
+        aggfunc: function, default=np.mean
+            Function to aggregate predictions from multiple models.
+        errfunc: function, default=np.std
 
         Returns
         -------
         np.ndarray
             Predictions for each graph.
         """
-        return super().predict({"g": g})
+        with torch.no_grad():
+            aggregate_preds = []
+            for model in self.models:
+                output_tensor = model({"g": g})[0]
+                # we ravel to always get a 1D array
+                aggregate_preds.append(output_tensor.cpu().numpy().flatten())
+            if self.is_ensemble:
+                aggregate_preds = np.array(aggregate_preds).flatten()
+                return aggfunc(aggregate_preds), errfunc(aggregate_preds)
+            else:
+                output_tensor = self.model({"g": g})[0]
+                # we ravel to always get a 1D array
+                return output_tensor.cpu().numpy().flatten(), np.nan
+
 
     def predict_from_smiles(
         self,
@@ -294,6 +313,8 @@ class GATInference(InferenceBase):
         -------
         np.ndarray or float
             Predictions for each graph, or a single prediction if only one SMILES string is provided.
+        np.ndarray or float
+            Errors for each prediction, or a single error if only one SMILES string is provided.
         """
         if isinstance(smiles, str):
             smiles = [smiles]
@@ -310,11 +331,15 @@ class GATInference(InferenceBase):
         )
 
         data = [self.predict(pose["g"]) for _, pose in ds]
-        data = np.concatenate(np.asarray(data))
+        data = np.asarray(data)
+        preds = data[:, 0]
+        errs = data[:, 1]
         # return a scalar float value if we only have one input
-        if np.all(np.array(data.shape) == 1):
-            data = data.item()
-        return data
+        if np.all(np.array(preds.shape) == 1):
+            preds = preds.item()
+            errs = errs.item()
+        
+        return preds, errs
 
 
 class StructuralInference(InferenceBase):
@@ -324,7 +349,7 @@ class StructuralInference(InferenceBase):
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
 
-    def predict(self, pose_dict: dict):
+    def predict(self, pose_dict: dict, aggfunc=np.mean, errfunc=np.std):
         """Predict on a pose, requires a dictionary with the pose data with
         the keys: "z", "pos", "lig" with the required tensors in each
 
@@ -332,16 +357,25 @@ class StructuralInference(InferenceBase):
         ----------
         pose_dict : dict
             Dictionary with pose data.
+        aggfunc: function, default=np.mean
+            Function to aggregate predictions from multiple models.
+        errfunc: function, default=np.std
+
 
         Returns
         -------
-        np.ndarray
-            Predictions for a pose.
+        np.ndarray or float
+            Predictions for the pose.
+        np.ndarray or float
+            Errors for the pose
+        
         """
         with torch.no_grad():
+            for model in self.models:
+            aggregate_preds = []
             output_tensor = self.model(pose_dict)[0]
             # we ravel to always get a 1D array
-            return output_tensor.cpu().numpy().ravel()
+            return output_tensor.cpu().numpy().flatten()
 
     def predict_from_structure_file(
         self, pose: Union[Path, list[Path]], for_e3nn: bool = False

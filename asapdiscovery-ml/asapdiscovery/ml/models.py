@@ -83,8 +83,11 @@ class MLModelBase(BaseModel):
 
         return low_pin <= cur_version < upper_pin
 
+class MLModelSpecBase(MLModelBase):
+    """Base class for model specs"""
 
-class MLModelSpec(MLModelBase):
+
+class MLModelSpec(MLModelSpecBase):
     """
     Model spec for a model stored at a remote url
     """
@@ -155,7 +158,7 @@ class MLModelSpec(MLModelBase):
 
 
 
-class EnsembleMLModelSpec(MLModelBase):
+class EnsembleMLModelSpec(MLModelSpecBase):
     models: List[MLModelSpec] = Field(
         ..., description="List of model specs for ensemble models"
     )
