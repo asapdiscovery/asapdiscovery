@@ -1,5 +1,6 @@
 import shutil
 from typing import Optional
+from warnings import warn
 
 import click
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
@@ -176,6 +177,11 @@ def alchemize(
     else:
         # can be a string from click
         processors = int(processors)
+
+    # can't currently handle more than 1 processor
+    if processors > 1:
+        warn("Currently only 1 processor is supported for this command, setting to 1")
+        processors = 1
 
     # step 1: attempt to create alchemical clusters. Some outliers/singletons ("outsiders") are likely
     outsiders, alchemical_clusters = compute_clusters(
