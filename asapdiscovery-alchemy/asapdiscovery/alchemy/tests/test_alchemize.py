@@ -11,10 +11,6 @@ from asapdiscovery.alchemy.alchemize import (
 from rdkit import Chem
 
 
-
-
-
-
 def test_compute_clusters(test_ligands):
     outsiders, alchemical_clusters = compute_clusters(test_ligands, outsider_number=2)
 
