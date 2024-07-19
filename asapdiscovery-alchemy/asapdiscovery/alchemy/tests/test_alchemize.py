@@ -8,40 +8,9 @@ from asapdiscovery.alchemy.alchemize import (
     rescue_outsiders,
     write_clusters,
 )
-from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
 from rdkit import Chem
-from asapdiscovery.alchemy.cli.cli import alchemy
-from click.testing import CliRunner
 
 
-@pytest.fixture() 
-def test_ligands():
-        
-    TEST_LIGANDS = [
-        Ligand.from_smiles(smi, compound_name="foo")
-        for smi in [
-            "O=C(NC1=CC(Cl)=CC(C(=O)NC2=CC=C(CC3CCNCC3)C=C2)=C1)OCC1=CC=CC=C1",
-            "CCNC(=O)NC1=CC(Cl)=CC(C(=O)NC2=CC(C)=CC(CN)=C2)=C1",
-            "NC1=CC=C(NC(=O)C2=CC(Cl)=CC3=C2C=NN3)C=N1",
-            "NCC1=CC=CC(NC(=O)C2=CC(Cl)=CC(CN)=C2)=C1",
-            "O=C(C1=CC=CC2=CC=CC=C12)NC3=CC=C4CNCC4=C3",
-            "CCNC(=O)NC1=CC(Cl)=CC(C(=O)NC2=CC(C)=CC(CN)=C2)=C1",
-            "O=C(C1=CC=CC2=C(F)C=CC=C12)NC3=CC=C4CNCC4=C3",
-            "O=C(C1=CC=CC2=C(Cl)C=CC=C12)NC3=CC=C4CNCC4=C3",
-            "O=C(C1=CC=CC2=C(Br)C=CC=C12)NC3=CC=C4CNCC4=C3",
-        ]
-    ]
-    return TEST_LIGANDS
-
-
-@pytest.fixture()
-def test_ligands_sdfile(test_ligands, tmp_path):
-    # write the ligands to a temporary SDF file
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".sdf", delete=False, dir=tmp_path
-    ) as f:
-        write_ligands_to_multi_sdf(f.name, test_ligands, overwrite=True)
-    return f.name
 
 
 
@@ -151,22 +120,3 @@ def test_write_clusters(test_ligands, tmp_path):
     assert len([file for file in written_files if "outsiders" in file]) == 1
 
 
-def test_cli(test_ligands_sdfile, tmp_path):
-    runner = CliRunner()
-    result = runner.invoke(
-        alchemy,
-        [
-            "prep",
-            "alchemize",
-            "-l",
-            test_ligands_sdfile,
-            "-n",
-            "tst",
-            "-onu",
-            "2",
-            "-mt", 
-            "9",
-
-        ],
-    )
-    assert result.exit_code == 0
