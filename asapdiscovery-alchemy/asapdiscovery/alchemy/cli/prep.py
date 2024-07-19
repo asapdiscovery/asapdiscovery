@@ -177,10 +177,6 @@ def alchemize(
         # can be a string from click
         processors = int(processors)
 
-    if processors > 1:  # TODO
-        raise NotImplementedError(
-            "Multiprocessing for rescuing outsiders is not yet implemented."
-        )
 
     # step 1: attempt to create alchemical clusters. Some outliers/singletons ("outsiders") are likely
     outsiders, alchemical_clusters = compute_clusters(
@@ -203,7 +199,6 @@ def alchemize(
     # now write to file
     write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders)
 
-    return alchemical_clusters, clusterfiles_prefix, outsiders
 
 
 @prep.command(

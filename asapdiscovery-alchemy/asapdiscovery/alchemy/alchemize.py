@@ -1,20 +1,31 @@
 from asapdiscovery.alchemy.cli.utils import report_alchemize_clusters
-from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.schema.ligand import  Ligand, write_ligands_to_multi_sdf
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFMCS
 from rdkit.Chem.Scaffolds import MurckoScaffold
+from rdkit.Chem.rdchem import Mol
 from rich.padding import Padding
 from tqdm import tqdm
 
 
-def compute_clusters(asap_ligands, outsider_number, console=None):
+def compute_clusters(ligands: list[Ligand], outsider_number: int, console=None):
+    """Clusters ligands into Bajorath-Murcko scaffolds
+    
+    Args:
+        ligands (list[Ligand]): Ligand objects to cluster
+        outsider_number (int): Number of ligands to consider as outsiders
+        console: Rich console object for logging
+    
+    Returns:
+        tuple[dict[str, list[Ligand]], dict[str, list[Ligand]]]: Outsiders and clusters
+    """
     # STEP 1: cluster by Bajorath-Murcko scaffold (fast)
     PATT = Chem.MolFromSmarts(
         "[$([D1]=[*])]"
     )  # selects any atoms that are not connected to another heavy atom
     bm_scaffs = []  # first get regular Bemis-Murcko scaffolds
 
-    for lig in tqdm(asap_ligands, desc="Computing Murcko scaffolds"):
+    for lig in tqdm(ligands, desc="Computing Murcko scaffolds"):
         bm_scaffs.append(MurckoScaffold.GetScaffoldForMol(lig.to_rdkit()))
 
     bbm_scaffs_smi = [
@@ -22,7 +33,7 @@ def compute_clusters(asap_ligands, outsider_number, console=None):
     ]  # make them into Bajorath-Bemis-Murcko scaffolds
 
     # now embed back with original molecules
-    mols_with_bbm = [[mol, bbm] for mol, bbm in zip(asap_ligands, bbm_scaffs_smi)]
+    mols_with_bbm = [[mol, bbm] for mol, bbm in zip(ligands, bbm_scaffs_smi)]
 
     # sort so that we make sure that BBM scaffolds get grouped together nicely
     mols_with_bbm = sorted(mols_with_bbm, key=lambda x: x[1], reverse=False)
@@ -52,9 +63,16 @@ def compute_clusters(asap_ligands, outsider_number, console=None):
     return outsiders, alchemical_clusters
 
 
-def partial_sanitize(mol):
+def partial_sanitize(mol: Mol) -> Mol:
     """Does the minimal number of steps for a molecule object to be workable by rdkit;
-    won't throw errors if the mol is funky."""
+    won't throw errors if the mol is funky.
+    
+    Args:
+        mol (Mol): RDKit molecule object
+    
+    Returns:
+        Mol: Sanitized RDKit molecule object
+    """
     mol.UpdatePropertyCache(strict=False)
     Chem.SanitizeMol(
         mol,
@@ -68,8 +86,16 @@ def partial_sanitize(mol):
     return mol
 
 
-def calc_mcs_residuals(mol1, mol2):
-    """Subtract the MCS from two molecules and return the number of heavy atoms remaining after removing the MCS from both"""
+def calc_mcs_residuals(mol1: Mol, mol2: Mol) -> tuple[int, int]:
+    """Subtract the MCS from two molecules and return the number of heavy atoms remaining after removing the MCS from both
+    
+    Args:
+        mol1 (Mol): RDKit molecule object
+        mol2 (Mol): RDKit molecule object
+    
+    Returns:
+        tuple[int, int]: Number of heavy atoms remaining in mol1 and mol2 after removing MCS
+    """
     mcs = Chem.MolFromSmarts(
         rdFMCS.FindMCS(
             [mol1, mol2],
@@ -86,11 +112,23 @@ def calc_mcs_residuals(mol1, mol2):
 
 
 def rescue_outsiders(
-    outsiders, alchemical_clusters, max_transform, processors, console=None
-):
-    # STEP 2: rescue outsiders by attempting to place them into Alchemical clusters (slow)
-    # now for every singleton (which can have len() up to SINGLETON_NUMBER_THRESHOLD), try to
-    # find a suitable cluster to add it into
+    outsiders , alchemical_clusters, max_transform , processors: int, console=None
+) -> tuple[dict[str, list[Ligand]], dict[str, list[Ligand]]]:
+    """
+    STEP 2: rescue outsiders by attempting to place them into Alchemical clusters (slow)
+    now for every singleton  try to find a suitable cluster to add it into
+
+    Args:
+        outsiders: dict of str: list of Ligands
+        alchemical_clusters: dict of str: list of RDKit mols
+        max_transform: int
+        processors: int
+        console: Rich console object for logging
+    
+    Returns:
+        tuple[dict[str, list[Ligand]], dict[str, list[Ligand]]]: Outsiders and clusters
+    """
+
     message = Padding(
         f"Working to add outsiders into alchemical clusters using {processors} processor(s)",
         (1, 0, 1, 0),
