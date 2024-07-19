@@ -177,7 +177,6 @@ def alchemize(
         # can be a string from click
         processors = int(processors)
 
-
     # step 1: attempt to create alchemical clusters. Some outliers/singletons ("outsiders") are likely
     outsiders, alchemical_clusters = compute_clusters(
         asap_ligands, outsider_number, console
@@ -198,7 +197,6 @@ def alchemize(
 
     # now write to file
     write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders)
-
 
 
 @prep.command(

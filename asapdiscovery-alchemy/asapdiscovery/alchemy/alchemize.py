@@ -1,21 +1,21 @@
 from asapdiscovery.alchemy.cli.utils import report_alchemize_clusters
-from asapdiscovery.data.schema.ligand import  Ligand, write_ligands_to_multi_sdf
+from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFMCS
-from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit.Chem.rdchem import Mol
+from rdkit.Chem.Scaffolds import MurckoScaffold
 from rich.padding import Padding
 from tqdm import tqdm
 
 
 def compute_clusters(ligands: list[Ligand], outsider_number: int, console=None):
     """Clusters ligands into Bajorath-Murcko scaffolds
-    
+
     Args:
         ligands (list[Ligand]): Ligand objects to cluster
         outsider_number (int): Number of ligands to consider as outsiders
         console: Rich console object for logging
-    
+
     Returns:
         tuple[dict[str, list[Ligand]], dict[str, list[Ligand]]]: Outsiders and clusters
     """
@@ -66,10 +66,10 @@ def compute_clusters(ligands: list[Ligand], outsider_number: int, console=None):
 def partial_sanitize(mol: Mol) -> Mol:
     """Does the minimal number of steps for a molecule object to be workable by rdkit;
     won't throw errors if the mol is funky.
-    
+
     Args:
         mol (Mol): RDKit molecule object
-    
+
     Returns:
         Mol: Sanitized RDKit molecule object
     """
@@ -88,11 +88,11 @@ def partial_sanitize(mol: Mol) -> Mol:
 
 def calc_mcs_residuals(mol1: Mol, mol2: Mol) -> tuple[int, int]:
     """Subtract the MCS from two molecules and return the number of heavy atoms remaining after removing the MCS from both
-    
+
     Args:
         mol1 (Mol): RDKit molecule object
         mol2 (Mol): RDKit molecule object
-    
+
     Returns:
         tuple[int, int]: Number of heavy atoms remaining in mol1 and mol2 after removing MCS
     """
@@ -112,7 +112,7 @@ def calc_mcs_residuals(mol1: Mol, mol2: Mol) -> tuple[int, int]:
 
 
 def rescue_outsiders(
-    outsiders , alchemical_clusters, max_transform , processors: int, console=None
+    outsiders, alchemical_clusters, max_transform, processors: int, console=None
 ) -> tuple[dict[str, list[Ligand]], dict[str, list[Ligand]]]:
     """
     STEP 2: rescue outsiders by attempting to place them into Alchemical clusters (slow)
@@ -124,7 +124,7 @@ def rescue_outsiders(
         max_transform: int
         processors: int
         console: Rich console object for logging
-    
+
     Returns:
         tuple[dict[str, list[Ligand]], dict[str, list[Ligand]]]: Outsiders and clusters
     """

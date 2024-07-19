@@ -7,10 +7,10 @@ from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.complex import PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
 from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure
-from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
 
 
 @pytest.fixture(scope="session")
@@ -124,8 +124,7 @@ def openeye_prep_workflow() -> AlchemyPrepWorkflow:
     )
 
 
-
-@pytest.fixture() 
+@pytest.fixture()
 def test_ligands():
     TEST_LIGANDS = [
         Ligand.from_smiles(smi, compound_name="foo")
@@ -152,4 +151,3 @@ def test_ligands_sdfile(test_ligands, tmp_path):
     ) as f:
         write_ligands_to_multi_sdf(f.name, test_ligands, overwrite=True)
     return f.name
-

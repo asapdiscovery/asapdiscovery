@@ -1,5 +1,6 @@
 import tempfile
 from glob import glob
+
 import pytest
 from asapdiscovery.alchemy.alchemize import (
     calc_mcs_residuals,
@@ -114,5 +115,3 @@ def test_write_clusters(test_ligands, tmp_path):
     # check that we have two alchemical cluster files written and one outsiders file
     assert len(written_files) == 3
     assert len([file for file in written_files if "outsiders" in file]) == 1
-
-

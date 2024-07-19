@@ -894,8 +894,6 @@ def test_prioritize_weight_not_set(monkeypatch):
     console.clear_live()
 
 
-
-
 def test_prep_alchemize(test_ligands_sdfile, tmpdir):
 
     with tmpdir.as_cwd():
@@ -911,9 +909,8 @@ def test_prep_alchemize(test_ligands_sdfile, tmpdir):
                 "tst",
                 "-onu",
                 "2",
-                "-mt", 
+                "-mt",
                 "9",
-
             ],
         )
         assert result.exit_code == 0
