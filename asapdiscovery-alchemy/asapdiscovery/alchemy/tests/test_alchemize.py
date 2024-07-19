@@ -1,7 +1,4 @@
-import tempfile
 from glob import glob
-
-import pytest
 from asapdiscovery.alchemy.alchemize import (
     calc_mcs_residuals,
     compute_clusters,
