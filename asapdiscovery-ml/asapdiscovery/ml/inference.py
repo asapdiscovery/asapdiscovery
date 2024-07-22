@@ -1,5 +1,4 @@
 import json
-import warnings
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
@@ -14,7 +13,6 @@ from asapdiscovery.ml.config import DatasetConfig
 from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
-    LocalMLModelSpec,
     LocalMLModelSpecBase,
     MLModelRegistry,
     MLModelSpec,

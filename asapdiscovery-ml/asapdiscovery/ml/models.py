@@ -233,7 +233,7 @@ def _url_to_yaml(url: str) -> dict:
     # Convert bytes to string
     try:
         content = response.content.decode("utf-8")
-    except:
+    except: # noqa: E722
         raise ValueError(f"Failed to decode content from {url}")
     # Load the yaml
     return yaml.safe_load(content)
