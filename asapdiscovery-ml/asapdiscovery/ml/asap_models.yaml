@@ -93,5 +93,3 @@ asapdiscovery-SARS-CoV-2-Mpro-e3nn-2024.02.06:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
   mtenn_lower_pin: "0.5.0"
-
-

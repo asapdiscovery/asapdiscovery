@@ -16,6 +16,7 @@ def weights_yaml():
     weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
     return weights
 
+
 @pytest.fixture()
 def remote_ensemble_manifest_url():
     return "https://asap-discovery-ml-skynet.asapdata.org/test_manifest/asap_ensemble_models.yaml"
@@ -101,6 +102,6 @@ def test_custom_registry_pull(weights_yaml):
 def test_remote_ensemble_pull(remote_ensemble_manifest_url):
     reh = RemoteEnsembleHelper(manifest_url=remote_ensemble_manifest_url)
     ens_mods = reh.to_ensemble_spec()
-    emodspec = ens_mods['asapdiscovery-GAT-ensemble-test']
+    emodspec = ens_mods["asapdiscovery-GAT-ensemble-test"]
     lemodspec = emodspec.pull()
     assert len(lemodspec.models) == 5

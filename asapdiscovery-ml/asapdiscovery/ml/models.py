@@ -6,13 +6,13 @@ from urllib.parse import urljoin
 
 import mtenn
 import pooch
+import requests
 import yaml
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
 from mtenn.config import ModelType
 from pydantic import BaseModel, Field, HttpUrl, validator
 from semver import Version
-import requests
 
 
 class MLModelBase(BaseModel):
@@ -40,7 +40,6 @@ class MLModelBase(BaseModel):
         None, description="Upper bound on compatible mtenn versions (exclusive)."
     )
     # class variable ensemble = False
-
 
     @validator("mtenn_lower_pin", "mtenn_upper_pin", pre=True)
     def cast_versions(cls, v):
@@ -83,8 +82,10 @@ class MLModelBase(BaseModel):
 
         return low_pin <= cur_version < upper_pin
 
+
 class MLModelSpecBase(MLModelBase):
     """Base class for model specs"""
+
     ensemble: bool = False
 
 
@@ -157,10 +158,8 @@ class MLModelSpec(MLModelSpecBase):
         )
 
 
-
-
 class EnsembleMLModelSpec(MLModelSpecBase):
-    models: List[MLModelSpec] = Field(
+    models: list[MLModelSpec] = Field(
         ..., description="List of model specs for ensemble models"
     )
     ensemble: bool = True
@@ -171,22 +170,24 @@ class EnsembleMLModelSpec(MLModelSpecBase):
         """
         Check that all models in the ensemble are of the same type
         """
-        if len(set([model.type for model in models])) > 1:
+        if len({model.type for model in models}) > 1:
             raise ValueError("All models in an ensemble must be of the same type")
         return models
 
-
-    
     @validator("models")
     @classmethod
     def check_all_mtenn_versions(cls, models):
         """
         Check that all models in the ensemble are compatible with the same mtenn version
         """
-        if len(set([model.mtenn_lower_pin for model in models])) > 1:
-            raise ValueError("All models in an ensemble must have the same mtenn_lower_pin")
-        if len(set([model.mtenn_upper_pin for model in models])) > 1:
-            raise ValueError("All models in an ensemble must have the same mtenn_upper_pin")
+        if len({model.mtenn_lower_pin for model in models}) > 1:
+            raise ValueError(
+                "All models in an ensemble must have the same mtenn_lower_pin"
+            )
+        if len({model.mtenn_upper_pin for model in models}) > 1:
+            raise ValueError(
+                "All models in an ensemble must have the same mtenn_upper_pin"
+            )
         return models
 
     @validator("models")
@@ -195,15 +196,16 @@ class EnsembleMLModelSpec(MLModelSpecBase):
         """
         Check that all models in the ensemble have the same last_updated
         """
-        if len(set([model.last_updated for model in models])) > 1:
-            raise ValueError("All models in an ensemble must have the same last_updated")
+        if len({model.last_updated for model in models}) > 1:
+            raise ValueError(
+                "All models in an ensemble must have the same last_updated"
+            )
         return models
 
     @property
     def ensemble_size(self):
         return len(self.models)
 
-    
     def pull(self, local_dir: Union[Path, str] = None) -> "LocalEnsembleMLModelSpec":
         """
         Pull ensemble model from S3
@@ -219,8 +221,9 @@ class EnsembleMLModelSpec(MLModelSpecBase):
             List of local model specs
         """
         return LocalEnsembleMLModelSpec(
-            models=[model.pull(local_dir) for model in self.models]
-        ,**self.dict(exclude={"models"}))
+            models=[model.pull(local_dir) for model in self.models],
+            **self.dict(exclude={"models"}),
+        )
 
 
 def _url_to_yaml(url: str) -> dict:
@@ -235,11 +238,12 @@ def _url_to_yaml(url: str) -> dict:
     # Load the yaml
     return yaml.safe_load(content)
 
+
 class RemoteEnsembleHelper(BaseModel):
     """
     Helper class for remote ensemble models
 
-    Parses manifests of the form 
+    Parses manifests of the form
 
     asapdiscovery-GAT-ensemble-test:
     type: GAT
@@ -267,7 +271,6 @@ class RemoteEnsembleHelper(BaseModel):
 
     manifest_url: HttpUrl = Field(..., description="Remote ensemble model url")
 
-   
     def to_ensemble_spec(self) -> EnsembleMLModelSpec:
         """
         Convert remote ensemble model to ensemble model spec
@@ -278,7 +281,7 @@ class RemoteEnsembleHelper(BaseModel):
             Ensemble model spec
         """
         manifest = _url_to_yaml(self.manifest_url)
-        
+
         ensemble_models = {}
 
         for model in manifest:
@@ -294,11 +297,15 @@ class RemoteEnsembleHelper(BaseModel):
                         name=model + "_ens_" + subname,
                         type=model_data["type"],
                         base_url=model_data["base_url"],
-                        weights_resource= submodel[subname]["resource"],
+                        weights_resource=submodel[subname]["resource"],
                         weights_sha256hash=submodel[subname]["sha256hash"],
                         config_resource=model_data["config"]["resource"],
                         config_sha256hash=model_data["config"]["sha256hash"],
-                        last_updated=model_data["last_updated"] if "last_updated" in model_data else "2024-02-06",
+                        last_updated=(
+                            model_data["last_updated"]
+                            if "last_updated" in model_data
+                            else "2024-02-06"
+                        ),
                         targets=set(model_data["targets"]),
                         mtenn_lower_pin=(
                             model_data["mtenn_lower_pin"]
@@ -312,34 +319,49 @@ class RemoteEnsembleHelper(BaseModel):
                         ),
                     )
                 )
-            
-            #check types of models
-            if len(set([model.type for model in models])) > 1:
-                raise ValueError("All models in an ensemble must be of the same type")
-            #check mtenn versions
-            if len(set([model.mtenn_lower_pin for model in models])) > 1:
-                raise ValueError("All models in an ensemble must have the same mtenn_lower_pin")
-            if len(set([model.mtenn_upper_pin for model in models])) > 1:
-                raise ValueError("All models in an ensemble must have the same mtenn_upper_pin")
-            #check last updated
-            if len(set([model.last_updated for model in models])) > 1:
-                raise ValueError("All models in an ensemble must have the same last_updated")
-            
 
-            ens = EnsembleMLModelSpec(models=models, name=model, type=model_data["type"], last_updated= "2024-02-06", targets=set(model_data["targets"]), mtenn_lower_pin=model_data["mtenn_lower_pin"], mtenn_upper_pin=model_data["mtenn_upper_pin"] if "mtenn_upper_pin" in model_data else None)
+            # check types of models
+            if len({model.type for model in models}) > 1:
+                raise ValueError("All models in an ensemble must be of the same type")
+            # check mtenn versions
+            if len({model.mtenn_lower_pin for model in models}) > 1:
+                raise ValueError(
+                    "All models in an ensemble must have the same mtenn_lower_pin"
+                )
+            if len({model.mtenn_upper_pin for model in models}) > 1:
+                raise ValueError(
+                    "All models in an ensemble must have the same mtenn_upper_pin"
+                )
+            # check last updated
+            if len({model.last_updated for model in models}) > 1:
+                raise ValueError(
+                    "All models in an ensemble must have the same last_updated"
+                )
+
+            ens = EnsembleMLModelSpec(
+                models=models,
+                name=model,
+                type=model_data["type"],
+                last_updated="2024-02-06",
+                targets=set(model_data["targets"]),
+                mtenn_lower_pin=model_data["mtenn_lower_pin"],
+                mtenn_upper_pin=(
+                    model_data["mtenn_upper_pin"]
+                    if "mtenn_upper_pin" in model_data
+                    else None
+                ),
+            )
 
             ensemble_models[model] = ens
-
 
         return ensemble_models
 
 
-        
-        
 class LocalMLModelSpecBase(MLModelBase):
     """Base class for local model specs"""
 
     ensemble = False
+
 
 class LocalMLModelSpec(LocalMLModelSpecBase):
     """
@@ -354,16 +376,16 @@ class LocalMLModelSpec(LocalMLModelSpecBase):
     )
 
 
-
 class LocalEnsembleMLModelSpec(LocalMLModelSpecBase):
     """
     Model spec for an ensemble model instantiated locally, containing file paths to model files
     """
+
     ensemble = True
-    models: List[LocalMLModelSpec] = Field(
+    models: list[LocalMLModelSpec] = Field(
         ..., description="List of local model specs for ensemble models"
     )
-    
+
     @property
     def ensemble_size(self):
         return len(self.models)
@@ -523,7 +545,9 @@ class MLModelRegistry(BaseModel):
         for model in spec:
             model_data = spec[model]
             has_config = "config" in model_data
-            is_ensemble = "remote_ensemble" in model_data and model_data["remote_ensemble"]
+            is_ensemble = (
+                "remote_ensemble" in model_data and model_data["remote_ensemble"]
+            )
             if is_ensemble:
                 models[model] = RemoteEnsembleHelper.to_ensemble_spec()
 

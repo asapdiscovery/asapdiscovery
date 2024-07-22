@@ -5,7 +5,7 @@ import pytest
 import torch
 from asapdiscovery.data.backend.openeye import load_openeye_pdb
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.inference import GATInference, SchnetInference, E3nnInference
+from asapdiscovery.ml.inference import E3nnInference, GATInference, SchnetInference
 from numpy.testing import assert_allclose
 
 
@@ -60,6 +60,7 @@ def test_gatinference_predict(test_data):
     assert inference_cls is not None
     output = inference_cls.predict(g1)
     assert output is not None
+
 
 def test_gatinference_predict_err(test_data):
     inference_cls = GATInference.from_model_name(
@@ -233,12 +234,10 @@ def test_schnet_inference_predict_from_oemol(docked_structure_file):
     assert output is not None
 
 
-
 def test_e3nn_inference_construct():
     inference_cls = E3nnInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     assert inference_cls.model_type == "e3nn"
-
 
 
 def test_e3nn_predict_from_structure_file(docked_structure_file):
@@ -246,6 +245,7 @@ def test_e3nn_predict_from_structure_file(docked_structure_file):
     assert inference_cls is not None
     output = inference_cls.predict_from_structure_file(docked_structure_file)
     assert output is not None
+
 
 def test_e3nn_predict_from_structure_file_err(docked_structure_file):
     inference_cls = E3nnInference.from_latest_by_target("SARS-CoV-2-Mpro")

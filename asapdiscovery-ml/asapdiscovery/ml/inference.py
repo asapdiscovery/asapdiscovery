@@ -1,4 +1,5 @@
 import json
+import warnings
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
@@ -14,12 +15,11 @@ from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
     LocalMLModelSpec,
+    LocalMLModelSpecBase,
     MLModelRegistry,
     MLModelSpec,
-    LocalMLModelSpecBase,
     MLModelSpecBase,
 )
-import warnings
 
 # static import of models from base yaml here
 from dgllife.utils import CanonicalAtomFeaturizer
@@ -187,13 +187,11 @@ class InferenceBase(BaseModel):
             case other:
                 raise ValueError(f"Can't instantiate model config for type {other}.")
 
-    
-
         models = []
 
         if model_spec.ensemble:
             for model in local_model_spec.models:
-                
+
                 config_kwargs = json.loads(model.config_file.read_text())
 
                 # warnings.warn(f"failed to parse model config file, {model.config_file}")
@@ -212,7 +210,6 @@ class InferenceBase(BaseModel):
             model = config_cls(**config_kwargs).build()
             model.eval()
             models.append(model)
-
 
         return cls(
             targets=local_model_spec.targets,
@@ -253,7 +250,7 @@ class InferenceBase(BaseModel):
             # for model ensemble, we need to loop through each model and get the
             # prediction from each, then aggregate
             input_tensor = torch.tensor(input_data).to(self.device)
-            
+
             aggregate_preds = []
             for model in self.models:
                 output_tensor = model(input_tensor)[0].cpu().numpy().flatten()
@@ -271,10 +268,13 @@ class InferenceBase(BaseModel):
             else:
                 return pred
 
+
 class GATInference(InferenceBase):
     model_type: ClassVar[ModelType.GAT] = ModelType.GAT
 
-    def predict(self, g: dgl.DGLGraph, aggfunc=np.mean, errfunc=np.std, return_err=False):
+    def predict(
+        self, g: dgl.DGLGraph, aggfunc=np.mean, errfunc=np.std, return_err=False
+    ):
         """Predict on a graph, requires a DGLGraph object with the `ndata`
         attribute `h` containing the node features. This is done by constucting
         the `GraphDataset` with the node_featurizer=`dgllife.utils.CanonicalAtomFeaturizer()`
@@ -317,7 +317,6 @@ class GATInference(InferenceBase):
                 return pred, err
             else:
                 return pred
-
 
     def predict_from_smiles(
         self,
@@ -369,7 +368,7 @@ class GATInference(InferenceBase):
             preds = preds.item()
             if return_err:
                 errs = errs.item()
-        
+
         if return_err:
             return preds, errs
         else:
@@ -383,7 +382,9 @@ class StructuralInference(InferenceBase):
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
 
-    def predict(self, pose_dict: dict, aggfunc=np.mean, errfunc=np.std, return_err=False):
+    def predict(
+        self, pose_dict: dict, aggfunc=np.mean, errfunc=np.std, return_err=False
+    ):
         """Predict on a pose, requires a dictionary with the pose data with
         the keys: "z", "pos", "lig" with the required tensors in each
 
@@ -404,7 +405,7 @@ class StructuralInference(InferenceBase):
             Predictions for the pose.
         np.ndarray or float
             Errors for the pose
-        
+
         """
         with torch.no_grad():
             aggregate_preds = []
@@ -419,7 +420,7 @@ class StructuralInference(InferenceBase):
             else:
                 pred = output_tensor
                 err = np.nan
-            
+
             if return_err:
                 return pred, err
             else:
@@ -465,14 +466,17 @@ class StructuralInference(InferenceBase):
             preds = preds.item()
             if return_err:
                 errs = errs.item()
-        
+
         if return_err:
             return preds, errs
         else:
             return preds
 
     def predict_from_oemol(
-        self, pose: Union[oechem.OEMol, list[oechem.OEMol]], for_e3nn: bool = False, return_err=False
+        self,
+        pose: Union[oechem.OEMol, list[oechem.OEMol]],
+        for_e3nn: bool = False,
+        return_err=False,
     ) -> Union[np.ndarray, float]:
         """
         Predict on a (list of) OEMol objects.
@@ -524,11 +528,12 @@ class StructuralInference(InferenceBase):
             preds = preds.item()
             if return_err:
                 errs = errs.item()
-        
+
         if return_err:
             return preds, errs
         else:
             return preds
+
 
 class SchnetInference(StructuralInference):
     """
@@ -549,7 +554,9 @@ class E3nnInference(StructuralInference):
         """
         Overload the base class method to pass for_e3nn=True.
         """
-        return super().predict_from_structure_file(pose, for_e3nn=True, return_err=return_err)
+        return super().predict_from_structure_file(
+            pose, for_e3nn=True, return_err=return_err
+        )
 
     def predict_from_oemol(self, pose, return_err=False):
         """
