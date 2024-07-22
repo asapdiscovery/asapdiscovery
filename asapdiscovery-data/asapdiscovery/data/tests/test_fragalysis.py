@@ -42,14 +42,14 @@ class TestFragalysisDownload:
 
 
     def test_failed_download_fragalysis_target(
-        self, tmp_path, fragalysis_api_call
+        self, tmp_path, 
     ):
         """Test failed download of target data from fragalysis"""
         from requests import HTTPError
-        fragalysis_api_call["target_name"] = "invalid_target"
+        api_call = fragalysis_api_call("target_name") 
         with pytest.raises(HTTPError):
             zip_file = tmp_path / "fragalysis.zip"
-            download(zip_file, fragalysis_api_call, extract=False, base_url=BASE_URL_LEGACY)
+            download(zip_file, api_call, extract=False, base_url=BASE_URL_LEGACY)
 
 
 
