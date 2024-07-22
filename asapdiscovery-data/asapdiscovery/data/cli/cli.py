@@ -6,7 +6,17 @@ from asapdiscovery.data.services.fragalysis.fragalysis_download import (  # noqa
     API_CALL_BASE_LEGACY,
     BASE_URL_LEGACY,
     download,
+    FragalysisTargets,
 )
+
+def target(func):
+    return click.option(
+        "-t",
+        "--fragalysis-target",
+        type=click.Choice(FragalysisTargets.get_values(), case_sensitive=True),
+        help="The target for the workflow",
+        required=True,
+    )(func)
 
 
 
@@ -17,14 +27,7 @@ def data():
 
 
 @data.command()
-@click.option(
-    "-t",
-    "--target",
-    required=True,
-    help="Which target to download. Options are [mpro, mac1].",
-    type=str.lower,
-    default="mpro",
-)
+@target
 @click.option("-o", "--output", required=True, help="Output file name.")
 @click.option(
     "-x",
@@ -32,12 +35,15 @@ def data():
     is_flag=True, 
     help="Extract file after downloading it."
 )
-def download_fragalysis(target: Optional[str] = "mpro", 
+def download_fragalysis(fragalysis_target: Optional[str] = "Mpro", 
                         output: Optional[str] = "output.zip", 
                         extract: Optional[bool] = False):
+    
+    # NOTE currently most of the targets we care about in fragalysis have been shifted to the "legacy" stack
+    # hence the use of the legacy base url and api call, this may change in the future
+
     # Copy the base call and update the base target with the cli-specified target
     api_call = copy.deepcopy(API_CALL_BASE_LEGACY)
-    target = target.lower()
-    api_call["target_name"] = target.capitalize()
+    api_call["target_name"] = fragalysis_target
 
     download(output, api_call, extract=extract, base_url=BASE_URL_LEGACY)
