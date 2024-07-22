@@ -6,6 +6,9 @@ import os
 import shutil
 
 import pytest
+import traceback
+from click.testing import CliRunner
+
 from asapdiscovery.data.schema.legacy import CrystalCompoundData
 from asapdiscovery.data.services.fragalysis.fragalysis_download import (
     API_CALL_BASE_LEGACY,
@@ -15,8 +18,15 @@ from asapdiscovery.data.services.fragalysis.fragalysis_download import (
     FragalysisTargets,
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.data.cli.cli import data as cli
 
 
+def click_success(result):
+    if result.exit_code != 0:  # -no-cov-  (only occurs on test error)
+        print(result.output)
+        traceback.print_tb(result.exc_info[2])
+        print(result.exc_info[0], result.exc_info[1])
+    return result.exit_code == 0
 
 def fragalysis_api_call(target):
     """Fragalysis API call for downloading target data"""
@@ -74,5 +84,9 @@ def test_parse_fragalysis(metadata_csv, local_fragalysis):
 
 
 
-def test_fragalysis_cli():
-    pass
+def test_fragalysis_cli(tmpdir):
+    with tmpdir.as_cwd():
+        runner = CliRunner()
+        args = ["data", "download-fragalysis", "-t", "Mpro", "-o", "output.zip", "-x"]
+        result = runner.invoke(cli, args)
+        assert click_success(result)
