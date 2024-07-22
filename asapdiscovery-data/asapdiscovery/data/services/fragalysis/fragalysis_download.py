@@ -46,7 +46,7 @@ API_CALL_BASE_LEGACY = {
 class FragalysisTargets(StringEnum):
     SARS = "Mpro"
     MAC1 = "Mac1"
-    D68EV3CPRO = "D68EV3CPRO"
+    D68EV3CPRO = "D68EV3CPROA"
     NPROT = "Nprot"
     nsp13 = "nsp13"
     XX01ZVNS2B = "XX01ZVNS2B"
