@@ -87,6 +87,6 @@ def test_parse_fragalysis(metadata_csv, local_fragalysis):
 def test_fragalysis_cli(tmpdir):
     with tmpdir.as_cwd():
         runner = CliRunner()
-        args = ["data", "download-fragalysis", "-t", "Mpro", "-o", "output.zip", "-x"]
+        args = ["download-fragalysis", "-t", "Mpro", "-o", "output.zip", "-x"]
         result = runner.invoke(cli, args)
         assert click_success(result)
