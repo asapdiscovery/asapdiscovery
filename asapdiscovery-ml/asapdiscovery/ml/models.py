@@ -85,6 +85,7 @@ class MLModelBase(BaseModel):
 
 class MLModelSpecBase(MLModelBase):
     """Base class for model specs"""
+    ensemble: bool = False
 
 
 class MLModelSpec(MLModelSpecBase):
@@ -162,6 +163,7 @@ class EnsembleMLModelSpec(MLModelSpecBase):
     models: List[MLModelSpec] = Field(
         ..., description="List of model specs for ensemble models"
     )
+    ensemble: bool = True
 
     @validator("models")
     @classmethod

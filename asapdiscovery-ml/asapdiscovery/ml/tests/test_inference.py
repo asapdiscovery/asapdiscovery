@@ -44,9 +44,10 @@ def test_gatinference_weights(tmp_path):
     )
 
     param_mismatches = []
-    for k, model_param in inference_cls.model.named_parameters():
-        if not torch.allclose(model_param, wts_file_params[k]):
-            param_mismatches.append(k)
+    for model in inference_cls.models:
+        for k, model_param in model.named_parameters():
+            if not torch.allclose(model_param, wts_file_params[k]):
+                param_mismatches.append(k)
 
     assert len(param_mismatches) == 0, param_mismatches
 
@@ -148,7 +149,7 @@ def test_schnet_inference_construct():
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     assert inference_cls.model_type == "schnet"
-    assert type(inference_cls.model.readout) is mtenn.readout.PIC50Readout
+    assert type(inference_cls.models[0].readout) is mtenn.readout.PIC50Readout
 
 
 def test_schnet_inference_weights(tmp_path):
@@ -161,9 +162,10 @@ def test_schnet_inference_weights(tmp_path):
     )
 
     param_mismatches = []
-    for k, model_param in inference_cls.model.named_parameters():
-        if not torch.allclose(model_param, wts_file_params[k]):
-            param_mismatches.append(k)
+    for model in inference_cls.models:
+        for k, model_param in model.named_parameters():
+            if not torch.allclose(model_param, wts_file_params[k]):
+                param_mismatches.append(k)
 
     assert len(param_mismatches) == 0, param_mismatches
 
