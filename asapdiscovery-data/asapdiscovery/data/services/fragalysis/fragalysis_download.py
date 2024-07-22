@@ -6,6 +6,8 @@ import requests
 from asapdiscovery.data.schema.legacy import CrystalCompoundData
 
 BASE_URL = "https://fragalysis.diamond.ac.uk/api/download_structures/"
+BASE_URL_LEGACY =  "https://fragalysis-legacy.xchem.diamond.ac.uk/api/download_structures/"
+
 # Info for the POST call
 API_CALL_BASE = {
     "target_name": "",
@@ -30,7 +32,14 @@ API_CALL_BASE = {
 }
 
 
-def download(out_fn, api_call, extract=True):
+API_CALL_BASE_LEGACY = {
+    "target_name": "",
+    "file_url": "",
+    "proteins": "",
+}
+
+
+def download(out_fn, api_call, extract=True, base_url=BASE_URL):
     """
     Download target structures from fragalysis.
 
@@ -45,16 +54,16 @@ def download(out_fn, api_call, extract=True):
         directory given by `dirname(out_fn)`
     """
     # First send POST request to prepare the download file and get its URL
-    r = requests.post(BASE_URL, json=api_call)
+    r = requests.post(base_url, json=api_call)
     if not r.ok:
         raise requests.HTTPError(
-            f"Post request to {BASE_URL} failed with {r.status_code} error code, "
+            f"Post request to {base_url} failed with {r.status_code} error code, "
             f"using the following API call {api_call}."
         )
     url_dl = r.json()["file_url"]
     print("Downloading archive", flush=True)
     # Send GET request for the zip archive
-    r_dl = requests.get(BASE_URL, params={"file_url": url_dl})
+    r_dl = requests.get(base_url, params={"file_url": url_dl})
     # Full archive stored in r_dl.content, so write to zip file
     with open(out_fn, "wb") as fp:
         fp.write(r_dl.content)

@@ -30,6 +30,7 @@ def test_toplevel_runnable():
         "ml",
         "visualization",
         "simulation",
+        "data"
     ],
 )
 def test_subcommand_runnable(subcommand):
