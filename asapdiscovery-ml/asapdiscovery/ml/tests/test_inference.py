@@ -5,7 +5,7 @@ import pytest
 import torch
 from asapdiscovery.data.backend.openeye import load_openeye_pdb
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.inference import GATInference, SchnetInference
+from asapdiscovery.ml.inference import GATInference, SchnetInference, E3nnInference
 from numpy.testing import assert_allclose
 
 
@@ -61,6 +61,16 @@ def test_gatinference_predict(test_data):
     output = inference_cls.predict(g1)
     assert output is not None
 
+def test_gatinference_predict_err(test_data):
+    inference_cls = GATInference.from_model_name(
+        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06"
+    )
+    g1, _, _, _ = test_data
+    assert inference_cls is not None
+    pred, err = inference_cls.predict(g1, return_err=True)
+    assert pred is not None
+    assert err is not None
+
 
 @pytest.mark.parametrize(
     "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
@@ -73,6 +83,20 @@ def test_gatinference_predict_smiles_equivariant(test_data, target):
     output1 = inference_cls.predict(g1)
     output2 = inference_cls.predict(g2)
     assert_allclose(output1, output2, rtol=1e-5)
+
+
+def test_gatinference_predict_from_smiles_err(test_data):
+    inference_cls = GATInference.from_model_name(
+        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06"
+    )
+    g1, g2, g3, gds = test_data
+    # same data different smiles order
+    assert inference_cls is not None
+    smiles = [pose["smiles"] for _, pose in gds]
+    assert inference_cls is not None
+    pred, err = inference_cls.predict_from_smiles(smiles, return_err=True)
+    assert pred is not None
+    assert err is not None
 
 
 # test inference dataset cls against training dataset cls
@@ -177,6 +201,16 @@ def test_schnet_inference_predict_from_structure_file(docked_structure_file):
     assert output is not None
 
 
+def test_schnet_inference_predict_from_structure_file_err(docked_structure_file):
+    inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
+    assert inference_cls is not None
+    output, err = inference_cls.predict_from_structure_file(
+        docked_structure_file, return_err=True
+    )
+    assert output is not None
+    assert err is not None
+
+
 def test_schnet_inference_predict_from_pose(docked_structure_file):
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
 
@@ -197,3 +231,27 @@ def test_schnet_inference_predict_from_oemol(docked_structure_file):
     assert inference_cls is not None
     output = inference_cls.predict_from_oemol(pose_oemol)
     assert output is not None
+
+
+
+def test_e3nn_inference_construct():
+    inference_cls = E3nnInference.from_latest_by_target("SARS-CoV-2-Mpro")
+    assert inference_cls is not None
+    assert inference_cls.model_type == "e3nn"
+
+
+
+def test_e3nn_predict_from_structure_file(docked_structure_file):
+    inference_cls = E3nnInference.from_latest_by_target("SARS-CoV-2-Mpro")
+    assert inference_cls is not None
+    output = inference_cls.predict_from_structure_file(docked_structure_file)
+    assert output is not None
+
+def test_e3nn_predict_from_structure_file_err(docked_structure_file):
+    inference_cls = E3nnInference.from_latest_by_target("SARS-CoV-2-Mpro")
+    assert inference_cls is not None
+    output, err = inference_cls.predict_from_structure_file(
+        docked_structure_file, return_err=True
+    )
+    assert output is not None
+    assert err is not None

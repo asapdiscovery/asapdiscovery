@@ -455,7 +455,7 @@ class StructuralInference(InferenceBase):
             pose = [
                 p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
             ]
-        data = [self.predict(p) for p in pose]
+        data = [self.predict(p, return_err=return_err) for p in pose]
         data = np.asarray(data)
         preds = data[:, 0]
         if return_err:
@@ -514,7 +514,7 @@ class StructuralInference(InferenceBase):
             h.close()
 
         # Make predictions
-        data = [self.predict(p) for p in pose]
+        data = [self.predict(p, return_err=return_err) for p in pose]
         data = np.asarray(data)
         preds = data[:, 0]
         if return_err:
@@ -545,17 +545,17 @@ class E3nnInference(StructuralInference):
 
     model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
 
-    def predict_from_structure_file(self, pose):
+    def predict_from_structure_file(self, pose, return_err=False):
         """
         Overload the base class method to pass for_e3nn=True.
         """
-        return super().predict_from_structure_file(pose, for_e3nn=True)
+        return super().predict_from_structure_file(pose, for_e3nn=True, return_err=return_err)
 
-    def predict_from_oemol(self, pose):
+    def predict_from_oemol(self, pose, return_err=False):
         """
         Overload the base class method to pass for_e3nn=True.
         """
-        return super().predict_from_oemol(pose, for_e3nn=True)
+        return super().predict_from_oemol(pose, for_e3nn=True, return_err=return_err)
 
 
 _inferences_classes_meta = [
