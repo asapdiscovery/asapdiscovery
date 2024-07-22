@@ -1,13 +1,14 @@
-import click
 import copy
-from typing import Optional 
+from typing import Optional
 
+import click
 from asapdiscovery.data.services.fragalysis.fragalysis_download import (  # noqa: E402
     API_CALL_BASE_LEGACY,
     BASE_URL_LEGACY,
-    download,
     FragalysisTargets,
+    download,
 )
+
 
 def target(func):
     return click.option(
@@ -17,7 +18,6 @@ def target(func):
         help="The target for the workflow",
         required=True,
     )(func)
-
 
 
 @click.group()
@@ -30,15 +30,14 @@ def data():
 @target
 @click.option("-o", "--output", required=True, help="Output file name.")
 @click.option(
-    "-x",
-    "--extract", 
-    is_flag=True, 
-    help="Extract file after downloading it."
+    "-x", "--extract", is_flag=True, help="Extract file after downloading it."
 )
-def download_fragalysis(fragalysis_target: Optional[str] = "Mpro", 
-                        output: Optional[str] = "output.zip", 
-                        extract: Optional[bool] = False):
-    
+def download_fragalysis(
+    fragalysis_target: Optional[str] = "Mpro",
+    output: Optional[str] = "output.zip",
+    extract: Optional[bool] = False,
+):
+
     # NOTE currently most of the targets we care about in fragalysis have been shifted to the "legacy" stack
     # hence the use of the legacy base url and api call, this may change in the future
 

@@ -2,14 +2,14 @@ import os
 from pathlib import Path
 from zipfile import ZipFile
 
-from asapdiscovery.data.util.stringenum import StringEnum
-
-
 import requests
 from asapdiscovery.data.schema.legacy import CrystalCompoundData
+from asapdiscovery.data.util.stringenum import StringEnum
 
 BASE_URL = "https://fragalysis.diamond.ac.uk/api/download_structures/"
-BASE_URL_LEGACY =  "https://fragalysis-legacy.xchem.diamond.ac.uk/api/download_structures/"
+BASE_URL_LEGACY = (
+    "https://fragalysis-legacy.xchem.diamond.ac.uk/api/download_structures/"
+)
 
 # Info for the POST call
 API_CALL_BASE = {
@@ -42,7 +42,6 @@ API_CALL_BASE_LEGACY = {
 }
 
 
-
 class FragalysisTargets(StringEnum):
     SARS = "Mpro"
     MAC1 = "Mac1"
@@ -50,7 +49,6 @@ class FragalysisTargets(StringEnum):
     NPROT = "Nprot"
     nsp13 = "nsp13"
     XX01ZVNS2B = "XX01ZVNS2B"
-
 
 
 def download(out_fn, api_call, extract=True, base_url=BASE_URL):

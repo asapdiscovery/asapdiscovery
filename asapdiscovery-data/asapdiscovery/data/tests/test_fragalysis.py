@@ -4,21 +4,20 @@ import copy
 import glob
 import os
 import shutil
+import traceback
 
 import pytest
-import traceback
-from click.testing import CliRunner
-
+from asapdiscovery.data.cli.cli import data as cli
 from asapdiscovery.data.schema.legacy import CrystalCompoundData
 from asapdiscovery.data.services.fragalysis.fragalysis_download import (
     API_CALL_BASE_LEGACY,
     BASE_URL_LEGACY,
+    FragalysisTargets,
     download,
     parse_fragalysis,
-    FragalysisTargets,
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.data.cli.cli import data as cli
+from click.testing import CliRunner
 
 
 def click_success(result):
@@ -27,6 +26,7 @@ def click_success(result):
         traceback.print_tb(result.exc_info[2])
         print(result.exc_info[0], result.exc_info[1])
     return result.exit_code == 0
+
 
 def fragalysis_api_call(target):
     """Fragalysis API call for downloading target data"""
@@ -40,27 +40,28 @@ def fragalysis_api_call(target):
 class TestFragalysisDownload:
     """Class to test the download of data from Fragalysis."""
 
-
     @pytest.mark.parametrize("target", FragalysisTargets.get_values())
     @pytest.mark.parametrize("extract", [True, False])
     def test_download_fragalysis_mpro_zip(self, tmp_path, target, extract):
         """Checks downloading target zip file dataset from fragalysis"""
         api_call = fragalysis_api_call(target)
         zip_file = tmp_path / "fragalysis.zip"
-        download(zip_file, api_call, extract=extract, base_url=BASE_URL_LEGACY)  # don't extract
+        download(
+            zip_file, api_call, extract=extract, base_url=BASE_URL_LEGACY
+        )  # don't extract
         assert os.path.exists(zip_file)
 
-
     def test_failed_download_fragalysis_target(
-        self, tmp_path, 
+        self,
+        tmp_path,
     ):
         """Test failed download of target data from fragalysis"""
         from requests import HTTPError
-        api_call = fragalysis_api_call("target_name") 
+
+        api_call = fragalysis_api_call("target_name")
         with pytest.raises(HTTPError):
             zip_file = tmp_path / "fragalysis.zip"
             download(zip_file, api_call, extract=False, base_url=BASE_URL_LEGACY)
-
 
 
 @pytest.fixture
@@ -81,7 +82,6 @@ def test_parse_fragalysis(metadata_csv, local_fragalysis):
     xtals = parse_fragalysis(metadata_csv, local_fragalysis)
     assert len(xtals) == 1
     assert type(xtals[0]) is CrystalCompoundData
-
 
 
 def test_fragalysis_cli(tmpdir):
