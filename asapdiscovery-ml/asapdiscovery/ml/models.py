@@ -316,8 +316,7 @@ class RemoteEnsembleHelper(BaseModel):
                         "All models in an ensemble must be of the same type"
                     )
                 # check the mtenn_versions are compatible
-                
-                
+
                 # set last updated to the oldest of the submodels
                 last_updated = min([model.last_updated for model in models])
 
