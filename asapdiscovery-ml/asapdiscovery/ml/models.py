@@ -259,7 +259,7 @@ class RemoteEnsembleHelper(BaseModel):
 
     manifest_url: HttpUrl = Field(..., description="Remote ensemble model url")
 
-    def to_ensemble_spec(self) -> dict[str,EnsembleMLModelSpec]:
+    def to_ensemble_spec(self) -> dict[str, EnsembleMLModelSpec]:
         """
         Convert remote ensemble model to ensemble model spec
 
