@@ -190,7 +190,6 @@ class EnsembleMLModelSpec(MLModelSpecBase):
             )
         return models
 
-
     @property
     def ensemble_size(self):
         return len(self.models)
@@ -272,9 +271,11 @@ class RemoteEnsembleHelper(BaseModel):
         try:
             manifest = _url_to_yaml(self.manifest_url)
         except Exception as e:
-            warnings.warn(f"Failed to load manifest from {self.manifest_url}, skipping. Error: {e}")
+            warnings.warn(
+                f"Failed to load manifest from {self.manifest_url}, skipping. Error: {e}"
+            )
             return {}
-        
+
         ensemble_models = {}
 
         for model in manifest:
@@ -313,9 +314,11 @@ class RemoteEnsembleHelper(BaseModel):
                             ),
                         )
                     )
-                 # check types of models
+                # check types of models
                 if len({model.type for model in models}) > 1:
-                    raise ValueError("All models in an ensemble must be of the same type")
+                    raise ValueError(
+                        "All models in an ensemble must be of the same type"
+                    )
                 # check mtenn versions
                 if len({model.mtenn_lower_pin for model in models}) > 1:
                     raise ValueError(
@@ -325,7 +328,7 @@ class RemoteEnsembleHelper(BaseModel):
                     raise ValueError(
                         "All models in an ensemble must have the same mtenn_upper_pin"
                     )
-            
+
                 ens = EnsembleMLModelSpec(
                     models=models,
                     name=model,
@@ -542,7 +545,9 @@ class MLModelRegistry(BaseModel):
                     "remote_ensemble" in model_data and model_data["remote_ensemble"]
                 )
                 if is_ensemble:
-                    ens_models = RemoteEnsembleHelper(manifest_url=model_data["manifest_url"]).to_ensemble_spec()
+                    ens_models = RemoteEnsembleHelper(
+                        manifest_url=model_data["manifest_url"]
+                    ).to_ensemble_spec()
                     models.update(ens_models)
 
                 else:
