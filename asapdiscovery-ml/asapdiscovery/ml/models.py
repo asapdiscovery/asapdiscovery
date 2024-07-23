@@ -180,13 +180,9 @@ class EnsembleMLModelSpec(MLModelSpecBase):
         """
         Check that all models in the ensemble are compatible with the same mtenn version
         """
-        if len({model.mtenn_lower_pin for model in models}) > 1:
+        if not check_mtenn_version_set_compatible(models):
             raise ValueError(
-                "All models in an ensemble must have the same mtenn_lower_pin"
-            )
-        if len({model.mtenn_upper_pin for model in models}) > 1:
-            raise ValueError(
-                "All models in an ensemble must have the same mtenn_upper_pin"
+                "All models in an ensemble must be compatible with the same mtenn version and current mtenn version"
             )
         return models
 
@@ -227,6 +223,46 @@ def _url_to_yaml(url: str) -> dict:
     return yaml.safe_load(content)
 
 
+
+def check_mtenn_version_set_compatible(models: List[MLModelSpecBase]) -> bool:
+    """
+    Check that all models in the list are compatible with the same mtenn version
+    Bit hacky but should work for now.
+    """
+
+    try:
+        cur_version = Version.parse(mtenn.__version__)
+    except AttributeError:
+        warnings.warn(
+            "No mtenn version found. Assuming compatibility, but note "
+            "that this may be incorrect."
+        )
+        return True
+
+    for i in range(len(models)):
+        for j in range(i + 1, len(models)):
+            # ugly sorry
+            model1, model2 = models[i], models[j]
+            low_pin1 = model1.mtenn_lower_pin if model1.mtenn_lower_pin else Version.parse("0.0.0")
+            upper_pin1 = model1.mtenn_upper_pin if model1.mtenn_upper_pin else Version.parse("999.999.999")
+            low_pin2 = model2.mtenn_lower_pin  if model2.mtenn_lower_pin else Version.parse("0.0.0")
+            upper_pin2 = model2.mtenn_upper_pin if model2.mtenn_upper_pin else Version.parse("999.999.999")
+
+            # check if versions are compatible with current mtenn version
+            m1_version_compat = low_pin1 <= cur_version < upper_pin1
+            m2_version_compat = low_pin2 <= cur_version < upper_pin2
+
+            if not m1_version_compat or not m2_version_compat:
+                return False
+            
+            # now check m1 and m2 are cross compatible
+            if not (low_pin1 <= upper_pin2 and low_pin2 <= upper_pin1):
+                return False
+            
+    return True
+    
+
+
 class RemoteEnsembleHelper(BaseModel):
     """
     Helper class for remote ensemble models
@@ -254,6 +290,7 @@ class RemoteEnsembleHelper(BaseModel):
         - SARS-CoV-2-Mpro
         - MERS-CoV-Mpro
     mtenn_lower_pin: "0.5.0"
+    last_updated: 2024-01-01
 
     """
 
@@ -316,6 +353,9 @@ class RemoteEnsembleHelper(BaseModel):
                         "All models in an ensemble must be of the same type"
                     )
                 # check the mtenn_versions are compatible
+                if not check_mtenn_version_set_compatible(models):
+                    raise ValueError(
+                        "All models in an ensemble must be compatible with the same mtenn version")
                 
                 
                 # set last updated to the oldest of the submodels
