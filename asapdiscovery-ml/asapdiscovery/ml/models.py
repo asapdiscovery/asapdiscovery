@@ -269,72 +269,80 @@ class RemoteEnsembleHelper(BaseModel):
         EnsembleMLModelSpec
             Ensemble model spec
         """
-        manifest = _url_to_yaml(self.manifest_url)
-
+        try:
+            manifest = _url_to_yaml(self.manifest_url)
+        except Exception as e:
+            warnings.warn(f"Failed to load manifest from {self.manifest_url}, skipping. Error: {e}")
+            return {}
+        
         ensemble_models = {}
 
         for model in manifest:
-            model_data = manifest[model]
-            models = []
-            for submodel in model_data["weights"]:
-                if len(submodel) > 1:
-                    raise ValueError("Submodel should have only one key")
-                # get the name of the submodel
-                subname = list(submodel.keys())[0]
-                models.append(
-                    MLModelSpec(
-                        name=model + "_ens_" + subname,
-                        type=model_data["type"],
-                        base_url=model_data["base_url"],
-                        weights_resource=submodel[subname]["resource"],
-                        weights_sha256hash=submodel[subname]["sha256hash"],
-                        config_resource=model_data["config"]["resource"],
-                        config_sha256hash=model_data["config"]["sha256hash"],
-                        last_updated=(
-                            model_data["last_updated"]
-                            if "last_updated" in model_data
-                            else "2024-02-06"
-                        ),
-                        targets=set(model_data["targets"]),
-                        mtenn_lower_pin=(
-                            model_data["mtenn_lower_pin"]
-                            if "mtenn_lower_pin" in model_data
-                            else None
-                        ),
-                        mtenn_upper_pin=(
-                            model_data["mtenn_upper_pin"]
-                            if "mtenn_upper_pin" in model_data
-                            else None
-                        ),
+            try:
+                model_data = manifest[model]
+                models = []
+                for submodel in model_data["weights"]:
+                    if len(submodel) > 1:
+                        raise ValueError("Submodel should have only one key")
+                    # get the name of the submodel
+                    subname = list(submodel.keys())[0]
+                    models.append(
+                        MLModelSpec(
+                            name=model + "_ens_" + subname,
+                            type=model_data["type"],
+                            base_url=model_data["base_url"],
+                            weights_resource=submodel[subname]["resource"],
+                            weights_sha256hash=submodel[subname]["sha256hash"],
+                            config_resource=model_data["config"]["resource"],
+                            config_sha256hash=model_data["config"]["sha256hash"],
+                            last_updated=(
+                                model_data["last_updated"]
+                                if "last_updated" in model_data
+                                else "2024-02-06"
+                            ),
+                            targets=set(model_data["targets"]),
+                            mtenn_lower_pin=(
+                                model_data["mtenn_lower_pin"]
+                                if "mtenn_lower_pin" in model_data
+                                else None
+                            ),
+                            mtenn_upper_pin=(
+                                model_data["mtenn_upper_pin"]
+                                if "mtenn_upper_pin" in model_data
+                                else None
+                            ),
+                        )
                     )
+                 # check types of models
+                if len({model.type for model in models}) > 1:
+                    raise ValueError("All models in an ensemble must be of the same type")
+                # check mtenn versions
+                if len({model.mtenn_lower_pin for model in models}) > 1:
+                    raise ValueError(
+                        "All models in an ensemble must have the same mtenn_lower_pin"
+                    )
+                if len({model.mtenn_upper_pin for model in models}) > 1:
+                    raise ValueError(
+                        "All models in an ensemble must have the same mtenn_upper_pin"
+                    )
+            
+                ens = EnsembleMLModelSpec(
+                    models=models,
+                    name=model,
+                    type=model_data["type"],
+                    last_updated="2024-02-06",
+                    targets=set(model_data["targets"]),
+                    mtenn_lower_pin=model_data["mtenn_lower_pin"],
+                    mtenn_upper_pin=(
+                        model_data["mtenn_upper_pin"]
+                        if "mtenn_upper_pin" in model_data
+                        else None
+                    ),
                 )
 
-            # check types of models
-            if len({model.type for model in models}) > 1:
-                raise ValueError("All models in an ensemble must be of the same type")
-            # check mtenn versions
-            if len({model.mtenn_lower_pin for model in models}) > 1:
-                raise ValueError(
-                    "All models in an ensemble must have the same mtenn_lower_pin"
-                )
-            if len({model.mtenn_upper_pin for model in models}) > 1:
-                raise ValueError(
-                    "All models in an ensemble must have the same mtenn_upper_pin"
-                )
-            
-            ens = EnsembleMLModelSpec(
-                models=models,
-                name=model,
-                type=model_data["type"],
-                last_updated="2024-02-06",
-                targets=set(model_data["targets"]),
-                mtenn_lower_pin=model_data["mtenn_lower_pin"],
-                mtenn_upper_pin=(
-                    model_data["mtenn_upper_pin"]
-                    if "mtenn_upper_pin" in model_data
-                    else None
-                ),
-            )
+            except Exception as e:
+                warnings.warn(f"Failed to load model {model}, skipping. Error: {e}")
+                continue
 
             ensemble_models[model] = ens
 
@@ -527,42 +535,45 @@ class MLModelRegistry(BaseModel):
 
         models = {}
         for model in spec:
-            model_data = spec[model]
-            has_config = "config" in model_data
-            is_ensemble = (
-                "remote_ensemble" in model_data and model_data["remote_ensemble"]
-            )
-            if is_ensemble:
-                ens_models = RemoteEnsembleHelper(manifest_url=model_data["manifest_url"]).to_ensemble_spec()
-                models.update(ens_models)
-
-            else:
-                # is a single model
-                models[model] = MLModelSpec(
-                    name=model,
-                    type=model_data["type"],
-                    base_url=model_data["base_url"],
-                    weights_resource=model_data["weights"]["resource"],
-                    weights_sha256hash=model_data["weights"]["sha256hash"],
-                    config_resource=(
-                        model_data["config"]["resource"] if has_config else None
-                    ),
-                    config_sha256hash=(
-                        model_data["config"]["sha256hash"] if has_config else None
-                    ),
-                    last_updated=model_data["last_updated"],
-                    targets=set(model_data["targets"]),
-                    mtenn_lower_pin=(
-                        model_data["mtenn_lower_pin"]
-                        if "mtenn_lower_pin" in model_data
-                        else None
-                    ),
-                    mtenn_upper_pin=(
-                        model_data["mtenn_upper_pin"]
-                        if "mtenn_upper_pin" in model_data
-                        else None
-                    ),
+            try:
+                model_data = spec[model]
+                has_config = "config" in model_data
+                is_ensemble = (
+                    "remote_ensemble" in model_data and model_data["remote_ensemble"]
                 )
+                if is_ensemble:
+                    ens_models = RemoteEnsembleHelper(manifest_url=model_data["manifest_url"]).to_ensemble_spec()
+                    models.update(ens_models)
+
+                else:
+                    # is a single model
+                    models[model] = MLModelSpec(
+                        name=model,
+                        type=model_data["type"],
+                        base_url=model_data["base_url"],
+                        weights_resource=model_data["weights"]["resource"],
+                        weights_sha256hash=model_data["weights"]["sha256hash"],
+                        config_resource=(
+                            model_data["config"]["resource"] if has_config else None
+                        ),
+                        config_sha256hash=(
+                            model_data["config"]["sha256hash"] if has_config else None
+                        ),
+                        last_updated=model_data["last_updated"],
+                        targets=set(model_data["targets"]),
+                        mtenn_lower_pin=(
+                            model_data["mtenn_lower_pin"]
+                            if "mtenn_lower_pin" in model_data
+                            else None
+                        ),
+                        mtenn_upper_pin=(
+                            model_data["mtenn_upper_pin"]
+                            if "mtenn_upper_pin" in model_data
+                            else None
+                        ),
+                    )
+            except Exception as e:
+                warnings.warn(f"Failed to load model {model}, skipping. Error: {e}")
 
         return cls(models=models)
 
