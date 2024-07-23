@@ -51,7 +51,7 @@ class InferenceBase(BaseModel):
         ..., description="Local model spec used to create Model to use"
     )
     device: str = Field("cpu", description="Device to use for inference")
-    models: list[Optional[torch.nn.Module]] = Field(..., description="PyTorch model")
+    models: Optional[list[torch.nn.Module]] = Field(..., description="PyTorch model(s)")
 
     @property
     def is_ensemble(self):
