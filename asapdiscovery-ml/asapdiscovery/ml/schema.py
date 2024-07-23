@@ -546,8 +546,8 @@ class TrainingPredictionTracker(BaseModel):
         agg_compounds:
 
         * "none": dict with levels split: compound: predictions (n_epochs,)
-        * "stack": dict with levels split: predctions (n_compounds, n_epochs)
-        * "mean": dict with levels split: predctions (n_epochs,)
+        * "stack": dict with levels split: predictions (n_compounds, n_epochs)
+        * "mean": dict with levels split: predictions (n_epochs,)
 
         Parameters
         ----------
