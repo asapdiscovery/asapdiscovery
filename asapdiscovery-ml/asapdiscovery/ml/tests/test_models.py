@@ -43,6 +43,11 @@ def test_pull_to_local_dir(tmp_path):
     assert os.path.exists(os.path.join(tmp_path, local_model.config_file))
 
 
+
+def test_default_registry_ensemble():
+    # name comes from remote ensemble manifest
+    assert ASAPMLModelRegistry.models["asapdiscovery-GAT-ensemble-test"].type == "GAT"
+
 @pytest.mark.parametrize(
     "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
 )

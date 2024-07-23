@@ -190,17 +190,6 @@ class EnsembleMLModelSpec(MLModelSpecBase):
             )
         return models
 
-    @validator("models")
-    @classmethod
-    def check_all_last_updated(cls, models):
-        """
-        Check that all models in the ensemble have the same last_updated
-        """
-        if len({model.last_updated for model in models}) > 1:
-            raise ValueError(
-                "All models in an ensemble must have the same last_updated"
-            )
-        return models
 
     @property
     def ensemble_size(self):
@@ -332,12 +321,7 @@ class RemoteEnsembleHelper(BaseModel):
                 raise ValueError(
                     "All models in an ensemble must have the same mtenn_upper_pin"
                 )
-            # check last updated
-            if len({model.last_updated for model in models}) > 1:
-                raise ValueError(
-                    "All models in an ensemble must have the same last_updated"
-                )
-
+            
             ens = EnsembleMLModelSpec(
                 models=models,
                 name=model,
@@ -397,13 +381,13 @@ class MLModelRegistry(BaseModel):
 
     """
 
-    models: dict[str, MLModelSpec] = Field(
+    models: dict[str, MLModelSpecBase] = Field(
         ..., description="Models in the model registry, keyed by name"
     )
 
     def get_models_for_target_and_type(
         self, target: TargetTags, type: ModelType
-    ) -> list[MLModelSpec]:
+    ) -> list[MLModelSpecBase]:
         """
         Get available model specs for a target and type.
 
@@ -416,7 +400,7 @@ class MLModelRegistry(BaseModel):
 
         Returns
         -------
-        List[MLModelSpec]
+        List[MLModelSpecBase]
             List of model specs
         """
         if target not in TargetTags.get_values():
@@ -549,7 +533,8 @@ class MLModelRegistry(BaseModel):
                 "remote_ensemble" in model_data and model_data["remote_ensemble"]
             )
             if is_ensemble:
-                models[model] = RemoteEnsembleHelper.to_ensemble_spec()
+                ens_models = RemoteEnsembleHelper(manifest_url=model_data["manifest_url"]).to_ensemble_spec()
+                models.update(ens_models)
 
             else:
                 # is a single model
