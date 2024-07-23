@@ -296,11 +296,7 @@ class RemoteEnsembleHelper(BaseModel):
                             weights_sha256hash=submodel[subname]["sha256hash"],
                             config_resource=model_data["config"]["resource"],
                             config_sha256hash=model_data["config"]["sha256hash"],
-                            last_updated=(
-                                model_data["last_updated"]
-                                if "last_updated" in model_data
-                                else "2024-02-06"
-                            ),
+                            last_updated=model_data["last_updated"],
                             targets=set(model_data["targets"]),
                             mtenn_lower_pin=(
                                 model_data["mtenn_lower_pin"]
@@ -319,21 +315,17 @@ class RemoteEnsembleHelper(BaseModel):
                     raise ValueError(
                         "All models in an ensemble must be of the same type"
                     )
-                # check mtenn versions
-                if len({model.mtenn_lower_pin for model in models}) > 1:
-                    raise ValueError(
-                        "All models in an ensemble must have the same mtenn_lower_pin"
-                    )
-                if len({model.mtenn_upper_pin for model in models}) > 1:
-                    raise ValueError(
-                        "All models in an ensemble must have the same mtenn_upper_pin"
-                    )
+                # check the mtenn_versions are compatible
+                
+                
+                # set last updated to the oldest of the submodels
+                last_updated = min([model.last_updated for model in models])
 
                 ens = EnsembleMLModelSpec(
                     models=models,
                     name=model,
                     type=model_data["type"],
-                    last_updated="2024-02-06",
+                    last_updated=last_updated,
                     targets=set(model_data["targets"]),
                     mtenn_lower_pin=model_data["mtenn_lower_pin"],
                     mtenn_upper_pin=(
