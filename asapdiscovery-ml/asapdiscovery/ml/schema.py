@@ -551,7 +551,7 @@ class TrainingPredictionTracker(BaseModel):
 
         Parameters
         ----------
-        agg_compounds : str, default="none
+        agg_compounds : str, default="none"
             How to aggregate the compounds. Options are "none", which does no
             aggregation, "stack", which stacks the prediction values for each compound,
             and "mean", which takes the mean across all compounds
@@ -616,6 +616,39 @@ class TrainingPredictionTracker(BaseModel):
             }
 
         return sp_compound_preds_dict
+
+    def get_target_vals(self, target_prop, flatten_compounds=False):
+        """
+        Convenience function for extracting the per-compound target values across. The
+        output structure will differ depending on the selection for flatten_compounds:
+
+        * False: dict with levels split: compound: target val (scalar)
+        * True: dict with levels split: target vals (n_compounds,)
+
+        Parameters
+        ----------
+        target_prop : str
+            Which target property to pull
+        flatten_compounds : str, default=False
+            Whether to combine the target values into a single tensor for each split
+            (True) or leave the return value as a nested dict (False, default)
+
+        Returns
+        -------
+        dict
+            Dict storing predictions, as described in docstring
+        """
+        # First get values for this target
+        target_prop_vals = self.get_values(target_prop=target_prop)
+
+        # Loop through and keep track of target val for each compound
+        target_val_dict = {sp: {} for sp in target_prop_vals.keys()}
+        for split, split_list in target_prop_vals.items():
+            for val in split_list:
+                if val.compound_id not in target_val_dict[split]:
+                    target_val_dict[split][val.compound_id] = val.target_val
+
+        return target_val_dict
 
     def to_plot_df(self, agg_compounds=False, agg_losses=False):
         """
