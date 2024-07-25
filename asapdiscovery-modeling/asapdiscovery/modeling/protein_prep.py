@@ -373,6 +373,7 @@ class LigandTransferProteinPrepper(ProteinPrepper):
         """
         prepped_complexes = []
         for complex in inputs:
+            logger.debug(f"Prepping {complex.target.target_name}")
             # load protein
             prot = complex.target.to_oemol()
 
@@ -403,10 +404,11 @@ class LigandTransferProteinPrepper(ProteinPrepper):
                 )
 
             # For each reference complex, align and transfer the ligand to the prepped protein
-            logger.info(
+            logger.debug(
                 f"Prepping with ligands from {len(self.reference_complexes)} reference complexes"
             )
             for complex_ref in self.reference_complexes:
+                logger.debug(f"Reference complex: {complex_ref.target.target_name}")
                 aligned, _ = superpose_molecule(
                     complex_ref.to_combined_oemol(),
                     spruced,

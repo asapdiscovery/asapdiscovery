@@ -208,9 +208,10 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         inputs.logname,  # default root logger so that dask logging is forwarded
         path=output_dir,
         logfile="ligand-transfer-docking.log",
-        stdout=False,
         level=inputs.loglevel,
+        stdout=True,
     ).getLogger()
+    
 
     if new_directory:
         logger.info(f"Writing to / overwriting output directory: {output_dir}")
@@ -284,8 +285,6 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
 
     n_prepped_complexes = len(prepped_complexes)
     logger.info(f"Prepped {n_prepped_complexes} complexes")
-    for pc in prepped_complexes:
-        logger.info(f"Complex is {pc.target.target_name}")
 
     if inputs.save_to_cache and inputs.cache_dir is not None:
         logger.info(f"Writing prepped complexes to global cache {inputs.cache_dir}")
@@ -296,19 +295,22 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
 
     # If the same reference is used for multiple targets, we will have duplicated ligands. This give problems when calling df.pivot()
     def get_unique_ligands(complex_list):
-        # Check if a list of complexes have repeated ligands by comparing smiles
+        # Check if a list of complexes have repeated ligands by comparing inchikeys
         seen = set()
         unique_ligands = []
         for comp in complex_list:
             ligand = comp.ligand
-            smiles = ligand.smiles
-            if smiles not in seen:
-                seen.add(smiles)
+            ic = ligand.inchikey
+            if ic not in seen:
+                seen.add(ic)
                 unique_ligands.append(ligand)
         return unique_ligands
 
-    ligands = get_unique_ligands(prepped_complexes)  # [prepped_complexes[0].ligand]
+    ligands = get_unique_ligands(prepped_complexes)
     pairs = selector.select(ligands, prepped_complexes)
+
+    for pair in pairs:
+        logger.debug(f"Pair: {pair.ligand.compound_name} - {pair.complex.target.target_name} + {pair.complex.ligand.compound_name}")
 
     n_pairs = len(pairs)
     logger.info(
