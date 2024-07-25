@@ -211,7 +211,6 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         level=inputs.loglevel,
         stdout=True,
     ).getLogger()
-    
 
     if new_directory:
         logger.info(f"Writing to / overwriting output directory: {output_dir}")
@@ -310,7 +309,9 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     pairs = selector.select(ligands, prepped_complexes)
 
     for pair in pairs:
-        logger.debug(f"Pair: {pair.ligand.compound_name} - {pair.complex.target.target_name} + {pair.complex.ligand.compound_name}")
+        logger.debug(
+            f"Pair: {pair.ligand.compound_name} - {pair.complex.target.target_name} + {pair.complex.ligand.compound_name}"
+        )
 
     n_pairs = len(pairs)
     logger.info(
