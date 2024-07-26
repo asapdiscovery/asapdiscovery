@@ -8,6 +8,7 @@ from asapdiscovery.data.util.utils import (
     filter_molecules_dataframe,
     parse_fluorescence_data_cdd,
 )
+from shutil import rmtree
 
 from asapdiscovery.ml.config import (
     DatasetConfig,
@@ -19,7 +20,11 @@ from asapdiscovery.ml.config import (
 from pathlib import Path
 from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import GATModelConfig
-
+from asapdiscovery.ml.cli_args import (
+    output_dir,
+)
+from asapdiscovery.data.services.services_config import S3Settings
+from asapdiscovery.cli.cli_args import loglevel
 
 from openff.toolkit import Molecule
 from openff.toolkit.utils.exceptions import (
@@ -105,7 +110,7 @@ def _gather_and_clean_data(protocol_name: str):
     filtered_cdd_data_this_protocol = []
     cdd_data_this_protocol = download_cdd_data(protocol_name=protocol_name)
     for _, row in cdd_data_this_protocol.iterrows():
-        logger.info(f"Working on {row['Molecule Name']}..")
+        logger.debug(f"Working on {row['Molecule Name']}..")
         # do checks first, based on https://github.com/choderalab/asapdiscovery/blob/main/asapdiscovery-alchemy/asapdiscovery/alchemy/cli/utils.py#L132-L146
         mol = Ligand.from_smiles(
             smiles=row["Smiles"],
@@ -121,17 +126,17 @@ def _gather_and_clean_data(protocol_name: str):
             )
         except RadicalsNotSupportedError:
             n_radicals += 1
-            logger.info("Rejected because this compound contains a radical.")
+            logger.debug("Rejected because this compound contains a radical.")
             continue
 
         # then remove compounds with covalent warheads
         if has_warhead(ligand=mol):
             n_covalents += 1
-            logger.info("Rejected because this compound is a covalent binder.")
+            logger.debug("Rejected because this compound is a covalent binder.")
             continue
 
         # compound is safe to be added to MLOps training set for this protocol.
-        logger.info("Compound accepted.")
+        logger.debug("Compound accepted.")
         filtered_cdd_data_this_protocol.append(row)
     logging.info(f"Rejected {n_radicals} compounds with radicals.")
     logging.info(f"Rejected {n_covalents} compounds with covalent warheads.")
@@ -182,12 +187,13 @@ def mlops():
 
 
 @mlops.command()
+@click.option("-p", "--protocol", type=str, required=True, help="Endpoint to train GAT model for")
 @output_dir
-@endpoint
 @loglevel
+@click.option("-e", "--ensemble-size", type=int, default=5, help="Number of models in ensemble")
 def train_GAT_for_endpoint(
-    output_dir: str,
     protocol: str,
+    output_dir: str = "output",
     loglevel: str = "INFO",
     ensemble_size: int = 5,
 
@@ -195,31 +201,41 @@ def train_GAT_for_endpoint(
     """
     Train a GAT model for a specific endpoint
     """
-    ISO_TODAY = datetime.datetime.now().strftime("%Y-%m-%d")
-    # make the output directory, warn if it already exists
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True)
+    if output_dir is None:
+        output_dir = Path.cwd() / "output"
+    
 
+    # make the output directory, overwriting
+    if output_dir.exists():
+        rmtree(output_dir)
+
+    output_dir.mkdir(exist_ok=True, parents=True)
+
+
+    logger = FileLogger("", path=output_dir, logfile="train_GAT_for_endpoint.log", level=loglevel, stdout=True).getLogger()
+
+    ISO_TODAY = datetime.datetime.now().strftime("%Y-%m-%d")
+    model_tag = f"asapdiscovery-GAT-{protocol}-ensemble-{ISO_TODAY}"
+
+
+    logger.info(f"Training GAT model for endpoint {protocol}")
+    logger.info(f"Start time: {ISO_TODAY}")
+    logger.info(f"Model tag: {model_tag}")
+    logger.info(f"Output directory: {output_dir}")
+
+    # do some pre checking before we start
     try:
         s3_settings = S3Settings()
     except Exception as e:
         raise ValueError(f"Could not load S3 settings: {e}, quitting.")
 
     if protocol not in PROTOCOLS:
-        raise ValueError(f"Endpoint {protocol} not in {PROTOCOLS}")
-
-    model_tag = f"asapdiscovery-GAT-{protocol}-ensemble-{ISO_TODAY}"
+        raise ValueError(f"Endpoint {protocol} not in allowed list of protocols {PROTOCOLS}")
 
 
-    logger.info(f"Training GAT model for endpoint {protocol}")
-    logger.info(f"Model tag: {model_tag}")
-    logger.info(f"Output directory: {output_dir}")
-
-
-    logger = FileLogger("train_GAT_for_endpoint", logfile="train_GAT_for_endpoint.log", level=loglevel, stdout=True).getLogger()
 
     # download the data for the endpoint
-    this_protocol_training_set = _gather_and_clean_data(protocol, logger)
+    this_protocol_training_set = _gather_and_clean_data(protocol)
     # save the data
     out_csv = output_dir / f"{protocol}_training_set_{ISO_TODAY}.csv"
     this_protocol_training_set.to_csv(out_csv)
@@ -228,6 +244,7 @@ def train_GAT_for_endpoint(
 
     # make output directory for this protocol
     protocol_out_dir = output_dir / protocol
+    protocol_out_dir.mkdir()
     out_json = protocol_out_dir / f"{ISO_TODAY}_ml_gat_input.json"
     _ = cdd_to_schema(
     cdd_csv=out_csv,
@@ -244,7 +261,7 @@ def train_GAT_for_endpoint(
         logger.info(f"Training ensemble model {i}")
         ensemble_out_dir = protocol_out_dir / f"ensemble_{i}"
         ensemble_out_dir.mkdir()
-        _train_single_model(out_json, ensemble_out_dir, logger)
+        _train_single_model(out_json, ensemble_out_dir)
         ensemble_directories.append(ensemble_out_dir)
 
 
