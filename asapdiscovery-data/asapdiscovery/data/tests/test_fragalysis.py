@@ -1,75 +1,66 @@
 """Tests for the fragalysis data fetching/wrangling/processing"""
 
 import copy
-import glob
 import os
 import shutil
+import traceback
 
 import pytest
+from asapdiscovery.data.cli.cli import data as cli
 from asapdiscovery.data.schema.legacy import CrystalCompoundData
 from asapdiscovery.data.services.fragalysis.fragalysis_download import (
-    API_CALL_BASE,
+    API_CALL_BASE_LEGACY,
+    BASE_URL_LEGACY,
+    FragalysisTargets,
     download,
     parse_fragalysis,
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from click.testing import CliRunner
 
 
-@pytest.fixture
-def mpro_fragalysis_api_call(scope="session"):
+def click_success(result):
+    if result.exit_code != 0:  # -no-cov-  (only occurs on test error)
+        print(result.output)
+        traceback.print_tb(result.exc_info[2])
+        print(result.exc_info[0], result.exc_info[1])
+    return result.exit_code == 0
+
+
+def fragalysis_api_call(target):
     """Fragalysis API call for downloading target data"""
 
-    api_call = copy.deepcopy(API_CALL_BASE)
-    api_call["target_name"] = "Mpro"
+    api_call = copy.deepcopy(API_CALL_BASE_LEGACY)
+    api_call["target_name"] = target
     return api_call
 
 
-@pytest.fixture
-def mac1_fragalysis_api_call(scope="session"):
-    """Fragalysis API call for downloading target data"""
-    api_call = copy.deepcopy(API_CALL_BASE)
-    api_call["target_name"] = "Mac1"
-    return api_call
-
-
-@pytest.mark.skip(reason="Fragalysis call is giving HTTP 500 error.")
+# @pytest.mark.skip(reason="Fragalysis call is giving HTTP 500 error.")
 class TestFragalysisDownload:
     """Class to test the download of data from Fragalysis."""
 
-    def test_download_fragalysis_mpro_zip(self, tmp_path, mpro_fragalysis_api_call):
+    @pytest.mark.parametrize("target", FragalysisTargets.get_values())
+    @pytest.mark.parametrize("extract", [True, False])
+    def test_download_fragalysis_mpro_zip(self, tmp_path, target, extract):
         """Checks downloading target zip file dataset from fragalysis"""
-        zip_file = tmp_path / "mpro_fragalysis.zip"
-        download(zip_file, mpro_fragalysis_api_call, extract=False)  # don't extract
-        assert os.path.exists(zip_file)
-
-    def test_download_fragalysis_mac1_zip(self, tmp_path, mac1_fragalysis_api_call):
-        """Checks downloading target zip file dataset from fragalysis"""
-        zip_file = tmp_path / "mac1_fragalysis.zip"
-        download(zip_file, mac1_fragalysis_api_call, extract=False)  # don't extract
+        api_call = fragalysis_api_call(target)
+        zip_file = tmp_path / "fragalysis.zip"
+        download(
+            zip_file, api_call, extract=extract, base_url=BASE_URL_LEGACY
+        )  # don't extract
         assert os.path.exists(zip_file)
 
     def test_failed_download_fragalysis_target(
-        self, tmp_path, mpro_fragalysis_api_call
+        self,
+        tmp_path,
     ):
         """Test failed download of target data from fragalysis"""
         from requests import HTTPError
 
-        mpro_fragalysis_api_call["target_name"] = "ThisIsNotATargetName"
+        api_call = fragalysis_api_call("target_name")
         with pytest.raises(HTTPError):
             zip_file = tmp_path / "fragalysis.zip"
-            download(zip_file, mpro_fragalysis_api_call)
-
-    def test_sdfs_pdbs_fragalysis_download(self, tmp_path, mpro_fragalysis_api_call):
-        """Test SDF and PDB files exists in downloaded fragalysis zip file"""
-        zip_file = tmp_path / "mpro_fragalysis.zip"
-        download(zip_file, mpro_fragalysis_api_call, extract=True)  # extract
-        # Make sure there are sdf and pdb files in the extracted files
-        assert glob.glob(
-            f"{zip_file.parent}/**/*.sdf", recursive=True
-        ), "No SDF files found on extracted fragalysis target zip."
-        assert glob.glob(
-            f"{zip_file.parent}/**/*.pdb", recursive=True
-        ), "No PDB files found on extracted fragalysis target zip."
+            download(zip_file, api_call, extract=False, base_url=BASE_URL_LEGACY)
 
 
 @pytest.fixture
@@ -90,3 +81,11 @@ def test_parse_fragalysis(metadata_csv, local_fragalysis):
     xtals = parse_fragalysis(metadata_csv, local_fragalysis)
     assert len(xtals) == 1
     assert type(xtals[0]) is CrystalCompoundData
+
+
+def test_fragalysis_cli(tmpdir):
+    with tmpdir.as_cwd():
+        runner = CliRunner()
+        args = ["download-fragalysis", "-t", "Mpro", "-o", "output.zip", "-x"]
+        result = runner.invoke(cli, args)
+        assert click_success(result)

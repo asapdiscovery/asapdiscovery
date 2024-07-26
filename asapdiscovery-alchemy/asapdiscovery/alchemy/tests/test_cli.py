@@ -893,3 +893,25 @@ def test_prioritize_weight_not_set(monkeypatch):
 
     console = rich.get_console()
     console.clear_live()
+
+
+def test_prep_alchemize(test_ligands_sdfile, tmpdir):
+
+    with tmpdir.as_cwd():
+        runner = CliRunner()
+        result = runner.invoke(
+            alchemy,
+            [
+                "prep",
+                "alchemize",
+                "-l",
+                test_ligands_sdfile,
+                "-n",
+                "tst",
+                "-onu",
+                "2",
+                "-mt",
+                "9",
+            ],
+        )
+        assert result.exit_code == 0
