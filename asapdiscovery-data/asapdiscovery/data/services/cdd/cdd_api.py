@@ -218,6 +218,7 @@ class CDDAPI(_BaseWebAPI):
         # extract the results linking the molecules to the extracted data
         ic50_data = []
         for readout in readout_data:
+            print
             try:
                 batch_data = {
                     f"{protocol_name}: {key}{' (µM)' if 'IC50' in key else ''}": readout[
@@ -231,13 +232,13 @@ class CDDAPI(_BaseWebAPI):
                 }
                 # add a placeholder for the molecule data to be added later
                 batch_data["name"] = readout["molecule"]
+                batch_data["modified_at"] = readout["modified_at"]
                 compound_ids.add(readout["molecule"])
                 ic50_data.append(batch_data)
             except KeyError:
                 # This is triggered if the upper and lower CI values are missing
                 # This means the values falls outside the does series
                 continue
-
         # gather the molecules
         molecule_data = self.get_molecules(compound_ids=list(compound_ids))
         compounds_by_id = {molecule["id"]: molecule for molecule in molecule_data}
@@ -251,6 +252,7 @@ class CDDAPI(_BaseWebAPI):
                 compound_data["Inchi Key"] = mol_data["inchi_key"]
                 compound_data["Molecule Name"] = mol_data["name"]
                 compound_data["CXSmiles"] = mol_data["cxsmiles"]
+
                 final_data.append(compound_data)
             except KeyError:
                 continue

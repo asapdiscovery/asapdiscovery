@@ -109,6 +109,7 @@ def _gather_and_clean_data(protocol_name: str):
     n_covalents = 0
     filtered_cdd_data_this_protocol = []
     cdd_data_this_protocol = download_cdd_data(protocol_name=protocol_name)
+
     for _, row in cdd_data_this_protocol.iterrows():
         logger.debug(f"Working on {row['Molecule Name']}..")
         # do checks first, based on https://github.com/choderalab/asapdiscovery/blob/main/asapdiscovery-alchemy/asapdiscovery/alchemy/cli/utils.py#L132-L146
