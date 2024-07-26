@@ -6,6 +6,7 @@ from asapdiscovery.ml.models import (
     LocalMLModelSpec,
     MLModelRegistry,
     MLModelSpec,
+    RemoteEnsembleHelper,
 )
 
 
@@ -14,6 +15,11 @@ def weights_yaml():
     # ugly hack to make the directory relative
     weights = os.path.join(os.path.dirname(__file__), "test_weights.yaml")
     return weights
+
+
+@pytest.fixture()
+def remote_ensemble_manifest_url():
+    return "https://asap-discovery-ml-skynet.asapdata.org/test_manifest/asap_ensemble_models.yaml"
 
 
 def test_default_registry():
@@ -35,6 +41,11 @@ def test_pull_to_local_dir(tmp_path):
     local_model = model.pull(local_dir=tmp_path)
     assert os.path.exists(os.path.join(tmp_path, local_model.weights_file))
     assert os.path.exists(os.path.join(tmp_path, local_model.config_file))
+
+
+def test_default_registry_ensemble():
+    # name comes from remote ensemble manifest
+    assert ASAPMLModelRegistry.models["asapdiscovery-GAT-ensemble-test"].type == "GAT"
 
 
 @pytest.mark.parametrize(
@@ -91,3 +102,11 @@ def test_custom_registry_pull(weights_yaml):
     pulled_model = model.pull()
     assert type(pulled_model) is LocalMLModelSpec
     assert pulled_model.type == "GAT"
+
+
+def test_remote_ensemble_pull(remote_ensemble_manifest_url):
+    reh = RemoteEnsembleHelper(manifest_url=remote_ensemble_manifest_url)
+    ens_mods = reh.to_ensemble_spec()
+    emodspec = ens_mods["asapdiscovery-GAT-ensemble-test"]
+    lemodspec = emodspec.pull()
+    assert len(lemodspec.models) == 5
