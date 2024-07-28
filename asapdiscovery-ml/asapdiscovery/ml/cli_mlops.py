@@ -237,6 +237,9 @@ def train_GAT_for_endpoint(
 
     # download the data for the endpoint
     this_protocol_training_set = _gather_and_clean_data(protocol)
+    # cludge to set the date to the right hardcoded column values
+    this_protocol_training_set.rename(columns={"modified_at": "Batch Created Date"}, inplace=True)
+
     # save the data
     out_csv = output_dir / f"{protocol}_training_set_{ISO_TODAY}.csv"
     this_protocol_training_set.to_csv(out_csv)
@@ -267,6 +270,7 @@ def train_GAT_for_endpoint(
 
 
     logger.info(f"Training complete for {protocol}")
+
 
     logger.info("writing ensemble manifest")
 

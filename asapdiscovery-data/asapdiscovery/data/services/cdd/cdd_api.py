@@ -218,7 +218,6 @@ class CDDAPI(_BaseWebAPI):
         # extract the results linking the molecules to the extracted data
         ic50_data = []
         for readout in readout_data:
-            print
             try:
                 batch_data = {
                     f"{protocol_name}: {key}{' (µM)' if 'IC50' in key else ''}": readout[
