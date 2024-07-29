@@ -8,7 +8,7 @@ from asapdiscovery.data.util.utils import (
     filter_molecules_dataframe,
     parse_fluorescence_data_cdd,
 )
-from shutil import rmtree
+from shutil import rmtree, copy
 
 from asapdiscovery.ml.config import (
     DatasetConfig,
@@ -22,7 +22,10 @@ from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import GATModelConfig
 from asapdiscovery.ml.cli_args import (
     output_dir,
+    n_epochs
 )
+import torch
+from hashlib import sha256
 from asapdiscovery.data.services.services_config import S3Settings
 from asapdiscovery.cli.cli_args import loglevel
 
@@ -60,6 +63,12 @@ PROTOCOLS = [
 
 
 
+def sha256sum(filename):
+    with open(filename, 'rb', buffering=0) as f:
+        return hashlib.file_digest(f, 'sha256').hexdigest()
+
+
+
 def _train_single_model(exp_data_json, output_dir):
 
     logging.info(f"Training GAT model for {exp_data_json}")
@@ -76,11 +85,11 @@ def _train_single_model(exp_data_json, output_dir):
     ds_splitter_config = DatasetSplitterConfig(split_type="temporal")
 
 
-    logging.info(f"Optimizer config: {optimizer_config}")
-    logging.info(f"GAT model config: {gat_model_config}")
-    logging.info(f"Early stopping config: {es_config}")
-    logging.info(f"Loss function config: {loss_config}")
-    logging.info(f"Dataset splitter config: {ds_splitter_config}")
+    logging.debug(f"Optimizer config: {optimizer_config}")
+    logging.debug(f"GAT model config: {gat_model_config}")
+    logging.debug(f"Early stopping config: {es_config}")
+    logging.debug(f"Loss function config: {loss_config}")
+    logging.debug(f"Dataset splitter config: {ds_splitter_config}")
 
 
     gat_ds_config = DatasetConfig.from_exp_file(
@@ -94,10 +103,11 @@ def _train_single_model(exp_data_json, output_dir):
             ds_config=gat_ds_config,
             ds_splitter_config=ds_splitter_config,
             loss_config=loss_config,
-            n_epochs=5000,
-            device="cuda",
+            n_epochs=1,
+            device="cuda" if torch.cuda.is_available() else "cpu",
             output_dir=output_dir,
             use_wandb=False,
+            save_weights="final"
     )
     t_gat.initialize()
     t_gat.train()
@@ -143,11 +153,15 @@ def _gather_and_clean_data(protocol_name: str):
     logging.info(f"Rejected {n_covalents} compounds with covalent warheads.")
     logging.info(f"Accepted {len(filtered_cdd_data_this_protocol)} compounds for training.")
 
+
+    return pd.DataFrame(filtered_cdd_data_this_protocol)
+
+def _parse_fluorescence_data_cdd(filtered_cdd_data_this_protocol, protocol_name):
     # now also apply BK's set of filters and wrangle into data type ready to be trained on.
     # based on https://asapdiscovery.readthedocs.io/en/latest/tutorials/training_ml_models_on_asap_data.html.
     this_protocol_training_set = parse_fluorescence_data_cdd(
     filter_molecules_dataframe(
-        pd.DataFrame(filtered_cdd_data_this_protocol),
+        filtered_cdd_data_this_protocol,
         id_fieldname="Molecule Name",
         smiles_fieldname="Smiles",
         assay_name=protocol_name,
@@ -160,25 +174,101 @@ def _gather_and_clean_data(protocol_name: str):
     )
     return this_protocol_training_set
 
+def _parse_scalar_data_cdd(filtered_cdd_data_this_protocol, protocol_name):
+    this_protocol_training_set = filter_molecules_dataframe(
+        filtered_cdd_data_this_protocol,
+        id_fieldname="Molecule Name",
+        smiles_fieldname="Smiles",
+        assay_name=protocol_name,
+        retain_achiral=True,
+        retain_racemic=True,
+        retain_enantiopure=True,
+        retain_semiquantitative_data=True,
+    )
+    return this_protocol_training_set
 
-def _write_ensemble_manifest_yaml(model_tag, ensemble_directories, output_dir):
+
+def _write_ensemble_manifest_yaml(model_tag, ensemble_directories, output_dir, ISO_TODAY):
+    """
+    Writes a YAML manifest for the ensemble of models trained for a specific endpoint
+
+    Manifest looks like 
+
+
+asapdiscovery-GAT-ensemble-test:
+  type: GAT
+  base_url: https://asap-discovery-ml-skynet.asapdata.org/test_manifest/endpoint/
+  ensemble: True
+
+  weights:
+    - member1:
+        resource: member1.th
+        sha256hash: 4a6494412089d390723b107a30361672f2d2711622eea016c33caf1d7c28e1a7
+    ...
+
+  config:
+    resource: config.json
+    sha256hash: d26f278c189eb897607b9b3a2c61ed6c82fbcd7590683631dc9afd7fa010f256
+  targets:
+    - SARS-CoV-2-Mpro
+    - MERS-CoV-Mpro
+  mtenn_lower_pin: "0.5.0"
+  last_updated: 2024-01-01
+    """
     ensemble_manifest = {
-        "model_tag": model_tag,
-        "ensemble": [
-            {
-                "model_tag": f"{model_tag}_ensemble_{i}",
-                "weights": f"{model_tag}_ensemble_{i}.pth",
-                "config": f"{model_tag}_ensemble_{i}.json",
-            }
-            for i in range(len(ensemble_directories))
-        ],
+        "type": "GAT",
+        "base_url": f"https://asap-discovery-ml-skynet.asapdata.org/{model_tag}/",
+        "ensemble": True,
+        "weights": {},
+        "config": {},
+        "targets": [model_tag],
+        "mtenn_lower_pin": "0.5.0",
+        "last_updated": ISO_TODAY,
     }
 
+    for i, ensemble_dir in enumerate(ensemble_directories):
+
+        member = f"member{i}"
+        weights_path = ensemble_dir / "model_weights.th"
+        weights_hash = sha256sum(weights_path)
+        ensemble_manifest["weights"][member] = {
+            "resource": weights_path.name,
+            "sha256hash": weights_hash,
+        }
+
+    config_path = ensemble_directories[0] / "model_config.json"
+    config_hash = sha256sum(config_path)
+
+    ensemble_manifest["config"] = {
+        "resource": config_path.name,
+        "sha256hash": config_hash,
+    }
     manifest_path = output_dir / f"{model_tag}_ensemble_manifest.yaml"
     with open(manifest_path, "w") as f:
         yaml.dump(ensemble_manifest, f)
     logging.info(f"Written ensemble manifest to {manifest_path}")
     return manifest_path
+
+def _gather_weights(ensemble_directories, model_tag, output_dir, ISO_TODAY):
+    """
+    Gathers the weights and config files from the ensemble directories and writes them to a final directory
+    """
+    final_dir = output_dir / model_tag
+    final_dir.mkdir()
+    weights_paths = {}
+    for i, ensemble_dir in enumerate(ensemble_directories):
+        member = f"member{i}"
+        ens_weights_path = ensemble_dir / "final.th"
+        # copy the weights to the final directory
+        final_weights_path = final_dir / f"{member}.th"
+        copy(ens_weights_path, final_weights_path)
+        weights_paths[member] = final_weights_path
+    
+    config_path = ensemble_directories[0] / "model_config.json"
+    # copy the config to the final directory
+    final_config_path = final_dir / "model_config.json"
+    copy(config_path, final_config_path)
+    return final_dir, weights_paths, final_config_path
 
 
 
@@ -192,12 +282,13 @@ def mlops():
 @output_dir
 @loglevel
 @click.option("-e", "--ensemble-size", type=int, default=5, help="Number of models in ensemble")
+@click.option("-n", "--n-epochs", type=int, default=5000, help="Number of epochs to train for")
 def train_GAT_for_endpoint(
     protocol: str,
     output_dir: str = "output",
     loglevel: str = "INFO",
     ensemble_size: int = 5,
-
+    n_epochs: int = 5000,
 ):
     """
     Train a GAT model for a specific endpoint
@@ -234,11 +325,17 @@ def train_GAT_for_endpoint(
         raise ValueError(f"Endpoint {protocol} not in allowed list of protocols {PROTOCOLS}")
 
 
-
     # download the data for the endpoint
     this_protocol_training_set = _gather_and_clean_data(protocol)
-    # cludge to set the date to the right hardcoded column values
+    # kludge to set the date to the right hardcoded column values
     this_protocol_training_set.rename(columns={"modified_at": "Batch Created Date"}, inplace=True)
+
+    if "fluorescence-dose-response" in protocol:  #TODO: make this YAML configurable
+        logger.info("Protocol is a fluorescence dose response, parsing data accordingly")
+        this_protocol_training_set = _parse_fluorescence_data_cdd(this_protocol_training_set, protocol)
+    else:
+        logger.info("Protocol is a scalar endpoint, parsing data accordingly")
+        this_protocol_training_set = _parse_scalar_data_cdd(this_protocol_training_set, protocol)
 
     # save the data
     out_csv = output_dir / f"{protocol}_training_set_{ISO_TODAY}.csv"
@@ -271,14 +368,21 @@ def train_GAT_for_endpoint(
 
     logger.info(f"Training complete for {protocol}")
 
+    final_dir_path, weights_paths, config_path = _gather_weights(ensemble_directories, model_tag, output_dir, ISO_TODAY)
+
+    logger.info(f"Final ensemble weights and config saved to {final_dir_path}")
+
 
     logger.info("writing ensemble manifest")
 
-    manifset_path = _write_ensemble_manifest_yaml(model_tag, ensemble_directories, output_dir)
+    manifest_path = _write_ensemble_manifest_yaml(model_tag, final_dir_path, output_dir)
 
     # now push weights, config and manifest to S3
     logger.info("Pushing weights, config and manifest to S3")
 
+    #push the whole final directory to S3
+    s3 = S3.from_settings(s3_settings)
+    # s3.push_dir(final_dir_path, f"asap-discovery-ml-skynet/{model_tag}")
 
 
 
