@@ -10,16 +10,19 @@ from asapdiscovery.data.services.postera.molecule_set import (
 )
 from asapdiscovery.data.services.services_config import PosteraSettings
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
 
 logger = logging.getLogger(__name__)
 
 
 class PosteraUploader(BaseModel):
     settings: PosteraSettings = Field(default_factory=PosteraSettings)
-    molecule_set_name: str = Field(
+    molecule_set_name: Optional[str] = Field(
         ...,
         description="Name of the molecule set to push to Postera, if it doesn't exist it will be created",
+    )
+    molecule_set_id: Optional[str] = Field(
+        None, description="ID of the molecule set to pull from Postera"
     )
     id_field: str = Field(
         DockingResultCols.LIGAND_ID.value,
@@ -32,6 +35,20 @@ class PosteraUploader(BaseModel):
     overwrite: bool = Field(
         False, description="Overwrite existing data on molecule set"
     )
+
+
+    @root_validator
+    @classmethod
+    def _molecule_set_id_or_name(cls, values):
+        molecule_set_name = values.get("molecule_set_name")
+        molecule_set_id = values.get("molecule_set_id")
+        if not molecule_set_name and not molecule_set_id:
+            raise ValueError("You must provide either a molecule set name or ID")
+        if molecule_set_name and molecule_set_id:
+            raise ValueError(
+                "You must provide either a molecule set name or ID, not both"
+            )
+        return values
 
     def push(
         self, df: pd.DataFrame, sort_column: bool = None, sort_ascending: bool = False
@@ -56,7 +73,6 @@ class PosteraUploader(BaseModel):
             The UUID of the molecule set
         new_molset : bool
             Whether a new molecule set was created
-
         """
 
         if self.smiles_field not in df.columns:
@@ -67,6 +83,7 @@ class PosteraUploader(BaseModel):
         ms_api = MoleculeSetAPI.from_settings(self.settings)
         data = df.copy()
         new_molset = False
+
 
         # if the molecule set doesn't exist, create it
         if not ms_api.exists(self.molecule_set_name, by="name"):

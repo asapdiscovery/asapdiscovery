@@ -23,6 +23,9 @@ class PosteraFactory(BaseModel):
     ) -> list[Ligand]:
         if molecule_set_id is None and molecule_set_name is None:
             raise ValueError("You must provide either a molecule set name or ID")
+        
+        if molecule_set_id and molecule_set_name:
+            raise ValueError("You must provide either a molecule set name or ID, not both")
 
         mols, _ = ms_api.get_molecules_from_id_or_name(
             name=molecule_set_name, id=molecule_set_id
