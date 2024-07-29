@@ -521,6 +521,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
             target=inputs.target,
             frames_per_ns=md_simulator.frames_per_ns,
             start=start_frame,
+            zoom_view=True, 
         )
         gifs = gif_maker.visualize(
             simulation_results,
