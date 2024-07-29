@@ -215,13 +215,27 @@ class Ligand(DataModelAbstractBase):
         keys_to_save = [
             key for key in kwargs.keys() if key not in cls.__fields__.keys()
         ]
-        tags = {(key, value) for key, value in kwargs.items() if key in keys_to_save}
+
+        tags = set()
+        # some keys will not be hashable, ignore them
+        for key, value in kwargs.items():
+            if key in keys_to_save:
+                try:
+                    tags.add((key, value))
+                except TypeError:
+                    warnings.warn(
+                        f"Tag {key} with value {value} is not hashable and will not be saved"
+                    )
+
         kwargs["tags"] = tags
 
         # Do the same thing for the conformer tags, only keeping the ones in 'tags'
-        kwargs["conf_tags"] = [
-            (key, value) for key, value in conf_tags.items() if key in keys_to_save
-        ]
+        conf_tags_list = []
+        for key, value in conf_tags.items():
+            if key in keys_to_save:
+                conf_tags_list.append((key, value))
+
+        kwargs["conf_tags"] = conf_tags_list
 
         # clean the sdf data for the internal model
         sdf_str = oemol_to_sdf_string(clear_SD_data(input_mol))

@@ -681,7 +681,6 @@ def predict(
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
-    import numpy as np
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header, upload_to_postera
     from asapdiscovery.alchemy.predict import (
@@ -777,40 +776,35 @@ def predict(
         )
         console.print(message)
 
-    # workout if any reference data was provided and if we should create the interactive reports
-    has_ref_data = reference_dataset or protocol
-    if has_ref_data is not None and not np.isnan(
-        absolute_df["DG (kcal/mol) (EXPT)"].mean()
-    ):
-        # check we have experimental data for a ligand in the network
-        report_status = console.status("Generating interactive reports")
-        report_status.start()
-        # we can only make these reports currently with experimental data
-        # TODO update once we have the per replicate estimate and error
-        absolute_layout = create_absolute_report(dataframe=absolute_df)
-        absolute_path = f"predictions-absolute-{result_network.dataset_name}.html"
-        relative_path = f"predictions-relative-{result_network.dataset_name}.html"
-        absolute_layout.save(
-            absolute_path,
-            title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}",
-            embed=True,
-        )
+    # create interactive reports, they will work out if a plot should be included
+    report_status = console.status("Generating interactive reports")
+    report_status.start()
+    # we can only make these reports currently with experimental data
+    # TODO update once we have the per replicate estimate and error
+    absolute_layout = create_absolute_report(dataframe=absolute_df)
+    absolute_path = f"predictions-absolute-{result_network.dataset_name}.html"
+    relative_path = f"predictions-relative-{result_network.dataset_name}.html"
+    absolute_layout.save(
+        absolute_path,
+        title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}",
+        embed=True,
+    )
 
-        relative_layout = create_relative_report(dataframe=relative_df)
-        relative_layout.save(
-            relative_path,
-            title=f"ASAP-Alchemy-Relative-{result_network.dataset_name}",
-            embed=True,
-        )
-        report_status.stop()
+    relative_layout = create_relative_report(dataframe=relative_df)
+    relative_layout.save(
+        relative_path,
+        title=f"ASAP-Alchemy-Relative-{result_network.dataset_name}",
+        embed=True,
+    )
+    report_status.stop()
 
-        message = Padding(
-            f"Absolute report written to [repr.filename]{absolute_path}[/repr.filename]",
-            (1, 0, 1, 0),
-        )
-        console.print(message)
-        message = Padding(
-            f"Relative report written to [repr.filename]{relative_path}[/repr.filename]",
-            (1, 0, 1, 0),
-        )
-        console.print(message)
+    message = Padding(
+        f"Absolute report written to [repr.filename]{absolute_path}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+    message = Padding(
+        f"Relative report written to [repr.filename]{relative_path}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)

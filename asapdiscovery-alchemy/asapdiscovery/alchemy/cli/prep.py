@@ -1,5 +1,6 @@
 import shutil
 from typing import Optional
+from warnings import warn
 
 import click
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
@@ -50,6 +51,158 @@ def create(filename: str, core_smarts: str):
         (1, 0, 1, 0),
     )
     console.print(message)
+
+
+@prep.command(
+    short_help="From a set of compounds with diverse chemistry, create individual clusters of compounds suitable for ASAP-Alchemy."
+)
+@click.option(
+    "-l",
+    "--ligands",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="The file which contains the ligands to use in the planned network.",
+)
+@click.option(
+    "-pm",
+    "--postera-molset-name",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+    help="The name of the Postera molecule set to pull the input ligands from.",
+)
+@click.option(
+    "-p",
+    "--processors",
+    default=1,
+    show_default=True,
+    help="The number of processors which can be used to run the workflow in parallel. `auto` will use (all_cpus -1), "
+    "`all` will use all or the exact number of cpus to use can be provided.",
+)
+@click.option(
+    "-mt",
+    "--max-transform",
+    default=8,
+    show_default=True,
+    help="The maximum number of allowed heavy atoms changed compared to the MCS during outsider rescue. Increasing "
+    "this number will increase the chemical diversity in each cluster, but also decrease the number of compounds in "
+    "outsiders/singletons.",
+)
+@click.option(
+    "-onu",
+    "--outsider-number",
+    default=8,
+    show_default=True,
+    help="The number of compounds at which a cluster is considered an outsider (at this value or below it, a cluster "
+    "will not be processed into an AlchemicalNetwork). Decreasing this number will increase the amount of compounds "
+    "generated for an AlchemicalNetwork, but can result in small AlchemicalNetworks.",
+)
+@click.option(
+    "-n",
+    "--clusterfiles-prefix",
+    type=click.STRING,
+    required=True,
+    help="The prefix to use as filename for the output cluster(s) SDF file(s).",
+)
+def alchemize(
+    ligands: Optional[str] = None,
+    postera_molset_name: Optional[str] = None,
+    processors: int = 1,
+    max_transform: int = 8,
+    outsider_number: int = 8,
+    clusterfiles_prefix: str = None,
+):
+    """
+    Split a dataset of ligands into individual clusters that are individually suitable for AlchemicalNetworks because
+    they have minimal transformations between all members in the cluster. Clustering is done using Bajorath-Murcko
+    scaffolds and subsequent attempts at rescuing outsiders (singletons with size up to `outsider_number`) using
+    RDKit's FindMCS implementation.
+
+    Parameters
+    ----------
+    ligands: The name of the local file which contains the input ligands to be prepared in the workflow.
+    postera_molset_name: The name of the postera molecule set we should pull the data from instead of a local file.
+    processors: The number of processors which can be used to run the workflow in parallel. `auto` will use all
+        cpus -1, `all` will use all or the exact number of cpus to use can be provided.
+    max_transform: The maximum number of allowed heavy atoms changed compared to the MCS during outsider rescue
+    outsider_number: The number of compounds at which a cluster is considered an outsider (at this value or below it,
+        a cluster will not be processed into an AlchemicalNetwork)
+    clusterfiles_prefix: The prefix to use as filename for the output cluster(s) SDF file(s).
+    """
+    from multiprocessing import cpu_count
+
+    import rich
+    from asapdiscovery.alchemy.alchemize import (
+        compute_clusters,
+        rescue_outsiders,
+        write_clusters,
+    )
+    from asapdiscovery.alchemy.cli.utils import (
+        print_header,
+        pull_from_postera,
+        report_alchemize_clusters,
+    )
+    from asapdiscovery.data.readers.molfile import MolFileFactory
+    from rich import pretty
+    from rich.padding import Padding
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
+
+    # workout where the molecules are coming from
+    if postera_molset_name is not None:
+        postera_download = console.status(
+            f"Downloading molecules from Postera molecule set:{postera_molset_name}"
+        )
+        postera_download.start()
+        asap_ligands = pull_from_postera(molecule_set_name=postera_molset_name)
+        postera_download.stop()
+
+    else:
+        # load the molecules
+        asap_ligands = MolFileFactory(filename=ligands).load()
+
+    message = Padding(
+        f"Loaded {len(asap_ligands)} ligands from [repr.filename]{postera_molset_name or ligands}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    # workout the number of processes to use if auto or all
+    all_cpus = cpu_count()
+    if processors == "all":
+        processors = all_cpus
+    elif processors == "auto":
+        processors = all_cpus - 1
+    else:
+        # can be a string from click
+        processors = int(processors)
+
+    # can't currently handle more than 1 processor
+    if processors > 1:
+        warn("Currently only 1 processor is supported for this command, setting to 1")
+        processors = 1
+
+    # step 1: attempt to create alchemical clusters. Some outliers/singletons ("outsiders") are likely
+    outsiders, alchemical_clusters = compute_clusters(
+        asap_ligands, outsider_number, console
+    )
+
+    # step 2: rescue outsiders by attempting to place them into clusters given some lenience level
+    outsiders, alchemical_clusters = rescue_outsiders(
+        outsiders, alchemical_clusters, max_transform, processors, console
+    )
+
+    message = Padding(
+        f"After rescuing outsiders, a total of {report_alchemize_clusters(alchemical_clusters, outsiders)[-1]}"
+        f" compounds are in an alchemical cluster. Summary (clustersize/number of clusters): "
+        f"{report_alchemize_clusters(alchemical_clusters, outsiders)[0]}. Writing to SDF file(s):",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    # now write to file
+    write_clusters(alchemical_clusters, clusterfiles_prefix, outsiders)
 
 
 @prep.command(

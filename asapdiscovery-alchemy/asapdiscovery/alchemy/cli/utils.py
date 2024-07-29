@@ -232,3 +232,30 @@ class SpecialHelpOrder(click.Group):
             return cmd
 
         return decorator
+
+
+def report_alchemize_clusters(alchemical_clusters, outsiders):
+    """does some reporting alchemical cluster and outsider composition for asap-alchemy.prep.alchemize().
+    Returns dicts that report {number-of-compounds-in-cluster : number-of-clusters-of-this-size, ..} for
+    both alchemical clusters and outsider clusters. Also returns the total number of compounds in
+    alchemical clusters."""
+    from collections import Counter
+
+    alchemical_cluster_sizes = dict(
+        Counter([len(v) for _, v in alchemical_clusters.items()])
+    )
+    outsider_cluster_sizes = dict(Counter([len(v) for _, v in outsiders.items()]))
+
+    # sort the dicts for easier interpretation of reports
+    alchemical_cluster_sizes = dict(
+        sorted(alchemical_cluster_sizes.items(), reverse=True)
+    )
+    outsider_cluster_sizes = dict(sorted(outsider_cluster_sizes.items(), reverse=True))
+
+    alchemical_num_in_clusters = sum(
+        [
+            cluster_size * num_clusters
+            for cluster_size, num_clusters in alchemical_cluster_sizes.items()
+        ]
+    )
+    return alchemical_cluster_sizes, outsider_cluster_sizes, alchemical_num_in_clusters
