@@ -9,7 +9,8 @@ from asapdiscovery.data.util.utils import (
     parse_fluorescence_data_cdd,
 )
 from shutil import rmtree, copy
-
+import mtenn
+import hashlib
 from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterConfig,
@@ -27,12 +28,14 @@ from asapdiscovery.ml.cli_args import (
 import torch
 from hashlib import sha256
 from asapdiscovery.data.services.services_config import S3Settings
+from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.cli.cli_args import loglevel
 
 from openff.toolkit import Molecule
 from openff.toolkit.utils.exceptions import (
     RadicalsNotSupportedError,
 )
+
 import logging
 import datetime
 import pandas as pd
@@ -63,9 +66,17 @@ PROTOCOLS = [
 
 
 
-def sha256sum(filename):
-    with open(filename, 'rb', buffering=0) as f:
-        return hashlib.file_digest(f, 'sha256').hexdigest()
+# need Py3.11 + for hashlib.file_digest, use this for now
+def sha256sum(file_path: Path) -> str:
+    h = hashlib.sha256()
+    with open(file_path, 'rb') as file:
+        while True:
+            # Reading is buffered, so we can read smaller chunks.
+            chunk = file.read(h.block_size)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
 
 
 
@@ -188,7 +199,7 @@ def _parse_scalar_data_cdd(filtered_cdd_data_this_protocol, protocol_name):
     return this_protocol_training_set
 
 
-def _write_ensemble_manifest_yaml(model_tag, ensemble_directories, output_dir, ISO_TODAY):
+def _write_ensemble_manifest_yaml(model_tag, weights_paths, config_path, output_dir, protocol, ISO_TODAY):
     """
     Writes a YAML manifest for the ensemble of models trained for a specific endpoint
 
@@ -215,39 +226,41 @@ asapdiscovery-GAT-ensemble-test:
   mtenn_lower_pin: "0.5.0"
   last_updated: 2024-01-01
     """
+    manifest = {}
     ensemble_manifest = {
         "type": "GAT",
-        "base_url": f"https://asap-discovery-ml-skynet.asapdata.org/{model_tag}/",
+        "base_url": f"https://asap-discovery-ml-skynet.asapdata.org/{protocol}/{model_tag}/",
         "ensemble": True,
         "weights": {},
-        "config": {},
-        "targets": [model_tag],
-        "mtenn_lower_pin": "0.5.0",
-        "last_updated": ISO_TODAY,
+        "config": {
+            "resource": "model_config.json",
+            "sha256hash": sha256sum(config_path)
+        },
+        "targets": [_protocol_to_target(protocol)],
+        "mtenn_lower_pin": mtenn.__version__,
+        "last_updated": ISO_TODAY
     }
 
-    for i, ensemble_dir in enumerate(ensemble_directories):
-
-        member = f"member{i}"
-        weights_path = ensemble_dir / "model_weights.th"
-        weights_hash = sha256sum(weights_path)
+    for member, weights_path in weights_paths.items():
         ensemble_manifest["weights"][member] = {
             "resource": weights_path.name,
-            "sha256hash": weights_hash,
+            "sha256hash": sha256sum(weights_path)
         }
-
-    config_path = ensemble_directories[0] / "model_config.json"
-    config_hash = sha256sum(config_path)
-
-    ensemble_manifest["config"] = {
-        "resource": config_path.name,
-        "sha256hash": config_hash,
-    }
-    manifest_path = output_dir / f"{model_tag}_ensemble_manifest.yaml"
+    manifest[model_tag] = ensemble_manifest
+    manifest_path = output_dir / f"{model_tag}_manifest.yaml"
     with open(manifest_path, "w") as f:
-        yaml.dump(ensemble_manifest, f)
-    logging.info(f"Written ensemble manifest to {manifest_path}")
+        yaml.dump(manifest, f)
     return manifest_path
+
+
+def _protocol_to_target(protocol):
+    """
+    Converts a protocol name to a list of targets
+    """
+    # grab the first element at underscore split
+    return protocol.split("_")[0]
+
+   
 
 def _gather_weights(ensemble_directories, model_tag, output_dir, ISO_TODAY):
     """
@@ -371,33 +384,35 @@ def train_GAT_for_endpoint(
     final_dir_path, weights_paths, config_path = _gather_weights(ensemble_directories, model_tag, output_dir, ISO_TODAY)
 
     logger.info(f"Final ensemble weights and config saved to {final_dir_path}")
+    logger.info(f"weights_paths: {weights_paths}")
+    logger.info(f"config_path: {config_path}")
 
 
     logger.info("writing ensemble manifest")
 
-    manifest_path = _write_ensemble_manifest_yaml(model_tag, final_dir_path, output_dir)
+    manifest_path = _write_ensemble_manifest_yaml(model_tag, weights_paths, config_path, output_dir, protocol, ISO_TODAY)
+
+    logger.info(f"Manifest written to {manifest_path}")
+
+    # copy manifest to final directory
+    final_manifest_path = final_dir_path / manifest_path.name
+    copy(manifest_path, final_manifest_path)
 
     # now push weights, config and manifest to S3
     logger.info("Pushing weights, config and manifest to S3")
-
-    #push the whole final directory to S3
+    # push the whole final directory to S3
+    # ends up at BUCKET_NAME/protocol/model_tag
     s3 = S3.from_settings(s3_settings)
+    s3_ensemble_dest = f"{protocol}/{model_tag}"
+
+    # push ensemble to "latest"
+    s3_manifest_dest = f"{protocol}/latest/manifest.yaml"
+
+
+    logger.info(f"Pushing final directory to S3 at {s3_ensemble_dest}")
     # s3.push_dir(final_dir_path, f"asap-discovery-ml-skynet/{model_tag}")
 
-
-
+    logger.info(f"Pushing manifest to S3 at {s3_manifest_dest}")
+    # s3.push_file(manifest_path, s3_manifest_dest)
 
     logger.info("Done.")
-
-
-
-
-    
-
-
-
-    
-  
-
-
-

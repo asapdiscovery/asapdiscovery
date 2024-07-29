@@ -124,6 +124,32 @@ class S3:
 
         self.resource.Bucket(self.bucket).upload_file(path, key, ExtraArgs=extra_args)
 
+    def push_dir(self, path: PathLike, location: PathLike = None):
+        """Push a directory at the local filesystem `path` to an object `location`
+        in this S3 Bucket.
+
+        `location` is relative to the `prefix` set for use of this bucket; e.g.
+        if ``location='foo'`` and ``self.prefix == 'baz'``, then the object will
+        be located at ``baz/foo`` in the bucket.
+
+        Parameters
+        ----------
+        path
+            Path to directory on local filesystem to push.
+        location
+            Location in the S3 bucket to place object relative to ``self.prefix``;
+            should not contain a leading ``/``.
+        """
+        if location is None:
+            location = os.path.basename(path)
+
+        for root, _, files in os.walk(path):
+            for file in files:
+                local_path = os.path.join(root, file)
+                remote_path = os.path.relpath(local_path, path)
+                self.push_file(local_path, os.path.join(location, remote_path))
+
+
     def pull_file(self): ...
 
     def to_uri(self, location: PathLike):
@@ -141,3 +167,6 @@ class S3:
 
         """
         return f"s3://{self.bucket}/{os.path.join(self.prefix, location)}"
+
+
+
