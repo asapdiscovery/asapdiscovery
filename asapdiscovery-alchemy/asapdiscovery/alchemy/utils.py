@@ -280,12 +280,16 @@ class AlchemiscaleHelper:
 
         # save to a new results object as they are frozen
         alchem_results = AlchemiscaleResults(network_key=network_key, results=results)
-        print(alchem_results, planned_network)
 
-        print(planned_network.dict(exclude={"results"}).keys())
-        network_with_results = FreeEnergyCalculationNetwork(
-            **planned_network.dict(exclude={"results"}), results=alchem_results
-        )
+        if planned_network:
+            network_with_results = FreeEnergyCalculationNetwork(
+                **planned_network.dict(exclude={"results"}), results=alchem_results
+            )
+        else:
+            # how do we get this and then make it into something usable for `predict` ???
+
+            # self._client.get_network(network_key)
+            pass
 
         return network_with_results
 
