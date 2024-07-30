@@ -1,0 +1,13 @@
+protocols:
+  - MERS-CoV-MPro_fluorescence-dose-response_weizmann
+  - SARS-CoV-2-MPro_fluorescence-dose-response_weizmann
+  - EVA-71-3C_fluorescence-dose-response_weizmann
+  - EVD-68-3C_fluorescence-dose-response_weizmann
+  - DENV-1-NS2B-NS3_fluorescence-dose-response_weizmann
+  - DENV-2-NS2B-NS3_fluorescence-dose-response_weizmann
+  - DENV-3-NS2B-NS3_fluorescence-dose-response_weizmann
+  - DENV-4-NS2B-NS3_fluorescence-dose-response_weizmann
+  - WNV-NS2B-NS3_fluorescence-dose-response_weizmann
+  - ZIKV-NS2B-NS3_fluorescence-dose-response_weizmann
+  
+

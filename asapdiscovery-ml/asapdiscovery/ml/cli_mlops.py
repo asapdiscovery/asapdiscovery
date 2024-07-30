@@ -36,12 +36,15 @@ from openff.toolkit import Molecule
 from openff.toolkit.utils.exceptions import (
     RadicalsNotSupportedError,
 )
-
+from asapdiscovery.ml.pretrained_models import cdd_protocols_yaml
+import yaml
 import logging
 import datetime
 import pandas as pd
 from pathlib import Path
 import yaml
+import wandb
+
 
 
 # logging 
@@ -52,19 +55,7 @@ TODO:
 - hook up to WandB and add hyperparameter search per model in ensemble ('sweep')
 """
 
-PROTOCOLS = [
-    "MERS-CoV-MPro_fluorescence-dose-response_weizmann",
-    "SARS-CoV-2-MPro_fluorescence-dose-response_weizmann",
-    "EVA-71-3C_fluorescence-dose-response_weizmann",
-    "EVD-68-3C_fluorescence-dose-response_weizmann",
-    "DENV-1-NS2B-NS3_fluorescence-dose-response_weizmann",
-    "DENV-2-NS2B-NS3_fluorescence-dose-response_weizmann",
-    "DENV-3-NS2B-NS3_fluorescence-dose-response_weizmann",
-    "DENV-4-NS2B-NS3_fluorescence-dose-response_weizmann",
-    "WNV-NS2B-NS3_fluorescence-dose-response_weizmann",
-    "ZIKV-NS2B-NS3_fluorescence-dose-response_weizmann",
-]
-
+protocols = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
 
 
 # need Py3.11 + for hashlib.file_digest, use this for now
@@ -126,6 +117,8 @@ def _train_single_model(ensemble_tag, model_tag, exp_data_json, output_dir, n_ep
     )
     t_gat.initialize()
     t_gat.train()
+    # need to get dir for WANDB, as has run_id prefix
+    return t_gat.output_dir
 
 
 
@@ -387,8 +380,8 @@ def train_GAT_for_endpoint(
         logger.info(f"Training ensemble model {i}")
         ensemble_out_dir = protocol_out_dir / f"ensemble_{i}"
         ensemble_out_dir.mkdir()
-        _train_single_model(ensemble_tag, model_tag, out_json, ensemble_out_dir, wandb_project=wandb_project, n_epochs=n_epochs)
-        ensemble_directories.append(ensemble_out_dir)
+        output_model_dir = _train_single_model(ensemble_tag, model_tag, out_json, ensemble_out_dir, wandb_project=wandb_project, n_epochs=n_epochs)
+        ensemble_directories.append(output_model_dir)
 
 
     logger.info(f"Training complete for {protocol}")
