@@ -1,3 +1,4 @@
+# trainable protocols from CDD
 protocols:
   - MERS-CoV-MPro_fluorescence-dose-response_weizmann
   - SARS-CoV-2-MPro_fluorescence-dose-response_weizmann
@@ -9,5 +10,6 @@ protocols:
   - DENV-4-NS2B-NS3_fluorescence-dose-response_weizmann
   - WNV-NS2B-NS3_fluorescence-dose-response_weizmann
   - ZIKV-NS2B-NS3_fluorescence-dose-response_weizmann
-  
+  - in-vitro_LogD_bienta
+
 
