@@ -122,6 +122,7 @@ class Trainer(BaseModel):
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
     wandb_project: str | None = Field(None, description="W&B project name.")
     wandb_name: str | None = Field(None, description="W&B project name.")
+    wandb_group: str | None = Field(None, description="W&B group name.")
     extra_config: dict | None = Field(
         None, description="Any extra config options to log to W&B."
     )
@@ -515,6 +516,7 @@ class Trainer(BaseModel):
                 project=self.wandb_project,
                 config=config,
                 name=self.wandb_name,
+                group=self.wandb_group,
             ).id
 
             # Save run_id in case we want to continue later

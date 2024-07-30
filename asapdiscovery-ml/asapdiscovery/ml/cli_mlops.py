@@ -81,7 +81,7 @@ def sha256sum(file_path: Path) -> str:
 
 
 
-def _train_single_model(ensemble_tag, exp_data_json, output_dir, n_epochs=5000, wandb_project=None):
+def _train_single_model(ensemble_tag, model_tag, exp_data_json, output_dir, n_epochs=5000, wandb_project=None):
 
     logging.info(f"Training GAT model for {exp_data_json}")
     optimizer_config = OptimizerConfig()
@@ -121,6 +121,7 @@ def _train_single_model(ensemble_tag, exp_data_json, output_dir, n_epochs=5000, 
             use_wandb=True,
             wandb_project=wandb_project,
             wandb_name=ensemble_tag,
+            wandb_group=model_tag,
             save_weights="final"
     )
     t_gat.initialize()
@@ -386,7 +387,7 @@ def train_GAT_for_endpoint(
         logger.info(f"Training ensemble model {i}")
         ensemble_out_dir = protocol_out_dir / f"ensemble_{i}"
         ensemble_out_dir.mkdir()
-        _train_single_model(ensemble_tag, out_json, ensemble_out_dir, wandb_project=wandb_project, n_epochs=n_epochs)
+        _train_single_model(ensemble_tag, model_tag, out_json, ensemble_out_dir, wandb_project=wandb_project, n_epochs=n_epochs)
         ensemble_directories.append(ensemble_out_dir)
 
 
