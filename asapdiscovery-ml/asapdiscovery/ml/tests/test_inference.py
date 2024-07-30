@@ -7,6 +7,10 @@ from asapdiscovery.data.backend.openeye import load_openeye_pdb
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.inference import E3nnInference, GATInference, SchnetInference
 from numpy.testing import assert_allclose
+from asapdiscovery.ml.models import (
+    RemoteEnsembleHelper,
+)
+
 
 
 @pytest.fixture()
@@ -86,6 +90,19 @@ def test_gatinference_predict_smiles_equivariant(test_data, target):
     assert_allclose(output1, output2, rtol=1e-5)
 
 
+
+@pytest.mark.parametrize("return_err", [True, False])
+@pytest.mark.parametrize("smiles", ["CCO", "CCN", "CCC", ["CCC", "CCN"]])
+def test_gatinference_predict_from_smiles(smiles, return_err):
+    inference_cls = GATInference.from_model_name(
+        "asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06"
+    )
+    assert inference_cls is not None
+    output = inference_cls.predict_from_smiles(smiles, return_err=return_err)
+    assert output is not None
+
+
+
 def test_gatinference_predict_from_smiles_err(test_data):
     inference_cls = GATInference.from_model_name(
         "asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06"
@@ -96,9 +113,8 @@ def test_gatinference_predict_from_smiles_err(test_data):
     smiles = [pose["smiles"] for _, pose in gds]
     assert inference_cls is not None
     pred, err = inference_cls.predict_from_smiles(smiles, return_err=True)
-    assert pred is not None
-    assert err is not None
-
+    assert all(pred > 0)
+    assert not inference_cls.is_ensemble
 
 # test inference dataset cls against training dataset cls
 @pytest.mark.parametrize(
@@ -255,3 +271,18 @@ def test_e3nn_predict_from_structure_file_err(docked_structure_file):
     )
     assert output is not None
     assert err is not None
+
+
+
+@pytest.mark.parametrize("return_err", [True, False])
+def test_GAT_ensemble_inference(remote_ensemble_manifest_url, return_err):
+    reh = RemoteEnsembleHelper(manifest_url=remote_ensemble_manifest_url)
+    ens_mods = reh.to_ensemble_spec()
+    emodspec = ens_mods["asapdiscovery-GAT-ensemble-test"]
+    lemodspec = emodspec.pull()
+    assert len(lemodspec.models) == 5
+    gi = GATInference.from_ml_model_spec(emodspec)
+    assert gi.is_ensemble
+    assert gi.model_type == "GAT"
+    pred = gi.predict_from_smiles(["CCCC", "CCCCCCC"], return_err=False)
+    assert pred  > 0

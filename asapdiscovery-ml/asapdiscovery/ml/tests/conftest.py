@@ -106,3 +106,9 @@ def test_data(graph_dataset):
     g2 = graph_dataset[1][1]["g"]
     g3 = graph_dataset[2][1]["g"]
     return g1, g2, g3, graph_dataset
+
+
+
+@pytest.fixture()
+def remote_ensemble_manifest_url():
+    return "https://asap-discovery-ml-skynet.asapdata.org/test_manifest/asap_ensemble_models.yaml"

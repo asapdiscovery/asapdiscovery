@@ -17,10 +17,6 @@ def weights_yaml():
     return weights
 
 
-@pytest.fixture()
-def remote_ensemble_manifest_url():
-    return "https://asap-discovery-ml-skynet.asapdata.org/test_manifest/asap_ensemble_models.yaml"
-
 
 def test_default_registry():
     assert ASAPMLModelRegistry.models != {}

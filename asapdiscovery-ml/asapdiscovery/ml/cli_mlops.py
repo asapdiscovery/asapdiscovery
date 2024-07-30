@@ -9,6 +9,7 @@ from asapdiscovery.data.util.utils import (
     parse_fluorescence_data_cdd,
 )
 from shutil import rmtree, copy
+import os
 import mtenn
 import hashlib
 from asapdiscovery.ml.config import (
@@ -80,7 +81,7 @@ def sha256sum(file_path: Path) -> str:
 
 
 
-def _train_single_model(exp_data_json, output_dir):
+def _train_single_model(ensemble_tag, exp_data_json, output_dir, n_epochs=5000, wandb_project=None):
 
     logging.info(f"Training GAT model for {exp_data_json}")
     optimizer_config = OptimizerConfig()
@@ -114,10 +115,12 @@ def _train_single_model(exp_data_json, output_dir):
             ds_config=gat_ds_config,
             ds_splitter_config=ds_splitter_config,
             loss_config=loss_config,
-            n_epochs=1,
+            n_epochs=n_epochs,
             device="cuda" if torch.cuda.is_available() else "cpu",
             output_dir=output_dir,
-            use_wandb=False,
+            use_wandb=True,
+            wandb_project=wandb_project,
+            wandb_name=ensemble_tag,
             save_weights="final"
     )
     t_gat.initialize()
@@ -241,11 +244,8 @@ asapdiscovery-GAT-ensemble-test:
         "last_updated": ISO_TODAY
     }
 
-    for member, weights_path in weights_paths.items():
-        ensemble_manifest["weights"][member] = {
-            "resource": weights_path.name,
-            "sha256hash": sha256sum(weights_path)
-        }
+
+    ensemble_manifest["weights"] = [{member: {"resource": weights_path.name, "sha256hash": sha256sum(weights_path)}} for member, weights_path in weights_paths.items()]
     manifest[model_tag] = ensemble_manifest
     manifest_path = output_dir / f"{model_tag}_manifest.yaml"
     with open(manifest_path, "w") as f:
@@ -258,7 +258,12 @@ def _protocol_to_target(protocol):
     Converts a protocol name to a list of targets
     """
     # grab the first element at underscore split
-    return protocol.split("_")[0]
+    target = protocol.split("_")[0]
+
+    # normalize MPro to Mpro
+    if "MPro" in target:
+        target = target.replace("MPro", "Mpro")
+    return target
 
    
 
@@ -332,7 +337,12 @@ def train_GAT_for_endpoint(
     try:
         s3_settings = S3Settings()
     except Exception as e:
-        raise ValueError(f"Could not load S3 settings: {e}, quitting.")
+        raise ValueError(f"Could not load S3 settings: {e}, quitting.")\
+        
+    wandb_project = os.getenv("WANDB_PROJECT")
+
+    if wandb_project is None:
+        raise ValueError("WandB project not set, quitting.")
 
     if protocol not in PROTOCOLS:
         raise ValueError(f"Endpoint {protocol} not in allowed list of protocols {PROTOCOLS}")
@@ -372,10 +382,11 @@ def train_GAT_for_endpoint(
 
     ensemble_directories = []
     for i in range(ensemble_size):
+        ensemble_tag = f"{model_tag}_ensemble_{i}"
         logger.info(f"Training ensemble model {i}")
         ensemble_out_dir = protocol_out_dir / f"ensemble_{i}"
         ensemble_out_dir.mkdir()
-        _train_single_model(out_json, ensemble_out_dir)
+        _train_single_model(ensemble_tag, out_json, ensemble_out_dir, wandb_project=wandb_project, n_epochs=n_epochs)
         ensemble_directories.append(ensemble_out_dir)
 
 
@@ -410,9 +421,9 @@ def train_GAT_for_endpoint(
 
 
     logger.info(f"Pushing final directory to S3 at {s3_ensemble_dest}")
-    # s3.push_dir(final_dir_path, f"asap-discovery-ml-skynet/{model_tag}")
+    s3.push_dir(final_dir_path, s3_ensemble_dest)
 
     logger.info(f"Pushing manifest to S3 at {s3_manifest_dest}")
-    # s3.push_file(manifest_path, s3_manifest_dest)
+    s3.push_file(manifest_path, s3_manifest_dest)
 
     logger.info("Done.")

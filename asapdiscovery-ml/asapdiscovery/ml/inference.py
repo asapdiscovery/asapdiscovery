@@ -358,6 +358,10 @@ class GATInference(InferenceBase):
 
         data = [self.predict(pose["g"], return_err=return_err) for _, pose in ds]
         data = np.asarray(data)
+        # if it is 1D array, we need to convert to 2D
+        if len(data.shape) == 1:
+            data = data.reshape(1, -1)
+    
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -456,6 +460,10 @@ class StructuralInference(InferenceBase):
             ]
         data = [self.predict(p, return_err=return_err) for p in pose]
         data = np.asarray(data)
+        # if it is 1D array, we need to convert to 2D
+        if len(data.shape) == 1:
+            data = data.reshape(1, -1)
+
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -518,6 +526,10 @@ class StructuralInference(InferenceBase):
         # Make predictions
         data = [self.predict(p, return_err=return_err) for p in pose]
         data = np.asarray(data)
+
+        # if it is 1D array, we need to convert to 2D
+        if len(data.shape) == 1:
+            data = data.reshape(1, -1)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
