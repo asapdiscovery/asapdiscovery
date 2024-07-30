@@ -340,14 +340,15 @@ def gather(network: str, allow_missing: bool):
     help="The name of the JSON file containing a planned FEC network.",
     default=None,
     show_default=True,
+    required=False,
 )
 @click.option(
     "-nk",
     "--network_key",
     type=click.STRING,
     help="The network key of the network to get the status of.",
-    default=False,
-    show_default=True,
+    default=None,
+    required=False,
 )
 @click.option(
     "-e",
@@ -404,7 +405,7 @@ def status(
     console = rich.get_console()
     print_header(console)
 
-    if network_key and all_networks or network_key and network:
+    if network_key and any([all_networks, network]):
         raise ValueError(
             "Can not retrieve status for --network_key at the same time as --all-networks and/or --network. Please flag only one of --network_key, --all-networks and --network_key"
         )
