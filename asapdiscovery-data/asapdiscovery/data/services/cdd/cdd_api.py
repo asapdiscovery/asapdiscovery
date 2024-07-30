@@ -257,3 +257,60 @@ class CDDAPI(_BaseWebAPI):
                 continue
 
         return pandas.DataFrame(final_data)
+    
+
+    def get_arbitrary_data_column(self, protocol_name: str, colname: str) -> Optional[pandas.DataFrame]:
+        # get the id of the protocol we want the readout for
+        protocols = self.get_protocols(protocol_names=[protocol_name])
+        if protocols:
+            protocol = protocols[0]
+        else:
+            return None
+
+        readout_ids = {}
+        for readout_def in protocol["readout_definitions"]:
+            readout_ids[readout_def["name"]] = readout_def["id"]
+
+        if colname not in readout_ids:
+            raise ValueError(f"Column {colname} not found in protocol {protocol_name}, available columns: {set(readout_ids.keys())}")
+        
+        readout_data = self.get_readout_rows(
+            protocol=protocol["id"]
+        )
+        compound_ids = set()
+
+        coldata  = []
+        for readout in readout_data:
+            try:
+                batch_data = {}
+                batch_data[colname] = readout["readouts"][str(readout_ids[colname])]["value"]
+                batch_data["name"] = readout["molecule"]
+                batch_data["modified_at"] = readout["modified_at"]
+                compound_ids.add(readout["molecule"])
+                coldata.append(batch_data)
+            except KeyError:
+                continue
+        
+        molecule_data = self.get_molecules(compound_ids=list(compound_ids))
+        compounds_by_id = {molecule["id"]: molecule for molecule in molecule_data}
+        final_data = []
+        for compound_data in coldata:
+            try:
+                mol_data = compounds_by_id[compound_data["name"]]
+                compound_data["Smiles"] = mol_data["smiles"]
+                compound_data["Inchi"] = mol_data["inchi"]
+                compound_data["Inchi Key"] = mol_data["inchi_key"]
+                compound_data["Molecule Name"] = mol_data["name"]
+                compound_data["CXSmiles"] = mol_data["cxsmiles"]
+
+                final_data.append(compound_data)
+            except KeyError:
+                continue
+        
+        return pandas.DataFrame(final_data)
+
+
+
+
+
+

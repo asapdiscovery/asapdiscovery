@@ -55,7 +55,7 @@ TODO:
 - hook up to WandB and add hyperparameter search per model in ensemble ('sweep')
 """
 
-protocols = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
+PROTOCOLS = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
 
 
 # need Py3.11 + for hashlib.file_digest, use this for now
