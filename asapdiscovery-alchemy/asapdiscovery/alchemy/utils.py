@@ -222,17 +222,15 @@ class AlchemiscaleHelper:
         results = []
 
         if planned_network:
-            alchemiscale_network_results = self._client.get_network_results(
-                network=planned_network.results.network_key
-            ).items()
-        elif network_key:
-            alchemiscale_network_results = self._client.get_network_results(
-                network_key
-            ).items()
-        else:
+            network_key = planned_network.results.network_key
+        elif not network_key:
             raise ValueError(
                 "Need to define one of `planned_network` or `network_key`."
             )
+
+        alchemiscale_network_results = self._client.get_network_results(
+            network_key
+        ).items()
         # use the process pool api point to gather all transformations for the network
         for _, raw_result in alchemiscale_network_results:
             if raw_result is None:
@@ -281,9 +279,10 @@ class AlchemiscaleHelper:
             )
 
         # save to a new results object as they are frozen
-        alchem_results = AlchemiscaleResults(
-            network_key=planned_network.results.network_key, results=results
-        )
+        alchem_results = AlchemiscaleResults(network_key=network_key, results=results)
+        print(alchem_results, planned_network)
+
+        print(planned_network.dict(exclude={"results"}).keys())
         network_with_results = FreeEnergyCalculationNetwork(
             **planned_network.dict(exclude={"results"}), results=alchem_results
         )

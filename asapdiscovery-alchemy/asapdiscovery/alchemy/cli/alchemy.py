@@ -339,8 +339,10 @@ def gather(network: str, network_key: str, allow_missing: bool):
     click.echo(
         f"Gathering network results from Alchemiscale instance: {client._client.api_url} with key {network_key}"
     )
-
-    network_with_results = client.collect_results(network_key=network_key)
+    if planned_network:
+        network_with_results = client.collect_results(planned_network=planned_network)
+    else:
+        network_with_results = client.collect_results(network_key=network_key)
     click.echo("Results gathered saving to file ...")
     network_with_results.to_file("result_network.json")
 
