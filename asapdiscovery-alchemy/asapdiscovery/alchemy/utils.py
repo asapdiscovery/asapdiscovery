@@ -204,23 +204,37 @@ class AlchemiscaleHelper:
         return restarted_tasks
 
     def collect_results(
-        self, planned_network: FreeEnergyCalculationNetwork
+        self,
+        planned_network: Optional[FreeEnergyCalculationNetwork] = False,
+        network_key: Optional[str] = False,
     ) -> FreeEnergyCalculationNetwork:
         """
         Collect the results for the given network.
 
         Args:
             planned_network: The network whose results we should collect.
+            network_key: The `alchemsicale` network key for the network whose results we should collect.
 
         Returns:
             A FreeEnergyCalculationNetwork with all current results. If any are missing and allow missing is false an error is raised.
         """
         # collect results following the notebook from openFE
         results = []
+
+        if planned_network:
+            alchemiscale_network_results = self._client.get_network_results(
+                network=planned_network.results.network_key
+            ).items()
+        elif network_key:
+            alchemiscale_network_results = self._client.get_network_results(
+                network_key
+            ).items()
+        else:
+            raise ValueError(
+                "Need to define one of `planned_network` or `network_key`."
+            )
         # use the process pool api point to gather all transformations for the network
-        for tf_sk, raw_result in self._client.get_network_results(
-            network=planned_network.results.network_key
-        ).items():
+        for _, raw_result in alchemiscale_network_results:
             if raw_result is None:
                 continue
             # format into our custom result schema and save

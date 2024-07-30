@@ -280,9 +280,17 @@ def submit(
 @click.option(
     "-n",
     "--network",
-    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
-    help="The name of the JSON file containing a planned FEC network.",
-    default="planned_network.json",
+    type=click.Path(resolve_path=False, readable=True, file_okay=True, dir_okay=False),
+    help="The name of the JSON file containing a submitted FEC network (typically 'planned_network.json').",
+    default=None,
+    show_default=True,
+)
+@click.option(
+    "-nk",
+    "--network_key",
+    type=click.STRING,
+    help="The network key of a submitted FEC network.",
+    default=None,
     show_default=True,
 )
 @click.option(
@@ -291,14 +299,15 @@ def submit(
     default=False,
     help="If we should allow missing results when gathering from alchemiscale.",
 )
-def gather(network: str, allow_missing: bool):
+def gather(network: str, network_key: str, allow_missing: bool):
     """
     Gather the results from alchemiscale for the given network.
 
     Note: An error is raised if all calculations have not finished and allow-missing is False.
 
     Args:
-        network: The of the JSON file containing the FreeEnergyCalculationNetwork whos results we should gather.
+        network: The path of the JSON file containing the FreeEnergyCalculationNetwork whose results we should gather.
+        network_key: The `alchemsicale` network key of the network whose results we should gather.
         allow_missing: If we should allow missing results when trying to gather the network.
 
     Raises:
@@ -312,19 +321,26 @@ def gather(network: str, allow_missing: bool):
     client = AlchemiscaleHelper.from_settings()
 
     # load the network
-    planned_network = FreeEnergyCalculationNetwork.from_file(network)
+    if network:
+        planned_network = FreeEnergyCalculationNetwork.from_file(network)
+        network_key = planned_network.results.network_key
+    elif not network_key:
+        raise ValueError(
+            "Need to define one of `--network` (typically 'planned_network.json') or `--network_key`."
+        )
 
     # show the network status
-    status = client.network_status(planned_network=planned_network)
+    status = client.network_status(network_key=network_key)
     if not allow_missing and "waiting" in status:
         raise RuntimeError(
             "Not all calculations have finished, to collect the current results use the flag `--allow-missing`."
         )
 
     click.echo(
-        f"Gathering network results from Alchemiscale instance: {client._client.api_url} with key {planned_network.results.network_key}"
+        f"Gathering network results from Alchemiscale instance: {client._client.api_url} with key {network_key}"
     )
-    network_with_results = client.collect_results(planned_network=planned_network)
+
+    network_with_results = client.collect_results(network_key=network_key)
     click.echo("Results gathered saving to file ...")
     network_with_results.to_file("result_network.json")
 
