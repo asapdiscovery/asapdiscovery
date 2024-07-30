@@ -158,18 +158,22 @@ class AlchemiscaleHelper:
         return actioned_tasks
 
     def network_status(
-        self, planned_network: FreeEnergyCalculationNetwork
+        self,
+        planned_network: Optional[FreeEnergyCalculationNetwork] = False,
+        network_key: Optional[str] = False,
     ) -> dict[str, int]:
         """
         Get the status of the network from alchemiscale.
 
         Args:
             planned_network: The network which we should look up in alchemiscale.
+            network_key: The network key belonging to the network which we should look up in alchemiscale.
 
         Returns:
             A dict of the status type and the number of instances.
         """
-        network_key = planned_network.results.network_key
+        if not network_key:
+            network_key = planned_network.results.network_key
         return self._client.get_network_status(network_key)
 
     def restart_tasks(

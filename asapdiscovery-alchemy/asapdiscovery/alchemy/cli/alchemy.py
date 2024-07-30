@@ -336,9 +336,17 @@ def gather(network: str, allow_missing: bool):
 @click.option(
     "-n",
     "--network",
-    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
+    type=click.Path(resolve_path=False, readable=True, file_okay=True, dir_okay=False),
     help="The name of the JSON file containing a planned FEC network.",
-    default="planned_network.json",
+    default=None,
+    show_default=True,
+)
+@click.option(
+    "-nk",
+    "--network_key",
+    type=click.STRING,
+    help="The network key of the network to get the status of.",
+    default=False,
     show_default=True,
 )
 @click.option(
@@ -363,12 +371,19 @@ def gather(network: str, allow_missing: bool):
     help="If the status of all running tasks in your scope should be displayed. "
     "This option will cause the command to ignore all other flags.",
 )
-def status(network: str, errors: bool, with_traceback: bool, all_networks: bool):
+def status(
+    network: str,
+    network_key: str,
+    errors: bool,
+    with_traceback: bool,
+    all_networks: bool,
+):
     """
     Get the status of the submitted network on alchemiscale.\f
 
     Args:
         network: The name of the JSON file containing the FreeEnergyCalculationNetwork we should check the status of.
+        network_key: The network key of the network to get the status of.
         errors: Flag to show errors from the tasks.
         with_traceback: Flag to show the complete traceback for the errored tasks.
         all_networks: If that status of all networks under the users scope should be displayed rather than for a single network.
@@ -380,6 +395,7 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
     from rich import pretty
     from rich.table import Table
@@ -388,6 +404,10 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
     console = rich.get_console()
     print_header(console)
 
+    if network_key and all_networks or network_key and network:
+        raise ValueError(
+            "Can not retrieve status for --network_key at the same time as --all-networks and/or --network. Please flag only one of --network_key, --all-networks and --network_key"
+        )
     # launch the helper which will try to login
     client = AlchemiscaleHelper.from_settings()
     if all_networks:
@@ -461,12 +481,20 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                 )
         status_breakdown.stop()
         console.print(table)
-
     else:
-        # load the network
-        planned_network = FreeEnergyCalculationNetwork.from_file(network)
-        # check the status
-        client.network_status(planned_network=planned_network)
+        if network:
+            # load the network
+            planned_network = FreeEnergyCalculationNetwork.from_file(network)
+            # check the status
+            client.network_status(planned_network=planned_network)
+        elif network_key:
+            # check the status
+            client.network_status(network_key=network_key)
+        else:
+            raise ValueError(
+                "Please flag one of --network_key, --all-networks or --network_key"
+            )
+
         # collect errors
         if errors or with_traceback:
             task_errors = client.collect_errors(
