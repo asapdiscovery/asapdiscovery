@@ -149,7 +149,7 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None):
     if not readout:
         raise ValueError(f"readout type not found for {protocol_name}")
 
-    if readout == "affinity":
+    if readout == "pIC50":
         logging.debug(f"Getting IC50 data for {protocol_name}")
         ic50_data = cdd_api.get_ic50_data(protocol_name=protocol_name)
         # format the data to add the pIC50 and error

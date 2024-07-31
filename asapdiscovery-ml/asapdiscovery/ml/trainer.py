@@ -740,8 +740,6 @@ class Trainer(BaseModel):
                     in_range = torch.tensor(
                         [[pose[f"{self.target_prop}_range"]]], device=self.device
                     ).float()
-                    print(in_range)
-                    print(in_range.shape)
                 else:
                     in_range = torch.tensor([[0]], device=self.device).float()
                     # empty tensor to match other types
@@ -751,8 +749,6 @@ class Trainer(BaseModel):
                         [[pose[f"{self.target_prop}_stderr"]]],
                         device=self.device,
                     ).float()
-                    print(uncertainty)
-                    print(uncertainty.shape)
                 else:
                     # empty tensor
                     uncertainty = torch.tensor([[0]], device=self.device).float()
@@ -855,8 +851,6 @@ class Trainer(BaseModel):
                     in_range = torch.tensor(
                         [[pose[f"{self.target_prop}_range"]]], device=self.device
                     ).float()
-                    print(in_range)
-                    print(in_range.shape)
                 else:
                     in_range = torch.tensor([[0]], device=self.device).float()
                     # empty tensor to match other types
@@ -866,8 +860,6 @@ class Trainer(BaseModel):
                         [[pose[f"{self.target_prop}_stderr"]]],
                         device=self.device,
                     ).float()
-                    print(uncertainty)
-                    print(uncertainty.shape)
                 else:
                     # empty tensor
                     uncertainty = torch.tensor([[0]], device=self.device).float()
@@ -913,8 +905,6 @@ class Trainer(BaseModel):
                     in_range = torch.tensor(
                         [[pose[f"{self.target_prop}_range"]]], device=self.device
                     ).float()
-                    print(in_range)
-                    print(in_range.shape)
                 else:
                     in_range = torch.tensor([[0]], device=self.device).float()
                     # empty tensor to match other types
@@ -924,8 +914,6 @@ class Trainer(BaseModel):
                         [[pose[f"{self.target_prop}_stderr"]]],
                         device=self.device,
                     ).float()
-                    print(uncertainty)
-                    print(uncertainty.shape)
                 else:
                     # empty tensor
                     uncertainty = torch.tensor([[0]], device=self.device).float()
