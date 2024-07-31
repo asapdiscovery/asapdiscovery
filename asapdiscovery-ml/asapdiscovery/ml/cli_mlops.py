@@ -22,6 +22,7 @@ from asapdiscovery.data.util.utils import (
     cdd_to_schema_v2,
     filter_molecules_dataframe,
 )
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.cli_args import output_dir
 from asapdiscovery.ml.config import (
     DatasetConfig,
@@ -191,9 +192,21 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
         raise ValueError(
             f"Protocol {protocol_name} not in allowed list of protocols {PROTOCOLS}"
         )
-    readout = PROTOCOLS[protocol_name]
+    readout = PROTOCOLS[protocol_name]["readout"]
     if not readout:
         raise ValueError(f"readout type not found for {protocol_name}")
+    
+    target = PROTOCOLS[protocol_name]["target"]
+
+    if target is None:
+        logger.info("Target-less protocol") # some protocols don't have a target, e.g logD
+    else:
+        logger.info(f"Target for protocol {protocol_name} is {target}")
+
+    # if its a string though, we need to check it is in allowed list of targets
+    if isinstance(target, str):
+        if target not in TargetTags.get_values():
+            raise ValueError(f"Target {target} not in allowed list of targets {TargetTags.get_values()}")
 
     try:
         settings = CDDSettings()
@@ -380,13 +393,7 @@ def _protocol_to_target(protocol: str) -> str:
     protocol : str
         Protocol name
     """
-    # grab the first element at underscore split
-    target = protocol.split("_")[0]
-
-    # normalize MPro to Mpro
-    if "MPro" in target:
-        target = target.replace("MPro", "Mpro")
-    return target
+    target = PROTOCOLS[protocol]["target"]
 
 
 def _gather_weights(ensemble_directories: list[Path], model_tag: str, output_dir: Path, ISO_TODAY: datetime.datetime) -> tuple[Path, dict[str, Path], Path]:
@@ -495,7 +502,7 @@ def train_GAT_for_endpoint(
             f"Endpoint {protocol} not in allowed list of protocols {PROTOCOLS}"
         )
 
-    readout = PROTOCOLS[protocol]
+    readout = PROTOCOLS[protocol]["readout"]
     if not readout:
         raise ValueError(f"readout type not found for {protocol}")
 
