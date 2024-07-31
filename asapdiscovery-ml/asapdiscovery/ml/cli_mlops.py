@@ -2,7 +2,6 @@ import datetime
 import hashlib
 import logging
 import os
-from hashlib import sha256
 from pathlib import Path
 from shutil import copy, rmtree
 
@@ -10,10 +9,9 @@ import click
 import mtenn
 import pandas as pd
 import torch
-import wandb
 import yaml
+from typing import Optional
 from asapdiscovery.alchemy.cli.utils import has_warhead
-from asapdiscovery.alchemy.predict import download_cdd_data
 from asapdiscovery.cli.cli_args import loglevel
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.aws.s3 import S3
@@ -23,9 +21,8 @@ from asapdiscovery.data.util.utils import (
     cdd_to_schema,
     cdd_to_schema_v2,
     filter_molecules_dataframe,
-    parse_fluorescence_data_cdd,
 )
-from asapdiscovery.ml.cli_args import n_epochs, output_dir
+from asapdiscovery.ml.cli_args import output_dir
 from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterConfig,
@@ -45,9 +42,23 @@ logger = logging.getLogger(__name__)
 
 PROTOCOLS = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
 
+SKYNET_SERVE_URL = "https://asap-discovery-ml-skynet.asapdata.org"
 
 # need Py3.11 + for hashlib.file_digest, use this for now
 def sha256sum(file_path: Path) -> str:
+    """
+    Calculate the SHA256 hash of a file
+
+    Parameters
+    ----------
+    file_path : Path
+        Path to the file
+    
+    Returns
+    -------
+    str
+        SHA256 hash of the file
+    """
     h = hashlib.sha256()
     with open(file_path, "rb") as file:
         while True:
@@ -60,14 +71,39 @@ def sha256sum(file_path: Path) -> str:
 
 
 def _train_single_model(
-    target_prop,
-    ensemble_tag,
-    model_tag,
-    exp_data_json,
-    output_dir,
-    n_epochs=5000,
-    wandb_project=None,
+    target_prop: str,
+    ensemble_tag: str,
+    model_tag: str,
+    exp_data_json: Path,
+    output_dir: Path,
+    n_epochs: int=5000,
+    wandb_project: Optional[str]=None,
 ):
+    """
+    Train a single GAT model for a specific endpoint
+
+    Parameters
+    ----------
+    target_prop : str
+        Target property to train the model for, must be specified directly as a readout from CDD or "pIC50" which uses the uncertainty and range
+    ensemble_tag : str
+        Tag of this model in the ensemble
+    model_tag : str
+        Tag of the ensemble
+    exp_data_json : str
+        Path to the JSON file containing the experimental data pulled from CDD
+    output_dir : Path
+        Output directory for the trained model
+    n_epochs : int
+        Number of epochs to train for
+    wandb_project : str
+        WandB project to log to
+    
+    Returns
+    -------
+    Path
+        Path to the output directory of the trained model, as set by wandb
+    """
 
     logging.info(
         f'Training GAT model for {exp_data_json} with target property "{target_prop}"'
@@ -102,6 +138,8 @@ def _train_single_model(
         has_uncertainty = False
         has_range = False
 
+    logger.info(f"Training GAT model for {target_prop} with uncertainty={has_uncertainty} and range={has_range}")
+
     t_gat = Trainer(
         target_prop=target_prop,
         optimizer_config=optimizer_config,
@@ -111,7 +149,7 @@ def _train_single_model(
         ds_splitter_config=ds_splitter_config,
         loss_config=loss_config,
         n_epochs=n_epochs,
-        device="cuda" if torch.cuda.is_available() else "cpu",
+        device="cuda" if torch.cuda.is_available() else "cpu", # let PyTorch decide
         output_dir=output_dir,
         use_wandb=True,
         wandb_project=wandb_project,
@@ -123,11 +161,27 @@ def _train_single_model(
     )
     t_gat.initialize()
     t_gat.train()
-    # need to get dir for WANDB, as has run_id prefix
+    # need to get dir for output as set by W&B inside trainer, as has run_id prefix
     return t_gat.output_dir
 
 
-def _gather_and_clean_data(protocol_name: str, output_dir: Path = None):
+def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.DataFrame:
+    """
+    Gather and clean data for a specific endpoint from CDD. Handles special cases for pIC50 data
+    or scalar endpoints, for which the readout is directly used. The data is cleaned to remove radicals and covalent warheads.
+
+    Parameters
+    ----------
+    protocol_name : str
+        Name of the protocol to gather data for
+    output_dir : Path
+        Output directory to save the raw data to
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the cleaned data
+    """
 
     from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
     from asapdiscovery.data.services.services_config import CDDSettings
@@ -137,15 +191,18 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None):
         raise ValueError(
             f"Protocol {protocol_name} not in allowed list of protocols {PROTOCOLS}"
         )
-
-    settings = CDDSettings()
-    cdd_api = CDDAPI.from_settings(settings=settings)
-
     readout = PROTOCOLS[protocol_name]
     if not readout:
         raise ValueError(f"readout type not found for {protocol_name}")
 
+    try:
+        settings = CDDSettings()
+        cdd_api = CDDAPI.from_settings(settings=settings)
+    except Exception as e:
+        raise ValueError(f"Could not load CDD settings: {e}, quitting.")
+
     if readout == "pIC50":
+        # special case for PIC50 data, which uses several readouts, including errs etc
         logging.debug(f"Getting IC50 data for {protocol_name}")
         ic50_data = cdd_api.get_ic50_data(protocol_name=protocol_name)
         # format the data to add the pIC50 and error
@@ -153,6 +210,7 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None):
             mol_df=ic50_data, assay_name=protocol_name
         )
     else:
+        # otherwise we pull the readout directly
         logging.debug(
             f"Getting readout data for {protocol_name} with readout {readout}"
         )
@@ -160,12 +218,13 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None):
             protocol_name=protocol_name, readout=readout
         )
 
+    # do some pre-processing to remove compounds with radicals or covalent warheads
+
     n_radicals = 0
     n_covalents = 0
     filtered_cdd_data_this_protocol = []
     for _, row in cdd_data_this_protocol.iterrows():
         logger.debug(f"Working on {row['Molecule Name']}..")
-        # do checks first, based on https://github.com/choderalab/asapdiscovery/blob/main/asapdiscovery-alchemy/asapdiscovery/alchemy/cli/utils.py#L132-L146
         mol = Ligand.from_smiles(
             smiles=row["Smiles"],
             compound_name=row["Molecule Name"],
@@ -202,10 +261,11 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None):
 
     # kludge to set the date to the right hardcoded column values
     df.rename(columns={"modified_at": "Batch Created Date"}, inplace=True)
+
     df.to_csv(output_dir / "raw_filtered_cdd_data.csv")
 
     if readout == "pIC50":
-        logger.info("Protocol is an activity endpoint, parsing data accordingly")
+        logger.info("Protocol is an IC50 activity endpoint, parsing data accordingly")
         this_protocol_training_set = parse_fluorescence_data_cdd(
             filter_molecules_dataframe(
                 df,
@@ -230,19 +290,19 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None):
             retain_racemic=True,
             retain_enantiopure=True,
             retain_semiquantitative_data=True,
-            is_ic50=False,  # need to add point to skip IC50 protocol conversion
+            is_ic50=False,  # need to add point to skip IC50 protocol conversion #TODO: refactor this so that base assumption is not IC50
         )
 
     return this_protocol_training_set
 
 
 def _write_ensemble_manifest_yaml(
-    model_tag, weights_paths, config_path, output_dir, protocol, ISO_TODAY
-):
+    model_tag: str , weights_paths: dict[str, Path], config_path: Path, output_dir: Path, protocol: str, ISO_TODAY: datetime.datetime
+) -> Path:
     """
         Writes a YAML manifest for the ensemble of models trained for a specific endpoint
 
-        Manifest looks like
+        Manifest looks like:
 
 
     asapdiscovery-GAT-ensemble-test:
@@ -264,11 +324,31 @@ def _write_ensemble_manifest_yaml(
         - MERS-CoV-Mpro
       mtenn_lower_pin: "0.5.0"
       last_updated: 2024-01-01
+
+    Parameters
+    ----------
+    model_tag : str
+        Tag of the ensemble
+    weights_paths : dict[str, Path]
+        Dictionary of model weights paths
+    config_path : Path
+        Path to the model config file
+    output_dir : Path
+        Output directory for the manifest
+    protocol : str
+        Name of the protocol
+    ISO_TODAY : datetime.datetime
+        Current date in ISO format
+    
+    Returns
+    -------
+    Path
+        Path to the manifest file
     """
     manifest = {}
     ensemble_manifest = {
         "type": "GAT",
-        "base_url": f"https://asap-discovery-ml-skynet.asapdata.org/{protocol}/{model_tag}/",
+        "base_url": f"{SKYNET_SERVE_URL}/{protocol}/{model_tag}/",
         "ensemble": True,
         "weights": {},
         "config": {
@@ -291,9 +371,14 @@ def _write_ensemble_manifest_yaml(
     return manifest_path
 
 
-def _protocol_to_target(protocol):
+def _protocol_to_target(protocol: str) -> str:
     """
-    Converts a protocol name to a list of targets
+    Converts a protocol name to a target name
+
+    Parameters
+    ----------
+    protocol : str
+        Protocol name
     """
     # grab the first element at underscore split
     target = protocol.split("_")[0]
@@ -304,9 +389,25 @@ def _protocol_to_target(protocol):
     return target
 
 
-def _gather_weights(ensemble_directories, model_tag, output_dir, ISO_TODAY):
+def _gather_weights(ensemble_directories: list[Path], model_tag: str, output_dir: Path, ISO_TODAY: datetime.datetime) -> tuple[Path, dict[str, Path], Path]:
     """
     Gathers the weights and config files from the ensemble directories and writes them to a final directory
+
+    Parameters
+    ----------
+    ensemble_directories : list[Path]
+        List of ensemble directories
+    model_tag : str
+        Tag of the ensemble
+    output_dir : Path
+        Output directory for the final ensemble
+    ISO_TODAY : datetime.datetime
+        Current date in ISO format
+    
+    Returns
+    -------
+    tuple[Path, dict[str, Path], Path]
+        Path to the final directory, dictionary of weights paths, path to the config file
     """
     final_dir = output_dir / model_tag
     final_dir.mkdir()
