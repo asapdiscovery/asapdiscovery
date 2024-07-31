@@ -5,6 +5,7 @@ from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.alchemy.predict import download_cdd_data
 from asapdiscovery.data.util.utils import (
     cdd_to_schema,
+    cdd_to_schema_v2,
     filter_molecules_dataframe,
     parse_fluorescence_data_cdd,
 )
@@ -72,9 +73,10 @@ def sha256sum(file_path: Path) -> str:
 
 
 
-def _train_single_model(ensemble_tag, model_tag, exp_data_json, output_dir, n_epochs=5000, wandb_project=None):
+def _train_single_model(target_prop, ensemble_tag, model_tag, exp_data_json, output_dir, n_epochs=5000, wandb_project=None):
 
-    logging.info(f"Training GAT model for {exp_data_json}")
+
+    logging.info(f"Training GAT model for {exp_data_json} with target property \"{target_prop}\"")
     optimizer_config = OptimizerConfig()
     gat_model_config = GATModelConfig()
     es_config = EarlyStoppingConfig(
@@ -100,6 +102,7 @@ def _train_single_model(ensemble_tag, model_tag, exp_data_json, output_dir, n_ep
     )
 
     t_gat = Trainer(
+            target_prop=target_prop,
             optimizer_config=optimizer_config,
             model_config=gat_model_config,
             es_config=es_config,
@@ -378,7 +381,7 @@ def train_GAT_for_endpoint(
     if not readout:
         raise ValueError(f"readout type not found for {protocol}")
     
-    logger.info(f"Endpoint {protocol} has readout {readout}, will be used as target property for training")
+    logger.info(f"Endpoint \"{protocol}\" has readout: \"{readout}\", will be used as target property for training")
 
 
     # download the data for the endpoint
@@ -394,28 +397,39 @@ def train_GAT_for_endpoint(
     protocol_out_dir = output_dir / protocol
     protocol_out_dir.mkdir()
     out_json = protocol_out_dir / f"{ISO_TODAY}_ml_gat_input.json"
-    _ = cdd_to_schema(
-    cdd_csv=out_csv,
-    out_json=out_json)
+
+    # pIC50 readouts have a bunch of munging in cdd_to_schema, so we need to handle them separately
+    # this should really be refactored to be more general
+    if readout == "pIC50":
+        _ = cdd_to_schema(
+        cdd_csv=out_csv,
+        out_json=out_json)
+    else:
+        _ = cdd_to_schema_v2(
+        target_prop=readout,
+        time_column="Batch Created Date",
+        cdd_csv=out_csv,
+        out_json=out_json)
 
     logger.info(f"Saved input JSON for GAT model training to {out_json}")
 
     # train the model
     logger.info(f"Training ensemble of {ensemble_size} models")
 
-
+    # train each model in the ensemble
     ensemble_directories = []
     for i in range(ensemble_size):
         ensemble_tag = f"{model_tag}_ensemble_{i}"
         logger.info(f"Training ensemble model {i}")
         ensemble_out_dir = protocol_out_dir / f"ensemble_{i}"
         ensemble_out_dir.mkdir()
-        output_model_dir = _train_single_model(ensemble_tag, model_tag, out_json, ensemble_out_dir, wandb_project=wandb_project, n_epochs=n_epochs, target_prop=readout)
+        output_model_dir = _train_single_model(readout, ensemble_tag, model_tag, out_json, ensemble_out_dir, wandb_project=wandb_project, n_epochs=n_epochs)
         ensemble_directories.append(output_model_dir)
 
 
     logger.info(f"Training complete for {protocol}")
 
+    # gather the weights and config files
     final_dir_path, weights_paths, config_path = _gather_weights(ensemble_directories, model_tag, output_dir, ISO_TODAY)
 
     logger.info(f"Final ensemble weights and config saved to {final_dir_path}")
@@ -425,6 +439,7 @@ def train_GAT_for_endpoint(
 
     logger.info("writing ensemble manifest")
 
+    # write the ensemble manifest
     manifest_path = _write_ensemble_manifest_yaml(model_tag, weights_paths, config_path, output_dir, protocol, ISO_TODAY)
 
     logger.info(f"Manifest written to {manifest_path}")
