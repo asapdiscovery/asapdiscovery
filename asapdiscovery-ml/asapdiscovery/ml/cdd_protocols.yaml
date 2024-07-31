@@ -1,15 +1,15 @@
 # trainable protocols from CDD
 protocols:
-  MERS-CoV-MPro_fluorescence-dose-response_weizmann : affinity
-  SARS-CoV-2-MPro_fluorescence-dose-response_weizmann : affinity
-  EVA-71-3C_fluorescence-dose-response_weizmann: affinity
-  EVD-68-3C_fluorescence-dose-response_weizmann: affinity
-  DENV-1-NS2B-NS3_fluorescence-dose-response_weizmann: affinity
-  DENV-2-NS2B-NS3_fluorescence-dose-response_weizmann: affinity
-  DENV-3-NS2B-NS3_fluorescence-dose-response_weizmann: affinity
-  DENV-4-NS2B-NS3_fluorescence-dose-response_weizmann: affinity
-  WNV-NS2B-NS3_fluorescence-dose-response_weizmann: affinity
-  ZIKV-NS2B-NS3_fluorescence-dose-response_weizmann: affinity
+  MERS-CoV-MPro_fluorescence-dose-response_weizmann : pIC50
+  SARS-CoV-2-MPro_fluorescence-dose-response_weizmann : pIC50
+  EVA-71-3C_fluorescence-dose-response_weizmann: pIC50
+  EVD-68-3C_fluorescence-dose-response_weizmann: pIC50
+  DENV-1-NS2B-NS3_fluorescence-dose-response_weizmann: pIC50
+  DENV-2-NS2B-NS3_fluorescence-dose-response_weizmann: pIC50
+  DENV-3-NS2B-NS3_fluorescence-dose-response_weizmann: pIC50
+  DENV-4-NS2B-NS3_fluorescence-dose-response_weizmann: pIC50
+  WNV-NS2B-NS3_fluorescence-dose-response_weizmann: pIC50
+  ZIKV-NS2B-NS3_fluorescence-dose-response_weizmann: pIC50
   in-vitro_LogD_bienta: LogD (Num)
 
 

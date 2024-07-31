@@ -195,8 +195,8 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None):
     df.rename(columns={"modified_at": "Batch Created Date"}, inplace=True)
     df.to_csv(output_dir / "raw_filtered_cdd_data.csv")
 
-    if readout == "activity":
-        logger.info("Protocol is an activity fluoresence endpoint, parsing data accordingly")
+    if readout == "pIC50":
+        logger.info("Protocol is an activity endpoint, parsing data accordingly")
         this_protocol_training_set = parse_fluorescence_data_cdd(
         filter_molecules_dataframe(
             df,
@@ -372,6 +372,13 @@ def train_GAT_for_endpoint(
 
     if protocol not in PROTOCOLS.keys():
         raise ValueError(f"Endpoint {protocol} not in allowed list of protocols {PROTOCOLS}")
+    
+
+    readout = PROTOCOLS[protocol]
+    if not readout:
+        raise ValueError(f"readout type not found for {protocol}")
+    
+    logger.info(f"Endpoint {protocol} has readout {readout}, will be used as target property for training")
 
 
     # download the data for the endpoint
@@ -403,7 +410,7 @@ def train_GAT_for_endpoint(
         logger.info(f"Training ensemble model {i}")
         ensemble_out_dir = protocol_out_dir / f"ensemble_{i}"
         ensemble_out_dir.mkdir()
-        output_model_dir = _train_single_model(ensemble_tag, model_tag, out_json, ensemble_out_dir, wandb_project=wandb_project, n_epochs=n_epochs)
+        output_model_dir = _train_single_model(ensemble_tag, model_tag, out_json, ensemble_out_dir, wandb_project=wandb_project, n_epochs=n_epochs, target_prop=readout)
         ensemble_directories.append(output_model_dir)
 
 
