@@ -286,10 +286,10 @@ class AlchemiscaleHelper:
                 **planned_network.dict(exclude={"results"}), results=alchem_results
             )
         else:
-            # how do we get this and then make it into something usable for `predict` ???
-
-            # self._client.get_network(network_key)
-            pass
+            # we'll only be able to do this realistically if we can store planned_network.json on alchemiscale
+            raise NotImplementedError(
+                "ASAP-Alchemy gather using network keys (-nk) is currently not implemented."
+            )
 
         return network_with_results
 
