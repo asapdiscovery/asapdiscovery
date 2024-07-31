@@ -51,10 +51,6 @@ import wandb
 # logging 
 logger = logging.getLogger(__name__)
 
-"""
-TODO:
-- hook up to WandB and add hyperparameter search per model in ensemble ('sweep')
-"""
 
 PROTOCOLS = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
 
@@ -101,6 +97,14 @@ def _train_single_model(target_prop, ensemble_tag, model_tag, exp_data_json, out
         Path(exp_data_json),
     )
 
+    # pIC0s have uncertainty and range, scalar endpoints have neither
+    if target_prop == "pIC50":
+        has_uncertainty = True
+        has_range = True
+    else:
+        has_uncertainty = False
+        has_range = False
+
     t_gat = Trainer(
             target_prop=target_prop,
             optimizer_config=optimizer_config,
@@ -116,7 +120,9 @@ def _train_single_model(target_prop, ensemble_tag, model_tag, exp_data_json, out
             wandb_project=wandb_project,
             wandb_name=ensemble_tag,
             wandb_group=model_tag,
-            save_weights="final"
+            save_weights="final",
+            has_uncertainty=has_uncertainty,
+            has_range=has_range
     )
     t_gat.initialize()
     t_gat.train()
