@@ -17,7 +17,6 @@ def weights_yaml():
     return weights
 
 
-
 def test_default_registry():
     assert ASAPMLModelRegistry.models != {}
     assert ASAPMLModelRegistry.models["gat_test"].type == "GAT"

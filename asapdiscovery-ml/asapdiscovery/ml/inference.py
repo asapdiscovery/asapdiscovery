@@ -361,7 +361,7 @@ class GATInference(InferenceBase):
         # if it is 1D array, we need to convert to 2D
         if len(data.shape) == 1:
             data = data.reshape(1, -1)
-    
+
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]

@@ -1,11 +1,11 @@
 import glob
+import json
 import logging
 import os.path
 import re
 from pathlib import Path
 from typing import Optional, Union
 
-import json
 import numpy as np
 import pandas
 import pydantic
@@ -176,32 +176,32 @@ def seqres_to_res_list(seqres_str):
 
 def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     """
-    Convert a CDD-downloaded and filtered CSV file into a JSON file containing
-    a list[ExperimentalCompoundData]. CSV file should be the result of the
-    filter_molecules_dataframe function and must contain the following headers:
-    * name
-    * smiles
-    * achiral
-    * racemic
-    * pIC50
-    * pIC50_stderr
-    * pIC50_95ci_lower
-    * pIC50_95ci_upper
-    * pIC50_range
+        Convert a CDD-downloaded and filtered CSV file into a JSON file containing
+        a list[ExperimentalCompoundData]. CSV file should be the result of the
+        filter_molecules_dataframe function and must contain the following headers:
+        * name
+        * smiles
+        * achiral
+        * racemic
+        * pIC50
+        * pIC50_stderr
+        * pIC50_95ci_lower
+        * pIC50_95ci_upper
+        * pIC50_range
 
-    Parameters
-    ----------
-    cdd_csv : str
-        CSV file downloaded from CDD.
-    out_json : str, optional
-        JSON file to save to.
-    out_csv : str, optional
-        CSV file to save to.
-s
-    Returns
-    -------
-    list[ExperimentalCompoundData]
-        The parsed list of ExperimentalCompoundData objects.
+        Parameters
+        ----------
+        cdd_csv : str
+            CSV file downloaded from CDD.
+        out_json : str, optional
+            JSON file to save to.
+        out_csv : str, optional
+            CSV file to save to.
+    s
+        Returns
+        -------
+        list[ExperimentalCompoundData]
+            The parsed list of ExperimentalCompoundData objects.
     """
 
     # Load and remove any straggling compounds w/o SMILES data
@@ -342,9 +342,9 @@ s
     return compounds
 
 
-
-
-def cdd_to_schema_v2(cdd_csv, target_prop, time_column=None, out_json=None, out_csv=None):
+def cdd_to_schema_v2(
+    cdd_csv, target_prop, time_column=None, out_json=None, out_csv=None
+):
     """
     Convert a CDD-downloaded and filtered CSV file into a JSON file containing
     a list[ExperimentalCompoundData]. CSV file should be the result of the
@@ -381,13 +381,10 @@ def cdd_to_schema_v2(cdd_csv, target_prop, time_column=None, out_json=None, out_
         "racemic",
         "semiquant",
         target_prop,
-
     ]
     missing_cols = [c for c in reqd_cols if c not in df.columns]
     if len(missing_cols) > 0:
-        raise ValueError(
-            f"Required columns not present in CSV file: {missing_cols}. "
-        )
+        raise ValueError(f"Required columns not present in CSV file: {missing_cols}. ")
 
     # Make extra sure nothing snuck by
     idx = df["smiles"].isna()
@@ -395,9 +392,7 @@ def cdd_to_schema_v2(cdd_csv, target_prop, time_column=None, out_json=None, out_
     df = df.loc[~idx, :]
 
     # Fill semi-qunatitative data with the mean of others WHAT TO DO FOR regular scalar?
-    df.loc[df["semiquant"], target_prop] = df.loc[
-        ~df["semiquant"], target_prop
-    ].mean()
+    df.loc[df["semiquant"], target_prop] = df.loc[~df["semiquant"], target_prop].mean()
 
     # For now just keep the first measure for each compound_id (should be the
     #  only one if `keep_best_per_mol` was set when running
@@ -406,7 +401,7 @@ def cdd_to_schema_v2(cdd_csv, target_prop, time_column=None, out_json=None, out_
     seen_compounds = {}
     for _, c in df.iterrows():
         compound_id = c["name"]
-        # take first observation is this right? 
+        # take first observation is this right?
         if compound_id in seen_compounds:
             # If there are no NaN values, don't need to fix
             if not seen_compounds[compound_id]:
@@ -458,7 +453,6 @@ def cdd_to_schema_v2(cdd_csv, target_prop, time_column=None, out_json=None, out_
             fp.write("[" + ", ".join([c.json() for c in compounds]) + "]")
         print(f"Wrote {out_json}", flush=True)
 
-    
     if out_csv:
         # read schema into dataframe
         schema_df = pandas.DataFrame([c.dict() for c in compounds])
@@ -466,7 +460,6 @@ def cdd_to_schema_v2(cdd_csv, target_prop, time_column=None, out_json=None, out_
         schema_df.to_csv(out_csv)
 
     return compounds
-
 
 
 def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
@@ -790,10 +783,12 @@ def filter_molecules_dataframe(
         semiquant_label = [
             is_semiquant(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
         ]
-        invalid_label = [is_invalid(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]]
+        invalid_label = [
+            is_invalid(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
+        ]
     else:
-        semiquant_label = [ is_semiquant(val) for val in mol_df[f"{assay_name}"] ]
-        invalid_label = [ is_invalid(val) for val in mol_df[f"{assay_name}"] ]
+        semiquant_label = [is_semiquant(val) for val in mol_df[f"{assay_name}"]]
+        invalid_label = [is_invalid(val) for val in mol_df[f"{assay_name}"]]
     mol_df["achiral"] = achiral_label
     mol_df["racemic"] = racemic_label
     mol_df["enantiopure"] = enantiopure_label
