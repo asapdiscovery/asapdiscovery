@@ -1,4 +1,6 @@
-# trainable protocols from CDD
+# trainable protocols from CDD, with protocol name and readout (endpoint)
+# pIC50 is a special case where multiple readouts from the same protocol are combined. 
+# otherwise the readout is the name of the readout in CDD.
 protocols:
   MERS-CoV-MPro_fluorescence-dose-response_weizmann : pIC50
   SARS-CoV-2-MPro_fluorescence-dose-response_weizmann : pIC50

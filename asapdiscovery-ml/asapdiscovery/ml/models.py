@@ -39,7 +39,6 @@ class MLModelBase(BaseModel):
     mtenn_upper_pin: Version | None = Field(
         None, description="Upper bound on compatible mtenn versions (exclusive)."
     )
-    # class variable ensemble = False
 
     @validator("mtenn_lower_pin", "mtenn_upper_pin", pre=True)
     def cast_versions(cls, v):
