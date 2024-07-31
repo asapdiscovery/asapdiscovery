@@ -4,17 +4,18 @@ import logging
 import os
 from pathlib import Path
 from shutil import copy, rmtree
+from typing import Optional
 
 import click
 import mtenn
 import pandas as pd
 import torch
 import yaml
-from typing import Optional
 from asapdiscovery.alchemy.cli.utils import has_warhead
 from asapdiscovery.cli.cli_args import loglevel
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.aws.s3 import S3
+from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.services.services_config import S3Settings
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import (
@@ -22,7 +23,6 @@ from asapdiscovery.data.util.utils import (
     cdd_to_schema_v2,
     filter_molecules_dataframe,
 )
-from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.cli_args import output_dir
 from asapdiscovery.ml.config import (
     DatasetConfig,
@@ -45,6 +45,7 @@ PROTOCOLS = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
 
 SKYNET_SERVE_URL = "https://asap-discovery-ml-skynet.asapdata.org"
 
+
 # need Py3.11 + for hashlib.file_digest, use this for now
 def sha256sum(file_path: Path) -> str:
     """
@@ -54,7 +55,7 @@ def sha256sum(file_path: Path) -> str:
     ----------
     file_path : Path
         Path to the file
-    
+
     Returns
     -------
     str
@@ -77,8 +78,8 @@ def _train_single_model(
     model_tag: str,
     exp_data_json: Path,
     output_dir: Path,
-    n_epochs: int=5000,
-    wandb_project: Optional[str]=None,
+    n_epochs: int = 5000,
+    wandb_project: Optional[str] = None,
 ):
     """
     Train a single GAT model for a specific endpoint
@@ -99,7 +100,7 @@ def _train_single_model(
         Number of epochs to train for
     wandb_project : str
         WandB project to log to
-    
+
     Returns
     -------
     Path
@@ -139,7 +140,9 @@ def _train_single_model(
         has_uncertainty = False
         has_range = False
 
-    logger.info(f"Training GAT model for {target_prop} with uncertainty={has_uncertainty} and range={has_range}")
+    logger.info(
+        f"Training GAT model for {target_prop} with uncertainty={has_uncertainty} and range={has_range}"
+    )
 
     t_gat = Trainer(
         target_prop=target_prop,
@@ -150,7 +153,7 @@ def _train_single_model(
         ds_splitter_config=ds_splitter_config,
         loss_config=loss_config,
         n_epochs=n_epochs,
-        device="cuda" if torch.cuda.is_available() else "cpu", # let PyTorch decide
+        device="cuda" if torch.cuda.is_available() else "cpu",  # let PyTorch decide
         output_dir=output_dir,
         use_wandb=True,
         wandb_project=wandb_project,
@@ -177,7 +180,7 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
         Name of the protocol to gather data for
     output_dir : Path
         Output directory to save the raw data to
-    
+
     Returns
     -------
     pd.DataFrame
@@ -195,18 +198,22 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
     readout = PROTOCOLS[protocol_name]["readout"]
     if not readout:
         raise ValueError(f"readout type not found for {protocol_name}")
-    
+
     target = PROTOCOLS[protocol_name]["target"]
 
     if target is None:
-        logger.info("Target-less protocol") # some protocols don't have a target, e.g logD
+        logger.info(
+            "Target-less protocol"
+        )  # some protocols don't have a target, e.g logD
     else:
         logger.info(f"Target for protocol {protocol_name} is {target}")
 
     # if its a string though, we need to check it is in allowed list of targets
     if isinstance(target, str):
         if target not in TargetTags.get_values():
-            raise ValueError(f"Target {target} not in allowed list of targets {TargetTags.get_values()}")
+            raise ValueError(
+                f"Target {target} not in allowed list of targets {TargetTags.get_values()}"
+            )
 
     try:
         settings = CDDSettings()
@@ -310,7 +317,12 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
 
 
 def _write_ensemble_manifest_yaml(
-    model_tag: str , weights_paths: dict[str, Path], config_path: Path, output_dir: Path, protocol: str, ISO_TODAY: datetime.datetime
+    model_tag: str,
+    weights_paths: dict[str, Path],
+    config_path: Path,
+    output_dir: Path,
+    protocol: str,
+    ISO_TODAY: datetime.datetime,
 ) -> Path:
     """
         Writes a YAML manifest for the ensemble of models trained for a specific endpoint
@@ -352,7 +364,7 @@ def _write_ensemble_manifest_yaml(
         Name of the protocol
     ISO_TODAY : datetime.datetime
         Current date in ISO format
-    
+
     Returns
     -------
     Path
@@ -396,7 +408,12 @@ def _protocol_to_target(protocol: str) -> str:
     target = PROTOCOLS[protocol]["target"]
 
 
-def _gather_weights(ensemble_directories: list[Path], model_tag: str, output_dir: Path, ISO_TODAY: datetime.datetime) -> tuple[Path, dict[str, Path], Path]:
+def _gather_weights(
+    ensemble_directories: list[Path],
+    model_tag: str,
+    output_dir: Path,
+    ISO_TODAY: datetime.datetime,
+) -> tuple[Path, dict[str, Path], Path]:
     """
     Gathers the weights and config files from the ensemble directories and writes them to a final directory
 
@@ -410,7 +427,7 @@ def _gather_weights(ensemble_directories: list[Path], model_tag: str, output_dir
         Output directory for the final ensemble
     ISO_TODAY : datetime.datetime
         Current date in ISO format
-    
+
     Returns
     -------
     tuple[Path, dict[str, Path], Path]

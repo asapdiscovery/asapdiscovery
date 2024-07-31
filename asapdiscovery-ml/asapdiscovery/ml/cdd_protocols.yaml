@@ -8,7 +8,7 @@
 protocols:
 
   # pIC50 protocols
-  MERS-CoV-MPro_fluorescence-dose-response_weizmann: 
+  MERS-CoV-MPro_fluorescence-dose-response_weizmann:
     readout: pIC50
     target: MERS-CoV-Mpro
   SARS-CoV-2-MPro_fluorescence-dose-response_weizmann:
@@ -20,7 +20,7 @@ protocols:
   EVD-68-3C_fluorescence-dose-response_weizmann:
     readout: pIC50
     target: EV-D68-3Cpro
-  
+
   # DENV-1-NS2B-NS3_fluorescence-dose-response_weizmann:  not enough data
   DENV-2-NS2B-NS3_fluorescence-dose-response_weizmann:
     readout: pIC50
@@ -34,9 +34,8 @@ protocols:
   ZIKV-NS2B-NS3_fluorescence-dose-response_weizmann:
     readout: pIC50
     target: ZIKV-NS2B-NS3pro
-  
+
   # non-target specific protocols
   in-vitro_LogD_bienta:
     readout: LogD (Num)
     target: null
-
