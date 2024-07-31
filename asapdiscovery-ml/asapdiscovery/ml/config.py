@@ -796,7 +796,6 @@ class DatasetSplitterConfig(ConfigBase):
         if all(d == None for d in dates_dict.keys()) or not dates_dict:
             raise ValueError("No dates found in dataset.")
 
-    
         all_dates = np.asarray(list(dates_dict.keys()))
 
         # Sort the dates

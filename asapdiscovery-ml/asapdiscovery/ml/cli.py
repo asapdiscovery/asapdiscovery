@@ -33,9 +33,8 @@ from asapdiscovery.ml.cli_args import (
     wandb_args,
     weights_path,
 )
-from asapdiscovery.ml.cli_sweep import sweep
 from asapdiscovery.ml.cli_mlops import mlops
-
+from asapdiscovery.ml.cli_sweep import sweep
 from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterType,
@@ -81,7 +80,7 @@ ml.add_command(build)
 ml.add_command(build_and_train)
 ml.add_command(build_ds)
 ml.add_command(sweep)
-ml.add_command(mlops)   
+ml.add_command(mlops)
 
 
 @build.command(name="gat")

@@ -149,7 +149,6 @@ class S3:
                 remote_path = os.path.relpath(local_path, path)
                 self.push_file(local_path, os.path.join(location, remote_path))
 
-
     def pull_file(self): ...
 
     def to_uri(self, location: PathLike):
@@ -167,6 +166,3 @@ class S3:
 
         """
         return f"s3://{self.bucket}/{os.path.join(self.prefix, location)}"
-
-
-
