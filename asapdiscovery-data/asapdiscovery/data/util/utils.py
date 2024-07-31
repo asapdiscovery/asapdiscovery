@@ -530,6 +530,7 @@ def filter_molecules_dataframe(
     retain_enantiopure=False,
     retain_semiquantitative_data=False,
     retain_invalid=False,
+    is_ic50=True,
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
@@ -615,19 +616,19 @@ def filter_molecules_dataframe(
         not is_racemic(smi)
     )
 
-    def is_semiquant(ic50):
+    def is_semiquant(val):
         try:
-            _ = float(ic50)
+            _ = float(val)
             return False
         except ValueError:
             return True
 
-    def is_invalid(ic50):
+    def is_invalid(val):
         try:
-            _ = float(ic50)
+            _ = float(val)
             return False
         except ValueError:
-            if "<" in ic50 or ">" in ic50:
+            if "<" in val or ">" in val:
                 return False
             return True
 
@@ -657,10 +658,14 @@ def filter_molecules_dataframe(
     achiral_label = [is_achiral(smiles) for smiles in mol_df["smiles"]]
     racemic_label = [is_racemic(smiles) for smiles in mol_df["smiles"]]
     enantiopure_label = [is_enantiopure(smiles) for smiles in mol_df["smiles"]]
-    semiquant_label = [
-        is_semiquant(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
-    ]
-    invalid_label = [is_invalid(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]]
+    if is_ic50:
+        semiquant_label = [
+            is_semiquant(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
+        ]
+        invalid_label = [is_invalid(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]]
+    else:
+        semiquant_label = [ is_semiquant(val) for val in mol_df[f"{assay_name}"] ]
+        invalid_label = [ is_invalid(val) for val in mol_df[f"{assay_name}"] ]
     mol_df["achiral"] = achiral_label
     mol_df["racemic"] = racemic_label
     mol_df["enantiopure"] = enantiopure_label
