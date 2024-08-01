@@ -331,3 +331,6 @@ files:
 
   - resource: tyk2_one_lig.sdf
     sha256hash: 182f6882a0160d041159ccedabc7fd3c7e74f07bf52d4e9974b91eb090f68485
+
+  - resource: Mpro-YP_009725301_AFold_processed.pdb
+    sha256hash: 2d594b29d2ffeb6a51789f489d3d8b183b1ef4cf33f03cbb274616cd87104e42
