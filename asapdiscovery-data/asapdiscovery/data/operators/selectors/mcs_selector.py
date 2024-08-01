@@ -107,6 +107,10 @@ class MCSSelector(SelectorBase):
         False,
         description="Whether to use a structure-based search (True) or a more strict element-based search (False).",
     )
+    approximate: bool = Field(
+        False,
+        description="Whether to use an approximate MCS search (True) or an exact MCS search (False).",
+    )
 
     def select(
         self,
@@ -208,26 +212,51 @@ class MCSSelector(SelectorBase):
 
             pattern_query = oechem.OEQMol(ligand.to_oemol())
             pattern_query.BuildExpressions(atomexpr, bondexpr)
-            mcss = oechem.OEMCSSearch(pattern_query)
+            if self.approximate:
+                mcs_stype = oechem.OEMCSType_Approximate
+            else:
+                mcs_stype = oechem.OEMCSType_Exhaustive
+            mcss = oechem.OEMCSSearch(pattern_query, True, mcs_stype)
             mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
 
-            sort_args = []
-            for complex in complexes:
-                complex_mol = complex.ligand.to_oemol()
-                # MCS search
-                try:
-                    mcs = next(iter(mcss.Match(complex_mol, True)))
-                    sort_args.append((mcs.NumBonds(), mcs.NumAtoms()))
-                except StopIteration:  # no match found
-                    sort_args.append((0, 0))
-            sort_args = np.asarray(sort_args)
-            sort_idx = np.lexsort(-sort_args.T)
-            complexes_sorted = np.asarray(complexes)[sort_idx]
-
-            for i in range(n_select):
-                pairs.append(pair_cls(ligand=ligand, complex=complexes_sorted[i]))
+            pairs.extend(
+                _mcs_inner_row(
+                    mcss=mcss,
+                    complexes=complexes,
+                    n_select=n_select,
+                    ligand=ligand,
+                    pair_cls=pair_cls,
+                )
+            )
 
         return pairs
 
     def provenance(self):
         return {"selector": self.dict(), "oechem": oechem.OEChemGetVersion()}
+
+
+
+def _mcs_inner_row(mcss, complexes, n_select, ligand, pair_cls):
+    """
+    Do one dimension of the NxN MCS search, ie for a single ligand
+    check all complexes for MCS overlap.
+    """
+    for complex in complexes:
+        complex_mol = complex.ligand.to_oemol()
+        # MCS search
+        sort_args = []
+        try:
+            mcs = next(iter(mcss.Match(complex_mol, True)))
+            sort_args.append((mcs.NumBonds(), mcs.NumAtoms()))
+        except StopIteration:
+            sort_args.append((0, 0))
+    
+    sort_args = np.asarray(sort_args)
+    sort_idx = np.lexsort(-sort_args.T)
+    complexes_sorted = np.asarray(complexes)[sort_idx]
+
+    pairs = []
+    for i in range(n_select):
+        pairs.append(pair_cls(ligand=ligand, complex=complexes_sorted[i]))
+    return pairs
+    
