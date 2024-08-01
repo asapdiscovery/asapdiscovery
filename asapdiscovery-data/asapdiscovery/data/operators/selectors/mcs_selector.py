@@ -7,10 +7,6 @@ from asapdiscovery.data.operators.selectors.selector import SelectorBase
 from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
-from asapdiscovery.data.util.dask_utils import (
-    FailureMode,
-    actualise_dask_delayed_iterable,
-)
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
 from pydantic import Field
 
