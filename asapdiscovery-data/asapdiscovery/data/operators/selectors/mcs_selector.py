@@ -9,6 +9,7 @@ from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
 from pydantic import Field
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +155,12 @@ class MCSSelector(SelectorBase):
             raise ValueError("All complexes must be of the same type")
 
         pair_cls = self._pair_type_from_complex(complexes[0])
+
+        if self.approximate:
+            warnings.warn(
+                "Approximate MCS search is not guaranteed to find the maximum common substructure, see: https://docs.eyesopen.com/toolkits/python/oechemtk/patternmatch.html ",
+                UserWarning,
+            )
 
         # clip n_select if it is larger than length of complexes to search from
         n_select = min(n_select, len(complexes))
