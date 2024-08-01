@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import ClassVar, Union
 
 import numpy as np
@@ -9,7 +10,6 @@ from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
 from pydantic import Field
-import warnings
 
 logger = logging.getLogger(__name__)
 
