@@ -44,8 +44,10 @@ def test_pairwise_selector_prepped(ligands_from_complexes, prepped_complexes, us
     assert len(pairs) == 8
 
 
-def test_mcs_selector(ligands_from_complexes, complexes):
-    selector = MCSSelector()
+@pytest.mark.parametrize("approximate", [True, False])
+@pytest.mark.parametrize("structure_based", [True, False])
+def test_mcs_selector(ligands_from_complexes, complexes, approximate, structure_based):
+    selector = MCSSelector(approximate=approximate, structure_based=structure_based)
     pairs = selector.select(ligands_from_complexes, complexes, n_select=1)
     # should be 4 pairs
     assert len(pairs) == 4

@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import ClassVar, Union
 
 import numpy as np
@@ -107,6 +108,10 @@ class MCSSelector(SelectorBase):
         False,
         description="Whether to use a structure-based search (True) or a more strict element-based search (False).",
     )
+    approximate: bool = Field(
+        False,
+        description="Whether to use an approximate MCS search (True) or an exact MCS search (False).",
+    )
 
     def select(
         self,
@@ -150,6 +155,12 @@ class MCSSelector(SelectorBase):
             raise ValueError("All complexes must be of the same type")
 
         pair_cls = self._pair_type_from_complex(complexes[0])
+
+        if self.approximate:
+            warnings.warn(
+                "Approximate MCS search is not guaranteed to find the maximum common substructure, see: https://docs.eyesopen.com/toolkits/python/oechemtk/patternmatch.html ",
+                UserWarning,
+            )
 
         # clip n_select if it is larger than length of complexes to search from
         n_select = min(n_select, len(complexes))
@@ -208,7 +219,11 @@ class MCSSelector(SelectorBase):
 
             pattern_query = oechem.OEQMol(ligand.to_oemol())
             pattern_query.BuildExpressions(atomexpr, bondexpr)
-            mcss = oechem.OEMCSSearch(pattern_query)
+            if self.approximate:
+                mcs_stype = oechem.OEMCSType_Approximate
+            else:
+                mcs_stype = oechem.OEMCSType_Exhaustive
+            mcss = oechem.OEMCSSearch(pattern_query, True, mcs_stype)
             mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
 
             sort_args = []
