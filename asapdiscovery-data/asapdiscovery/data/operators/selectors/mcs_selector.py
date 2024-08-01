@@ -242,30 +242,3 @@ class MCSSelector(SelectorBase):
 
     def provenance(self):
         return {"selector": self.dict(), "oechem": oechem.OEChemGetVersion()}
-
-
-
-def _mcs_inner_row(mcss, complexes, n_select, ligand, pair_cls):
-    """
-    Do one dimension of the NxM MCS search, ie for a single ligand
-    check all complexes for MCS overlap.
-    """
-    for complex in complexes:
-        complex_mol = complex.ligand.to_oemol()
-        # MCS search
-        sort_args = []
-        try:
-            mcs = next(iter(mcss.Match(complex_mol, True)))
-            sort_args.append((mcs.NumBonds(), mcs.NumAtoms()))
-        except StopIteration:
-            sort_args.append((0, 0))
-    
-    sort_args = np.asarray(sort_args)
-    sort_idx = np.lexsort(-sort_args.T)
-    complexes_sorted = np.asarray(complexes)[sort_idx]
-
-    pairs = []
-    for i in range(n_select):
-        pairs.append(pair_cls(ligand=ligand, complex=complexes_sorted[i]))
-    return pairs
-    
