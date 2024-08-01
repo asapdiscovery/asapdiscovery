@@ -7,7 +7,10 @@ from asapdiscovery.data.operators.selectors.selector import SelectorBase
 from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
-from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable, FailureMode
+from asapdiscovery.data.util.dask_utils import (
+    FailureMode,
+    actualise_dask_delayed_iterable,
+)
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
 from pydantic import Field
 
@@ -238,11 +241,8 @@ class MCSSelector(SelectorBase):
 
         return pairs
 
-
-
     def provenance(self):
         return {"selector": self.dict(), "oechem": oechem.OEChemGetVersion()}
-
 
 
 def _mcs_inner_row(mcss, complexes, n_select, ligand, pair_cls):
@@ -259,7 +259,7 @@ def _mcs_inner_row(mcss, complexes, n_select, ligand, pair_cls):
             sort_args.append((mcs.NumBonds(), mcs.NumAtoms()))
         except StopIteration:
             sort_args.append((0, 0))
-    
+
     sort_args = np.asarray(sort_args)
     sort_idx = np.lexsort(-sort_args.T)
     complexes_sorted = np.asarray(complexes)[sort_idx]
@@ -268,4 +268,3 @@ def _mcs_inner_row(mcss, complexes, n_select, ligand, pair_cls):
     for i in range(n_select):
         pairs.append(pair_cls(ligand=ligand, complex=complexes_sorted[i]))
     return pairs
-    
