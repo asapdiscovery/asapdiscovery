@@ -12,9 +12,11 @@ def ligand_file():
 def pdb_file():
     return fetch_test_file("Mpro-P2660_0A_bound_oe_processed.pdb")
 
+
 @pytest.fixture()
 def pdb_apo_file():
     return fetch_test_file("Mpro-YP_009725301_AFold_processed.pdb")
+
 
 @pytest.fixture()
 def all_mpro_fns():
