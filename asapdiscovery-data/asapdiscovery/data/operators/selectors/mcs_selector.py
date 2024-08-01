@@ -7,6 +7,7 @@ from asapdiscovery.data.operators.selectors.selector import SelectorBase
 from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
+from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable, FailureMode
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
 from pydantic import Field
 
@@ -126,6 +127,9 @@ class MCSSelector(SelectorBase):
         ligands: list[Ligand],
         complexes: list[Union[Complex, PreppedComplex]],
         n_select: int = 1,
+        use_dask: bool = False,
+        dask_client=None,
+        failure_mode=FailureMode.SKIP,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         """
         Selects ligand and complex pairs based on maximum common substructure
@@ -219,14 +223,37 @@ class MCSSelector(SelectorBase):
             mcss = oechem.OEMCSSearch(pattern_query, True, mcs_stype)
             mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
 
-            pairs.extend(
-                _mcs_inner_row(
-                    mcss=mcss,
-                    complexes=complexes,
-                    n_select=n_select,
-                    ligand=ligand,
-                    pair_cls=pair_cls,
+
+            # due to memory issues in constructing lots of MCS search objects in parallel in outer loop
+            # we only use dask on the inner loop
+            if use_dask:
+                from dask import delayed
+
+                pairs.append(
+                    delayed(_mcs_inner_row)(
+                        mcss=mcss,
+                        complexes=complexes,
+                        n_select=n_select,
+                        ligand=ligand,
+                        pair_cls=pair_cls,
+                    )
+                )                
+
+            else:
+
+                pairs.extend(
+                    _mcs_inner_row(
+                        mcss=mcss,
+                        complexes=complexes,
+                        n_select=n_select,
+                        ligand=ligand,
+                        pair_cls=pair_cls,
+                    )
                 )
+
+        if use_dask:
+            pairs = actualise_dask_delayed_iterable(
+                pairs, dask_client=dask_client, errors=failure_mode
             )
 
         return pairs
@@ -238,7 +265,7 @@ class MCSSelector(SelectorBase):
 
 def _mcs_inner_row(mcss, complexes, n_select, ligand, pair_cls):
     """
-    Do one dimension of the NxN MCS search, ie for a single ligand
+    Do one dimension of the NxM MCS search, ie for a single ligand
     check all complexes for MCS overlap.
     """
     for complex in complexes:
