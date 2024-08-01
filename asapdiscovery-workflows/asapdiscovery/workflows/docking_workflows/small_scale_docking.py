@@ -266,7 +266,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     logger.info("Selecting pairs for docking based on MCS")
-    selector = MCSSelector()
+    selector = MCSSelector(approximate=True) # use faster approximate matcher
     pairs = selector.select(
         query_ligands,
         prepped_complexes,

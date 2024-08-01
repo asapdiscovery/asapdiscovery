@@ -246,7 +246,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     # TODO: fix, see issue 560
     logger.info("Selecting pairs for docking based on MCS")
-    selector = MCSSelector()
+    selector = MCSSelector(approximate=True)
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
