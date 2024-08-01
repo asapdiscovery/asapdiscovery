@@ -214,7 +214,14 @@ class MCSSelector(SelectorBase):
                 pairs.append(pair_cls(ligand=ligand, complex=complexes[0]))
                 continue
 
-
+            pattern_query = oechem.OEQMol(ligand.to_oemol())
+            pattern_query.BuildExpressions(atomexpr, bondexpr)
+            if self.approximate:
+                mcs_stype = oechem.OEMCSType_Approximate
+            else:
+                mcs_stype = oechem.OEMCSType_Exhaustive
+            mcss = oechem.OEMCSSearch(pattern_query, True, mcs_stype)
+            mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
 
 
             # due to memory issues in constructing lots of MCS search objects in parallel in outer loop
@@ -224,9 +231,7 @@ class MCSSelector(SelectorBase):
 
                 pairs.append(
                     delayed(_mcs_inner_row)(
-                        atomexpr=atomexpr,
-                        bondexpr=bondexpr,
-                        approximate=self.approximate,
+                        mcss=mcss,
                         complexes=complexes,
                         n_select=n_select,
                         ligand=ligand,
@@ -238,9 +243,7 @@ class MCSSelector(SelectorBase):
 
                 pairs.extend(
                     _mcs_inner_row(
-                        atomexpr=atomexpr,
-                        bondexpr=bondexpr,
-                        approximate=self.approximate,
+                        mcss=mcss,
                         complexes=complexes,
                         n_select=n_select,
                         ligand=ligand,
@@ -260,20 +263,11 @@ class MCSSelector(SelectorBase):
 
 
 
-def _mcs_inner_row(atomexpr, bondexpr, approximate, complexes, n_select, ligand, pair_cls):
+def _mcs_inner_row(mcss, complexes, n_select, ligand, pair_cls):
     """
     Do one dimension of the NxM MCS search, ie for a single ligand
     check all complexes for MCS overlap.
     """
-
-    pattern_query = oechem.OEQMol(ligand.to_oemol())
-    pattern_query.BuildExpressions(atomexpr, bondexpr)
-    if approximate:
-        mcs_stype = oechem.OEMCSType_Approximate
-    else:
-        mcs_stype = oechem.OEMCSType_Exhaustive
-    mcss = oechem.OEMCSSearch(pattern_query, True, mcs_stype)
-    mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
     for complex in complexes:
         complex_mol = complex.ligand.to_oemol()
         # MCS search
