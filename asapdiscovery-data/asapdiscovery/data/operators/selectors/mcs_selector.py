@@ -127,9 +127,6 @@ class MCSSelector(SelectorBase):
         ligands: list[Ligand],
         complexes: list[Union[Complex, PreppedComplex]],
         n_select: int = 1,
-        use_dask: bool = False,
-        dask_client=None,
-        failure_mode=FailureMode.SKIP,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         """
         Selects ligand and complex pairs based on maximum common substructure
@@ -223,40 +220,25 @@ class MCSSelector(SelectorBase):
             mcss = oechem.OEMCSSearch(pattern_query, True, mcs_stype)
             mcss.SetMCSFunc(oechem.OEMCSMaxAtomsCompleteCycles())
 
+            sort_args = []
+            for complex in complexes:
+                complex_mol = complex.ligand.to_oemol()
+                # MCS search
+                try:
+                    mcs = next(iter(mcss.Match(complex_mol, True)))
+                    sort_args.append((mcs.NumBonds(), mcs.NumAtoms()))
+                except StopIteration:  # no match found
+                    sort_args.append((0, 0))
+            sort_args = np.asarray(sort_args)
+            sort_idx = np.lexsort(-sort_args.T)
+            complexes_sorted = np.asarray(complexes)[sort_idx]
 
-            # due to memory issues in constructing lots of MCS search objects in parallel in outer loop
-            # we only use dask on the inner loop
-            if use_dask:
-                from dask import delayed
-
-                pairs.append(
-                    delayed(_mcs_inner_row)(
-                        mcss=mcss,
-                        complexes=complexes,
-                        n_select=n_select,
-                        ligand=ligand,
-                        pair_cls=pair_cls,
-                    )
-                )                
-
-            else:
-
-                pairs.extend(
-                    _mcs_inner_row(
-                        mcss=mcss,
-                        complexes=complexes,
-                        n_select=n_select,
-                        ligand=ligand,
-                        pair_cls=pair_cls,
-                    )
-                )
-
-        if use_dask:
-            pairs = actualise_dask_delayed_iterable(
-                pairs, dask_client=dask_client, errors=failure_mode
-            )
+            for i in range(n_select):
+                pairs.append(pair_cls(ligand=ligand, complex=complexes_sorted[i]))
 
         return pairs
+
+
 
     def provenance(self):
         return {"selector": self.dict(), "oechem": oechem.OEChemGetVersion()}
