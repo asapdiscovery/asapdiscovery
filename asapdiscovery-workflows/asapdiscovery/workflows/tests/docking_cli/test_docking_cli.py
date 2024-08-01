@@ -237,3 +237,35 @@ def test_symexp_workflow(ligand_file, pdb_file, tmp_path):
         ],
     )
     assert click_success(result)
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
+def test_ligand_transfer_workflow(ligand_file, pdb_apo_file, pdb_file, tmp_path):
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "ligand-transfer-docking",
+            "--target",
+            "SARS-CoV-2-Mpro",
+            "--ref-pdb-file",
+            pdb_file,
+            "--pdb-file",
+            pdb_apo_file,
+            "--output-dir",
+            tmp_path,
+            "--no-allow-dask-cuda",
+            "--posit-confidence-cutoff",
+            0,
+            "--allow-final-clash",
+            "--allow-retries",
+            "--md",
+            "--md-steps",
+            1,
+            "--md-openmm-platform",
+            "CPU",
+        ],
+    )
+    assert click_success(result)
