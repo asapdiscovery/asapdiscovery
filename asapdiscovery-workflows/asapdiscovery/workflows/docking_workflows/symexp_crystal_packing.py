@@ -132,12 +132,12 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         structure_dir=inputs.structure_dir,
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
-        use_dask=inputs.use_dask,
+        use_dask=False,
         failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
     complexes = structure_factory.load(
-        use_dask=inputs.use_dask,
+        use_dask=False,  # not working for mac1
         failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
@@ -181,7 +181,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
-        n_select=1,
+        n_select=20,
     )
 
     n_pairs = len(pairs)
@@ -209,7 +209,6 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     logger.info("Docking complete")
 
-    complexes = [result.to_posed_complex() for result in results]
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
@@ -243,6 +242,32 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         tag="scores",
         message="No docking results",
     )
+
+    # deduplicate 
+
+    # then order by chemgauss4 score
+    scores_df = scores_df.sort_values(
+        DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
+    )
+    scores_df.to_csv(
+        data_intermediates / "docking_scores_filtered_sorted.csv", index=False
+    )
+
+    # remove duplicates that are the same compound docked to different structures
+    scores_df = scores_df.drop_duplicates(
+        subset=[DockingResultCols.SMILES.value], keep="first"
+    )
+
+    scores_df.to_csv(data_intermediates / "docking_scores_deduplicated.csv", index=False)
+
+    # extract the complexes to keep from the scores
+    
+    # re-extract the filtered input results
+    results = scores_df["input"].tolist()
+    complexes = [result.to_posed_complex() for result in results]
+
+
+    # expand the docked structures
 
     logger.info("Symmetry expanding docked structures")
     expander = SymmetryExpander()
