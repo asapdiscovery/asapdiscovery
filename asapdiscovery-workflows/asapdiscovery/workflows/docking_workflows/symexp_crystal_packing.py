@@ -132,12 +132,12 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         structure_dir=inputs.structure_dir,
         fragalysis_dir=inputs.fragalysis_dir,
         pdb_file=inputs.pdb_file,
-        use_dask=False,
+        use_dask=inputs.use_dask,
         failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
     complexes = structure_factory.load(
-        use_dask=False,  # not working for mac1
+        use_dask=inputs.use_dask,
         failure_mode=inputs.failure_mode,
         dask_client=dask_client,
     )
@@ -160,7 +160,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     prepped_complexes = prepper.prep(
         complexes,
         cache_dir=inputs.cache_dir,
-        use_dask=inputs.use_dask,
+        use_dask=False, # not working for mac1
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
     )
@@ -177,7 +177,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     logger.info("Selecting pairs for docking based on MCS")
-    selector = MCSSelector()
+    selector = MCSSelector(approximate=True)
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
