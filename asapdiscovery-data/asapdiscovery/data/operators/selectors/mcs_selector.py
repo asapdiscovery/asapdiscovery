@@ -8,14 +8,15 @@ from asapdiscovery.data.operators.selectors.selector import SelectorBase
 from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
+from asapdiscovery.data.util.dask_utils import (
+    FailureMode,
+    actualise_dask_delayed_iterable,
+)
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
-from rdkit import rdBase
-from rdkit import Chem
-from rdkit.Chem import rdRascalMCES
-from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable, FailureMode
 from dask import delayed
-
 from pydantic import Field
+from rdkit import Chem, rdBase
+from rdkit.Chem import rdRascalMCES
 
 logger = logging.getLogger(__name__)
 
@@ -254,8 +255,6 @@ class MCSSelector(SelectorBase):
         return {"selector": self.dict(), "oechem": oechem.OEChemGetVersion()}
 
 
-
-
 class RascalMCESSelector(SelectorBase):
     """
     Implementation of the Rascal Maximum Common Edge Subgraphs (MCES) algorithm
@@ -270,9 +269,12 @@ class RascalMCESSelector(SelectorBase):
     Works pairwise between a ligand and a complex, and selects the complex with the
     highest similarity to the ligand.
     """
-    selector_type: ClassVar[str] = "RascalMCESSelector"
-    similarity_threshold: float = Field(0.7, description="Threshold for the similarity score, if the similarity is below this value, the RascalMCES algorithm will not attempt to find the MCS.")
 
+    selector_type: ClassVar[str] = "RascalMCESSelector"
+    similarity_threshold: float = Field(
+        0.7,
+        description="Threshold for the similarity score, if the similarity is below this value, the RascalMCES algorithm will not attempt to find the MCS.",
+    )
 
     def select(
         self,
@@ -283,9 +285,15 @@ class RascalMCESSelector(SelectorBase):
         failure_mode: str = FailureMode.SKIP,
         **kwargs,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
-        outputs = self._select(ligands=ligands, complexes=complexes, use_dask=use_dask, dask_client=dask_client, failure_mode=failure_mode, **kwargs)
+        outputs = self._select(
+            ligands=ligands,
+            complexes=complexes,
+            use_dask=use_dask,
+            dask_client=dask_client,
+            failure_mode=failure_mode,
+            **kwargs,
+        )
         return outputs
-
 
     def _select(
         self,
@@ -302,7 +310,7 @@ class RascalMCESSelector(SelectorBase):
 
         if not all(isinstance(c, type(complexes[0])) for c in complexes):
             raise ValueError("All complexes must be of the same type")
-        
+
         pair_cls = self._pair_type_from_complex(complexes[0])
 
         # clip n_select if it is larger than length of complexes to search from
@@ -315,35 +323,44 @@ class RascalMCESSelector(SelectorBase):
             similarities = []
             for complex in complexes:
                 clsmiles = complex.ligand.smiles
-                
+
                 if use_dask:
-                    similarity = delayed(self._single_pair_rascalMCES_similarity)(lsmiles, clsmiles, similarity_threshold=self.similarity_threshold)
+                    similarity = delayed(self._single_pair_rascalMCES_similarity)(
+                        lsmiles,
+                        clsmiles,
+                        similarity_threshold=self.similarity_threshold,
+                    )
                 else:
-                    similarity = self._single_pair_rascalMCES_similarity(lsmiles, clsmiles, similarity_threshold=self.similarity_threshold)
-                
+                    similarity = self._single_pair_rascalMCES_similarity(
+                        lsmiles,
+                        clsmiles,
+                        similarity_threshold=self.similarity_threshold,
+                    )
+
                 similarities.append(similarity)
-            
+
             if use_dask:
-                similarities=actualise_dask_delayed_iterable(similarities, dask_client=dask_client, errors=failure_mode)
+                similarities = actualise_dask_delayed_iterable(
+                    similarities, dask_client=dask_client, errors=failure_mode
+                )
 
             similarities = np.array(similarities)
-            sort_idx = np.argsort(similarities)[::-1] # sort in descending order
-            complexes_sorted = np.asarray(complexes)[sort_idx]  
+            sort_idx = np.argsort(similarities)[::-1]  # sort in descending order
+            complexes_sorted = np.asarray(complexes)[sort_idx]
 
             for i in range(n_select):
                 pairs.append(pair_cls(ligand=ligand, complex=complexes_sorted[i]))
 
         return pairs
 
-
-
-
     @staticmethod
-    def _single_pair_rascalMCES_similarity(lig_smiles: str, complex_lig_smiles: str, similarity_threshold: float=0.7) -> float:
+    def _single_pair_rascalMCES_similarity(
+        lig_smiles: str, complex_lig_smiles: str, similarity_threshold: float = 0.7
+    ) -> float:
         """
         Serializes the ligand and complex ligand SMILES strings into RDKit Mol objects
-        then uses the rascalMCES algorithm to find the maximum common edge subgraph. 
-        
+        then uses the rascalMCES algorithm to find the maximum common edge subgraph.
+
         The RDKit objects are instantiated inside this method to avoid pickling issues
         when using Dask delayed functions.
 
@@ -378,8 +395,6 @@ class RascalMCESSelector(SelectorBase):
             similarity = 0.0
 
         return similarity
-            
 
     def provenance(self):
         return {"selector": self.dict(), "rdkit": rdBase.rdkitVersion}
-    
