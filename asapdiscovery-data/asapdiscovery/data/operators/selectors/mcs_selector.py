@@ -9,6 +9,12 @@ from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedCompl
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
+from rdkit import rdBase
+from rdkit import Chem
+from rdkit.Chem import rdRascalMCES
+from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable
+from dask import delayed
+
 from pydantic import Field
 
 logger = logging.getLogger(__name__)
@@ -246,3 +252,95 @@ class MCSSelector(SelectorBase):
 
     def provenance(self):
         return {"selector": self.dict(), "oechem": oechem.OEChemGetVersion()}
+
+
+
+
+class RascalMCESSelector(SelectorBase):
+    selector_type: ClassVar[str] = "RascalMCESSelector"
+
+
+    def select(
+        self,
+        ligands: list[Ligand],
+        complexes: list[Union[Complex, PreppedComplex]],
+        use_dask: bool = False,
+        dask_client=None,
+        failure_mode: str = "raise",
+    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+        outputs = self._select(ligands=ligands, complexes=complexes, use_dask=use_dask, dask_client=dask_client, failure_mode=failure_mode)
+        return outputs
+
+
+    def _select(
+        self,
+        ligands: list[Ligand],
+        complexes: list[Union[Complex, PreppedComplex]],
+        n_select: int = 1,
+        use_dask: bool = False,
+        dask_client=None,
+        failure_mode: str = "raise",
+    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+
+        if not all(isinstance(c, ComplexBase) for c in complexes):
+            raise ValueError("All complexes must be of type Complex, or PreppedComplex")
+
+        if not all(isinstance(c, type(complexes[0])) for c in complexes):
+            raise ValueError("All complexes must be of the same type")
+        
+        pair_cls = self._pair_type_from_complex(complexes[0])
+
+        # clip n_select if it is larger than length of complexes to search from
+        n_select = min(n_select, len(complexes))
+
+        pairs = []
+
+        for ligand in ligands:
+            lsmiles = ligand.smiles
+            similarities = []
+            for complex in complexes:
+                clsmiles = complex.ligand.smiles
+                
+                if use_dask:
+                    similarity = delayed(self._single_pair_rascalMCES_similarity)(lsmiles, clsmiles)
+                else:
+                    similarity = self._single_pair_rascalMCES_similarity(lsmiles, clsmiles)
+                
+                similarities.append(similarity)
+            
+            if use_dask:
+                similarities=actualise_dask_delayed_iterable(similarities)
+
+            similarities = np.array(similarities)
+            sort_idx = np.argsort(similarities)[::-1] # sort in descending order
+            complexes_sorted = np.asarray(complexes)[sort_idx]  
+
+            for i in range(n_select):
+                pairs.append(pair_cls(ligand=ligand, complex=complexes_sorted[i]))
+
+        return pairs
+
+
+
+
+    @staticmethod
+    def _single_pair_rascalMCES_similarity(lig_smiles, complex_lig_smiles):
+        lig_mol = Chem.MolFromSmiles(lig_smiles)
+        complex_lig_mol = Chem.MolFromSmiles(complex_lig_smiles)
+        opts = rdRascalMCES.RascalOptions()
+        opts.returnEmptyMCES = True
+        opts.singleLargestFrag = True
+        opts.similarityThreshold = 0.7
+
+        try:
+            mces = rdRascalMCES.FindMCES(lig_mol, complex_lig_mol, opts)
+            similarity = mces[0].similarity
+        except Exception as e:
+            logger.error(f"Error in rascalMCES: {e}")
+            similarity = 0.0
+
+        return similarity
+            
+
+    def provenance(self):
+        return {"selector": self.dict(), "rdkit": rdBase.rdkitVersion}
