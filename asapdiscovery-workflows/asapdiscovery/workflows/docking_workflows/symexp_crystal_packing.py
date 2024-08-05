@@ -181,7 +181,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
-        n_select=20,
+        n_select=5,
     )
 
     n_pairs = len(pairs)
@@ -343,39 +343,8 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     clashing_df.to_csv(data_intermediates / "clashing.csv", index=False)
     non_clashing_df.to_csv(data_intermediates / "non_clashing.csv", index=False)
 
-    # # run html visualiser to get web-ready vis of docked poses in expanded form
-    # logger.info("Running HTML visualiser for poses")
-    html_ouptut_dir = output_dir / "poses"
-    html_visualizer = HTMLVisualizer(
-        color_method=ColorMethod.subpockets,
-        target=inputs.target,
-        output_dir=html_ouptut_dir,
-    )
-    pose_visualizatons = html_visualizer.visualize(
-        expanded_complexes,
-        use_dask=inputs.use_dask,
-        dask_client=dask_client,
-        failure_mode=inputs.failure_mode,
-    )
-
-    # rename visualisations target id column to POSIT structure tag so we can join
-    pose_visualizatons.rename(
-        columns={
-            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        },
-        inplace=True,
-    )
-
-    # join the two dataframes on ligand_id, target_id and smiles
-    combined_df = scores_df.merge(
-        pose_visualizatons,
-        on=[
-            DockingResultCols.LIGAND_ID.value,
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
-            DockingResultCols.SMILES.value,
-        ],
-        how="outer",
-    )
+    # forgive me for this
+    combined_df = scores_df
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
