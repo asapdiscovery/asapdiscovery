@@ -12,7 +12,7 @@ from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to back
 from rdkit import rdBase
 from rdkit import Chem
 from rdkit.Chem import rdRascalMCES
-from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable
+from asapdiscovery.data.util.dask_utils import actualise_dask_delayed_iterable, FailureMode
 from dask import delayed
 
 from pydantic import Field
@@ -280,7 +280,7 @@ class RascalMCESSelector(SelectorBase):
         complexes: list[Union[Complex, PreppedComplex]],
         use_dask: bool = False,
         dask_client=None,
-        failure_mode: str = "raise",
+        failure_mode: str = FailureMode.SKIP,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
         outputs = self._select(ligands=ligands, complexes=complexes, use_dask=use_dask, dask_client=dask_client, failure_mode=failure_mode)
         return outputs
@@ -293,7 +293,7 @@ class RascalMCESSelector(SelectorBase):
         n_select: int = 1,
         use_dask: bool = False,
         dask_client=None,
-        failure_mode: str = "raise",
+        failure_mode: str = FailureMode.SKIP,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
 
         if not all(isinstance(c, ComplexBase) for c in complexes):
@@ -323,7 +323,7 @@ class RascalMCESSelector(SelectorBase):
                 similarities.append(similarity)
             
             if use_dask:
-                similarities=actualise_dask_delayed_iterable(similarities, dask_client=dask_client, failure_mode=failure_mode)
+                similarities=actualise_dask_delayed_iterable(similarities, dask_client=dask_client, errors=failure_mode)
 
             similarities = np.array(similarities)
             sort_idx = np.argsort(similarities)[::-1] # sort in descending order
