@@ -253,7 +253,9 @@ class ProteinPrepper(ProteinPrepperBase):
         prepped_complexes = []
         for complex_target in inputs:
 
-            logger.debug(f"Prepping complex: {complex_target.target.target_name} - {complex_target.ligand.compound_name}")
+            logger.debug(
+                f"Prepping complex: {complex_target.target.target_name} - {complex_target.ligand.compound_name}"
+            )
             try:
                 # load protein
                 prot = complex_target.to_combined_oemol()

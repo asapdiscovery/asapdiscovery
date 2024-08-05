@@ -160,7 +160,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     prepped_complexes = prepper.prep(
         complexes,
         cache_dir=inputs.cache_dir,
-        use_dask=False, # not working for mac1
+        use_dask=False,  # not working for mac1
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
     )
@@ -212,7 +212,6 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     logger.info("Docking complete")
 
-
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     if n_results == 0:
@@ -246,7 +245,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         message="No docking results",
     )
 
-    # deduplicate 
+    # deduplicate
 
     # then order by chemgauss4 score
     scores_df = scores_df.sort_values(
@@ -261,14 +260,15 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         subset=[DockingResultCols.SMILES.value], keep="first"
     )
 
-    scores_df.to_csv(data_intermediates / "docking_scores_deduplicated.csv", index=False)
+    scores_df.to_csv(
+        data_intermediates / "docking_scores_deduplicated.csv", index=False
+    )
 
     # extract the complexes to keep from the scores
-    
+
     # re-extract the filtered input results
     results = scores_df["input"].tolist()
     complexes = [result.to_posed_complex() for result in results]
-
 
     # expand the docked structures
 
