@@ -95,8 +95,3 @@ def mac1_complex():
     return PreppedComplex.parse_file(
         fetch_test_file("constrained_conformer/complex.json")
     )
-
-
-@pytest.fixture()
-def alphafold_maestro_prep_pdb():
-    return fetch_test_file("Mpro-YP_009725301_AFold_processed.pdb")
