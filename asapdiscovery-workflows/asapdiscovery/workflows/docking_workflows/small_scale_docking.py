@@ -266,7 +266,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     logger.info("Selecting pairs for docking based on MCS")
-    selector = RascalMCESSelector(similarity_threshold=0.4) # better attempt to find the MCS than the default 0.7
+    selector = RascalMCESSelector(
+        similarity_threshold=0.4
+    )  # better attempt to find the MCS than the default 0.7
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
