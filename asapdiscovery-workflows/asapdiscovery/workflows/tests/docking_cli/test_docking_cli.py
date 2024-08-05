@@ -238,6 +238,7 @@ def test_symexp_workflow(ligand_file, pdb_file, tmp_path):
     )
     assert click_success(result)
 
+
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
