@@ -1,5 +1,5 @@
 import pytest
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelector, MCSSelector
 from asapdiscovery.data.operators.selectors.pairwise_selector import (
     LeaveOneOutSelector,
     LeaveSimilarOutSelector,
@@ -64,6 +64,28 @@ def test_mcs_selector(ligands_from_complexes, complexes, approximate, structure_
     assert pairs[3] == CompoundStructurePair(
         ligand=ligands_from_complexes[3], complex=complexes[3]
     )
+
+@pytest.mark.parametrize("use_dask", [True, False])
+def test_rascalMCES_selector(ligands_from_complexes, complexes, use_dask):
+    selector = RascalMCESSelector()
+    pairs = selector.select(ligands_from_complexes, complexes, n_select=1, use_dask=use_dask)
+    # should be 4 pairs
+    assert len(pairs) == 4
+    # as we matched against the exact smiles of the first 4 complex ligands_from_complexes, they should be in order
+    assert pairs[0] == CompoundStructurePair(
+        ligand=ligands_from_complexes[0], complex=complexes[0]
+    )
+    assert pairs[1] == CompoundStructurePair(
+        ligand=ligands_from_complexes[1], complex=complexes[1]
+    )
+    assert pairs[2] == CompoundStructurePair(
+        ligand=ligands_from_complexes[2], complex=complexes[2]
+    )
+    assert pairs[3] == CompoundStructurePair(
+        ligand=ligands_from_complexes[3], complex=complexes[3]
+    )
+
+
 
 
 def test_mcs_select_prepped(ligands_from_complexes, prepped_complexes):

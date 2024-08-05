@@ -281,8 +281,9 @@ class RascalMCESSelector(SelectorBase):
         use_dask: bool = False,
         dask_client=None,
         failure_mode: str = FailureMode.SKIP,
+        **kwargs,
     ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
-        outputs = self._select(ligands=ligands, complexes=complexes, use_dask=use_dask, dask_client=dask_client, failure_mode=failure_mode)
+        outputs = self._select(ligands=ligands, complexes=complexes, use_dask=use_dask, dask_client=dask_client, failure_mode=failure_mode, **kwargs)
         return outputs
 
 
