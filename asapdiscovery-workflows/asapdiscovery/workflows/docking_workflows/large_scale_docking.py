@@ -4,7 +4,7 @@ from typing import Optional
 
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelector
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema.complex import Complex
@@ -246,11 +246,14 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     # TODO: fix, see issue 560
     logger.info("Selecting pairs for docking based on MCS")
-    selector = MCSSelector(approximate=True)
+    selector = RascalMCESSelector()
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
         n_select=inputs.n_select,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        failure_mode=inputs.failure_mode,
     )
 
     n_pairs = len(pairs)
