@@ -6,7 +6,7 @@ from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelect
 from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_artifacts import (
@@ -24,10 +24,9 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.util.dask_utils import make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import make_dask_client_meta, BackendType
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
-from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer import ChemGauss4Scorer, SymClashScorer
@@ -160,7 +159,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     prepped_complexes = prepper.prep(
         complexes,
         cache_dir=inputs.cache_dir,
-        use_dask=False, # not working for mac1
+        use_dask=inputs.use_dask, # not working for mac1 fragalysis dump
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
     )
@@ -208,6 +207,8 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode="skip",
+        return_for_disk_backend=True,
+
     )
 
     logger.info("Docking complete")
@@ -221,8 +222,11 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
     # score results with just normal ChemGauss scorer
@@ -234,6 +238,8 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
         return_df=True,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
