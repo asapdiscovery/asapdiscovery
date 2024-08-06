@@ -308,12 +308,10 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     logger.info("Running scoring")
     scores_df_exp = scorer.score(
         expanded_complexes,
-        use_dask=inputs.use_dask,
-        dask_client=dask_client,
+        use_dask=False,
+        dask_client=None,
         failure_mode=inputs.failure_mode,
         return_df=True,
-        backend=BackendType.DISK,
-        reconstruct_cls=docker.result_cls,
     )
 
     scores_df_exp.to_csv(data_intermediates / "symexp_scores_raw.csv", index=False)
