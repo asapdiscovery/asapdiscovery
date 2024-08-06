@@ -276,7 +276,6 @@ def test_ligand_transfer_workflow(pdb_apo_file, pdb_file, tmp_path, simulation_r
                 1,
                 "--md-openmm-platform",
                 "CPU",
-
             ],
         )
     assert click_success(result)
