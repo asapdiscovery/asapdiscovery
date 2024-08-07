@@ -6,7 +6,6 @@ from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelect
 from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_artifacts import (
@@ -24,9 +23,10 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.util.dask_utils import make_dask_client_meta, BackendType
+from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer import ChemGauss4Scorer, SymClashScorer
@@ -159,7 +159,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     prepped_complexes = prepper.prep(
         complexes,
         cache_dir=inputs.cache_dir,
-        use_dask=inputs.use_dask, # not working for mac1 fragalysis dump
+        use_dask=inputs.use_dask,  # not working for mac1 fragalysis dump
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
     )
@@ -208,7 +208,6 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         dask_client=dask_client,
         failure_mode="skip",
         return_for_disk_backend=True,
-
     )
 
     logger.info("Docking complete")
