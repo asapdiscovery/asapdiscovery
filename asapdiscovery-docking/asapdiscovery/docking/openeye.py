@@ -405,7 +405,7 @@ class POSITDocker(DockingBase):
                                 )
                             )
 
-                    # No we can decide if we want to return a path to the json file or the actual object
+                    # Now we can decide if we want to return a path to the json file or the actual object
                     for docking_result in docking_results_objects:
                         if return_for_disk_backend:
                             docking_results.append(docked_result_json_path)
