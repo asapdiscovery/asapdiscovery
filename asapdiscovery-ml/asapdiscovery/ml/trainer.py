@@ -122,6 +122,7 @@ class Trainer(BaseModel):
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
     wandb_project: str | None = Field(None, description="W&B project name.")
     wandb_name: str | None = Field(None, description="W&B project name.")
+    wandb_group: str | None = Field(None, description="W&B group name.")
     extra_config: dict | None = Field(
         None, description="Any extra config options to log to W&B."
     )
@@ -131,6 +132,11 @@ class Trainer(BaseModel):
     s3_settings: S3Settings | None = Field(None, description="S3 settings.")
     s3_path: str | None = Field(None, description="S3 location to upload artifacts.")
     model_tag: str | None = Field(None, description="Tag for the model being trained.")
+
+    has_uncertainty: bool = Field(
+        True, description="Whether the target has uncertainty."
+    )
+    has_range: bool = Field(True, description="Whether the target has a range.")
 
     # Tracker to make sure the optimizer and ML model are built before trying to train
     _is_initialized = False
@@ -515,6 +521,7 @@ class Trainer(BaseModel):
                 project=self.wandb_project,
                 config=config,
                 name=self.wandb_name,
+                group=self.wandb_group,
             ).id
 
             # Save run_id in case we want to continue later
@@ -729,13 +736,23 @@ class Trainer(BaseModel):
                 target = torch.tensor(
                     [[pose[self.target_prop]]], device=self.device
                 ).float()
-                in_range = torch.tensor(
-                    [[pose[f"{self.target_prop}_range"]]], device=self.device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[pose[f"{self.target_prop}_stderr"]]],
-                    device=self.device,
-                ).float()
+
+                if self.has_range:
+                    in_range = torch.tensor(
+                        [[pose[f"{self.target_prop}_range"]]], device=self.device
+                    ).float()
+                else:
+                    in_range = torch.tensor([[0]], device=self.device).float()
+                    # empty tensor to match other types
+
+                if self.has_uncertainty:
+                    uncertainty = torch.tensor(
+                        [[pose[f"{self.target_prop}_stderr"]]],
+                        device=self.device,
+                    ).float()
+                else:
+                    # empty tensor
+                    uncertainty = torch.tensor([[0]], device=self.device).float()
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -830,17 +847,22 @@ class Trainer(BaseModel):
                 else:
                     compound_id = compound
 
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[pose[self.target_prop]]], device=self.device
-                ).float()
-                in_range = torch.tensor(
-                    [[pose[f"{self.target_prop}_range"]]], device=self.device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[pose[f"{self.target_prop}_stderr"]]],
-                    device=self.device,
-                ).float()
+                if self.has_range:
+                    in_range = torch.tensor(
+                        [[pose[f"{self.target_prop}_range"]]], device=self.device
+                    ).float()
+                else:
+                    in_range = torch.tensor([[0]], device=self.device).float()
+                    # empty tensor to match other types
+
+                if self.has_uncertainty:
+                    uncertainty = torch.tensor(
+                        [[pose[f"{self.target_prop}_stderr"]]],
+                        device=self.device,
+                    ).float()
+                else:
+                    # empty tensor
+                    uncertainty = torch.tensor([[0]], device=self.device).float()
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -877,16 +899,23 @@ class Trainer(BaseModel):
                     compound_id = compound
 
                 # convert to float to match other types
-                target = torch.tensor(
-                    [[pose[self.target_prop]]], device=self.device
-                ).float()
-                in_range = torch.tensor(
-                    [[pose[f"{self.target_prop}_range"]]], device=self.device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[pose[f"{self.target_prop}_stderr"]]],
-                    device=self.device,
-                ).float()
+
+                if self.has_range:
+                    in_range = torch.tensor(
+                        [[pose[f"{self.target_prop}_range"]]], device=self.device
+                    ).float()
+                else:
+                    in_range = torch.tensor([[0]], device=self.device).float()
+                    # empty tensor to match other types
+
+                if self.has_uncertainty:
+                    uncertainty = torch.tensor(
+                        [[pose[f"{self.target_prop}_stderr"]]],
+                        device=self.device,
+                    ).float()
+                else:
+                    # empty tensor
+                    uncertainty = torch.tensor([[0]], device=self.device).float()
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:

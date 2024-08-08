@@ -175,32 +175,32 @@ def seqres_to_res_list(seqres_str):
 
 def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
     """
-    Convert a CDD-downloaded and filtered CSV file into a JSON file containing
-    a list[ExperimentalCompoundData]. CSV file should be the result of the
-    filter_molecules_dataframe function and must contain the following headers:
-    * name
-    * smiles
-    * achiral
-    * racemic
-    * pIC50
-    * pIC50_stderr
-    * pIC50_95ci_lower
-    * pIC50_95ci_upper
-    * pIC50_range
+        Convert a CDD-downloaded and filtered CSV file into a JSON file containing
+        a list[ExperimentalCompoundData]. CSV file should be the result of the
+        filter_molecules_dataframe function and must contain the following headers:
+        * name
+        * smiles
+        * achiral
+        * racemic
+        * pIC50
+        * pIC50_stderr
+        * pIC50_95ci_lower
+        * pIC50_95ci_upper
+        * pIC50_range
 
-    Parameters
-    ----------
-    cdd_csv : str
-        CSV file downloaded from CDD.
-    out_json : str, optional
-        JSON file to save to.
-    out_csv : str, optional
-        CSV file to save to.
-
-    Returns
-    -------
-    list[ExperimentalCompoundData]
-        The parsed list of ExperimentalCompoundData objects.
+        Parameters
+        ----------
+        cdd_csv : str
+            CSV file downloaded from CDD.
+        out_json : str, optional
+            JSON file to save to.
+        out_csv : str, optional
+            CSV file to save to.
+    s
+        Returns
+        -------
+        list[ExperimentalCompoundData]
+            The parsed list of ExperimentalCompoundData objects.
     """
 
     # Load and remove any straggling compounds w/o SMILES data
@@ -337,6 +337,126 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
             out_cols += ["Batch Created Date"]
         df[out_cols].to_csv(out_csv)
         print(f"Wrote {out_csv}", flush=True)
+
+    return compounds
+
+
+def cdd_to_schema_v2(
+    cdd_csv, target_prop, time_column=None, out_json=None, out_csv=None
+):
+    """
+    Convert a CDD-downloaded and filtered CSV file into a JSON file containing
+    a list[ExperimentalCompoundData]. CSV file should be the result of the
+    filter_molecules_dataframe function and must contain the following headers:
+    * name
+    * smiles
+    * achiral
+    * racemic
+    * <target property>
+
+    Parameters
+    ----------
+    cdd_csv : str
+        CSV file downloaded from CDD.
+    out_json : str, optional
+        JSON file to save to.
+    out_csv : str, optional
+        CSV file to save to.
+
+    Returns
+    -------
+    list[ExperimentalCompoundData]
+        The parsed list of ExperimentalCompoundData objects.
+    """
+
+    # Load and remove any straggling compounds w/o SMILES data
+    df = pandas.read_csv(cdd_csv)
+
+    # Check that all required columns are present
+    reqd_cols = [
+        "name",
+        "smiles",
+        "achiral",
+        "racemic",
+        "semiquant",
+        target_prop,
+    ]
+    missing_cols = [c for c in reqd_cols if c not in df.columns]
+    if len(missing_cols) > 0:
+        raise ValueError(f"Required columns not present in CSV file: {missing_cols}. ")
+
+    # Make extra sure nothing snuck by
+    idx = df["smiles"].isna()
+    logging.debug(f"Removing {idx.sum()} entries with no SMILES", flush=True)
+    df = df.loc[~idx, :]
+
+    # Fill semi-qunatitative data with the mean of others WHAT TO DO FOR regular scalar?
+    df.loc[df["semiquant"], target_prop] = df.loc[~df["semiquant"], target_prop].mean()
+
+    # For now just keep the first measure for each compound_id (should be the
+    #  only one if `keep_best_per_mol` was set when running
+    #  `filter_molecules_dataframe`.)
+    compounds = []
+    seen_compounds = {}
+    for _, c in df.iterrows():
+        compound_id = c["name"]
+        # take first observation is this right?
+        if compound_id in seen_compounds:
+            # If there are no NaN values, don't need to fix
+            if not seen_compounds[compound_id]:
+                continue
+
+        smiles = c["smiles"]
+        experimental_data = {}
+        experimental_data[target_prop] = c[target_prop]
+
+        # Add date created if present
+        if time_column in c.index:
+            date_created = pandas.to_datetime(c[time_column]).date()
+        else:
+            date_created = None
+
+        # Keep track of if there are any NaN values
+        try:
+            seen_compounds[compound_id] = np.isnan(
+                list(experimental_data.values())
+            ).any()
+        except TypeError:
+            seen_compounds[compound_id] = True
+
+        try:
+            compounds.append(
+                ExperimentalCompoundData(
+                    compound_id=compound_id,
+                    smiles=smiles,
+                    racemic=c["racemic"],
+                    achiral=c["achiral"],
+                    absolute_stereochemistry_enantiomerically_pure=(not c["racemic"]),
+                    relative_stereochemistry_enantiomerically_pure=(not c["racemic"]),
+                    date_created=date_created,
+                    experimental_data=experimental_data,
+                )
+            )
+        except pydantic.error_wrappers.ValidationError as e:
+            print(
+                "Error converting this row to ExperimentalCompoundData object:",
+                c,
+                flush=True,
+            )
+            raise e
+
+    # needs to be this way for compatibility #TODO: change this
+    # should be json.dumps([c.json() for c in compounds])
+    if out_json:
+        with open(out_json, "w") as fp:
+            fp.write("[" + ", ".join([c.json() for c in compounds]) + "]")
+        print(f"Wrote {out_json}", flush=True)
+
+    if out_csv:
+        # read schema into dataframe
+        schema_df = pandas.DataFrame([c.dict() for c in compounds])
+        # write to csv
+        schema_df.to_csv(out_csv)
 
     return compounds
 
@@ -530,6 +650,7 @@ def filter_molecules_dataframe(
     retain_enantiopure=False,
     retain_semiquantitative_data=False,
     retain_invalid=False,
+    is_ic50=True,
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
@@ -615,19 +736,19 @@ def filter_molecules_dataframe(
         not is_racemic(smi)
     )
 
-    def is_semiquant(ic50):
+    def is_semiquant(val):
         try:
-            _ = float(ic50)
+            _ = float(val)
             return False
         except ValueError:
             return True
 
-    def is_invalid(ic50):
+    def is_invalid(val):
         try:
-            _ = float(ic50)
+            _ = float(val)
             return False
         except ValueError:
-            if "<" in ic50 or ">" in ic50:
+            if "<" in val or ">" in val:
                 return False
             return True
 
@@ -657,10 +778,16 @@ def filter_molecules_dataframe(
     achiral_label = [is_achiral(smiles) for smiles in mol_df["smiles"]]
     racemic_label = [is_racemic(smiles) for smiles in mol_df["smiles"]]
     enantiopure_label = [is_enantiopure(smiles) for smiles in mol_df["smiles"]]
-    semiquant_label = [
-        is_semiquant(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
-    ]
-    invalid_label = [is_invalid(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]]
+    if is_ic50:
+        semiquant_label = [
+            is_semiquant(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
+        ]
+        invalid_label = [
+            is_invalid(ic50) for ic50 in mol_df[f"{assay_name}: IC50 (µM)"]
+        ]
+    else:
+        semiquant_label = [is_semiquant(val) for val in mol_df[f"{assay_name}"]]
+        invalid_label = [is_invalid(val) for val in mol_df[f"{assay_name}"]]
     mol_df["achiral"] = achiral_label
     mol_df["racemic"] = racemic_label
     mol_df["enantiopure"] = enantiopure_label
