@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
@@ -37,21 +38,25 @@ class PosteraFactory(BaseModel):
         ligands = []
         for _, mol in mols.iterrows():
             # create the ligand with relevant metadata
-            ligand = Ligand.from_smiles(
-                compound_name=mol.id,
-                smiles=mol.smiles,
-                ids=LigandIdentifiers(manifold_api_id=mol.id),
-            )
+            try:
+                smiles = mol.smiles
+                ligand = Ligand.from_smiles(
+                    compound_name=mol.id,
+                    smiles=smiles,
+                    ids=LigandIdentifiers(manifold_api_id=mol.id),
+                )
 
-            # now append custom data to the Ligand's tags, if there is any
-            tags = {}
-            for custom_col in custom_data_columns:
-                if mol[custom_col] is None:
-                    mol[custom_col] = ""
-                tags[custom_col] = mol[custom_col]
+                # now append custom data to the Ligand's tags, if there is any
+                tags = {}
+                for custom_col in custom_data_columns:
+                    if mol[custom_col] is None:
+                        mol[custom_col] = ""
+                    tags[custom_col] = mol[custom_col]
 
-            ligand.tags = tags
-            ligands.append(ligand)
+                ligand.tags = tags
+                ligands.append(ligand)
+            except:  # noqa: E722
+                warnings.warn(f"Failed to create ligand from smiles: {smiles}")
         return ligands
 
     def pull(self) -> list[Ligand]:
