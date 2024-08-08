@@ -4,7 +4,7 @@ from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.services.postera.molecule_set import MoleculeSetAPI
 from asapdiscovery.data.services.services_config import PosteraSettings
 from pydantic import BaseModel, Field
-
+import warnings
 
 class PosteraFactory(BaseModel):
     settings: PosteraSettings = Field(default_factory=PosteraSettings)
@@ -37,21 +37,25 @@ class PosteraFactory(BaseModel):
         ligands = []
         for _, mol in mols.iterrows():
             # create the ligand with relevant metadata
-            ligand = Ligand.from_smiles(
-                compound_name=mol.id,
-                smiles=mol.smiles,
-                ids=LigandIdentifiers(manifold_api_id=mol.id),
-            )
+            try:
+                smiles = mol.smiles
+                ligand = Ligand.from_smiles(
+                    compound_name=mol.id,
+                    smiles=smiles,
+                    ids=LigandIdentifiers(manifold_api_id=mol.id),
+                )
 
-            # now append custom data to the Ligand's tags, if there is any
-            tags = {}
-            for custom_col in custom_data_columns:
-                if mol[custom_col] is None:
-                    mol[custom_col] = ""
-                tags[custom_col] = mol[custom_col]
+                # now append custom data to the Ligand's tags, if there is any
+                tags = {}
+                for custom_col in custom_data_columns:
+                    if mol[custom_col] is None:
+                        mol[custom_col] = ""
+                    tags[custom_col] = mol[custom_col]
 
-            ligand.tags = tags
-            ligands.append(ligand)
+                ligand.tags = tags
+                ligands.append(ligand)
+            except:
+                warnings.warn(f"Failed to create ligand from smiles: {smiles}")
         return ligands
 
     def pull(self) -> list[Ligand]:
