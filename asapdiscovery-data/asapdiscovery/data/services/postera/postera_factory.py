@@ -55,7 +55,7 @@ class PosteraFactory(BaseModel):
 
                 ligand.tags = tags
                 ligands.append(ligand)
-            except:
+            except: # noqa: E722
                 warnings.warn(f"Failed to create ligand from smiles: {smiles}")
         return ligands
 
