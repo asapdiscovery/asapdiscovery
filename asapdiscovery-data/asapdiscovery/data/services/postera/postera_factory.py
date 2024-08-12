@@ -95,8 +95,8 @@ class PosteraFactory(BaseModel):
         if progress:
             wrapper = track
         else:
-            wrapper = lambda x, **kwargs: x # noqa: E731
-        
+            wrapper = lambda x, **kwargs: x  # noqa: E731
+
         all_mset_data = []
         for mset_uuid, _ in wrapper(
             available_msets.items(),
