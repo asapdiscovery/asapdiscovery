@@ -1,4 +1,5 @@
 import datetime
+import tempfile
 
 import openfe
 import pytest
@@ -7,6 +8,7 @@ from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.complex import PreppedComplex
+from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
 from gufe.protocols import Context, ProtocolUnit, ProtocolUnitFailure
@@ -121,3 +123,32 @@ def openeye_prep_workflow() -> AlchemyPrepWorkflow:
         pose_generator=OpenEyeConstrainedPoseGenerator(),
         charge_method=None,
     )
+
+
+@pytest.fixture()
+def test_ligands():
+    TEST_LIGANDS = [
+        Ligand.from_smiles(smi, compound_name="foo")
+        for smi in [
+            "O=C(NC1=CC(Cl)=CC(C(=O)NC2=CC=C(CC3CCNCC3)C=C2)=C1)OCC1=CC=CC=C1",
+            "CCNC(=O)NC1=CC(Cl)=CC(C(=O)NC2=CC(C)=CC(CN)=C2)=C1",
+            "NC1=CC=C(NC(=O)C2=CC(Cl)=CC3=C2C=NN3)C=N1",
+            "NCC1=CC=CC(NC(=O)C2=CC(Cl)=CC(CN)=C2)=C1",
+            "O=C(C1=CC=CC2=CC=CC=C12)NC3=CC=C4CNCC4=C3",
+            "CCNC(=O)NC1=CC(Cl)=CC(C(=O)NC2=CC(C)=CC(CN)=C2)=C1",
+            "O=C(C1=CC=CC2=C(F)C=CC=C12)NC3=CC=C4CNCC4=C3",
+            "O=C(C1=CC=CC2=C(Cl)C=CC=C12)NC3=CC=C4CNCC4=C3",
+            "O=C(C1=CC=CC2=C(Br)C=CC=C12)NC3=CC=C4CNCC4=C3",
+        ]
+    ]
+    return TEST_LIGANDS
+
+
+@pytest.fixture()
+def test_ligands_sdfile(test_ligands, tmp_path):
+    # write the ligands to a temporary SDF file
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".sdf", delete=False, dir=tmp_path
+    ) as f:
+        write_ligands_to_multi_sdf(f.name, test_ligands, overwrite=True)
+    return f.name
