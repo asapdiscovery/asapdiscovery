@@ -1000,12 +1000,14 @@ def clean_result_network(network, console=None):
 
     returns the loaded FreeEnergyCalculationNetwork.
     """
-    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
-    import rich, sys
-    from rich.padding import Padding
     import json
+    import sys
     import tempfile
+
     import numpy as np
+    import rich
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from rich.padding import Padding
 
     with open(network) as f:
         d = json.load(f)

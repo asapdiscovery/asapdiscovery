@@ -691,10 +691,10 @@ def predict(
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header, upload_to_postera
     from asapdiscovery.alchemy.predict import (
+        clean_result_network,
         create_absolute_report,
         create_relative_report,
         get_data_from_femap,
-        clean_result_network,
     )
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from rich import pretty
