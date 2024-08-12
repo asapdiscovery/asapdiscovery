@@ -669,6 +669,12 @@ def stop(network_key: str):
     show_default=True,
     help="The name of the Postera molecule set to upload the results to.",
 )
+@click.option(
+    "-c",
+    "--clean",
+    is_flag=True,
+    help="Whether or not to clean the incoming result network, e.g. in cases where some edges are imbalanced between complex/solvent or when DG==0.0.",
+)
 def predict(
     network: str,
     reference_units: str,
@@ -676,6 +682,7 @@ def predict(
     experimental_protocol: Optional[str] = None,
     target: Optional[TagEnumBase] = None,
     postera_molset_name: Optional[str] = None,
+    clean: Optional[bool] = False,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
@@ -687,6 +694,7 @@ def predict(
         create_absolute_report,
         create_relative_report,
         get_data_from_femap,
+        clean_result_network,
     )
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from rich import pretty
@@ -696,7 +704,15 @@ def predict(
     console = rich.get_console()
     print_header(console)
 
-    result_network = FreeEnergyCalculationNetwork.from_file(network)
+    if clean:
+        message = Padding(
+            f"Warning: cleaning incoming result network {network}. You may lose results.",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+        result_network = clean_result_network(network, console=console)
+    else:
+        result_network = FreeEnergyCalculationNetwork.from_file(network)
 
     message = Padding(
         f"Loaded FreeEnergyCalculationNetwork from [repr.filename]{network}[/repr.filename]",
