@@ -73,9 +73,14 @@ class PosteraFactory(BaseModel):
             ms_api, self.molecule_set_id, self.molecule_set_name
         )
 
-    def pull_all(self) -> list[dict]:
+    def pull_all(self, progress=True) -> list[dict]:
         """
         Pull all molecules from all Postera molecule sets
+
+        Parameters
+        ----------
+        progress: bool, optional
+            Whether to show a progress bar, by default True
 
         Returns
         -------
@@ -87,8 +92,13 @@ class PosteraFactory(BaseModel):
         ms_api = MoleculeSetAPI.from_settings(self.settings)
         available_msets = ms_api.list_available()
 
+        if progress:
+            wrapper = track
+        else:
+            wrapper = lambda x, **kwargs: x
+        
         all_mset_data = []
-        for mset_uuid, _ in track(
+        for mset_uuid, _ in wrapper(
             available_msets.items(),
             total=len(available_msets),
             description=f"Processing {len(available_msets)} available moleculesets..",
