@@ -317,7 +317,10 @@ class Ligand(DataModelAbstractBase):
             get_dict_of_lists_from_list_of_dicts,
         )
 
+        # Turn list[dict[k,v]] into dict[k,[v]]
         conf_tags = get_dict_of_lists_from_list_of_dicts([tags] + sd_data)
+
+        # Filter out the keys that are a model attribute
         conf_tags = {
             k: v for k, v in conf_tags.items() if k not in cls.__fields__.keys()
         }

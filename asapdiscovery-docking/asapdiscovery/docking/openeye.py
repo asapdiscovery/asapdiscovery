@@ -355,58 +355,18 @@ class POSITDocker(DockingBase):
 
                     # Create Docking Results Objects
                     docking_results_objects = []
-                    if self.num_poses == 1:
-                        # this is simple for single pose results
-                        for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
-                            docking_results_objects.append(
-                                POSITDockingResults(
-                                    input_pair=input_pair,
-                                    posed_ligand=posed_ligand,
-                                    probability=posed_ligand.tags[
-                                        DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
-                                    ],
-                                    provenance=self.provenance(),
-                                )
+                    for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
+                        docking_results_objects.append(
+                            POSITDockingResults(
+                                input_pair=input_pair,
+                                posed_ligand=posed_ligand,
+                                probability=posed_ligand.tags[
+                                    DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
+                                ],
+                                provenance=self.provenance(),
+                                pose_id=posed_ligand.tags["Pose_ID"],
                             )
-                    else:
-                        # for multi-pose results, we need to split the results by input pair
-                        # create hashable dict of input pairs
-                        input_pair_dict = {
-                            input_pair.unique_name: input_pair
-                            for input_pair in input_pairs
-                        }
-
-                        # split results by input pair
-                        from collections import defaultdict
-
-                        results_dict = defaultdict(list)
-                        for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
-                            results_dict[input_pair.unique_name].append(posed_ligand)
-
-                        # return results split by input pair
-                        for input_pair_name, posed_ligands in results_dict.items():
-                            docking_results_objects.append(
-                                POSITDockingResults(
-                                    input_pair=input_pair_dict[input_pair_name],
-                                    posed_ligand=Ligand.from_single_conformers(
-                                        posed_ligands
-                                    ),
-                                    provenance=self.provenance(),
-                                    probability=(
-                                        posed_ligands[0].tags[
-                                            DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
-                                        ]
-                                        if len(posed_ligands) == 1
-                                        else None
-                                    ),
-                                    pose_id=(
-                                        posed_ligands[0].tags["Pose_ID"]
-                                        if len(posed_ligands) == 1
-                                        else None
-                                    ),
-                                )
-                            )
-
+                        )
                     # Now we can decide if we want to return a path to the json file or the actual object
                     for docking_result in docking_results_objects:
                         if return_for_disk_backend:

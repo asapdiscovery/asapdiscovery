@@ -300,7 +300,13 @@ class DockingResult(BaseModel):
     def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
         output_dir = Path(output_dir)
         output_pref = result.unique_name
-        compound_dir = output_dir / f"{output_pref}_pose_{result.pose_id}"
+
+        # If the result has a pose id and it doesn't equal 0, then we want to create a subdirectory
+        if result.pose_id != 0:
+            compound_dir = output_dir / f"{output_pref}_pose_{result.pose_id}"
+        else:
+            compound_dir = output_dir / f"{output_pref}"
+
         compound_dir.mkdir(parents=True, exist_ok=True)
         output_sdf_file = compound_dir / "docked.sdf"
         output_pdb_file = compound_dir / "docked_complex.pdb"
