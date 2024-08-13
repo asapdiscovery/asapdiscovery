@@ -141,6 +141,18 @@ manifold_outputs:
         - FINT
       postfix: msk
 
+  - symexp-clash-num:
+      prefix: in-silico
+      tools:
+      units:
+      postfix: msk
+
+  - symexp-clashing:
+      prefix: in-silico
+      tools:
+      units:
+      postfix: msk
+
 # identifiers for static data
 static_identifiers:
   - in-silico-UUID_POSTERA_API

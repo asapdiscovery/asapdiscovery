@@ -2,6 +2,7 @@ import pathlib
 
 import pandas as pd
 import pytest
+import rich
 from alchemiscale import AlchemiscaleClient
 from alchemiscale.models import ScopedKey
 from asapdiscovery.alchemy.cli.cli import alchemy
@@ -121,7 +122,9 @@ def test_alchemy_prep_create(tmpdir):
         assert prep_workflow.core_smarts == "CC"
 
 
-def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow):
+def test_alchemy_prep_run_with_fails_and_charges(
+    tmpdir, mac1_complex, openeye_charged_prep_workflow
+):
     """Test running the alchemy prep workflow on a set of mac1 ligands and that failures are captured"""
 
     # locate the ligands input file
@@ -133,7 +136,7 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
         # complex to a local file
         mac1_complex.to_json_file("complex.json")
         # write out the workflow to file
-        openeye_prep_workflow.to_file("openeye_workflow.json")
+        openeye_charged_prep_workflow.to_file("openeye_workflow.json")
 
         result = runner.invoke(
             alchemy,
@@ -193,6 +196,9 @@ def test_alchemy_prep_run_with_fails(tmpdir, mac1_complex, openeye_prep_workflow
         assert len(prep_dataset.input_ligands) == 5
         assert len(prep_dataset.posed_ligands) == 3
         assert len(prep_dataset.failed_ligands["InconsistentStereo"]) == 2
+        for ligand in prep_dataset.posed_ligands:
+            assert "atom.dprop.PartialCharge" in ligand.tags
+            assert ligand.charge_provenance is not None
 
 
 def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
@@ -388,22 +394,39 @@ def test_alchemy_status_all(monkeypatch):
         campaign="alchemy",
         project="testing",
     )
+    network_status = {"complete": 1, "running": 2, "waiting": 3}
+
+    def get_networks_status(*args, **kwargs):
+        """ ""We mock this as it changes the return on get scope status and get network status"""
+        return [network_status]
 
     def _get_resource(*args, **kwargs):
-        "We mock this as it changes the return on get scope status and get network status"
-        return {"complete": 1, "running": 2, "waiting": 3}
+        return network_status
 
     def get_network_keys(*args, **kwargs):
         """Mock a network key for a running network"""
-        return [network_key]
+        return [
+            network_key,
+        ]
 
     def get_actioned(*args, **kwargs):
-        assert kwargs["network"] == network_key
-        return [i for i in range(5)]
+        assert network_key in kwargs["networks"]
+        return [
+            [i for i in range(5)],
+        ]
 
-    monkeypatch.setattr(AlchemiscaleClient, "_get_resource", _get_resource)
+    def get_networks_weight(*args, **kwargs):
+        """Mock the network priority weight"""
+        return [
+            1,
+        ]
+
+    # mock the full call stack in the helper function
+    monkeypatch.setattr(AlchemiscaleClient, "get_networks_status", get_networks_status)
     monkeypatch.setattr(AlchemiscaleClient, "query_networks", get_network_keys)
-    monkeypatch.setattr(AlchemiscaleClient, "get_network_actioned_tasks", get_actioned)
+    monkeypatch.setattr(AlchemiscaleClient, "get_networks_actioned_tasks", get_actioned)
+    monkeypatch.setattr(AlchemiscaleClient, "get_networks_weight", get_networks_weight)
+    monkeypatch.setattr(AlchemiscaleClient, "_get_resource", _get_resource)
 
     runner = CliRunner()
 
@@ -414,7 +437,7 @@ def test_alchemy_status_all(monkeypatch):
         in result.stdout
     )
     assert (
-        "│ fakenetwork-asap-alchemy-testing │ 1   │ 2   │ 3   │ 0   │ 0    │ 0   │ 5    │"
+        "│ fakenetwork-asap-alchemy-testing │ 1   │ 2  │ 3   │ 0  │ 0   │ 0  │ 5   │ 1  │"
         in result.stdout
     )
 
@@ -759,13 +782,14 @@ def test_predict_missing_all_exp_data(
         result = runner.invoke(alchemy, ["predict", "-ep", protocol_name])
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
+        # make sure the interactive reports are still made they just won't have a figure
         assert (
             "Absolute report written to predictions-absolute-tyk2-small-test.html"
-            not in result.stdout
+            in result.stdout
         )
         assert (
             "Relative report written to predictions-relative-tyk2-small-test.html"
-            not in result.stdout
+            in result.stdout
         )
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
@@ -821,3 +845,73 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
                 ["predict", "-rd", tyk2_reference_data, "-ru", "pIC50"],
                 catch_exceptions=False,  # let the exception buble up so pytest can check it
             )
+    # make sure to clean the console when an error is raised
+    console = rich.get_console()
+    console.clear_live()
+
+
+def test_prioritize_weight_not_set(monkeypatch):
+    """
+    Make sure an error is raised if the weight of the network is not
+    correctly set.
+    """
+    # mock the env variables
+    monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
+    monkeypatch.setenv("ALCHEMISCALE_KEY", "my-key")
+
+    runner = CliRunner()
+
+    # patch the calls to alchemiscale
+    network_key = ScopedKey(
+        gufe_key="fakenetwork-12345",
+        org="asap",
+        campaign="alchemy",
+        project="testing",
+    )
+
+    def get_network_weight(self, network):
+        assert network == str(network_key)
+        # the default weight
+        return 0.5
+
+    def set_network_weight(self, network, weight):
+        # make sure the correct new weight is passed
+        assert network == str(network_key)
+        assert weight == 0.4
+
+    monkeypatch.setattr(AlchemiscaleClient, "get_network_weight", get_network_weight)
+    monkeypatch.setattr(AlchemiscaleClient, "set_network_weight", set_network_weight)
+
+    with pytest.raises(
+        ValueError, match="Something went wrong during the weight change of network "
+    ):
+        runner.invoke(
+            alchemy,
+            ["prioritize", "-nk", network_key, "-w", 0.4],
+            catch_exceptions=False,
+        )
+
+    console = rich.get_console()
+    console.clear_live()
+
+
+def test_prep_alchemize(test_ligands_sdfile, tmpdir):
+
+    with tmpdir.as_cwd():
+        runner = CliRunner()
+        result = runner.invoke(
+            alchemy,
+            [
+                "prep",
+                "alchemize",
+                "-l",
+                test_ligands_sdfile,
+                "-n",
+                "tst",
+                "-onu",
+                "2",
+                "-mt",
+                "9",
+            ],
+        )
+        assert result.exit_code == 0

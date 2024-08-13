@@ -4,7 +4,7 @@
 # or
 # openssl sha256 <file_name>
 
-base_url: https://asap-discovery-test-files.s3.amazonaws.com/
+base_url: https://asap-discovery-test-files.asapdata.org/
 
 files:
   # file for internal testing
@@ -325,3 +325,12 @@ files:
 
   - resource: mpro_fragalysis-04-01-24_zipped.zip
     sha256hash: 82c47271ce2f1035b6c00d3421f43b7beeebcb27aedfea3dba9f2def8194421b
+
+  - resource: zikv_nsb2_nsb3_literature_structure.pdb
+    sha256hash: 33cf1112975b5901f2510be1d42959f95d5601fd3befcc84768260ccb2a5c3e6
+
+  - resource: tyk2_one_lig.sdf
+    sha256hash: 182f6882a0160d041159ccedabc7fd3c7e74f07bf52d4e9974b91eb090f68485
+
+  - resource: Mpro-YP_009725301_AFold_processed.pdb
+    sha256hash: 3cdc93de0186243d790e7abd61d77eacde649f547f3d0cd0aaa58243631431f8

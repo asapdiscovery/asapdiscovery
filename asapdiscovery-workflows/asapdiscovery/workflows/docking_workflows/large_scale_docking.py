@@ -4,7 +4,7 @@ from typing import Optional
 
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelector
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema.complex import Complex
@@ -221,8 +221,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     prepper = ProteinPrepper(
         cache_dir=inputs.cache_dir,
         align=ref_complex,
-        ref_chain="A",
-        active_site_chain="A",
+        ref_chain=inputs.ref_chain,
+        active_site_chain=inputs.active_site_chain,
     )
 
     prepped_complexes = prepper.prep(
@@ -246,11 +246,14 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     # TODO: fix, see issue 560
     logger.info("Selecting pairs for docking based on MCS")
-    selector = MCSSelector()
+    selector = RascalMCESSelector()
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
         n_select=inputs.n_select,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        failure_mode=inputs.failure_mode,
     )
 
     n_pairs = len(pairs)
@@ -332,6 +335,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         color_method=ColorMethod.subpockets,
         target=inputs.target,
         output_dir=html_ouptut_dir,
+        ref_chain=inputs.ref_chain,
+        active_site_chain=inputs.ref_chain,
     )
     pose_visualizatons = html_visualizer.visualize(
         results,
@@ -368,6 +373,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
             color_method=ColorMethod.fitness,
             target=inputs.target,
             output_dir=html_fitness_output_dir,
+            ref_chain=inputs.ref_chain,
+            active_site_chain=inputs.ref_chain,
         )
         fitness_visualizations = html_fitness_visualizer.visualize(
             results,

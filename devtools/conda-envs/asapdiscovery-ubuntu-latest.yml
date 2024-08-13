@@ -32,11 +32,11 @@ dependencies:
   - pydantic >=1.10.8,<2.0.0a0
   - rdkit
   - seaborn
-  - pebble
   - panel
   - plotmol
   - semver
   - mafft
+  - scipy >=1.13.1
 
   # data
   - requests
@@ -61,10 +61,10 @@ dependencies:
   - numpy
   - h5py
   - e3nn
-  - dgl
+  - dgl <=2.0.0
   - dgllife
   - pooch
-  - mtenn >=0.5.1
+  - mtenn =0.5.2
   - wandb
 
   # md

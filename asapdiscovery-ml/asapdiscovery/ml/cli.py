@@ -18,10 +18,13 @@ from asapdiscovery.ml.cli_args import (
     loss_args,
     model_config_cache,
     model_rand_seed,
+    model_tag,
     mtenn_args,
     optim_args,
     output_dir,
     overwrite_args,
+    s3_args,
+    save_weights,
     schnet_args,
     struct_ds_args,
     trainer_args,
@@ -80,12 +83,14 @@ ml.add_command(sweep)
 
 @build.command(name="gat")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
 @wandb_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @mtenn_args
 @gat_args
 @es_args
@@ -94,8 +99,10 @@ ml.add_command(sweep)
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_gat(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -125,6 +132,7 @@ def build_gat(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     in_feats: int | None = None,
     num_layers: int | None = None,
     hidden_feats: str | None = None,
@@ -172,6 +180,8 @@ def build_gat(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -278,10 +288,14 @@ def build_gat(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -289,11 +303,13 @@ def build_gat(
 
 @build.command(name="schnet")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @schnet_args
@@ -306,6 +322,7 @@ def build_gat(
 @overwrite_args
 def build_schnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -335,6 +352,7 @@ def build_schnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     hidden_channels: int | None = None,
     num_filters: int | None = None,
     num_interactions: int | None = None,
@@ -384,6 +402,8 @@ def build_schnet(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -494,10 +514,14 @@ def build_schnet(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -505,11 +529,13 @@ def build_schnet(
 
 @build.command(name="e3nn")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @e3nn_args
@@ -520,8 +546,10 @@ def build_schnet(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_e3nn(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -551,6 +579,7 @@ def build_e3nn(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     num_atom_types: int | None = None,
     irreps_hidden: str | None = None,
     lig: bool | None = None,
@@ -601,6 +630,8 @@ def build_e3nn(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -712,10 +743,14 @@ def build_e3nn(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -723,10 +758,12 @@ def build_e3nn(
 
 @build.command(name="visnet")
 @output_dir
+@save_weights
 @trainer_config_cache
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @visnet_args
@@ -737,8 +774,10 @@ def build_e3nn(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_visnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -767,6 +806,7 @@ def build_visnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     lmax: int | None = None,
     vecnorm_type: str | None = None,
     trainable_vecnorm: bool | None = None,
@@ -822,6 +862,8 @@ def build_visnet(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -936,10 +978,14 @@ def build_visnet(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
@@ -947,12 +993,14 @@ def build_visnet(
 
 @build_and_train.command(name="gat")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
 @wandb_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @mtenn_args
 @gat_args
 @es_args
@@ -961,8 +1009,10 @@ def build_visnet(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_and_train_gat(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -992,6 +1042,7 @@ def build_and_train_gat(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     in_feats: int | None = None,
     num_layers: int | None = None,
     hidden_feats: str | None = None,
@@ -1039,6 +1090,8 @@ def build_and_train_gat(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1145,10 +1198,14 @@ def build_and_train_gat(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     t = _build_trainer(
@@ -1161,11 +1218,13 @@ def build_and_train_gat(
 
 @build_and_train.command(name="schnet")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @schnet_args
@@ -1176,8 +1235,10 @@ def build_and_train_gat(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_and_train_schnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -1207,6 +1268,7 @@ def build_and_train_schnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     hidden_channels: int | None = None,
     num_filters: int | None = None,
     num_interactions: int | None = None,
@@ -1256,6 +1318,8 @@ def build_and_train_schnet(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1366,10 +1430,14 @@ def build_and_train_schnet(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     t = _build_trainer(
@@ -1382,11 +1450,13 @@ def build_and_train_schnet(
 
 @build_and_train.command("e3nn")
 @output_dir
+@save_weights
 @weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @e3nn_args
@@ -1397,8 +1467,10 @@ def build_and_train_schnet(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_and_train_e3nn(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
@@ -1428,6 +1500,7 @@ def build_and_train_e3nn(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     num_atom_types: int | None = None,
     irreps_hidden: str | None = None,
     lig: bool | None = None,
@@ -1478,6 +1551,8 @@ def build_and_train_e3nn(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1589,10 +1664,14 @@ def build_and_train_e3nn(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     t = _build_trainer(
@@ -1605,10 +1684,12 @@ def build_and_train_e3nn(
 
 @build_and_train.command(name="visnet")
 @output_dir
+@save_weights
 @trainer_config_cache
 @optim_args
 @model_config_cache
 @model_rand_seed
+@model_tag
 @wandb_args
 @mtenn_args
 @visnet_args
@@ -1619,8 +1700,10 @@ def build_and_train_e3nn(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_and_train_visnet(
     output_dir: Path | None = None,
+    save_weights: str | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -1649,6 +1732,7 @@ def build_and_train_visnet(
     comb_km: float | None = None,
     model_config_cache: Path | None = None,
     model_rand_seed: int | None = None,
+    model_tag: str | None = None,
     lmax: int | None = None,
     vecnorm_type: str | None = None,
     trainable_vecnorm: bool | None = None,
@@ -1704,6 +1788,8 @@ def build_and_train_visnet(
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
     overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
 ):
     # Build each dict and pass to Trainer
     optim_config = {
@@ -1819,10 +1905,14 @@ def build_and_train_visnet(
         "loss_dict": loss_dict,
         "device": device,
         "output_dir": output_dir,
+        "save_weights": save_weights,
         "use_wandb": use_wandb,
         "wandb_project": wandb_project,
         "wandb_name": wandb_name,
         "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
     }
 
     t = _build_trainer(

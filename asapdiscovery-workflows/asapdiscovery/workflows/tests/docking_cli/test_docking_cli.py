@@ -154,7 +154,7 @@ def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path, simulation_resu
     runner = CliRunner()
 
     def _simulate_patch(
-        self, docking_results: list[DockingResult]
+        self, inputs: list[DockingResult], **kwargs
     ) -> list[SimulationResult]:
         return [simulation_results]
 
@@ -213,4 +213,70 @@ def test_cross_docking_cli_structure_directory_du_cache(
             tmp_path,
         ],
     )
+    assert click_success(result)
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
+def test_symexp_workflow(ligand_file, pdb_file, tmp_path):
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "symexp-crystal-packing",
+            "--target",
+            "SARS-CoV-2-Mpro",
+            "--ligands",
+            ligand_file,
+            "--pdb-file",
+            pdb_file,
+            "--output-dir",
+            tmp_path,
+        ],
+    )
+    assert click_success(result)
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
+)
+@pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
+@pytest.mark.skip()  # Test is broken on GHA but should run locally
+def test_ligand_transfer_workflow(pdb_apo_file, pdb_file, tmp_path, simulation_results):
+    runner = CliRunner()
+
+    def _simulate_patch(
+        self, inputs: list[DockingResult], **kwargs
+    ) -> list[SimulationResult]:
+        return [simulation_results]
+
+    # NB: cannot use dask for below test as patch will not survive pickling and transfer to worker
+
+    with mock.patch.object(VanillaMDSimulator, "_simulate", _simulate_patch):
+        result = runner.invoke(
+            cli,
+            [
+                "ligand-transfer-docking",
+                "--target",
+                "SARS-CoV-2-Mpro",
+                "--ref-pdb-file",
+                pdb_file,
+                "--pdb-file",
+                pdb_apo_file,
+                "--output-dir",
+                tmp_path,
+                "--no-allow-dask-cuda",
+                "--posit-confidence-cutoff",
+                0,
+                "--allow-final-clash",
+                "--allow-retries",
+                "--md",
+                "--md-steps",
+                1,
+                "--md-openmm-platform",
+                "CPU",
+            ],
+        )
     assert click_success(result)

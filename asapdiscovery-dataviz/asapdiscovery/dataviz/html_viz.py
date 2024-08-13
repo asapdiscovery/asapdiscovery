@@ -24,7 +24,7 @@ from asapdiscovery.data.backend.plip import (
     make_color_res_fitness,
     make_color_res_subpockets,
 )
-from asapdiscovery.data.metadata.resources import master_structures
+from asapdiscovery.data.metadata.resources import active_site_chains, master_structures
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -96,10 +96,27 @@ class HTMLVisualizer(VisualizerBase):
     align: bool = Field(
         True, description="Whether to align the poses to the reference protein"
     )
-
+    ref_chain: Optional[str] = Field(
+        None, description="Reference chain ID to align to."
+    )
+    active_site_chain: Optional[str] = Field(
+        None, description="Mobile chain ID to align."
+    )
     fitness_data: Optional[Any]
     fitness_data_logoplots: Optional[Any]
     reference_protein: Optional[Any]
+
+    @root_validator(pre=True)
+    def check_and_set_chains(cls, values):
+        active_site_chain = values.get("active_site_chain")
+        ref_chain = values.get("ref_chain")
+        target = values.get("target")
+        if not active_site_chain:
+            values["active_site_chain"] = active_site_chains[target]
+        # set same chain for active site if not specified
+        if not ref_chain:
+            values["ref_chain"] = active_site_chains[target]
+        return values
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -217,7 +234,7 @@ class HTMLVisualizer(VisualizerBase):
                 row[DockingResultCols.TARGET_ID.value] = (
                     result.input_pair.complex.target.target_name
                 )
-                row[DockingResultCols.SMILES.value] = result.input_pair.ligand.smiles
+                row[DockingResultCols.SMILES.value] = result.posed_ligand.smiles
                 row[self.get_tag_for_color_method()] = outpath
                 data.append(row)
             except Exception as e:
@@ -457,6 +474,8 @@ class HTMLVisualizer(VisualizerBase):
             complex_aligned, _ = superpose_molecule(
                 self.reference_protein,
                 complex,
+                ref_chain=self.ref_chain,
+                mobile_chain=self.active_site_chain,
             )
 
             # get pose and protein back

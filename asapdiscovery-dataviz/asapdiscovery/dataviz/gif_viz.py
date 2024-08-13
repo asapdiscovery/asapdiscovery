@@ -10,7 +10,7 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetProteinMap,
     TargetTags,
 )
-from asapdiscovery.data.util.dask_utils import dask_vmap
+from asapdiscovery.data.util.dask_utils import backend_wrapper, dask_vmap
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.resources.fonts import opensans_regular
 from asapdiscovery.dataviz.show_contacts import show_contacts
@@ -54,6 +54,8 @@ class GIFVisualizer(VisualizerBase):
         Whether to generate contact maps
     static_view_only : bool
         Whether to only generate static PSE for the trajectory
+    zoom_view : bool
+        Whether to zoom into the binding site on final output visualization
     start : PositiveInt
         Start frame - if not defined, will default to last 10% of default trajectory settings
     stop : int
@@ -79,6 +81,10 @@ class GIFVisualizer(VisualizerBase):
     static_view_only: bool = Field(
         False, description="Whether to only generate static views"
     )
+    zoom_view: bool = Field(
+        False,
+        description="Whether to zoom into the binding site on final output visualization",
+    )
     start: PositiveInt = Field(
         1800,
         description="Start frame - if not defined, will default to last 10% of default trajectory settings",
@@ -91,6 +97,7 @@ class GIFVisualizer(VisualizerBase):
         arbitrary_types_allowed = True
 
     @dask_vmap(["inputs"], has_failure_mode=True)
+    @backend_wrapper("inputs")
     def _visualize(
         self, inputs: list[Any], outpaths: Optional[list[Path]] = None, **kwargs
     ) -> list[dict[str, str]]:
@@ -117,6 +124,7 @@ class GIFVisualizer(VisualizerBase):
         smooth: int,
         contacts: bool,
         frames_per_ns: int,
+        zoom_view: bool,
         outpath: Optional[Path] = None,
         out_dir: Optional[Path] = None,
     ):
@@ -222,6 +230,9 @@ class GIFVisualizer(VisualizerBase):
                 stop=stop,
                 interval=interval,
             )
+            # fix pbc
+            p.cmd.pbc_wrap(complex_name)
+
             if pse:
                 p.cmd.save(str(out_dir / "session_4_loaded_trajectory.pse"))
 
@@ -229,7 +240,15 @@ class GIFVisualizer(VisualizerBase):
             # reload
             complex_name_min = "complex_min"
             p.cmd.load(str(system), object=complex_name_min)
+            # align to reference structure
+            reference_structure = master_structures[target]
+            p.cmd.load(reference_structure, object="reference_master")
+            p.cmd.align(complex_name_min, "reference_master")
+            p.cmd.delete("reference_master")
+
+            # align the trajectory to the minimized structure (itself aligned to the reference structure)
             p.cmd.align(complex_name, complex_name_min)
+            p.cmd.intra_fit(complex_name, 1)
             p.cmd.delete(complex_name_min)
 
             if smooth:
@@ -268,6 +287,8 @@ class GIFVisualizer(VisualizerBase):
         # Process the trajectory in a temporary directory
         from pygifsicle import gifsicle
 
+        if zoom_view:
+            p.cmd.zoom("binding_site")
         # now make the movie.
         p.cmd.set(
             "ray_trace_frames", 0
@@ -361,6 +382,7 @@ class GIFVisualizer(VisualizerBase):
                     smooth=self.smooth,
                     contacts=self.contacts,
                     frames_per_ns=self.frames_per_ns,
+                    zoom_view=self.zoom_view,
                     out_dir=self.output_dir,
                 )
                 row = {}
@@ -430,6 +452,7 @@ class GIFVisualizer(VisualizerBase):
                     smooth=self.smooth,
                     contacts=self.contacts,
                     frames_per_ns=self.frames_per_ns,
+                    zoom_view=self.zoom_view,
                     out_dir=self.output_dir,
                 )
                 row = {}
