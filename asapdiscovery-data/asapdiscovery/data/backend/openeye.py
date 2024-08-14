@@ -1197,3 +1197,39 @@ def featurize_oemol(mol: oechem.OEMol, self_edges=True):
     bond_list_tensor = torch.tensor(bond_list).T
 
     return feature_tensor, bond_list_tensor
+
+
+def featurize_smiles(smiles: str, self_edges=True):
+    """
+    Featurize a SMILES for use in ML. Returns a feature tensor of shape
+    (n_atoms, n_features) and an edge index tensor, which will have one of two shapes:
+        * (2, 2 * n_bonds) if self_edges==False
+        * (2, 2 * n_bonds + n_atoms) otherwise
+    Each bond gives 2 edges because each atom can be a source or destination node.
+
+    The featurization scheme closely matches that of DGL-LifeSci, with the main
+    difference being the size of the atom type one-hot encoding.
+
+
+    Parameters
+    ----------
+    smiles: str
+        SMILES To featurize
+    self_edges: bool, default=True
+        Should we include edges going from each atom to itself
+
+    Returns
+    -------
+    torch.Tensor
+        Feature tensor of shape (n_atom, n_features)
+    torch.Tensor
+        Edge index tensor of shape (2, 2 * n_bonds) or (2, 2 * n_bonds + n_atoms)
+    """
+
+    # Turn input SMILES into an OE mol
+    mol = oechem.OEGraphMol()
+    if not oechem.OESmilesToMol(mol, smiles):
+        raise ValueError(f"Unable to parse smiles: {smiles}")
+
+    # Reuse featurize_oemol function
+    return featurize_oemol(mol)
