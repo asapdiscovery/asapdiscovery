@@ -831,10 +831,6 @@ class PygGraphDataset(Dataset):
             Dict mapping compound_id to an experimental results dict. The dict for a
             compound will be added to the pose representation of each Complex containing
             a ligand witht that compound_id
-        node_featurizer : BaseAtomFeaturizer, optional
-            Featurizer for node data
-        edge_featurizer : BaseBondFeaturizer, optional
-            Featurizer for edges
         """
         from asapdiscovery.data.backend.openeye import featurize_smiles
 
@@ -883,8 +879,6 @@ class PygGraphDataset(Dataset):
         cls,
         exp_compounds,
         exp_dict: dict = {},
-        node_featurizer=None,
-        edge_featurizer=None,
     ):
         """
         Parameters
@@ -895,11 +889,6 @@ class PygGraphDataset(Dataset):
             Dict mapping compound_id to an experimental results dict. The dict for a
             compound will be added to the pose representation of each Complex containing
             a ligand witht that compound_id
-        node_featurizer : BaseAtomFeaturizer, optional
-            Featurizer for node data
-        edge_featurizer : BaseBondFeaturizer, optional
-            Featurizer for edges
-            Cache file for graph dataset
 
         """
         from asapdiscovery.data.backend.openeye import featurize_smiles
