@@ -22,9 +22,9 @@ from asapdiscovery.ml.config import (
 from mtenn.config import (
     E3NNModelConfig,
     GATModelConfig,
-    PyGGATModelConfig,
     ModelConfigBase,
     ModelType,
+    PyGGATModelConfig,
     SchNetModelConfig,
     ViSNetModelConfig,
 )
