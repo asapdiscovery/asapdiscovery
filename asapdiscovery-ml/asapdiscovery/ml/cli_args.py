@@ -514,13 +514,8 @@ def gat_args(func):
         num_layers_gat,
         hidden_feats,
         num_heads,
-        feat_drops,
-        attn_drops,
+        dropout,
         alphas,
-        residuals,
-        agg_modes,
-        biases,
-        allow_zero_in_degree,
     ]:
         func = fn(func)
 
@@ -532,103 +527,28 @@ def in_feats(func):
 
 
 def num_layers_gat(func):
-    return click.option(
-        "--num-layers",
-        type=int,
-        help=(
-            "Number of GAT layers. Ignored if multiple values are passed for any "
-            "other GAT argument. To define a model with only one layer, this must be "
-            "explicitly set to 1."
-        ),
-    )(func)
+    return click.option("--num-layers", type=int, help="Number of GAT layers.")(func)
 
 
 def hidden_feats(func):
-    return click.option(
-        "--hidden-feats",
-        help=(
-            "Output size of each GAT layer. This can either be a single value, which will "
-            "be broadcasted to each layer, or a comma-separated list with each value "
-            "corresponding to one layer in the model."
-        ),
-    )(func)
+    return click.option("--hidden-feats", help="Output size of each GAT layer.")(func)
 
 
 def num_heads(func):
     return click.option(
-        "--num-heads",
-        help=(
-            "Number of attention heads for each GAT layer. Passing a single value or "
-            "multiple values functions similarly as for --hidden-feats."
-        ),
+        "--num-heads", help="Number of attention heads for each GAT layer."
     )(func)
 
 
-def feat_drops(func):
+def dropout(func):
     return click.option(
-        "--feat-drops",
-        help=(
-            "Dropout of input features for each GAT layer. Passing a single value or "
-            "multiple values functions similarly as for --hidden-feats."
-        ),
-    )(func)
-
-
-def attn_drops(func):
-    return click.option(
-        "--attn-drops",
-        help=(
-            "Dropout of attention values for each GAT layer. Passing a single value or "
-            "multiple values functions similarly as for --hidden-feats."
-        ),
+        "--dropout", help="Dropout of input features for each GAT layer."
     )(func)
 
 
 def alphas(func):
     return click.option(
-        "--alphas",
-        help=(
-            "Hyperparameter for LeakyReLU gate for each GAT layer. Passing a single value "
-            "or multiple values functions similarly as for --hidden-feats."
-        ),
-    )(func)
-
-
-def residuals(func):
-    return click.option(
-        "--residuals",
-        help=(
-            "Whether to use residual connection for each GAT layer. Passing a single value "
-            "or multiple values functions similarly as for --hidden-feats."
-        ),
-    )(func)
-
-
-def agg_modes(func):
-    return click.option(
-        "--agg-modes",
-        help=(
-            "Which aggregation mode [flatten, mean] to use for each GAT layer. Passing a "
-            "single value or multiple values functions similarly as for --hidden-feats."
-        ),
-    )(func)
-
-
-def biases(func):
-    return click.option(
-        "--biases",
-        help=(
-            "Whether to use bias for each GAT layer. Passing a single value "
-            "or multiple values functions similarly as for --hidden-feats."
-        ),
-    )(func)
-
-
-def allow_zero_in_degree(func):
-    return click.option(
-        "--allow-zero-in-degree",
-        type=bool,
-        help="Allow zero in degree nodes for all graph layers.",
+        "--alphas", help="Hyperparameter for LeakyReLU gate for each GAT layer."
     )(func)
 
 
