@@ -2,15 +2,17 @@ import json
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
-import dgl
 import mtenn
 import numpy as np
 import torch
-from asapdiscovery.data.backend.openeye import oechem, oemol_to_pdb_string
-from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.backend.openeye import (
+    featurize_smiles,
+    oechem,
+    oemol_to_pdb_string,
+)
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.config import DatasetConfig
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
+from asapdiscovery.ml.dataset import DockedDataset
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
     LocalMLModelSpec,
@@ -19,7 +21,6 @@ from asapdiscovery.ml.models import (
 )
 
 # static import of models from base yaml here
-from dgllife.utils import CanonicalAtomFeaturizer
 from mtenn.config import E3NNModelConfig, GATModelConfig, ModelType, SchNetModelConfig
 from pydantic import BaseModel, Field
 
@@ -224,17 +225,20 @@ class InferenceBase(BaseModel):
 class GATInference(InferenceBase):
     model_type: ClassVar[ModelType.GAT] = ModelType.GAT
 
-    def predict(self, g: dgl.DGLGraph):
-        """Predict on a graph, requires a DGLGraph object with the `ndata`
-        attribute `h` containing the node features. This is done by constucting
-        the `GraphDataset` with the node_featurizer=`dgllife.utils.CanonicalAtomFeaturizer()`
-        argument.
-
+    def predict(self, x: torch.Tensor, edge_index: torch.Tensor):
+        """
+        Predict on a featurized molecule. This featurization can be generated using
+        `featurize_oemol` and `featurize_smiles` in
+        `asapdiscovery.data.backend.openeye`.
 
         Parameters
         ----------
-        g : dgl.DGLGraph
-            DGLGraph object.
+        x : torch.Tensor
+            Tensor of input node features. Should be of shape (n_atoms, feat_size)
+        edge_index : torch.Tensor
+            Tensor of graph edges. First row should be the atom index of the source node
+            and second row should be the atom index of the destination node. Indices
+            should correspond to rows in `x`
 
         Returns
         -------
@@ -242,26 +246,21 @@ class GATInference(InferenceBase):
             Predictions for each graph.
         """
         with torch.no_grad():
-            output_tensor = self.model({"g": g})[0]
+            output_tensor = self.model({"x": x, "edge_index": edge_index})[0]
             # we ravel to always get a 1D array
             return output_tensor.cpu().numpy().ravel()
 
     def predict_from_smiles(
         self,
         smiles: Union[str, list[str]],
-        node_featurizer=None,
-        edge_featurizer=None,
     ) -> Union[np.ndarray, float]:
-        """Predict on a list of SMILES strings, or a single SMILES string.
+        """
+        Predict on a list of SMILES strings, or a single SMILES string.
 
         Parameters
         ----------
         smiles : Union[str, List[str]]
             SMILES string or list of SMILES strings.
-        node_featurizer : BaseAtomFeaturizer, optional
-            Featurizer for node data
-        edge_featurizer : BaseBondFeaturizer, optional
-            Featurizer for edges
 
         Returns
         -------
@@ -271,18 +270,7 @@ class GATInference(InferenceBase):
         if isinstance(smiles, str):
             smiles = [smiles]
 
-        ligands = [
-            Ligand.from_smiles(smi, compound_name=f"eval_{i}")
-            for i, smi in enumerate(smiles)
-        ]
-
-        if not node_featurizer:
-            node_featurizer = CanonicalAtomFeaturizer()
-        ds = GraphDataset.from_ligands(
-            ligands, node_featurizer=node_featurizer, edge_featurizer=edge_featurizer
-        )
-
-        data = [self.predict(pose["g"]) for _, pose in ds]
+        data = [self.predict(*featurize_smiles(smi)) for smi in smiles]
         data = np.concatenate(np.asarray(data))
         # return a scalar float value if we only have one input
         if np.all(np.array(data.shape) == 1):
