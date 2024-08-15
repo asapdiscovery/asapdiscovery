@@ -7,14 +7,20 @@ import openfe
 from alchemiscale import ScopedKey
 from gufe import settings
 from gufe.tokenization import GufeKey
-from openfe.protocols.openmm_rfe.equil_rfe_settings import (
-    AlchemicalSamplerSettings,
-    AlchemicalSettings,
-    IntegratorSettings,
+from openfe.protocols.openmm_utils.omm_settings import (
+    MultiStateSimulationSettings,
+    BaseSolvationSettings,
+    OpenMMSolvationSettings,
     OpenMMEngineSettings,
-    SimulationSettings,
-    SolvationSettings,
-    SystemSettings,
+    IntegratorSettings,
+    # OpenFFPartialChargeSettings,
+    # MultiStateOutputSettings,
+    MDSimulationSettings,
+    # MDOutputSettings,
+)
+from openfe.protocols.openmm_rfe.equil_rfe_settings import (
+    AlchemicalSettings,
+    # SystemSettings,
 )
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
@@ -209,7 +215,7 @@ class _FreeEnergyBase(_SchemaBase):
     )
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
         settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.1.0"
+            small_molecule_forcefield="openff-2.2.0"
         ),
         description="The force field settings used to parameterize the systems.",
     )
@@ -219,22 +225,13 @@ class _FreeEnergyBase(_SchemaBase):
         ),
         description="The settings for thermodynamic parameters.",
     )
-    system_settings: SystemSettings = Field(
-        SystemSettings(), description="The nonbonded system settings."
-    )
-    solvation_settings: SolvationSettings = Field(
-        SolvationSettings(),
+    solvation_settings: OpenMMSolvationSettings = Field(
+        OpenMMSolvationSettings(),
         description="Settings controlling how the systems should be solvated.",
     )
     alchemical_settings: AlchemicalSettings = Field(
-        AlchemicalSettings(), description="The alchemical protocol settings."
-    )
-    # note alchemical_sampler_settings.n_repeats specifies the number of times each transformation will be run
-    alchemical_sampler_settings: AlchemicalSamplerSettings = Field(
-        AlchemicalSamplerSettings(
-            n_repeats=1
-        ),  # Run one calculation in serial and parallise accross alchemiscale workers see n_repeats on the _FreeEnergyBase object
-        description="Settings for the Equilibrium Alchemical sampler, currently supporting either MultistateSampler, SAMSSampler or ReplicaExchangeSampler.",
+        AlchemicalSettings(softcore_LJ="gapsys"),
+        description="The alchemical protocol settings.",
     )
     engine_settings: OpenMMEngineSettings = Field(
         OpenMMEngineSettings(), description="Openmm platform settings."
@@ -243,8 +240,8 @@ class _FreeEnergyBase(_SchemaBase):
         IntegratorSettings(),
         description="Settings for the LangevinSplittingDynamicsMove integrator.",
     )
-    simulation_settings: SimulationSettings = Field(
-        SimulationSettings(
+    simulation_settings: MultiStateSimulationSettings = Field(
+        MultiStateSimulationSettings(
             equilibration_length=1.0 * OFFUnit.nanoseconds,
             production_length=5.0 * OFFUnit.nanoseconds,
         ),
