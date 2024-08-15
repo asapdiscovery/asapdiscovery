@@ -996,7 +996,8 @@ def clean_result_network(network, console=None):
     Cleans an incoming result network JSON file from some issues that might occur. Current procedures:
     - removes edges that have DG==0.0, this happens when there is inconsistent stereo annotation in input ligands
     such that after stereo enumeration there are duplicate ligands.
-    - cleans imbalanced complex/solvent legs, e.g. when some have failed or when stereo expansion was done unintentionally
+    - cleans imbalanced complex/solvent legs, e.g. when some have failed or when stereo expansion was done unintentionally.
+    Averages duplicate legs to come to a single value.
 
     returns the loaded FreeEnergyCalculationNetwork.
     """
