@@ -1003,11 +1003,11 @@ def clean_result_network(network, console=None):
     """
     import json
     import tempfile
+    from collections import defaultdict
 
     import numpy as np
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from rich.padding import Padding
-    from collections import defaultdict
 
     with open(network) as f:
         d = json.load(f)
