@@ -18,7 +18,6 @@ from asapdiscovery.ml.dataset import (
     DockedDataset,
     GraphDataset,
     GroupedDockedDataset,
-    PygGraphDataset,
 )
 from asapdiscovery.ml.es import (
     BestEarlyStopping,
@@ -261,7 +260,6 @@ class DatasetType(StringEnum):
     """
 
     graph = "graph"
-    pyg_graph = "pyg_graph"
     structural = "structural"
 
 
@@ -319,7 +317,7 @@ class DatasetConfig(ConfigBase):
     def check_data_type(cls, values):
         inp = values["input_data"][0]
         match values["ds_type"]:
-            case DatasetType.graph | DatasetType.pyg_graph:
+            case DatasetType.graph:
                 if not isinstance(inp, Ligand):
                     raise ValueError(
                         "Expected Ligand input data for graph-based model, but got "
@@ -501,17 +499,7 @@ class DatasetConfig(ConfigBase):
         # Build directly from Complexes/Ligands
         match self.ds_type:
             case DatasetType.graph:
-                from dgllife.utils import CanonicalAtomFeaturizer
-
-                ds = GraphDataset.from_ligands(
-                    self.input_data,
-                    exp_dict=self.exp_data,
-                    node_featurizer=CanonicalAtomFeaturizer(),
-                )
-            case DatasetType.pyg_graph:
-                ds = PygGraphDataset.from_ligands(
-                    self.input_data, exp_dict=self.exp_data
-                )
+                ds = GraphDataset.from_ligands(self.input_data, exp_dict=self.exp_data)
             case DatasetType.structural:
                 if self.grouped:
                     ds = GroupedDockedDataset.from_complexes(
