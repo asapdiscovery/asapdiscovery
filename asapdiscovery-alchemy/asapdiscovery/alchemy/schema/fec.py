@@ -9,21 +9,15 @@ from gufe import settings
 from gufe.tokenization import GufeKey
 from openfe.protocols.openmm_utils.omm_settings import (
     MultiStateSimulationSettings,
-    BaseSolvationSettings,
     OpenMMSolvationSettings,
     OpenMMEngineSettings,
     IntegratorSettings,
-    # OpenFFPartialChargeSettings,
-    # MultiStateOutputSettings,
-    MDSimulationSettings,
-    # MDOutputSettings,
 )
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSettings,
     LambdaSettings,
     OpenFFPartialChargeSettings,
     MultiStateOutputSettings,
-    # SystemSettings,
 )
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
