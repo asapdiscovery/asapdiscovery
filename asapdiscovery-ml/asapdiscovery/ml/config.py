@@ -14,7 +14,12 @@ from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.stringenum import StringEnum
 from asapdiscovery.data.util.utils import extract_compounds_from_filenames
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
+from asapdiscovery.ml.dataset import (
+    DockedDataset,
+    GraphDataset,
+    GroupedDockedDataset,
+    PygGraphDataset,
+)
 from asapdiscovery.ml.es import (
     BestEarlyStopping,
     ConvergedEarlyStopping,
@@ -256,6 +261,7 @@ class DatasetType(StringEnum):
     """
 
     graph = "graph"
+    pyg_graph = "pyg_graph"
     structural = "structural"
 
 
@@ -313,7 +319,7 @@ class DatasetConfig(ConfigBase):
     def check_data_type(cls, values):
         inp = values["input_data"][0]
         match values["ds_type"]:
-            case DatasetType.graph:
+            case DatasetType.graph | DatasetType.pyg_graph:
                 if not isinstance(inp, Ligand):
                     raise ValueError(
                         "Expected Ligand input data for graph-based model, but got "
@@ -333,7 +339,7 @@ class DatasetConfig(ConfigBase):
         return values
 
     @classmethod
-    def from_exp_file(cls, exp_file: Path, **config_kwargs):
+    def from_exp_file(cls, exp_file: Path, ds_type=DatasetType.graph, **config_kwargs):
         """
         Build a graph DatasetConfig from an experimental data file.
 
@@ -377,7 +383,7 @@ class DatasetConfig(ConfigBase):
         }
 
         return cls(
-            ds_type=DatasetType.graph,
+            ds_type=ds_type,
             exp_data=exp_data,
             input_data=input_data,
             **config_kwargs,
@@ -501,6 +507,10 @@ class DatasetConfig(ConfigBase):
                     self.input_data,
                     exp_dict=self.exp_data,
                     node_featurizer=CanonicalAtomFeaturizer(),
+                )
+            case DatasetType.pyg_graph:
+                ds = PygGraphDataset.from_ligands(
+                    self.input_data, exp_dict=self.exp_data
                 )
             case DatasetType.structural:
                 if self.grouped:

@@ -1932,6 +1932,36 @@ def build_ds_gat(
     ds_config.build()
 
 
+@build_ds.command(name="pyg_gat")
+@graph_ds_args
+@grouped
+@ds_cache_overwrite
+@ds_config_cache_overwrite
+def build_ds_pyg_gat(
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    grouped: bool | None = None,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+):
+    ds_config = _build_ds_config(
+        exp_file=exp_file,
+        structures=None,
+        xtal_regex=None,
+        cpd_regex=None,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=False,
+        is_grouped=grouped,
+        for_e3nn=False,
+        config_overwrite=overwrite_ds_config_cache,
+        pkl_overwrite=overwrite_ds_cache,
+        ds_type="pyg_graph",
+    )
+    ds_config.build()
+
+
 @build_ds.command(name="schnet")
 @graph_ds_args
 @struct_ds_args
@@ -2096,6 +2126,7 @@ def _build_ds_config(
     for_e3nn,
     config_overwrite,
     pkl_overwrite,
+    ds_type=None,
 ):
     """
     Helper function to build a DatasetConfig object.
@@ -2144,6 +2175,7 @@ def _build_ds_config(
         "cache_file": ds_cache,
         "grouped": is_grouped,
         "for_e3nn": for_e3nn,
+        "ds_type": ds_type,
         "overwrite": pkl_overwrite,
     }
     config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}
