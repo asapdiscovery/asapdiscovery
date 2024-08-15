@@ -15,9 +15,10 @@ from asapdiscovery.ml.config import DatasetConfig
 from asapdiscovery.ml.dataset import DockedDataset
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
-    LocalMLModelSpec,
+    LocalMLModelSpecBase,
     MLModelRegistry,
     MLModelSpec,
+    MLModelSpecBase,
 )
 
 # static import of models from base yaml here
@@ -44,14 +45,22 @@ class InferenceBase(BaseModel):
     )
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
-    model_spec: Optional[MLModelSpec] = Field(
+    model_spec: Optional[MLModelSpecBase] = Field(
         ..., description="Model spec used to create Model to use"
     )
-    local_model_spec: LocalMLModelSpec = Field(
+    local_model_spec: LocalMLModelSpecBase = Field(
         ..., description="Local model spec used to create Model to use"
     )
     device: str = Field("cpu", description="Device to use for inference")
-    model: Optional[torch.nn.Module] = Field(..., description="PyTorch model")
+    models: Optional[list[torch.nn.Module]] = Field(..., description="PyTorch model(s)")
+
+    @property
+    def is_ensemble(self):
+        return len(self.models) > 1
+
+    @property
+    def ensemble_size(self):
+        return len(self.models)
 
     @classmethod
     def from_latest_by_target(
@@ -127,7 +136,7 @@ class InferenceBase(BaseModel):
     @classmethod
     def from_local_model_spec(
         cls,
-        local_model_spec: LocalMLModelSpec,
+        local_model_spec: LocalMLModelSpecBase,
         device: str = "cpu",
         model_spec: Optional[MLModelSpec] = None,
         build_model_kwargs: Optional[dict] = {},
@@ -177,19 +186,28 @@ class InferenceBase(BaseModel):
             case other:
                 raise ValueError(f"Can't instantiate model config for type {other}.")
 
-        try:
-            config_kwargs = json.loads(local_model_spec.config_file.read_text())
-        except AttributeError:
-            config_kwargs = {}
+        models = []
 
-        existing_model_weights = config_kwargs.get("model_weights", None)
-        if (existing_model_weights is None) and local_model_spec.weights_file:
+        if model_spec.ensemble:
+            for model in local_model_spec.models:
+                config_kwargs = json.loads(model.config_file.read_text())
+
+                # warnings.warn(f"failed to parse model config file, {model.config_file}")
+                # config_kwargs = {}
+                config_kwargs["model_weights"] = torch.load(
+                    model.weights_file, map_location=device
+                )
+                model = config_cls(**config_kwargs).build()
+                model.eval()
+                models.append(model)
+        else:
+            config_kwargs = json.loads(local_model_spec.config_file.read_text())
             config_kwargs["model_weights"] = torch.load(
                 local_model_spec.weights_file, map_location=device
             )
-
-        model = config_cls(**config_kwargs).build()
-        model.eval()
+            model = config_cls(**config_kwargs).build()
+            model.eval()
+            models.append(model)
 
         return cls(
             targets=local_model_spec.targets,
@@ -198,10 +216,10 @@ class InferenceBase(BaseModel):
             model_spec=model_spec,
             local_model_spec=local_model_spec,
             device=device,
-            model=model,
+            models=models,
         )
 
-    def predict(self, input_data):
+    def predict(self, input_data, aggfunc=np.mean, errfunc=np.std, return_err=False):
         """Predict on data, needs to be overloaded in child classes most of
         the time
 
@@ -209,23 +227,56 @@ class InferenceBase(BaseModel):
         ----------
 
         input_data: pytorch.Tensor
+            Input data to predict on.
+        aggfunc: function, default=np.mean
+            Function to aggregate predictions from multiple models.
+        errfunc: function, default=np.std
+            Function to calculate error from multiple models.
+        return_err: bool, default=False
+            Return error in addition to prediction.
 
         Returns
         -------
         np.ndarray
             Prediction from model.
+        float
+            Error from model.
         """
-        # feed in data in whatever format is required by the model
         with torch.no_grad():
+            # feed in data in whatever format is required by the model
+            # for model ensemble, we need to loop through each model and get the
+            # prediction from each, then aggregate
             input_tensor = torch.tensor(input_data).to(self.device)
-            output_tensor = self.model(input_tensor)[0]
-            return output_tensor.cpu().numpy().ravel()
+
+            aggregate_preds = []
+            for model in self.models:
+                output_tensor = model(input_tensor)[0].cpu().numpy().flatten()
+                aggregate_preds.append(output_tensor)
+            if self.is_ensemble:
+                aggregate_preds = np.array(aggregate_preds)
+                pred = aggfunc(aggregate_preds, axis=0)
+                err = errfunc(aggregate_preds, axis=0)
+            else:
+                # iterates only once, just return the prediction
+                pred = output_tensor
+                err = np.nan
+            if return_err:
+                return pred, err
+            else:
+                return pred
 
 
 class GATInference(InferenceBase):
     model_type: ClassVar[ModelType.GAT] = ModelType.GAT
 
-    def predict(self, x: torch.Tensor, edge_index: torch.Tensor):
+    def predict(
+        self,
+        x: torch.Tensor,
+        edge_index: torch.Tensor,
+        aggfunc=np.mean,
+        errfunc=np.std,
+        return_err=False,
+    ):
         """
         Predict on a featurized molecule. This featurization can be generated using
         `featurize_oemol` and `featurize_smiles` in
@@ -239,20 +290,43 @@ class GATInference(InferenceBase):
             Tensor of graph edges. First row should be the atom index of the source node
             and second row should be the atom index of the destination node. Indices
             should correspond to rows in `x`
+        aggfunc: function, default=np.mean
+            Function to aggregate predictions from multiple models.
+        errfunc: function, default=np.std
+            Function to calculate error from multiple models.
+        return_err: bool, default=False
+            Return error in addition to prediction.
 
         Returns
         -------
         np.ndarray
             Predictions for each graph.
+        np.ndarray
+            Errors for each prediction.
         """
         with torch.no_grad():
-            output_tensor = self.model({"x": x, "edge_index": edge_index})[0]
-            # we ravel to always get a 1D array
-            return output_tensor.cpu().numpy().ravel()
+            aggregate_preds = []
+            for model in self.models:
+                output_tensor = (
+                    model({"x": x, "edge_index": edge_index})[0].cpu().numpy().flatten()
+                )
+                # we ravel to always get a 1D array
+                aggregate_preds.append(output_tensor)
+            if self.is_ensemble:
+                aggregate_preds = np.array(aggregate_preds).flatten()
+                pred = aggfunc(aggregate_preds)
+                err = errfunc(aggregate_preds)
+            else:
+                pred = output_tensor
+                err = np.nan
+
+            if return_err:
+                return pred, err
+            else:
+                return pred
 
     def predict_from_smiles(
-        self,
-        smiles: Union[str, list[str]],
+        self, smiles: Union[str, list[str]], return_err=False
     ) -> Union[np.ndarray, float]:
         """
         Predict on a list of SMILES strings, or a single SMILES string.
@@ -261,21 +335,36 @@ class GATInference(InferenceBase):
         ----------
         smiles : Union[str, List[str]]
             SMILES string or list of SMILES strings.
+        return_err: bool, default=False
 
         Returns
         -------
         np.ndarray or float
             Predictions for each graph, or a single prediction if only one SMILES string is provided.
+        np.ndarray or float
+            Errors for each prediction, or a single error if only one SMILES string is provided.
         """
         if isinstance(smiles, str):
             smiles = [smiles]
 
-        data = [self.predict(*featurize_smiles(smi)) for smi in smiles]
-        data = np.concatenate(np.asarray(data))
+        data = [
+            self.predict(*featurize_smiles(smi), return_err=return_err)
+            for smi in smiles
+        ]
+        data = np.asarray(data)
+        preds = data[:, 0]
+        if return_err:
+            errs = data[:, 1]
         # return a scalar float value if we only have one input
-        if np.all(np.array(data.shape) == 1):
-            data = data.item()
-        return data
+        if np.all(np.array(preds.shape) == 1):
+            preds = preds.item()
+            if return_err:
+                errs = errs.item()
+
+        if return_err:
+            return preds, errs
+        else:
+            return preds
 
 
 class StructuralInference(InferenceBase):
@@ -285,7 +374,9 @@ class StructuralInference(InferenceBase):
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
 
-    def predict(self, pose_dict: dict):
+    def predict(
+        self, pose_dict: dict, aggfunc=np.mean, errfunc=np.std, return_err=False
+    ):
         """Predict on a pose, requires a dictionary with the pose data with
         the keys: "z", "pos", "lig" with the required tensors in each
 
@@ -293,19 +384,42 @@ class StructuralInference(InferenceBase):
         ----------
         pose_dict : dict
             Dictionary with pose data.
+        aggfunc: function, default=np.mean
+            Function to aggregate predictions from multiple models.
+        errfunc: function, default=np.std
+            Function to calculate error from multiple models.
+        return_err: bool, default=False
+
 
         Returns
         -------
-        np.ndarray
-            Predictions for a pose.
+        np.ndarray or float
+            Predictions for the pose.
+        np.ndarray or float
+            Errors for the pose
+
         """
         with torch.no_grad():
-            output_tensor = self.model(pose_dict)[0]
-            # we ravel to always get a 1D array
-            return output_tensor.cpu().numpy().ravel()
+            aggregate_preds = []
+            for model in self.models:
+                output_tensor = model(pose_dict)[0].cpu().numpy().flatten()
+                # we ravel to always get a 1D array
+                aggregate_preds.append(output_tensor)
+            if self.is_ensemble:
+                aggregate_preds = np.array(aggregate_preds).flatten()
+                pred = aggfunc(aggregate_preds)
+                err = errfunc(aggregate_preds)
+            else:
+                pred = output_tensor
+                err = np.nan
+
+            if return_err:
+                return pred, err
+            else:
+                return pred
 
     def predict_from_structure_file(
-        self, pose: Union[Path, list[Path]], for_e3nn: bool = False
+        self, pose: Union[Path, list[Path]], for_e3nn: bool = False, return_err=False
     ) -> Union[np.ndarray, float]:
         """Predict on a list of poses or a single pose.
 
@@ -316,11 +430,14 @@ class StructuralInference(InferenceBase):
         for_e3nn : bool, default=False
             If this prediction is being made for an e3nn model. Need to adjust the
             dict labels in this case
+        return_err: bool, default=False
 
         Returns
         -------
         np.ndarray or float
             Prediction for poses, or a single prediction if only one pose is provided.
+        np.ndarray or float
+            Error for poses, or a single error if only one pose is provided.
         """
 
         if isinstance(pose, Path):
@@ -331,16 +448,27 @@ class StructuralInference(InferenceBase):
             pose = [
                 p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
             ]
-        data = [self.predict(p) for p in pose]
-
-        data = np.concatenate(np.asarray(data))
+        data = [self.predict(p, return_err=return_err) for p in pose]
+        data = np.asarray(data)
+        preds = data[:, 0]
+        if return_err:
+            errs = data[:, 1]
         # return a scalar float value if we only have one input
-        if np.all(np.array(data.shape) == 1):
-            data = data.item()
-        return data
+        if np.all(np.array(preds.shape) == 1):
+            preds = preds.item()
+            if return_err:
+                errs = errs.item()
+
+        if return_err:
+            return preds, errs
+        else:
+            return preds
 
     def predict_from_oemol(
-        self, pose: Union[oechem.OEMol, list[oechem.OEMol]], for_e3nn: bool = False
+        self,
+        pose: Union[oechem.OEMol, list[oechem.OEMol]],
+        for_e3nn: bool = False,
+        return_err=False,
     ) -> Union[np.ndarray, float]:
         """
         Predict on a (list of) OEMol objects.
@@ -352,11 +480,14 @@ class StructuralInference(InferenceBase):
         for_e3nn : bool, default=False
             If this prediction is being made for an e3nn model. Need to adjust the
             dict labels in this case
+        return_err: bool, default=False
 
         Returns
         -------
         np.ndarray or float
             Model prediction(s)
+        np.ndarray or float
+            Model error(s)
         """
         from io import StringIO
 
@@ -379,12 +510,21 @@ class StructuralInference(InferenceBase):
             h.close()
 
         # Make predictions
-        preds = [self.predict(p) for p in pose]
-        preds = np.concatenate(np.asarray(preds))
+        data = [self.predict(p, return_err=return_err) for p in pose]
+        data = np.asarray(data)
+        preds = data[:, 0]
+        if return_err:
+            errs = data[:, 1]
         # return a scalar float value if we only have one input
         if np.all(np.array(preds.shape) == 1):
             preds = preds.item()
-        return preds
+            if return_err:
+                errs = errs.item()
+
+        if return_err:
+            return preds, errs
+        else:
+            return preds
 
 
 class SchnetInference(StructuralInference):
@@ -402,17 +542,19 @@ class E3nnInference(StructuralInference):
 
     model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
 
-    def predict_from_structure_file(self, pose):
+    def predict_from_structure_file(self, pose, return_err=False):
         """
         Overload the base class method to pass for_e3nn=True.
         """
-        return super().predict_from_structure_file(pose, for_e3nn=True)
+        return super().predict_from_structure_file(
+            pose, for_e3nn=True, return_err=return_err
+        )
 
-    def predict_from_oemol(self, pose):
+    def predict_from_oemol(self, pose, return_err=False):
         """
         Overload the base class method to pass for_e3nn=True.
         """
-        return super().predict_from_oemol(pose, for_e3nn=True)
+        return super().predict_from_oemol(pose, for_e3nn=True, return_err=return_err)
 
 
 _inferences_classes_meta = [

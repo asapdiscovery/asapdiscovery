@@ -93,3 +93,7 @@ asapdiscovery-SARS-CoV-2-Mpro-e3nn-2024.02.06:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
   mtenn_lower_pin: "0.5.0"
+
+asapdiscovery-GAT-remote-ensemble:
+  remote_ensemble: true
+  manifest_url: https://asap-discovery-ml-skynet.asapdata.org/test_manifest/asap_ensemble_models.yaml
