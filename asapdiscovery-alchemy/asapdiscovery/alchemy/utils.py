@@ -150,7 +150,9 @@ class AlchemiscaleHelper:
         for tf_sk in self._client.get_network_transformations(network_key):
             # the factory defines how many times the task should be repeated, so total runs is 1 + no of repeats
             tasks.extend(
-                self._client.create_tasks(tf_sk, count=planned_network.n_repeats + 1)
+                self._client.create_tasks(
+                    tf_sk, count=planned_network.protocol_repeats + 1
+                )
             )
 
         # now action the tasks to ensure they are picked up by compute.
