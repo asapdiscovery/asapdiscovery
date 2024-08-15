@@ -1014,10 +1014,7 @@ def clean_result_network(network, console=None):
         input_results = d["results"]["results"]
 
     # 1. remove edges where DG is 0.0
-    cleaned_results = []
-    for result in input_results:
-        if not result["estimate"]["magnitude"] == 0.0:
-            cleaned_results.append(result)
+cleaned_results = [result for result in input_results if not result["estimate"]["magnitude"] == 0.0]
 
     num_0_0_removed = len(input_results) - len(cleaned_results)
 
