@@ -1002,33 +1002,30 @@ def clean_result_network(network, console=None):
     returns the loaded FreeEnergyCalculationNetwork.
     """
     import json
-    import sys
     import tempfile
 
     import numpy as np
-    import rich
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from rich.padding import Padding
+    from collections import defaultdict
 
     with open(network) as f:
         d = json.load(f)
         input_results = d["results"]["results"]
 
     # 1. remove edges where DG is 0.0
-cleaned_results = [result for result in input_results if not result["estimate"]["magnitude"] == 0.0]
+    cleaned_results = [
+        result for result in input_results if not result["estimate"]["magnitude"] == 0.0
+    ]
 
     num_0_0_removed = len(input_results) - len(cleaned_results)
 
     # 2. balance between complex/solvent replicates, such that n=N=1
-    deduped_results_dict = (
-        {}
-    )  # make a dict first that we can query; if an edge has multiple results it'll be a list of results
+
+    deduped_results_dict = defaultdict(list)
     for result in cleaned_results:
         transform = f"{result['ligand_a']}~{result['ligand_b']}_{result['phase']}"
-        if transform in deduped_results_dict:
-            deduped_results_dict[transform].append(result)
-        else:
-            deduped_results_dict[transform] = [result]
+        deduped_results_dict[transform].append(result)
 
     deduped_results = []
     for _, results in deduped_results_dict.items():
