@@ -325,6 +325,10 @@ def gather(
     client = AlchemiscaleHelper.from_settings()
 
     # load the network
+    if network_key and network:
+        raise ValueError("cannot provide both --network and --network_key; choose one.")
+    elif not network_key and not network:
+        raise ValueError("Must provide one of --network or --network_key")
     if network:
         planned_network = FreeEnergyCalculationNetwork.from_file(network)
         network_key = planned_network.results.network_key
