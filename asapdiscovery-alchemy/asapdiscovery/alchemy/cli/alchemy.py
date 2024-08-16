@@ -430,7 +430,7 @@ def status(
     console = rich.get_console()
     print_header(console)
 
-    if sum([ bool(arg) for arg in [all_networks, network, network_key] ]) > 1:
+    if sum([bool(arg) for arg in [all_networks, network, network_key]]) > 1:
         raise ValueError(
             "Can not retrieve status for --network_key at the same time as --all-networks and/or --network. Please flag only one of --network_key, --all-networks and --network_key"
         )
