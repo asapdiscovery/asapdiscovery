@@ -165,6 +165,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
         self,
         ligands: list[Ligand],
         central_ligand: Optional[Ligand] = None,
+        custom_network_file: Optional[str] = None,
     ) -> PlannedNetwork:
         """
         Generate a network with the configured settings.
@@ -174,6 +175,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
         Args:
             ligands: The set of ligands which should be included in the network.
             central_ligand: The ligand which should be considered as the central node in a radial network
+            custom_network_file: An optional path to a custom network specified as a CSV file where each line contains <lig_a,lig_b>, on the next line <lig_b,lig_x>, etc
         """
 
         # validate the inputs

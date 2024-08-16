@@ -98,6 +98,7 @@ def plan(
     receptor: Optional[str] = None,
     ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
+    custom_network_file: Optional[str] = None,
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
@@ -163,12 +164,17 @@ def plan(
 
         center_ligand = center_ligand[0]
 
+    if custom_network_file is not None:
+        click.echo(
+            f"Using custom network specified in {custom_network_file}, ignoring central ligand if supplied."
+        )
     click.echo("Creating FEC network ...")
     planned_network = factory.create_fec_dataset(
         dataset_name=name,
         receptor=receptor,
         ligands=input_ligands,
         central_ligand=center_ligand,
+        custom_network_file=custom_network_file,
         experimental_protocol=experimental_protocol,
         target=target,
     )

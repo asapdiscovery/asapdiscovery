@@ -381,6 +381,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         receptor: openfe.ProteinComponent,
         ligands: list["Ligand"],
         central_ligand: Optional["Ligand"] = None,
+        custom_network_file: Optional[str] = None,
         experimental_protocol: Optional[str] = None,
         target: Optional[str] = None,
     ) -> FreeEnergyCalculationNetwork:
@@ -394,6 +395,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
             ligands: The list of prepared and state enumerated ligands to use in the FEC calculation.
             central_ligand: An optional ligand which should be considered as the center only needed for radial networks.
                 Note this ligand will be deduplicated from the list if it appears in both.
+            custom_network_file: An optional path to a custom network specified as a CSV file where each line contains <lig_a,lig_b>, on the next line <lig_b,lig_x>, etc
             experimental_protocol: The name of the experimental protocol in the CDD vault that should be
                 associated with this Alchemy network.
             target: The name of the biological target associated with this Alchemy network.
@@ -420,7 +422,9 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(
-            ligands=ligands, central_ligand=central_ligand
+            ligands=ligands,
+            central_ligand=central_ligand,
+            custom_network_file=custom_network_file,
         )
 
         planned_fec_network = FreeEnergyCalculationNetwork(
