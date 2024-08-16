@@ -32,12 +32,17 @@ class POSIT_METHOD(Enum):
     ALL = oedocking.OEPositMethod_ALL
     HYBRID = oedocking.OEPositMethod_HYBRID
     FRED = oedocking.OEPositMethod_FRED
-    MCS = oedocking.OEPositMethod_MCS
+    # this is a fake method but it is in the docs
+    # MCS = oedocking.OEPositMethod_MCS
     SHAPEFIT = oedocking.OEPositMethod_SHAPEFIT
 
     @classmethod
     def reverse_lookup(cls, value):
         return cls(value).name
+
+    @classmethod
+    def get_values(cls):
+        return [method.value for method in cls]
 
 
 class POSIT_RELAX_MODE(Enum):

@@ -22,6 +22,7 @@ from asapdiscovery.cli.cli_args import (
     target,
     use_only_cache,
 )
+from asapdiscovery.docking.openeye import POSIT_METHOD
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
@@ -184,6 +185,12 @@ def large_scale(
     help="Whether to use dense conformer enumeration with OEOmega (slower, more accurate)",
 )
 @click.option(
+    "--posit_method",
+    type=click.Choice(POSIT_METHOD.get_values(), case_sensitive=False),
+    default=POSIT_METHOD.ALL,
+    help="The set of methods POSIT can use. Defaults to all.",
+)
+@click.option(
     "--allow-retries",
     is_flag=True,
     default=False,
@@ -264,6 +271,7 @@ def cross_docking(
             failure_mode=failure_mode,
             use_omega=use_omega,
             omega_dense=omega_dense,
+            posit_method=posit_method,
             num_poses=num_poses,
             allow_retries=allow_retries,
             ligands=ligands,
