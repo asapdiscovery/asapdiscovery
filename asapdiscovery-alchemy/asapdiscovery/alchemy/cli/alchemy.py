@@ -80,6 +80,12 @@ def create(filename: str):
     help="The file which contains the center ligand, only required by radial type networks.",
 )
 @click.option(
+    "-cn",
+    "--custom-network-file",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="An optional path to a custom network specified as a CSV file where each line contains <lig_a,lig_b>, on the next line <lig_b,lig_x>, etc.",
+)
+@click.option(
     "-ep",
     "--experimental-protocol",
     help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",

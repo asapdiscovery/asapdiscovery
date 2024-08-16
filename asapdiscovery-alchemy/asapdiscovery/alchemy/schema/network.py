@@ -212,11 +212,17 @@ class NetworkPlanner(_NetworkPlannerSettings):
             raise RuntimeError(
                 "The radial type network requires a ligand to act as the central node."
             )
+        if (
+            self.network_planning_method.type == "CustomNetworkPlanner"
+            and not custom_network_file
+        ):
+            raise ValueError(
+                "When setting network_planning_method:type: CustomNetworkPlanner in your free energy perturbation factory, you must provide a custom network CSV (-cn)."
+            )
 
         # build the network planner
-        custom_network_file = "custom_network.csv"  ### instead: feed through from CLI!
         if custom_network_file:
-            if not self.network_planning_method.type == "RadialPlanner":
+            if not self.network_planning_method.type == "CustomNetworkPlanner":
                 raise ValueError(
                     "When providing a custom network CSV (-cn), you must set network_planning_method:type: CustomNetworkPlanner in your free energy perturbation factory."
                 )
