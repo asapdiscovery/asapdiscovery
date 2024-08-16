@@ -74,6 +74,28 @@ class MinimalRedundantPlanner(_NetworkPlannerMethod):
         )
 
 
+class CustomNetworkPlanner(_NetworkPlannerMethod):
+    """Plan a user-set custom network"""
+
+    type: Literal["CustomNetworkPlanner"] = "CustomNetworkPlanner"
+
+    custom_network_file: str = Field(
+        None,
+        description="The path to a CSV file containing edges specified by the user. Each line contains an edge, and ligand names (corresponding to the names in the input SDF) are separated by commas.",
+    )
+
+    def get_planning_function(self) -> Callable:
+        return openfe.ligand_network_planning.generate_network_from_names
+
+    def read_custom_network_csv(csv_path):
+        import csv
+
+        with open(csv_path) as readfile:
+            reader = csv.reader(readfile)
+            edges = [edge for edge in reader]
+        return edges
+
+
 class _NetworkPlannerSettings(_SchemaBase):
     """
     The Network planner settings which configure how the FEC networks should be constructed.
@@ -92,7 +114,11 @@ class _NetworkPlannerSettings(_SchemaBase):
         description="The method which should be used to score the proposed atom mappings by the atom mapping engine.",
     )
     network_planning_method: Union[
-        RadialPlanner, MaximalPlanner, MinimalSpanningPlanner, MinimalRedundantPlanner
+        RadialPlanner,
+        MaximalPlanner,
+        MinimalSpanningPlanner,
+        MinimalRedundantPlanner,
+        CustomNetworkPlanner,
     ] = Field(
         MinimalRedundantPlanner(),
         description="The way in which the ligand network should be connected. Note radial requires a central ligand node.",
@@ -188,13 +214,29 @@ class NetworkPlanner(_NetworkPlannerSettings):
             )
 
         # build the network planner
-        planner_data = {
-            "ligands": [
-                mol.to_openfe() for mol in ligands
-            ],  # need to convert to rdkit objects?
-            "mappers": [self.atom_mapping_engine.get_mapper()],
-            "scorer": self._get_scorer(),
-        }
+        custom_network_file = "custom_network.csv"  ### instead: feed through from CLI!
+        if custom_network_file:
+            if not self.network_planning_method.type == "RadialPlanner":
+                raise ValueError(
+                    "When providing a custom network CSV (-cn), you must set network_planning_method:type: CustomNetworkPlanner in your free energy perturbation factory."
+                )
+            planner_data = {  # for reason OpenFE's `generate_network_from_names` takes in `mapper` instead of `mappers`
+                "ligands": [
+                    mol.to_openfe() for mol in ligands
+                ],  # need to convert to rdkit objects?
+                "mapper": self.atom_mapping_engine.get_mapper(),
+                "names": CustomNetworkPlanner.read_custom_network_csv(
+                    custom_network_file
+                ),
+            }
+        else:
+            planner_data = {
+                "ligands": [
+                    mol.to_openfe() for mol in ligands
+                ],  # need to convert to rdkit objects?
+                "mappers": [self.atom_mapping_engine.get_mapper()],
+                "scorer": self._get_scorer(),
+            }
 
         # add the central ligand if required
         if self.network_planning_method.type == "RadialPlanner":

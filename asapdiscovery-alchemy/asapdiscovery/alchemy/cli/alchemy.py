@@ -166,7 +166,7 @@ def plan(
 
     if custom_network_file is not None:
         click.echo(
-            f"Using custom network specified in {custom_network_file}, ignoring central ligand if supplied."
+            f"Using custom network specified in {custom_network_file}, ignoring network mapper settings and central ligand if supplied."
         )
     click.echo("Creating FEC network ...")
     planned_network = factory.create_fec_dataset(
