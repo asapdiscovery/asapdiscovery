@@ -233,6 +233,7 @@ def cross_docking(
     structure_selector: StructureSelector = StructureSelector.LEAVE_SIMILAR_OUT,
     use_omega: bool = False,
     omega_dense: bool = False,
+    posit_method: POSIT_METHOD = POSIT_METHOD.ALL,
     num_poses: int = 1,
     allow_retries: bool = False,
     allow_final_clash: bool = False,
