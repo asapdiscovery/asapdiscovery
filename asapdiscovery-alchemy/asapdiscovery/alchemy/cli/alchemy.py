@@ -349,7 +349,7 @@ def gather(
     )
     if network:
         network_with_results = client.collect_results(planned_network=planned_network)
-    else:
+    elif network_key:
         network_with_results = client.collect_results(network_key=network_key)
     click.echo("Results gathered saving to file ...")
     network_with_results.to_file("result_network.json")
@@ -430,7 +430,7 @@ def status(
     console = rich.get_console()
     print_header(console)
 
-    if network_key and any([all_networks, network]):
+    if sum([ bool(arg) for arg in [all_networks, network, network_key] ]) > 1:
         raise ValueError(
             "Can not retrieve status for --network_key at the same time as --all-networks and/or --network. Please flag only one of --network_key, --all-networks and --network_key"
         )

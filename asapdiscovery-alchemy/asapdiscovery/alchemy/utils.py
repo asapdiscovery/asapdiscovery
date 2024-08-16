@@ -159,8 +159,8 @@ class AlchemiscaleHelper:
 
     def network_status(
         self,
-        planned_network: Optional[FreeEnergyCalculationNetwork] = False,
-        network_key: Optional[str] = False,
+        planned_network: Optional[FreeEnergyCalculationNetwork] = None,
+        network_key: Optional[str] = None,
     ) -> dict[str, int]:
         """
         Get the status of the network from alchemiscale.
@@ -172,6 +172,8 @@ class AlchemiscaleHelper:
         Returns:
             A dict of the status type and the number of instances.
         """
+        if planned_network and network_key:
+            raise ValueError("Provide only one of `planned_network` or `network_key`")
         if not network_key:
             network_key = planned_network.results.network_key
         return self._client.get_network_status(network_key)
@@ -205,8 +207,8 @@ class AlchemiscaleHelper:
 
     def collect_results(
         self,
-        planned_network: Optional[FreeEnergyCalculationNetwork] = False,
-        network_key: Optional[str] = False,
+        planned_network: Optional[FreeEnergyCalculationNetwork] = None,
+        network_key: Optional[str] = None,
     ) -> FreeEnergyCalculationNetwork:
         """
         Collect the results for the given network.
@@ -220,7 +222,8 @@ class AlchemiscaleHelper:
         """
         # collect results following the notebook from openFE
         results = []
-
+        if planned_network and network_key:
+            raise ValueError("Provide only one of `planned_network` or `network_key`")
         if planned_network:
             network_key = planned_network.results.network_key
         elif not network_key:
