@@ -194,7 +194,7 @@ def large_scale(
     "--posit_relax_mode",
     type=click.Choice(POSIT_RELAX_MODE.get_names(), case_sensitive=False),
     default="none",
-    help="The set of methods POSIT can use. Defaults to all.",
+    help="When to check for relaxation either, 'clash', 'all', 'none'",
 )
 @click.option(
     "--allow-retries",
