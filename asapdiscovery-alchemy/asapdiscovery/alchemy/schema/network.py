@@ -86,6 +86,7 @@ class CustomNetworkPlanner(_NetworkPlannerMethod):
     @validator("custom_network_file", check_fields=False)
     def validate_custom_network_file(cls, v):
         from pathlib import Path
+
         import pandas as pd
 
         path = Path(v)
