@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from asapdiscovery.docking.openeye import POSITDocker, POSIT_METHOD
+from asapdiscovery.docking.openeye import POSIT_METHOD, POSITDocker
 
 
 @pytest.mark.parametrize("posit_method", ["ALL", "HYBRID", "FRED", "SHAPEFIT"])
