@@ -3,8 +3,6 @@ This module contains the inputs, docker, and output schema for using POSIT
 """
 
 import logging
-
-from asapdiscovery.data.util.intenum import IntEnum
 from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Literal, Optional, Union
@@ -13,6 +11,7 @@ import pandas as pd
 from asapdiscovery.data.backend.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.dask_utils import dask_vmap
+from asapdiscovery.data.util.intenum import IntEnum
 from asapdiscovery.docking.docking import (
     DockingBase,
     DockingInputBase,
