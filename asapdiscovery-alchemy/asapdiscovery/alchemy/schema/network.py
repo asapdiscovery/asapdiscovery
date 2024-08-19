@@ -78,18 +78,42 @@ class CustomNetworkPlanner(_NetworkPlannerMethod):
     """Plan a user-set custom network"""
 
     type: Literal["CustomNetworkPlanner"] = "CustomNetworkPlanner"
-
-    custom_network_file: str = Field(
-        None,
-        description="The path to a CSV file containing edges specified by the user. Each line contains an edge, and ligand names (corresponding to the names in the input SDF) are separated by commas.",
-    )
+    from pydantic import validator
 
     def get_planning_function(self) -> Callable:
         return openfe.ligand_network_planning.generate_network_from_names
 
+    @validator("custom_network_file", check_fields=False)
+    def validate_custom_network_file(cls, v):
+        from pathlib import Path
+        import pandas as pd
+
+        path = Path(v)
+        if not path.exists():
+            raise ValueError(f"Custom network file doesn't exist: {v}")
+
+        # do some checks on the input data.
+        try:
+            custom_network_df = pd.read_csv(v, header=None)
+        except pd.errors.EmptyDataError:
+            raise ValueError(f"Custom network file {v} is empty.")
+        for i, row in custom_network_df.iterrows():
+            if any(" " in entry for entry in row):
+                raise ValueError(
+                    f"Custom network file contains an empty space (' ') at index {i+1}, please remove any spaces."
+                )
+            if row.isnull().values.any() or any(entry.rsplit() == [] for entry in row):
+                raise ValueError(
+                    f"Custom network file contains an empty entry at index {i+1}"
+                )
+
+        return v
+
+    @staticmethod
     def read_custom_network_csv(csv_path):
         import csv
 
+        CustomNetworkPlanner.validate_custom_network_file(csv_path)
         with open(csv_path) as readfile:
             reader = csv.reader(readfile)
             edges = [edge for edge in reader]
@@ -226,7 +250,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
                 raise ValueError(
                     "When providing a custom network CSV (-cn), you must set network_planning_method:type: CustomNetworkPlanner in your free energy perturbation factory."
                 )
-            planner_data = {  # for reason OpenFE's `generate_network_from_names` takes in `mapper` instead of `mappers`
+            planner_data = {  # for some reason, OpenFE's `generate_network_from_names` takes in `mapper` instead of `mappers`
                 "ligands": [
                     mol.to_openfe() for mol in ligands
                 ],  # need to convert to rdkit objects?
