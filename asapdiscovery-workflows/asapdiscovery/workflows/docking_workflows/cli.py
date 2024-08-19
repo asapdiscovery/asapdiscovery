@@ -185,13 +185,13 @@ def large_scale(
     help="Whether to use dense conformer enumeration with OEOmega (slower, more accurate)",
 )
 @click.option(
-    "--posit_method",
+    "--posit-method",
     type=click.Choice(POSIT_METHOD.get_names(), case_sensitive=False),
     default="all",
     help="The set of methods POSIT can use. Defaults to all.",
 )
 @click.option(
-    "--posit_relax_mode",
+    "--relax-mode",
     type=click.Choice(POSIT_RELAX_MODE.get_names(), case_sensitive=False),
     default="none",
     help="When to check for relaxation either, 'clash', 'all', 'none'",
