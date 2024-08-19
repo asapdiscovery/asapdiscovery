@@ -5,7 +5,6 @@ This module contains the inputs, docker, and output schema for using POSIT
 import logging
 
 from asapdiscovery.data.util.intenum import IntEnum
-from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Literal, Optional, Union
 
