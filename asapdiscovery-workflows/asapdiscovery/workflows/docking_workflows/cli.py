@@ -280,7 +280,7 @@ def cross_docking(
             use_omega=use_omega,
             omega_dense=omega_dense,
             posit_method=posit_method,
-            relax=relax_mode,
+            relax_mode=relax_mode,
             num_poses=num_poses,
             allow_retries=allow_retries,
             ligands=ligands,
