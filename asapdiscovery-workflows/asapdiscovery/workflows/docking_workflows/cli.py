@@ -25,7 +25,7 @@ from asapdiscovery.cli.cli_args import (
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
-from asapdiscovery.docking.openeye import POSIT_METHOD
+from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.workflows.docking_workflows.cross_docking import (
     CrossDockingWorkflowInputs,
@@ -186,8 +186,14 @@ def large_scale(
 )
 @click.option(
     "--posit_method",
-    type=click.Choice(POSIT_METHOD.get_values(), case_sensitive=False),
-    default=POSIT_METHOD.ALL,
+    type=click.Choice(POSIT_METHOD.get_names(), case_sensitive=False),
+    default="all",
+    help="The set of methods POSIT can use. Defaults to all.",
+)
+@click.option(
+    "--posit_relax_mode",
+    type=click.Choice(POSIT_RELAX_MODE.get_names(), case_sensitive=False),
+    default="none",
     help="The set of methods POSIT can use. Defaults to all.",
 )
 @click.option(
@@ -233,7 +239,8 @@ def cross_docking(
     structure_selector: StructureSelector = StructureSelector.LEAVE_SIMILAR_OUT,
     use_omega: bool = False,
     omega_dense: bool = False,
-    posit_method: POSIT_METHOD = POSIT_METHOD.ALL,
+    posit_method: POSIT_METHOD = POSIT_METHOD.ALL.name,
+    relax_mode: POSIT_RELAX_MODE = POSIT_RELAX_MODE.NONE.name,
     num_poses: int = 1,
     allow_retries: bool = False,
     allow_final_clash: bool = False,
@@ -273,6 +280,7 @@ def cross_docking(
             use_omega=use_omega,
             omega_dense=omega_dense,
             posit_method=posit_method,
+            relax=relax_mode,
             num_poses=num_poses,
             allow_retries=allow_retries,
             ligands=ligands,

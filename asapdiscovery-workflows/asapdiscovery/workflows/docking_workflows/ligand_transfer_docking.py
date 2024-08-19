@@ -322,7 +322,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     # dock pairs
     logger.info("Running docking on selected pairs")
     docker = POSITDocker(
-        relax=inputs.relax,
+        relax_mode=inputs.relax,
         posit_method=inputs.posit_method,
         use_omega=inputs.use_omega,
         omega_dense=inputs.omega_dense,
