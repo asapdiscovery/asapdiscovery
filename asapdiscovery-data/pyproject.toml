@@ -35,7 +35,14 @@ split-fragment-screen = "asapdiscovery.data.scripts.split_fragment_screen:main"
 where = ["."]
 
 [tool.versioningit]
+default-version = "1+unknown"
 
+[tool.versioningit.format]
+distance = "{base_version}+{distance}.{vcs}{rev}"
+dirty = "{base_version}+{distance}.{vcs}{rev}.dirty"
+distance-dirty = "{base_version}+{distance}.{vcs}{rev}.dirty"
 
 [tool.versioningit.vcs]
-default-tag = "0.0.99" # useful for CI/shallow clones
+method = "git"
+match = ["*"]
+default-tag = "0.0.0"

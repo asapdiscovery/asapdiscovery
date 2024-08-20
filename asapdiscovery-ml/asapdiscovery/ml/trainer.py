@@ -1,5 +1,6 @@
 import json
 import pickle as pkl
+from copy import deepcopy
 from glob import glob
 from pathlib import Path
 from time import time
@@ -9,6 +10,7 @@ import torch
 import wandb
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.ml.config import (
+    DataAugConfig,
     DatasetConfig,
     DatasetSplitterConfig,
     EarlyStoppingConfig,
@@ -54,6 +56,10 @@ class Trainer(BaseModel):
     loss_config: LossFunctionConfig = Field(
         ...,
         description="Config describing the loss function for training.",
+    )
+    data_aug_configs: list[DataAugConfig] = Field(
+        [],
+        description="List of data augmentations to be applied in order to each pose.",
     )
 
     # Options for the training process
@@ -204,6 +210,42 @@ class Trainer(BaseModel):
             overwrite=overwrite,
             **config_kwargs,
         )
+
+    @validator("data_aug_configs", pre=True)
+    def load_cache_files_lists(cls, kwargs_list, field):
+        """
+        This validator performs the same functionality as the above function, but for
+        Fields that contain a list of some type.
+        """
+        config_cls = field.type_
+
+        configs = []
+        for config_kwargs in kwargs_list:
+            # If an instance of the actual config class is passed, there's no cache file so
+            #  just return
+            if isinstance(config_kwargs, config_cls):
+                configs.append(config_kwargs)
+                continue
+
+            # Just skip any Nones
+            if config_kwargs is None:
+                continue
+
+            # Get config cache file and overwrite option (if given). Defaults to no cache
+            #  file and not overwriting
+            config_file = config_kwargs.pop("cache", None)
+            overwrite = config_kwargs.pop("overwrite_cache", False)
+
+            configs.append(
+                Trainer._build_arbitrary_config(
+                    config_cls=config_cls,
+                    config_file=config_file,
+                    overwrite=overwrite,
+                    **config_kwargs,
+                )
+            )
+
+        return configs
 
     @validator("ds_config", pre=True)
     def check_and_build_ds(cls, config_kwargs):
@@ -566,10 +608,10 @@ class Trainer(BaseModel):
             self.optimizer.load_state_dict(optimizer_state)
 
         # Build early stopping
-        if self.es_config:
-            self.es = self.es_config.build()
-        else:
-            self.es = None
+        self.es = self.es_config.build()
+
+        # Build data augmentation classes
+        self.data_augs = [aug.build() for aug in self.data_aug_configs]
 
         # Build loss function
         self.loss_func = self.loss_config.build()
@@ -639,9 +681,22 @@ class Trainer(BaseModel):
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
-                    model_inp = pose["poses"]
+                    model_inp = []
+                    for single_pose in pose["poses"]:
+                        # Apply all data augmentations
+                        aug_pose = deepcopy(single_pose)
+                        for aug in self.data_augs:
+                            aug_pose = aug(aug_pose)
+
+                        model_inp.append(aug_pose)
+
                 else:
-                    model_inp = pose
+                    # Apply all data augmentations
+                    aug_pose = deepcopy(pose)
+                    for aug in self.data_augs:
+                        aug_pose = aug(aug_pose)
+
+                    model_inp = aug_pose
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
@@ -882,7 +937,7 @@ class Trainer(BaseModel):
                     use_epoch = self.es.converged_epoch
                     break
                 elif self.es_config.es_type == "converged" and self.es.check(
-                    epoch_val_loss
+                    epoch_idx, epoch_val_loss
                 ):
                     print(f"Stopping training after epoch {epoch_idx}", flush=True)
                     if self.log_file:
