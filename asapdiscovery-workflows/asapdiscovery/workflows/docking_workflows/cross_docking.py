@@ -9,7 +9,8 @@ from shutil import rmtree
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
+from asapdiscovery.data.util.dask_utils import BackendType
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
@@ -221,8 +222,11 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
 
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
     scores_df = scorer.score(
