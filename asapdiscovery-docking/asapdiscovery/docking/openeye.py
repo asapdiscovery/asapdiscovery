@@ -3,7 +3,6 @@ This module contains the inputs, docker, and output schema for using POSIT
 """
 
 import logging
-from enum import Enum
 from pathlib import Path
 from typing import ClassVar, Literal, Optional, Union
 
@@ -11,6 +10,7 @@ import pandas as pd
 from asapdiscovery.data.backend.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.dask_utils import dask_vmap
+from asapdiscovery.data.util.intenum import IntEnum
 from asapdiscovery.docking.docking import (
     DockingBase,
     DockingInputBase,
@@ -24,7 +24,7 @@ from pydantic import Field, PositiveInt, root_validator
 logger = logging.getLogger(__name__)
 
 
-class POSIT_METHOD(Enum):
+class POSIT_METHOD(IntEnum):
     """
     Enum for POSIT methods
     """
@@ -32,15 +32,12 @@ class POSIT_METHOD(Enum):
     ALL = oedocking.OEPositMethod_ALL
     HYBRID = oedocking.OEPositMethod_HYBRID
     FRED = oedocking.OEPositMethod_FRED
-    MCS = oedocking.OEPositMethod_MCS
+    # this is a fake method but it is in the docs
+    # MCS = oedocking.OEPositMethod_MCS
     SHAPEFIT = oedocking.OEPositMethod_SHAPEFIT
 
-    @classmethod
-    def reverse_lookup(cls, value):
-        return cls(value).name
 
-
-class POSIT_RELAX_MODE(Enum):
+class POSIT_RELAX_MODE(IntEnum):
     """
     Enum for POSIT relax modes
     """
@@ -131,7 +128,7 @@ class POSITDocker(DockingBase):
 
     result_cls: ClassVar[POSITDockingResults] = POSITDockingResults
 
-    relax: POSIT_RELAX_MODE = Field(
+    relax_mode: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
         description="When to check for relaxation either, 'clash', 'all', 'none'",
     )
@@ -277,7 +274,7 @@ class POSITDocker(DockingBase):
                     opts = oedocking.OEPositOptions()
                     opts.SetIgnoreNitrogenStereo(True)
                     opts.SetPositMethods(self.posit_method.value)
-                    opts.SetPoseRelaxMode(self.relax.value)
+                    opts.SetPoseRelaxMode(self.relax_mode.value)
 
                     pose_res = oedocking.OEPositResults()
                     pose_res, retcode = self.run_oe_posit_docking(
