@@ -540,7 +540,7 @@ class TrainingPredictionTracker(BaseModel):
 
         return agg_loss_dict
 
-    def get_predictions(self, agg_compounds="none"):
+    def get_predictions(self, agg_compounds="none", in_range_only=False):
         """
         Convenience function for extracting the per-epoch predictions values across all
         tracked values. The output structure will differ depending on the selection for
@@ -556,6 +556,8 @@ class TrainingPredictionTracker(BaseModel):
             How to aggregate the compounds. Options are "none", which does no
             aggregation, "stack", which stacks the prediction values for each compound,
             and "mean", which takes the mean across all compounds
+        in_range_only : bool, default=False
+            Only take predictions for target values that are within the assay range
 
         Returns
         -------
@@ -577,6 +579,10 @@ class TrainingPredictionTracker(BaseModel):
         for sp, split_list in self.split_dict.items():
             cur_preds = {}
             for tp in split_list:
+                # If we only want in-range measurements, skip any that are out of range
+                if in_range_only and tp.in_range:
+                    continue
+
                 try:
                     cur_preds[tp.compound_id].update([tuple(tp.predictions)])
                 except KeyError:
@@ -775,7 +781,7 @@ class TrainingPredictionTracker(BaseModel):
             Statistics dict (see docstring for details)
         """
         # Get preds
-        preds_dict = self.get_predictions()
+        preds_dict = self.get_predictions(in_range_only=True)
         # preds_dict should map split -> compound_id -> preds (n_epochs,)
 
         # Get target vals
