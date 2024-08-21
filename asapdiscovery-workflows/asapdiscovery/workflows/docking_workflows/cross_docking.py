@@ -9,14 +9,15 @@ from shutil import rmtree
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.data.util.dask_utils import BackendType
-from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.util.dask_utils import make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
-from asapdiscovery.docking.docking import DockingInputMultiStructure
+from asapdiscovery.docking.docking import (
+    DockingInputMultiStructure,
+    write_results_to_multi_sdf,
+)
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer import ChemGauss4Scorer, MetaScorer
