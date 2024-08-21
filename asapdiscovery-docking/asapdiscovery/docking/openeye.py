@@ -315,63 +315,65 @@ class POSITDocker(DockingBase):
                             pose_res, retcode = self.run_oe_posit_docking(
                                 opts, pose_res, dus, lig_oemol, self.num_poses
                             )
-                if retcode == oedocking.OEDockingReturnCode_Success:
-                    input_pairs = []
-                    posed_ligands = []
-                    for i, result in enumerate(pose_res.GetSinglePoseResults()):
-                        posed_mol = result.GetPose()
-                        prob = result.GetProbability()
+                    if retcode == oedocking.OEDockingReturnCode_Success:
+                        input_pairs = []
+                        posed_ligands = []
+                        for i, result in enumerate(pose_res.GetSinglePoseResults()):
+                            posed_mol = result.GetPose()
+                            prob = result.GetProbability()
 
-                        # clear SD data for uniformity of results
-                        from asapdiscovery.data.backend.openeye import clear_SD_data
+                            # clear SD data for uniformity of results
+                            from asapdiscovery.data.backend.openeye import clear_SD_data
 
-                        clear_SD_data(posed_mol)
+                            clear_SD_data(posed_mol)
 
-                        posed_ligand = Ligand.from_oemol(posed_mol, **set.ligand.dict())
-                        # set SD tags
-                        sd_data = {
-                            DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
-                            DockingResultCols.POSIT_METHOD.value: oedocking.OEPositMethodGetName(
-                                result.GetPositMethod()
-                            ),
-                            "Pose_ID": i,
-                        }
-                        posed_ligand.set_SD_data(sd_data)
-                        posed_ligands.append(posed_ligand)
+                            posed_ligand = Ligand.from_oemol(
+                                posed_mol, **set.ligand.dict()
+                            )
+                            # set SD tags
+                            sd_data = {
+                                DockingResultCols.DOCKING_CONFIDENCE_POSIT.value: prob,
+                                DockingResultCols.POSIT_METHOD.value: oedocking.OEPositMethodGetName(
+                                    result.GetPositMethod()
+                                ),
+                                "Pose_ID": i,
+                            }
+                            posed_ligand.set_SD_data(sd_data)
+                            posed_ligands.append(posed_ligand)
 
-                        # Generate info about which target was actually used by multi-reference docking
-                        if isinstance(set, DockingInputMultiStructure):
-                            docked_target = set.complexes[result.GetReceptorIndex()]
-                            input_pairs.append(
-                                DockingInputPair(
-                                    ligand=set.ligand, complex=docked_target
+                            # Generate info about which target was actually used by multi-reference docking
+                            if isinstance(set, DockingInputMultiStructure):
+                                docked_target = set.complexes[result.GetReceptorIndex()]
+                                input_pairs.append(
+                                    DockingInputPair(
+                                        ligand=set.ligand, complex=docked_target
+                                    )
+                                )
+                            else:
+                                input_pairs.append(set)
+
+                        # Create Docking Results Objects
+                        docking_results_objects = []
+                        for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
+                            docking_results_objects.append(
+                                POSITDockingResults(
+                                    input_pair=input_pair,
+                                    posed_ligand=posed_ligand,
+                                    probability=posed_ligand.tags[
+                                        DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
+                                    ],
+                                    provenance=self.provenance(),
+                                    pose_id=posed_ligand.tags["Pose_ID"],
                                 )
                             )
-                        else:
-                            input_pairs.append(set)
-
-                    # Create Docking Results Objects
-                    docking_results_objects = []
-                    for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
-                        docking_results_objects.append(
-                            POSITDockingResults(
-                                input_pair=input_pair,
-                                posed_ligand=posed_ligand,
-                                probability=posed_ligand.tags[
-                                    DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
-                                ],
-                                provenance=self.provenance(),
-                                pose_id=posed_ligand.tags["Pose_ID"],
-                            )
-                        )
-                    # Now we can decide if we want to return a path to the json file or the actual object
-                    for docking_result in docking_results_objects:
-                        if return_for_disk_backend:
-                            docking_results.append(docked_result_json_path)
-                        else:
-                            docking_results.append(docking_result)
-                        if output_dir is not None:
-                            docking_result.write_docking_files(output_dir)
+                        # Now we can decide if we want to return a path to the json file or the actual object
+                        for docking_result in docking_results_objects:
+                            if return_for_disk_backend:
+                                docking_results.append(docked_result_json_path)
+                            else:
+                                docking_results.append(docking_result)
+                            if output_dir is not None:
+                                docking_result.write_docking_files(output_dir)
 
             except Exception as e:
                 error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name} with error: {e}"
