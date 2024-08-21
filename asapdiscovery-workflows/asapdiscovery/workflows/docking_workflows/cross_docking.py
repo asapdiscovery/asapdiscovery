@@ -231,12 +231,15 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
             reconstruct_cls=docker.result_cls,
         )
 
+    logger.info("Running scoring")
     scores_df = scorer.score(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        return_df=True,
         failure_mode=inputs.failure_mode,
+        return_df=True,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
 
     del results
