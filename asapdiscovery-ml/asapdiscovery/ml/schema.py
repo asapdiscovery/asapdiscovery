@@ -1,5 +1,6 @@
 import numpy as np
 import pandas
+from scipy.stats import bootstrap, kendalltau, spearmanr
 import torch
 from asapdiscovery.ml.config import LossFunctionConfig
 from pydantic import BaseModel, Extra, Field, validator
@@ -715,7 +716,7 @@ class TrainingPredictionTracker(BaseModel):
 
         return pandas.DataFrame(dict(use_vals))
 
-    def to_loss_dict(self, allow_multiple=False):
+    def to_loss_dict(self, allow_multiple=False, loss_config=None):
         """
         Method to convert a TrainingPredictionTracker to the old loss_dict method of
         tracking losses and predictions over training, for compatibility with existing
@@ -727,9 +728,12 @@ class TrainingPredictionTracker(BaseModel):
             Allow multiple loss types for a given compound. If this is False, multiple
             loss types for a compound will raise a ValueError. If True, multiple loss
             types will generate an entry in the loss_dict for each loss type
+        loss_config : LossFunctionConfig, optional
+            Which LossFunctionConfig to pull values for
         """
         loss_dict = {"train": {}, "val": {}, "test": {}}
-        for sp, values_list in self.split_dict.items():
+        # for sp, values_list in self.split_dict.items():
+        for sp, values_list in self.get_values(loss_config=loss_config).items():
             for training_pred in values_list:
                 if (training_pred.compound_id in loss_dict[sp]) and (
                     not allow_multiple
@@ -750,3 +754,121 @@ class TrainingPredictionTracker(BaseModel):
                 loss_dict[sp][training_pred.compound_id] = d
 
         return loss_dict
+
+    def calculate_pred_statistics(self, target_prop, pred_epoch=-1):
+        """
+        Calculate boostrapped MAE, RMSE, Spearman r, and Kendall tau values on losses.
+        Return value is a dict mapping split -> metric name -> {"value": metric value,
+        "95ci_low": lower bound of bootstrapped 95% confidence interval,
+        "95ci_high": upper bound of bootstrapped 95% confidence interval}.
+
+        Parameters
+        ----------
+        target_prop : str
+            Which target property to pull
+        pred_epoch : int, default=-1
+            Which epoch of predictions to use. Default is to use the final one
+
+        Returns
+        -------
+        dict
+            Statistics dict (see docstring for details)
+        """
+        # Get preds
+        preds_dict = self.get_predictions()
+        # preds_dict should map split -> compound_id -> preds (n_epochs,)
+
+        # Get target vals
+        target_vals = self.get_target_vals(self, target_prop)
+
+        # Order preds and targets together
+        compound_ids_dict = {
+            split: [compound_id for compound_id in split_d.keys()]
+            for split, split_d in preds_dict.items()
+        }  # maps split -> compound_ids
+        preds_dict = {
+            split: [
+                split_d[compound_id][pred_epoch]
+                for compound_id in compound_ids_dict[split]
+            ]
+            for split, split_d in preds_dict.items()
+        }  # maps split -> preds (n_compounds,) ordered by compound_ids_dict
+        target_vals_dict = {
+            split: [
+                split_d[compound_id][pred_epoch]
+                for compound_id in compound_ids_dict[split]
+            ]
+            for split, split_d in target_vals.items()
+        }  # maps split -> target_vals (n_compounds,) ordered by compound_ids_dict
+
+        # Dict to accumulate results
+        stats_dict = {"train": {}, "val": {}, "test": {}}
+
+        # Loop through splits
+        for sp in stats_dict.keys():
+            preds = preds_dict[sp]
+            target_vals = target_vals_dict[sp]
+
+            # Calculate MAE and bootstrapped confidence interval
+            mae = (target_vals - preds).abs().mean()
+            conf_interval = bootstrap(
+                (target_vals, preds),
+                statistic=lambda target, pred: np.abs(target - pred).mean(),
+                method="basic",
+                confidence_level=0.95,
+                paired=True,
+            ).confidence_interval
+            stats_dict[sp]["mae"] = {
+                "value": mae,
+                "95ci_low": conf_interval.low,
+                "95ci_high": conf_interval.high,
+            }
+
+            # Calculate RMSE and bootstrapped confidence interval
+            rmse = np.sqrt((target_vals - preds).pow(2).mean())
+            conf_interval = bootstrap(
+                (target_vals, preds),
+                statistic=lambda target, pred: np.sqrt(
+                    np.power(target - pred, 2).mean()
+                ),
+                method="basic",
+                confidence_level=0.95,
+                paired=True,
+            ).confidence_interval
+            stats_dict[sp]["rmse"] = {
+                "value": rmse,
+                "95ci_low": conf_interval.low,
+                "95ci_high": conf_interval.high,
+            }
+
+            # Calculate Spearman r and bootstrapped confidence interval
+            sp_r = spearmanr(target_vals, preds).statistic
+            conf_interval = bootstrap(
+                (target_vals, preds),
+                statistic=lambda target, pred: spearmanr(target, pred).statistic,
+                method="basic",
+                confidence_level=0.95,
+                paired=True,
+            ).confidence_interval
+            stats_dict[sp]["sp_r"] = {
+                "value": sp_r,
+                "95ci_low": conf_interval.low,
+                "95ci_high": conf_interval.high,
+            }
+
+            # Calculate Kendall's tau and bootstrapped confidence interval
+            tau = kendalltau(target_vals, preds).statistic
+            conf_interval = bootstrap(
+                (target_vals, preds),
+                statistic=lambda target, pred: kendalltau(target, pred).statistic,
+                method="basic",
+                confidence_level=0.95,
+                paired=True,
+            ).confidence_interval
+            stats_dict[sp]["tau"] = {
+                "value": tau,
+                "95ci_low": conf_interval.low,
+                "95ci_high": conf_interval.high,
+            }
+
+        return stats_dict
