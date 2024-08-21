@@ -251,14 +251,26 @@ class NetworkPlanner(_NetworkPlannerSettings):
                 raise ValueError(
                     "When providing a custom network CSV (-cn), you must set network_planning_method:type: CustomNetworkPlanner in your free energy perturbation factory."
                 )
+            # find the set of ligands that are intended to be in the network;
+            # ignore the rest of the compounds.
+            specified_edges = CustomNetworkPlanner.read_custom_network_csv(
+                custom_network_file
+            )
+            ligand_names_in_network = [
+                ligand_name for edge in specified_edges for ligand_name in edge
+            ]
+            ligands = [
+                ligand
+                for ligand in ligands
+                if ligand.to_openfe().name in ligand_names_in_network
+            ]
+
             planner_data = {  # for some reason, OpenFE's `generate_network_from_names` takes in `mapper` instead of `mappers`
                 "ligands": [
                     mol.to_openfe() for mol in ligands
                 ],  # need to convert to rdkit objects?
                 "mapper": self.atom_mapping_engine.get_mapper(),
-                "names": CustomNetworkPlanner.read_custom_network_csv(
-                    custom_network_file
-                ),
+                "names": specified_edges,
             }
         else:
             planner_data = {
