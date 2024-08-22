@@ -785,7 +785,10 @@ class TrainingPredictionTracker(BaseModel):
         # preds_dict should map split -> compound_id -> preds (n_epochs,)
 
         # Get target vals
-        target_vals = self.get_target_vals(self, target_prop)
+        target_vals = self.get_target_vals(
+            target_prop=target_prop, flatten_compounds=False
+        )
+        # maps split -> compound_id -> target val
 
         # Order preds and targets together
         compound_ids_dict = {
@@ -793,17 +796,18 @@ class TrainingPredictionTracker(BaseModel):
             for split, split_d in preds_dict.items()
         }  # maps split -> compound_ids
         preds_dict = {
-            split: [
-                split_d[compound_id][pred_epoch]
-                for compound_id in compound_ids_dict[split]
-            ]
+            split: np.asarray(
+                [
+                    split_d[compound_id][pred_epoch]
+                    for compound_id in compound_ids_dict[split]
+                ]
+            )
             for split, split_d in preds_dict.items()
         }  # maps split -> preds (n_compounds,) ordered by compound_ids_dict
         target_vals_dict = {
-            split: [
-                split_d[compound_id][pred_epoch]
-                for compound_id in compound_ids_dict[split]
-            ]
+            split: np.asarray(
+                [split_d[compound_id] for compound_id in compound_ids_dict[split]]
+            )
             for split, split_d in target_vals.items()
         }  # maps split -> target_vals (n_compounds,) ordered by compound_ids_dict
 
@@ -816,7 +820,7 @@ class TrainingPredictionTracker(BaseModel):
             target_vals = target_vals_dict[sp]
 
             # Calculate MAE and bootstrapped confidence interval
-            mae = (target_vals - preds).abs().mean()
+            mae = np.abs(target_vals - preds).mean()
             conf_interval = bootstrap(
                 (target_vals, preds),
                 statistic=lambda target, pred: np.abs(target - pred).mean(),
@@ -831,7 +835,7 @@ class TrainingPredictionTracker(BaseModel):
             }
 
             # Calculate RMSE and bootstrapped confidence interval
-            rmse = np.sqrt((target_vals - preds).pow(2).mean())
+            rmse = np.sqrt(np.power(target_vals - preds, 2).mean())
             conf_interval = bootstrap(
                 (target_vals, preds),
                 statistic=lambda target, pred: np.sqrt(
