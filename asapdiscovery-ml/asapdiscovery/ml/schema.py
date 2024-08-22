@@ -624,7 +624,7 @@ class TrainingPredictionTracker(BaseModel):
 
         return sp_compound_preds_dict
 
-    def get_target_vals(self, target_prop, flatten_compounds=False):
+    def get_target_vals(self, target_prop, flatten_compounds=False, return_range=False):
         """
         Convenience function for extracting the per-compound target values across. The
         output structure will differ depending on the selection for flatten_compounds:
@@ -632,13 +632,19 @@ class TrainingPredictionTracker(BaseModel):
         * False: dict with levels split: compound: target val (scalar)
         * True: dict with levels split: target vals (n_compounds,)
 
+        If return_range is True, this function will also return the in-range values for
+        each compound. The shape of this output will be the same as the target val
+        output.
+
         Parameters
         ----------
         target_prop : str
             Which target property to pull
-        flatten_compounds : str, default=False
+        flatten_compounds : bool, default=False
             Whether to combine the target values into a single tensor for each split
             (True) or leave the return value as a nested dict (False, default)
+        return_range : bool, default=False
+            Return the in-range values as well as the target values
 
         Returns
         -------
@@ -650,14 +656,19 @@ class TrainingPredictionTracker(BaseModel):
 
         # Loop through and keep track of target val for each compound
         target_val_dict = {sp: {} for sp in target_prop_vals.keys()}
+        in_range_dict = {sp: {} for sp in target_prop_vals.keys()}
         for split, split_list in target_prop_vals.items():
             for val in split_list:
                 if val.compound_id not in target_val_dict[split]:
                     target_val_dict[split][val.compound_id] = val.target_val
+                    in_range_dict[split][val.compound_id] = val.in_range
 
-        return target_val_dict
+        if return_range:
+            return target_val_dict, in_range_dict
+        else:
+            return target_val_dict
 
-    def to_plot_df(self, agg_compounds=False, agg_losses=False):
+    def to_plot_df(self, agg_compounds=False, agg_losses=False, pred_epoch=-1):
         """
         Convenience function for returning loss values in a DatFrame that can be used
         immediately for plotting.
@@ -669,6 +680,8 @@ class TrainingPredictionTracker(BaseModel):
         agg_losses : bool, default=False
             Aggregate (by weighted mean) all different types of loss values for each
             compound
+        pred_epoch : int, default=-1
+            Which epoch of predictions to use. Default is to use the final one
 
         Returns
         -------
@@ -678,19 +691,23 @@ class TrainingPredictionTracker(BaseModel):
         all_split = []
         all_epoch = []
         all_compounds = []
+        all_preds = []
         all_losses = []
         all_loss_vals = []
 
         loss_dict = self.get_losses(agg_compounds=agg_compounds, agg_losses=agg_losses)
+        preds_dict = self.get_predictions()
 
         for sp, split_dict in loss_dict.items():
             match agg_compounds, agg_losses:
                 case (False, False):
                     for compound_id, cpd_dict in split_dict.items():
+                        pred = preds_dict[sp][compound_id][pred_epoch]
                         for loss_config, loss_val_list in cpd_dict.items():
                             all_split.extend([sp] * len(loss_val_list))
                             all_epoch.extend(np.arange(len(loss_val_list)))
                             all_compounds.extend([compound_id] * len(loss_val_list))
+                            all_preds.extend([pred] * len(loss_val_list))
                             all_losses.extend([loss_config] * len(loss_val_list))
                             all_loss_vals.extend(loss_val_list)
                 case (True, False):
@@ -701,9 +718,11 @@ class TrainingPredictionTracker(BaseModel):
                         all_loss_vals.extend(loss_val_list)
                 case (False, True):
                     for compound_id, loss_val_list in split_dict.items():
+                        pred = preds_dict[sp][compound_id][pred_epoch]
                         all_split.extend([sp] * len(loss_val_list))
                         all_epoch.extend(np.arange(len(loss_val_list)))
                         all_compounds.extend([compound_id] * len(loss_val_list))
+                        all_preds.extend([pred] * len(loss_val_list))
                         all_loss_vals.extend(loss_val_list)
                 case (True, True):
                     loss_val_list = split_dict
@@ -714,8 +733,15 @@ class TrainingPredictionTracker(BaseModel):
         use_vals = [
             (label, val)
             for label, val in zip(
-                ["split", "epoch", "compound_id", "loss_config", "loss"],
-                [all_split, all_epoch, all_compounds, all_losses, all_loss_vals],
+                ["split", "epoch", "compound_id", "pred", "loss_config", "loss"],
+                [
+                    all_split,
+                    all_epoch,
+                    all_compounds,
+                    all_preds,
+                    all_losses,
+                    all_loss_vals,
+                ],
             )
             if len(val) > 0
         ]
