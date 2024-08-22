@@ -176,7 +176,8 @@ class VanillaMDSimulator(SimulatorBase):
     )
 
     minimize_only: bool = Field(
-        False, description="Whether to carry out a single minimization step.",
+        False,
+        description="Whether to carry out a single minimization step.",
     )
 
     @validator("rmsd_restraint_type")
