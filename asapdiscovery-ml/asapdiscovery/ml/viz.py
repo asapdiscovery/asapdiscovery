@@ -164,9 +164,9 @@ def plot_model_preds_scatter(
     max_val = all_dfs.loc[:, ["target", "pred"]].values.flatten().max() + 0.5
 
     for ax in fg.axes[:, 0]:
-        ax.set_ylabel("Predicted $\mathrm{pIC}_{50}$")
+        ax.set_ylabel(r"Predicted $\mathrm{pIC}_{50}$")
     for ax in fg.axes[-1, :]:
-        ax.set_xlabel("Experimental $\mathrm{pIC}_{50}$")
+        ax.set_xlabel(r"Experimental $\mathrm{pIC}_{50}$")
 
     if out_fn:
         fg.savefig(out_fn, bbox_inches="tight", dpi=200)
