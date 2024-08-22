@@ -668,7 +668,7 @@ class TrainingPredictionTracker(BaseModel):
         else:
             return target_val_dict
 
-    def to_plot_df(self, agg_compounds=False, agg_losses=False, pred_epoch=-1):
+    def to_plot_df(self, agg_compounds=False, agg_losses=False):
         """
         Convenience function for returning loss values in a DatFrame that can be used
         immediately for plotting.
@@ -680,8 +680,6 @@ class TrainingPredictionTracker(BaseModel):
         agg_losses : bool, default=False
             Aggregate (by weighted mean) all different types of loss values for each
             compound
-        pred_epoch : int, default=-1
-            Which epoch of predictions to use. Default is to use the final one
 
         Returns
         -------
@@ -707,14 +705,14 @@ class TrainingPredictionTracker(BaseModel):
             match agg_compounds, agg_losses:
                 case (False, False):
                     for compound_id, cpd_dict in split_dict.items():
-                        pred = preds_dict[sp][compound_id][pred_epoch]
+                        preds = preds_dict[sp][compound_id]
                         target_val = target_vals_dict[sp][compound_id]
                         range_val = in_range_dict[sp][compound_id]
                         for loss_config, loss_val_list in cpd_dict.items():
                             all_split.extend([sp] * len(loss_val_list))
                             all_epoch.extend(np.arange(len(loss_val_list)))
                             all_compounds.extend([compound_id] * len(loss_val_list))
-                            all_preds.extend([pred] * len(loss_val_list))
+                            all_preds.extend(preds)
                             all_target_vals.extend([target_val] * len(loss_val_list))
                             all_range_vals.extend([range_val] * len(loss_val_list))
                             all_losses.extend([loss_config] * len(loss_val_list))
@@ -727,13 +725,13 @@ class TrainingPredictionTracker(BaseModel):
                         all_loss_vals.extend(loss_val_list)
                 case (False, True):
                     for compound_id, loss_val_list in split_dict.items():
-                        pred = preds_dict[sp][compound_id][pred_epoch]
+                        preds = preds_dict[sp][compound_id]
                         target_val = target_vals_dict[sp][compound_id]
                         range_val = in_range_dict[sp][compound_id]
                         all_split.extend([sp] * len(loss_val_list))
                         all_epoch.extend(np.arange(len(loss_val_list)))
                         all_compounds.extend([compound_id] * len(loss_val_list))
-                        all_preds.extend([pred] * len(loss_val_list))
+                        all_preds.extend(preds)
                         all_target_vals.extend([target_val] * len(loss_val_list))
                         all_range_vals.extend([range_val] * len(loss_val_list))
                         all_loss_vals.extend(loss_val_list)
