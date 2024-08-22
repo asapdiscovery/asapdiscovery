@@ -487,6 +487,8 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         rmsd_restraint = False
         rmsd_restraint_type = None
 
+        
+
         md_simulator = VanillaMDSimulator(
             output_dir=md_output_dir,
             openmm_platform=inputs.md_openmm_platform,
@@ -497,6 +499,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         )
         simulation_results = md_simulator.simulate(
             results,
+            outpaths=[md_output_dir]*len(results)
             use_dask=inputs.use_dask,
             dask_client=dask_client,
             failure_mode=inputs.failure_mode,
