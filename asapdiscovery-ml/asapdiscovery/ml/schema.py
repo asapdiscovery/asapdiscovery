@@ -692,22 +692,31 @@ class TrainingPredictionTracker(BaseModel):
         all_epoch = []
         all_compounds = []
         all_preds = []
+        all_target_vals = []
+        all_range_vals = []
         all_losses = []
         all_loss_vals = []
 
         loss_dict = self.get_losses(agg_compounds=agg_compounds, agg_losses=agg_losses)
         preds_dict = self.get_predictions()
+        target_vals_dict, in_range_dict = self.get_target_vals(
+            "pIC50", return_range=True
+        )
 
         for sp, split_dict in loss_dict.items():
             match agg_compounds, agg_losses:
                 case (False, False):
                     for compound_id, cpd_dict in split_dict.items():
                         pred = preds_dict[sp][compound_id][pred_epoch]
+                        target_val = target_vals_dict[sp][compound_id]
+                        range_val = in_range_dict[sp][compound_id]
                         for loss_config, loss_val_list in cpd_dict.items():
                             all_split.extend([sp] * len(loss_val_list))
                             all_epoch.extend(np.arange(len(loss_val_list)))
                             all_compounds.extend([compound_id] * len(loss_val_list))
                             all_preds.extend([pred] * len(loss_val_list))
+                            all_target_vals.extend([target_val] * len(loss_val_list))
+                            all_range_vals.extend([range_val] * len(loss_val_list))
                             all_losses.extend([loss_config] * len(loss_val_list))
                             all_loss_vals.extend(loss_val_list)
                 case (True, False):
@@ -719,10 +728,14 @@ class TrainingPredictionTracker(BaseModel):
                 case (False, True):
                     for compound_id, loss_val_list in split_dict.items():
                         pred = preds_dict[sp][compound_id][pred_epoch]
+                        target_val = target_vals_dict[sp][compound_id]
+                        range_val = in_range_dict[sp][compound_id]
                         all_split.extend([sp] * len(loss_val_list))
                         all_epoch.extend(np.arange(len(loss_val_list)))
                         all_compounds.extend([compound_id] * len(loss_val_list))
                         all_preds.extend([pred] * len(loss_val_list))
+                        all_target_vals.extend([target_val] * len(loss_val_list))
+                        all_range_vals.extend([range_val] * len(loss_val_list))
                         all_loss_vals.extend(loss_val_list)
                 case (True, True):
                     loss_val_list = split_dict
@@ -733,12 +746,23 @@ class TrainingPredictionTracker(BaseModel):
         use_vals = [
             (label, val)
             for label, val in zip(
-                ["split", "epoch", "compound_id", "pred", "loss_config", "loss"],
+                [
+                    "split",
+                    "epoch",
+                    "compound_id",
+                    "pred",
+                    "target",
+                    "in_range",
+                    "loss_config",
+                    "loss",
+                ],
                 [
                     all_split,
                     all_epoch,
                     all_compounds,
                     all_preds,
+                    all_target_vals,
+                    all_range_vals,
                     all_losses,
                     all_loss_vals,
                 ],
