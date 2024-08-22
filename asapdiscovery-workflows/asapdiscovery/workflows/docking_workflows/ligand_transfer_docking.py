@@ -487,7 +487,7 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
         rmsd_restraint = False
         rmsd_restraint_type = None
 
-        
+
 
         md_simulator = VanillaMDSimulator(
             output_dir=md_output_dir,
