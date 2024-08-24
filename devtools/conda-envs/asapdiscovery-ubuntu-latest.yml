@@ -64,7 +64,7 @@ dependencies:
   - dgl <=2.0.0
   - dgllife
   - pooch
-  - mtenn >=0.5.1
+  - mtenn =0.5.2
   - wandb
 
   # md
@@ -93,8 +93,8 @@ dependencies:
   - logomaker
 
   # simulation
-  - openfe =>0.14.0
-  - gufe =>0.9.5
+  - openfe =0.14.0
+  - gufe =0.9.5
   - httpx
   - perses >=0.10.2
   - kartograf

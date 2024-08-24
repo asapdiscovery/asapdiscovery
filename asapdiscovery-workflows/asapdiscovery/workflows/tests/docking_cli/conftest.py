@@ -14,6 +14,11 @@ def pdb_file():
 
 
 @pytest.fixture()
+def pdb_apo_file():
+    return fetch_test_file("Mpro-YP_009725301_AFold_processed.pdb")
+
+
+@pytest.fixture()
 def all_mpro_fns():
     return [
         "metadata.csv",

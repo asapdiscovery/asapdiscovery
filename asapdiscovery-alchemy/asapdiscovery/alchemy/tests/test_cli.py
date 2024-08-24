@@ -782,13 +782,14 @@ def test_predict_missing_all_exp_data(
         result = runner.invoke(alchemy, ["predict", "-ep", protocol_name])
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
+        # make sure the interactive reports are still made they just won't have a figure
         assert (
             "Absolute report written to predictions-absolute-tyk2-small-test.html"
-            not in result.stdout
+            in result.stdout
         )
         assert (
             "Relative report written to predictions-relative-tyk2-small-test.html"
-            not in result.stdout
+            in result.stdout
         )
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
@@ -892,3 +893,25 @@ def test_prioritize_weight_not_set(monkeypatch):
 
     console = rich.get_console()
     console.clear_live()
+
+
+def test_prep_alchemize(test_ligands_sdfile, tmpdir):
+
+    with tmpdir.as_cwd():
+        runner = CliRunner()
+        result = runner.invoke(
+            alchemy,
+            [
+                "prep",
+                "alchemize",
+                "-l",
+                test_ligands_sdfile,
+                "-n",
+                "tst",
+                "-onu",
+                "2",
+                "-mt",
+                "9",
+            ],
+        )
+        assert result.exit_code == 0

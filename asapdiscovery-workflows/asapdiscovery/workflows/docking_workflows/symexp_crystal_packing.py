@@ -2,11 +2,10 @@ from pathlib import Path
 from shutil import rmtree
 
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelector
 from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
-from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_artifacts import (
@@ -24,10 +23,10 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.util.dask_utils import make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
-from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer import ChemGauss4Scorer, SymClashScorer
@@ -160,7 +159,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     prepped_complexes = prepper.prep(
         complexes,
         cache_dir=inputs.cache_dir,
-        use_dask=inputs.use_dask,
+        use_dask=inputs.use_dask,  # not working for mac1 fragalysis dump
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
     )
@@ -177,11 +176,14 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     logger.info("Selecting pairs for docking based on MCS")
-    selector = MCSSelector()
+    selector = RascalMCESSelector()
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
-        n_select=1,
+        n_select=5,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        failure_mode=inputs.failure_mode,
     )
 
     n_pairs = len(pairs)
@@ -205,11 +207,10 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode="skip",
+        return_for_disk_backend=True,
     )
 
     logger.info("Docking complete")
-
-    complexes = [result.to_posed_complex() for result in results]
 
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
@@ -219,8 +220,11 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
     # score results with just normal ChemGauss scorer
@@ -232,7 +236,8 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
         return_df=True,
-        include_input=False,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -244,6 +249,33 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
         tag="scores",
         message="No docking results",
     )
+
+    # deduplicate
+
+    # then order by chemgauss4 score
+    scores_df = scores_df.sort_values(
+        DockingResultCols.DOCKING_SCORE_POSIT.value, ascending=True
+    )
+    scores_df.to_csv(
+        data_intermediates / "docking_scores_filtered_sorted.csv", index=False
+    )
+
+    # remove duplicates that are the same compound docked to different structures
+    scores_df = scores_df.drop_duplicates(
+        subset=[DockingResultCols.SMILES.value], keep="first"
+    )
+
+    scores_df.to_csv(
+        data_intermediates / "docking_scores_deduplicated.csv", index=False
+    )
+
+    # extract the complexes to keep from the scores
+
+    # re-extract the filtered input results
+    results = scores_df["input"].tolist()
+    complexes = [result.to_posed_complex() for result in results]
+
+    # expand the docked structures
 
     logger.info("Symmetry expanding docked structures")
     expander = SymmetryExpander()
@@ -275,8 +307,8 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     logger.info("Running scoring")
     scores_df_exp = scorer.score(
         expanded_complexes,
-        use_dask=inputs.use_dask,
-        dask_client=dask_client,
+        use_dask=False,
+        dask_client=None,
         failure_mode=inputs.failure_mode,
         return_df=True,
     )
@@ -319,39 +351,8 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
     clashing_df.to_csv(data_intermediates / "clashing.csv", index=False)
     non_clashing_df.to_csv(data_intermediates / "non_clashing.csv", index=False)
 
-    # # run html visualiser to get web-ready vis of docked poses in expanded form
-    # logger.info("Running HTML visualiser for poses")
-    html_ouptut_dir = output_dir / "poses"
-    html_visualizer = HTMLVisualizer(
-        color_method=ColorMethod.subpockets,
-        target=inputs.target,
-        output_dir=html_ouptut_dir,
-    )
-    pose_visualizatons = html_visualizer.visualize(
-        expanded_complexes,
-        use_dask=inputs.use_dask,
-        dask_client=dask_client,
-        failure_mode=inputs.failure_mode,
-    )
-
-    # rename visualisations target id column to POSIT structure tag so we can join
-    pose_visualizatons.rename(
-        columns={
-            DockingResultCols.TARGET_ID.value: DockingResultCols.DOCKING_STRUCTURE_POSIT.value
-        },
-        inplace=True,
-    )
-
-    # join the two dataframes on ligand_id, target_id and smiles
-    combined_df = scores_df.merge(
-        pose_visualizatons,
-        on=[
-            DockingResultCols.LIGAND_ID.value,
-            DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
-            DockingResultCols.SMILES.value,
-        ],
-        how="outer",
-    )
+    # forgive me for this
+    combined_df = scores_df
 
     # rename columns for manifold
     logger.info("Renaming columns for manifold")
