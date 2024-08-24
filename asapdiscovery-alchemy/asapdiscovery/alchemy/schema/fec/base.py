@@ -8,7 +8,8 @@ from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
 from asapdiscovery.alchemy.schema.fec.protocols import (
     OPENFE_PROTOCOLS,
     RelativeHybridTopologySettings,
-    )
+)
+from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from gufe.tokenization import GufeKey
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
@@ -23,8 +24,6 @@ from openfe.protocols.openmm_utils.omm_settings import (
     OpenMMEngineSettings,
     OpenMMSolvationSettings,
 )
-from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
-from gufe.tokenization import GufeKey
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
