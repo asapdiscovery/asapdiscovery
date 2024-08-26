@@ -175,6 +175,11 @@ class VanillaMDSimulator(SimulatorBase):
         description="The OpenFF small molecule force field which should be used for the ligand.",
     )
 
+    minimize_only: bool = Field(
+        False,
+        description="Whether to carry out a single minimization step.",
+    )
+
     @validator("rmsd_restraint_type")
     @classmethod
     def check_restraint_type(cls, v):
@@ -382,6 +387,16 @@ class VanillaMDSimulator(SimulatorBase):
         simulation, context = self.setup_simulation(
             modeller, system, output_indices, output_topology, outpath, _platform
         )
+        if self.minimize_only:
+            sim_result = SimulationResult(
+                input_docking_result=input_docking_result,
+                traj_path="",
+                minimized_pdb_path=outpath / "minimized.pdb",
+                final_pdb_path="",
+                success=True,
+            )
+            return sim_result
+
         logger.info("Setup simulation")
         simulation = self.equilibrate(simulation)
         logger.info("Equilibrated")
