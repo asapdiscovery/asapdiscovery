@@ -1,5 +1,6 @@
 import abc
 import logging
+import shutil
 import warnings
 from pathlib import Path
 from typing import Any, ClassVar, Optional, Union  # noqa: F401
@@ -34,7 +35,6 @@ from pydantic import (
 )
 from rdkit import Chem
 from tqdm import tqdm
-import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +175,9 @@ class VanillaMDSimulator(SimulatorBase):
         "openff-2.2.0",
         description="The OpenFF small molecule force field which should be used for the ligand.",
     )
-    collect_dir: Optional[Path] = Field(None, description="Directory to collect results in a single directory")
+    collect_dir: Optional[Path] = Field(
+        None, description="Directory to collect results in a single directory"
+    )
     minimize_only: bool = Field(
         False,
         description="Whether to carry out a single minimization step.",
@@ -420,16 +422,20 @@ class VanillaMDSimulator(SimulatorBase):
                 tag = input_docking_result.unique_name
             else:
                 tag = protein.stem + "_" + ligand.stem
-            
+
             if not self.collect_dir.exists():
                 self.collect_dir.mkdir(parents=True)
             if sim_result.traj_path.exists():
                 shutil.copy(sim_result.traj_path, self.collect_dir / f"{tag}_traj.xtc")
             if sim_result.minimized_pdb_path.exists():
-                shutil.copy(sim_result.minimized_pdb_path, self.collect_dir / f"{tag}_minimized.pdb")
+                shutil.copy(
+                    sim_result.minimized_pdb_path,
+                    self.collect_dir / f"{tag}_minimized.pdb",
+                )
             if sim_result.final_pdb_path.exists():
-                shutil.copy(sim_result.final_pdb_path, self.collect_dir / f"{tag}_final.pdb")
-            
+                shutil.copy(
+                    sim_result.final_pdb_path, self.collect_dir / f"{tag}_final.pdb"
+                )
 
         return sim_result
 
