@@ -101,17 +101,16 @@ def seq_alignment(
             "The option input-type must be either 'fasta', 'pdb' or 'pre-calc'"
         )
 
-    n_chains = 1
     if multimer:
         n_chains = n_chains
+    else:
+        n_chains = 1
     # Create folder if doesn't already exists
     results_folder = Path(output_dir)
     results_folder.mkdir(parents=True, exist_ok=True)
 
     if "host" in sel_key:
-        if len(email) > 0:
-            user_email = email
-        else:
+        if len(email) < 0:
             raise ValueError(
                 "If a host selection is requested, an email must be provided"
             )
@@ -127,7 +126,7 @@ def seq_alignment(
         e_val_thresh=e_thr,
         database="refseq_protein",
         verbose=False,
-        email=user_email,
+        email=email,
     )
 
     # Perform alignment for each entry in the FASTA file

@@ -57,12 +57,12 @@ class Alignment:
         unique_descp = [self.descripts[i] for i in ordered_idxs]
 
         # Filter sequences by keyword
-        substrings = [
-            match_string.capitalize(),
-            match_string.lower(),
-            match_string.upper(),
-        ]
-
+        substrings = []
+        for s in match_string.split(","):
+            substrings.append(s)
+            substrings.append(s.capitalize())
+            substrings.append(s.lower())
+            substrings.append(s.upper())
         filtered_idxs = [
             idx
             for idx, descp in enumerate(unique_descp)
@@ -314,7 +314,7 @@ class Alignment:
             seq_print = str(rec.seq)
             if n_chains > 1:
                 # ColabFold reads multimer chains separated by ":"
-                seq_print = ":".join(seq_print * n_chains)
+                seq_print = ":".join([seq_print] * n_chains)
             dfi = pd.DataFrame.from_dict({"id": [red_label], "sequence": [seq_print]})
             df = pd.concat([df, dfi], ignore_index=True)
         df.to_csv(output_file, index=False)

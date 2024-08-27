@@ -78,6 +78,7 @@ def parse_blast(
                 df = pd.concat(dfs, axis=0, ignore_index=True, sort=False).dropna(
                     axis=1, how="all"
                 )
+    df.sort_values(by=['score'], ascending=False)
     return df
 
 
@@ -107,9 +108,9 @@ def get_blast_seqs(
     nhits : int, optional
         Number of hits, hitlist_size parameter in BLAST, by default 100
     nalign : int, optional
-        Number of alignments, alignments parameter in BLAST, by default 1e-20
+        Number of alignments, alignments parameter in BLAST, by default 500 
     e_val_thresh : float, optional
-        Threshold to filter BLAST results, by default 500
+        Threshold to filter BLAST results, by default 1e-20
     database : str, optional
         Name of BLAST database, by default "refseq_protein"
     xml_file : str, optional
@@ -225,7 +226,7 @@ class PDBEntry(BaseModel):
             results_folder,
             input_type=self.type,
             xml_file=record_name,
-            nalign=500,
+            nalign=50,
             database="pdb",
             verbose=False,
         )
@@ -385,9 +386,12 @@ def pdb_to_seq(pdb_input=Path, chain="A", fasta_out=None):
     seq_record = SeqRecord(biop_sequence, id=entry_name, description=description)
 
     # Save as fasta file
-    with open(fasta_out, "w") as output_handle:
-        SeqIO.write(seq_record, output_handle, "fasta")
-    return seq_record, fasta_out
+    if fasta_out is None: 
+        return seq_record
+    else:
+        with open(fasta_out, "w") as output_handle:
+            SeqIO.write(seq_record, output_handle, "fasta")
+        return seq_record, fasta_out
 
 
 def search_host(hit_id, user_email):
