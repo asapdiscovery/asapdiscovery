@@ -175,8 +175,11 @@ class VanillaMDSimulator(SimulatorBase):
         "openff-2.2.0",
         description="The OpenFF small molecule force field which should be used for the ligand.",
     )
-
     collect_dir: Optional[Path] = Field(None, description="Directory to collect results in a single directory")
+    minimize_only: bool = Field(
+        False,
+        description="Whether to carry out a single minimization step.",
+    )
 
     @validator("rmsd_restraint_type")
     @classmethod
@@ -385,6 +388,16 @@ class VanillaMDSimulator(SimulatorBase):
         simulation, context = self.setup_simulation(
             modeller, system, output_indices, output_topology, outpath, _platform
         )
+        if self.minimize_only:
+            sim_result = SimulationResult(
+                input_docking_result=input_docking_result,
+                traj_path="",
+                minimized_pdb_path=outpath / "minimized.pdb",
+                final_pdb_path="",
+                success=True,
+            )
+            return sim_result
+
         logger.info("Setup simulation")
         simulation = self.equilibrate(simulation)
         logger.info("Equilibrated")
