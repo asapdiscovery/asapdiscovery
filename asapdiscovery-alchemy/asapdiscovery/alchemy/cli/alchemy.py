@@ -1,6 +1,7 @@
 import shutil
-from typing import Optional
 from pathlib import Path
+from typing import Optional
+
 import click
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -329,7 +330,7 @@ def gather(
         raise ValueError("cannot provide both --network and --network_key; choose one.")
     elif not network_key and not network:
         raise ValueError("Must provide one of --network or --network_key")
-    
+
     if network and Path(network).exists():
         planned_network = FreeEnergyCalculationNetwork.from_file(network)
         network_key = planned_network.results.network_key
@@ -520,7 +521,7 @@ def status(
         elif network_key:
             # check the status
             client.network_status(network_key=network_key)
-        
+
         elif not network_key and not Path(network).exists():
             raise FileNotFoundError(f"Network file {network} does not exist.")
         else:
