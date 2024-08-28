@@ -326,9 +326,9 @@ def gather(
     client = AlchemiscaleHelper.from_settings()
 
     # load the network
-    if network_key and network:
+    if network_key and Path(network).exists():
         raise ValueError("cannot provide both --network and --network_key; choose one.")
-    elif not network_key and not network:
+    elif not network_key and not Path(network).exists():
         raise ValueError("Must provide one of --network or --network_key")
 
     if network and Path(network).exists():
@@ -440,7 +440,7 @@ def status(
     if Path(network).exists():
         args.append(network)
 
-    if sum([bool(arg) for arg in [all_networks, network, network_key]]) > 1:
+    if sum([bool(arg) for arg in args]) > 1:
         raise ValueError(
             "Can not retrieve status for --network_key at the same time as --all-networks and/or --network. Please flag only one of --network_key, --all-networks and --network_key"
         )
