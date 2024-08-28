@@ -1,6 +1,6 @@
 import shutil
 from typing import Optional
-
+from pathlib import Path
 import click
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -280,9 +280,9 @@ def submit(
 @click.option(
     "-n",
     "--network",
-    type=click.Path(resolve_path=False, readable=True, file_okay=True, dir_okay=False),
+    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
     help="The name of the JSON file containing a submitted FEC network (typically 'planned_network.json').",
-    default=None,
+    default="planned_network.json",
     show_default=True,
 )
 @click.option(
@@ -329,13 +329,17 @@ def gather(
         raise ValueError("cannot provide both --network and --network_key; choose one.")
     elif not network_key and not network:
         raise ValueError("Must provide one of --network or --network_key")
-    if network:
+    
+    if network and Path(network).exists():
         planned_network = FreeEnergyCalculationNetwork.from_file(network)
         network_key = planned_network.results.network_key
     elif not network_key:
-        raise ValueError(
-            "Need to define one of `--network` (typically 'planned_network.json') or `--network_key`."
-        )
+        if not Path(network).exists():
+            raise FileNotFoundError(f"Network file {network} does not exist.")
+        else:
+            raise ValueError(
+                "Need to define one of `--network` (typically 'planned_network.json') or `--network_key`."
+            )
 
     # show the network status
     status = client.network_status(network_key=network_key)
@@ -362,9 +366,9 @@ def gather(
 @click.option(
     "-n",
     "--network",
-    type=click.Path(resolve_path=False, readable=True, file_okay=True, dir_okay=False),
+    type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
     help="The name of the JSON file containing a planned FEC network.",
-    default=None,
+    default="planned_network.json",
     show_default=True,
     required=False,
 )
@@ -508,7 +512,7 @@ def status(
         status_breakdown.stop()
         console.print(table)
     else:
-        if network:
+        if network and Path(network).exists():
             # load the network
             planned_network = FreeEnergyCalculationNetwork.from_file(network)
             # check the status
@@ -516,6 +520,9 @@ def status(
         elif network_key:
             # check the status
             client.network_status(network_key=network_key)
+        
+        elif not network_key and not Path(network).exists():
+            raise FileNotFoundError(f"Network file {network} does not exist.")
         else:
             raise ValueError(
                 "Please flag one of --network_key, --all-networks or --network_key"

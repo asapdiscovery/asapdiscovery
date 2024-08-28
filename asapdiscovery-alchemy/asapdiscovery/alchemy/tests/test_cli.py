@@ -442,6 +442,13 @@ def test_alchemy_status_all(monkeypatch):
     )
 
 
+def test_alchemy_status_mutex():
+    runner = CliRunner()
+    result = runner.invoke(alchemy, ["status", "-n", "fakenetwork", "-nk", "1234"])
+    assert result.exit_code == 1 # will fail
+
+
+
 def test_alchemy_stop(monkeypatch):
     """Test canceling the actioned tasks on a network"""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
