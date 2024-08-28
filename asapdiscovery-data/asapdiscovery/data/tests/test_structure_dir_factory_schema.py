@@ -23,3 +23,10 @@ def test_structure_dir(use_dask, structure_dir):
     factory = StructureDirFactory.from_dir(struct_dir)
     complexes = factory.load(use_dask=use_dask)
     assert len(complexes) == 2
+
+def test_custom_glob(structure_dir):
+    struct_dir, _ = structure_dir
+    factory = StructureDirFactory.from_dir(struct_dir)
+    factory.glob = "*x1002*.pdb"
+    complexes = factory.load()
+    assert len(complexes) == 1
