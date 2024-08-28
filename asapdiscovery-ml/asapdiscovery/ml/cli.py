@@ -137,13 +137,8 @@ def build_gat(
     num_layers: int | None = None,
     hidden_feats: str | None = None,
     num_heads: str | None = None,
-    feat_drops: str | None = None,
-    attn_drops: str | None = None,
+    dropout: str | None = None,
     alphas: str | None = None,
-    residuals: str | None = None,
-    agg_modes: str | None = None,
-    biases: str | None = None,
-    allow_zero_in_degree: bool | None = None,
     es_type: EarlyStoppingType | None = None,
     es_patience: int | None = None,
     es_n_check: int | None = None,
@@ -200,7 +195,7 @@ def build_gat(
     model_config = {
         "cache": model_config_cache,
         "overwrite_cache": overwrite_model_config_cache,
-        "model_type": ModelType.GAT,
+        "model_type": ModelType.gat_pyg,
         "rand_seed": model_rand_seed,
         "weights_path": weights_path,
         "grouped": grouped,
@@ -214,17 +209,12 @@ def build_gat(
         "pred_km": pred_km,
         "comb_substrate": comb_substrate,
         "comb_km": comb_km,
-        "in_feats": in_feats,
+        "in_channels": in_feats,
         "num_layers": num_layers,
-        "hidden_feats": hidden_feats,
-        "num_heads": num_heads,
-        "feat_drops": feat_drops,
-        "attn_drops": attn_drops,
-        "alphas": alphas,
-        "residuals": residuals,
-        "agg_modes": agg_modes,
-        "biases": biases,
-        "allow_zero_in_degree": allow_zero_in_degree,
+        "hidden_channels": hidden_feats,
+        "heads": num_heads,
+        "dropout": dropout,
+        "negative_slope": alphas,
     }
     es_config = {
         "cache": es_config_cache,
@@ -898,7 +888,7 @@ def build_visnet(
         "lmax": lmax,
         "vecnorm_type": vecnorm_type,
         "trainable_vecnorm": trainable_vecnorm,
-        "num_heads": num_heads,
+        "heads": num_heads,
         "num_layers": num_layers,
         "hidden_channels": hidden_channels,
         "num_rbf": num_rbf,
@@ -1047,13 +1037,8 @@ def build_and_train_gat(
     num_layers: int | None = None,
     hidden_feats: str | None = None,
     num_heads: str | None = None,
-    feat_drops: str | None = None,
-    attn_drops: str | None = None,
+    dropout: str | None = None,
     alphas: str | None = None,
-    residuals: str | None = None,
-    agg_modes: str | None = None,
-    biases: str | None = None,
-    allow_zero_in_degree: bool | None = None,
     es_type: EarlyStoppingType | None = None,
     es_patience: int | None = None,
     es_n_check: int | None = None,
@@ -1110,7 +1095,7 @@ def build_and_train_gat(
     model_config = {
         "cache": model_config_cache,
         "overwrite_cache": overwrite_model_config_cache,
-        "model_type": ModelType.GAT,
+        "model_type": ModelType.gat_pyg,
         "rand_seed": model_rand_seed,
         "weights_path": weights_path,
         "grouped": grouped,
@@ -1124,17 +1109,12 @@ def build_and_train_gat(
         "pred_km": pred_km,
         "comb_substrate": comb_substrate,
         "comb_km": comb_km,
-        "in_feats": in_feats,
+        "in_channels": in_feats,
         "num_layers": num_layers,
-        "hidden_feats": hidden_feats,
+        "hidden_channels": hidden_feats,
         "num_heads": num_heads,
-        "feat_drops": feat_drops,
-        "attn_drops": attn_drops,
-        "alphas": alphas,
-        "residuals": residuals,
-        "agg_modes": agg_modes,
-        "biases": biases,
-        "allow_zero_in_degree": allow_zero_in_degree,
+        "dropout": dropout,
+        "negative_slope": alphas,
     }
     es_config = {
         "cache": es_config_cache,
@@ -1952,6 +1932,36 @@ def build_ds_gat(
     ds_config.build()
 
 
+@build_ds.command(name="pyg_gat")
+@graph_ds_args
+@grouped
+@ds_cache_overwrite
+@ds_config_cache_overwrite
+def build_ds_pyg_gat(
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    grouped: bool | None = None,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+):
+    ds_config = _build_ds_config(
+        exp_file=exp_file,
+        structures=None,
+        xtal_regex=None,
+        cpd_regex=None,
+        ds_cache=ds_cache,
+        ds_config_cache=ds_config_cache,
+        is_structural=False,
+        is_grouped=grouped,
+        for_e3nn=False,
+        config_overwrite=overwrite_ds_config_cache,
+        pkl_overwrite=overwrite_ds_cache,
+        ds_type="pyg_graph",
+    )
+    ds_config.build()
+
+
 @build_ds.command(name="schnet")
 @graph_ds_args
 @struct_ds_args
@@ -2116,6 +2126,7 @@ def _build_ds_config(
     for_e3nn,
     config_overwrite,
     pkl_overwrite,
+    ds_type=None,
 ):
     """
     Helper function to build a DatasetConfig object.
@@ -2164,6 +2175,7 @@ def _build_ds_config(
         "cache_file": ds_cache,
         "grouped": is_grouped,
         "for_e3nn": for_e3nn,
+        "ds_type": ds_type,
         "overwrite": pkl_overwrite,
     }
     config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}

@@ -333,7 +333,7 @@ class DatasetConfig(ConfigBase):
         return values
 
     @classmethod
-    def from_exp_file(cls, exp_file: Path, **config_kwargs):
+    def from_exp_file(cls, exp_file: Path, ds_type=DatasetType.graph, **config_kwargs):
         """
         Build a graph DatasetConfig from an experimental data file.
 
@@ -377,7 +377,7 @@ class DatasetConfig(ConfigBase):
         }
 
         return cls(
-            ds_type=DatasetType.graph,
+            ds_type=ds_type,
             exp_data=exp_data,
             input_data=input_data,
             **config_kwargs,
@@ -495,13 +495,7 @@ class DatasetConfig(ConfigBase):
         # Build directly from Complexes/Ligands
         match self.ds_type:
             case DatasetType.graph:
-                from dgllife.utils import CanonicalAtomFeaturizer
-
-                ds = GraphDataset.from_ligands(
-                    self.input_data,
-                    exp_dict=self.exp_data,
-                    node_featurizer=CanonicalAtomFeaturizer(),
-                )
+                ds = GraphDataset.from_ligands(self.input_data, exp_dict=self.exp_data)
             case DatasetType.structural:
                 if self.grouped:
                     ds = GroupedDockedDataset.from_complexes(

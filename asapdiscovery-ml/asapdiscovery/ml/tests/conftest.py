@@ -3,7 +3,6 @@ import os
 import pytest
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 from asapdiscovery.ml.dataset import GraphDataset
-from dgllife.utils import CanonicalAtomFeaturizer
 from rdkit import Chem
 
 
@@ -89,8 +88,7 @@ def graph_dataset(
             experimental_compound_data_1,
             experimental_compound_data_1_reordered,
             experimental_compound_data_2,
-        ],
-        node_featurizer=CanonicalAtomFeaturizer(),
+        ]
     )
     yield gds
 

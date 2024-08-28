@@ -2,15 +2,17 @@ import json
 from pathlib import Path
 from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
 
-import dgl
 import mtenn
 import numpy as np
 import torch
-from asapdiscovery.data.backend.openeye import oechem, oemol_to_pdb_string
-from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.backend.openeye import (
+    featurize_smiles,
+    oechem,
+    oemol_to_pdb_string,
+)
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.config import DatasetConfig
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset
+from asapdiscovery.ml.dataset import DockedDataset
 from asapdiscovery.ml.models import (
     ASAPMLModelRegistry,
     LocalMLModelSpecBase,
@@ -20,7 +22,6 @@ from asapdiscovery.ml.models import (
 )
 
 # static import of models from base yaml here
-from dgllife.utils import CanonicalAtomFeaturizer
 from mtenn.config import E3NNModelConfig, GATModelConfig, ModelType, SchNetModelConfig
 from pydantic import BaseModel, Field
 
@@ -189,7 +190,6 @@ class InferenceBase(BaseModel):
 
         if model_spec.ensemble:
             for model in local_model_spec.models:
-
                 config_kwargs = json.loads(model.config_file.read_text())
 
                 # warnings.warn(f"failed to parse model config file, {model.config_file}")
@@ -243,7 +243,6 @@ class InferenceBase(BaseModel):
             Error from model.
         """
         with torch.no_grad():
-
             # feed in data in whatever format is required by the model
             # for model ensemble, we need to loop through each model and get the
             # prediction from each, then aggregate
@@ -271,18 +270,26 @@ class GATInference(InferenceBase):
     model_type: ClassVar[ModelType.GAT] = ModelType.GAT
 
     def predict(
-        self, g: dgl.DGLGraph, aggfunc=np.mean, errfunc=np.std, return_err=False
+        self,
+        x: torch.Tensor,
+        edge_index: torch.Tensor,
+        aggfunc=np.mean,
+        errfunc=np.std,
+        return_err=False,
     ):
-        """Predict on a graph, requires a DGLGraph object with the `ndata`
-        attribute `h` containing the node features. This is done by constucting
-        the `GraphDataset` with the node_featurizer=`dgllife.utils.CanonicalAtomFeaturizer()`
-        argument.
-
+        """
+        Predict on a featurized molecule. This featurization can be generated using
+        `featurize_oemol` and `featurize_smiles` in
+        `asapdiscovery.data.backend.openeye`.
 
         Parameters
         ----------
-        g : dgl.DGLGraph
-            DGLGraph object.
+        x : torch.Tensor
+            Tensor of input node features. Should be of shape (n_atoms, feat_size)
+        edge_index : torch.Tensor
+            Tensor of graph edges. First row should be the atom index of the source node
+            and second row should be the atom index of the destination node. Indices
+            should correspond to rows in `x`
         aggfunc: function, default=np.mean
             Function to aggregate predictions from multiple models.
         errfunc: function, default=np.std
@@ -300,7 +307,9 @@ class GATInference(InferenceBase):
         with torch.no_grad():
             aggregate_preds = []
             for model in self.models:
-                output_tensor = model({"g": g})[0].cpu().numpy().flatten()
+                output_tensor = (
+                    model({"x": x, "edge_index": edge_index})[0].cpu().numpy().flatten()
+                )
                 # we ravel to always get a 1D array
                 aggregate_preds.append(output_tensor)
             if self.is_ensemble:
@@ -317,22 +326,15 @@ class GATInference(InferenceBase):
                 return pred
 
     def predict_from_smiles(
-        self,
-        smiles: Union[str, list[str]],
-        node_featurizer=None,
-        edge_featurizer=None,
-        return_err=False,
+        self, smiles: Union[str, list[str]], return_err=False
     ) -> Union[np.ndarray, float]:
-        """Predict on a list of SMILES strings, or a single SMILES string.
+        """
+        Predict on a list of SMILES strings, or a single SMILES string.
 
         Parameters
         ----------
         smiles : Union[str, List[str]]
             SMILES string or list of SMILES strings.
-        node_featurizer : BaseAtomFeaturizer, optional
-            Featurizer for node data
-        edge_featurizer : BaseBondFeaturizer, optional
-            Featurizer for edges
         return_err: bool, default=False
 
         Returns
@@ -345,18 +347,10 @@ class GATInference(InferenceBase):
         if isinstance(smiles, str):
             smiles = [smiles]
 
-        ligands = [
-            Ligand.from_smiles(smi, compound_name=f"eval_{i}")
-            for i, smi in enumerate(smiles)
+        data = [
+            self.predict(*featurize_smiles(smi), return_err=return_err)
+            for smi in smiles
         ]
-
-        if not node_featurizer:
-            node_featurizer = CanonicalAtomFeaturizer()
-        ds = GraphDataset.from_ligands(
-            ligands, node_featurizer=node_featurizer, edge_featurizer=edge_featurizer
-        )
-
-        data = [self.predict(pose["g"], return_err=return_err) for _, pose in ds]
         data = np.asarray(data)
         preds = data[:, 0]
         if return_err:

@@ -586,33 +586,20 @@ class GraphDataset(Dataset):
         cls,
         ligands: list[Ligand],
         exp_dict: dict = {},
-        node_featurizer=None,
-        edge_featurizer=None,
     ):
         """
         Parameters
         ----------
         ligands : list[Ligands]
-            List of Ligand schema objects to build into a GraphDataset object
+            List of Ligand schema objects to build into a PygGraphDataset object
         exp_dict : dict[str, dict[str, int | float]], optional
             Dict mapping compound_id to an experimental results dict. The dict for a
             compound will be added to the pose representation of each Complex containing
             a ligand witht that compound_id
-        node_featurizer : BaseAtomFeaturizer, optional
-            Featurizer for node data
-        edge_featurizer : BaseBondFeaturizer, optional
-            Featurizer for edges
         """
-
-        from dgllife.utils import SMILESToBigraph
+        from asapdiscovery.data.backend.openeye import featurize_smiles
 
         # Function for encoding SMILES to a graph
-        smiles_to_g = SMILESToBigraph(
-            add_self_loop=True,
-            node_featurizer=node_featurizer,
-            edge_featurizer=edge_featurizer,
-        )
-
         compounds = {}
         structures = []
         for i, lig in enumerate(ligands):
@@ -623,8 +610,8 @@ class GraphDataset(Dataset):
             #  attached to a protein structure at all
             compound = ("NA", compound_id)
 
-            # Generate DGL graph
-            g = smiles_to_g(smiles)
+            # Featurize mol
+            feature_tensor, bond_list_tensor = featurize_smiles(smiles)
 
             # Gather experimental data
             try:
@@ -643,7 +630,8 @@ class GraphDataset(Dataset):
             structures.append(
                 {
                     "smiles": smiles,
-                    "g": g,
+                    "x": feature_tensor,
+                    "edge_index": bond_list_tensor,
                     "compound": compound,
                 }
                 | lig_exp_dict
@@ -656,8 +644,6 @@ class GraphDataset(Dataset):
         cls,
         exp_compounds,
         exp_dict: dict = {},
-        node_featurizer=None,
-        edge_featurizer=None,
     ):
         """
         Parameters
@@ -668,21 +654,9 @@ class GraphDataset(Dataset):
             Dict mapping compound_id to an experimental results dict. The dict for a
             compound will be added to the pose representation of each Complex containing
             a ligand witht that compound_id
-        node_featurizer : BaseAtomFeaturizer, optional
-            Featurizer for node data
-        edge_featurizer : BaseBondFeaturizer, optional
-            Featurizer for edges
-            Cache file for graph dataset
 
         """
-        from dgllife.utils import SMILESToBigraph
-
-        # Function for encoding SMILES to a graph
-        smiles_to_g = SMILESToBigraph(
-            add_self_loop=True,
-            node_featurizer=node_featurizer,
-            edge_featurizer=edge_featurizer,
-        )
+        from asapdiscovery.data.backend.openeye import featurize_smiles
 
         compounds = {}
         structures = []
@@ -694,8 +668,8 @@ class GraphDataset(Dataset):
             #  attached to a protein structure at all
             compound = ("NA", compound_id)
 
-            # Generate DGL graph
-            g = smiles_to_g(smiles)
+            # Featurize mol
+            feature_tensor, bond_list_tensor = featurize_smiles(smiles)
 
             # Gather experimental data
             lig_exp_dict = exp_compound.experimental_data.copy()
@@ -711,7 +685,8 @@ class GraphDataset(Dataset):
             structures.append(
                 {
                     "smiles": smiles,
-                    "g": g,
+                    "x": feature_tensor,
+                    "edge_index": bond_list_tensor,
                     "compound": compound,
                 }
                 | exp_compound.experimental_data
@@ -738,8 +713,10 @@ class GraphDataset(Dataset):
         list[tuple]
             List of tuples (crystal_structure, compound_id) for found structures
         list[dict]
-            List of dictionaries with keys
-            - `g`: DGLGraph
+            List of dictionaries with keys (at minimum)
+            - `smiles`: SMILES
+            - `x`: Atom feature tensors
+            - `edge_index`: Tensor giving list of bonds
             - `compound`: tuple of (crystal_structure, compound_id)
         """
         import torch
