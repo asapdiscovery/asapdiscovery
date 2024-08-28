@@ -494,7 +494,10 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
             reporting_interval=inputs.md_report_interval,
             rmsd_restraint=rmsd_restraint,
             rmsd_restraint_type=rmsd_restraint_type,
+            collect_dir=output_dir
+            / "md_collect",  # collect dir for MD files in flat format
         )
+
         simulation_results = md_simulator.simulate(
             results,
             use_dask=inputs.use_dask,
