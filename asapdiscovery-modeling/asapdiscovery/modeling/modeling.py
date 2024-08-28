@@ -222,6 +222,31 @@ def make_design_unit(
     return success, du
 
 
+def make_du_from_new_lig(
+    protein: oechem.OEGraphMol,
+    lig: oechem.OEGraphMol,
+    opts: oespruce.OEMakeDesignUnitOptions = None,
+):
+    """
+    Make a design unit from a protein and ligand. Does not resolve clashes,
+    and should really only be used to guide docking.
+
+    Parameters
+    ----------
+    protein : oechem.OEGraphMol
+        Protein molecule
+    lig : oechem.OEGraphMol
+        Ligand molecule
+    opts : oechem.OEMakeDesignUnitOptions, optional
+        Options for making the design unit, by default the options from `get_oe_prep_opts` will be used.
+    """
+    if not opts:
+        opts = get_oe_prep_opts()
+    du = oechem.OEDesignUnit()
+    success = oespruce.OEMakeDesignUnit(du, protein, lig, opts)
+    return success, du
+
+
 def superpose_molecule(ref_mol, mobile_mol, ref_chain="A", mobile_chain="A"):
     """
     Superpose `mobile_mol` onto `ref_mol`.

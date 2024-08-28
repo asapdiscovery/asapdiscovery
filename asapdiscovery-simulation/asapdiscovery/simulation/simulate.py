@@ -2,7 +2,7 @@ import abc
 import logging
 import warnings
 from pathlib import Path
-from typing import Any, ClassVar, Optional  # noqa: F401
+from typing import Any, ClassVar, Optional, Union  # noqa: F401
 
 import mdtraj
 import openmm
@@ -283,7 +283,7 @@ class VanillaMDSimulator(SimulatorBase):
     @backend_wrapper("inputs")
     def _simulate(
         self,
-        inputs: list[Any],
+        inputs: Union[list[DockingResult], list[tuple[Path, Path]]],
         outpaths: Optional[list[Path]] = None,
         **kwargs,
     ) -> list[dict[str, str]]:
