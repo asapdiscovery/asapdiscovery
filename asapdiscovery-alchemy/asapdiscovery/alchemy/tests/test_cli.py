@@ -447,6 +447,10 @@ def test_alchemy_status_mutex():
     result = runner.invoke(alchemy, ["status", "-n", "fakenetwork", "-nk", "1234"])
     assert result.exit_code == 1 # will fail
 
+def test_alchemy_status_mutex():
+    runner = CliRunner()
+    result = runner.invoke(alchemy, ["gather", "-n", "fakenetwork", "-nk", "1234"])
+    assert result.exit_code == 1 # will fail
 
 
 def test_alchemy_stop(monkeypatch):
