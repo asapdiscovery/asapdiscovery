@@ -174,9 +174,25 @@ class AlchemiscaleHelper:
         """
         if planned_network and network_key:
             raise ValueError("Provide only one of `planned_network` or `network_key`")
-        if not network_key:
+        if not network_key and not planned_network:
+            raise ValueError("Need to define one of `planned_network` or `network_key`.")
+
+        if planned_network:
             network_key = planned_network.results.network_key
+
         return self._client.get_network_status(network_key)
+    
+    def network_exists(self, network_key: str) -> bool:
+        """
+        Check if a network exists on alchemiscale.
+
+        Args:
+            network_key: The network key belonging to the network which we should look up in alchemiscale.
+
+        Returns:
+            True if the network exists, False otherwise.
+        """
+        return self._client.check_exists(network_key)
 
     def restart_tasks(
         self,
@@ -222,15 +238,20 @@ class AlchemiscaleHelper:
         """
         # collect results following the notebook from openFE
         results = []
+        
+        if network_key:
+            raise NotImplementedError(
+                "ASAP-Alchemy gather using network keys (-nk) is currently not implemented."
+            )
+        
         if planned_network and network_key:
             raise ValueError("Provide only one of `planned_network` or `network_key`")
+        if not network_key and not planned_network:
+            raise ValueError("Need to define one of `planned_network` or `network_key`.")
+        
         if planned_network:
             network_key = planned_network.results.network_key
-        elif not network_key:
-            raise ValueError(
-                "Need to define one of `planned_network` or `network_key`."
-            )
-
+    
         alchemiscale_network_results = self._client.get_network_results(
             network_key
         ).items()
@@ -288,17 +309,13 @@ class AlchemiscaleHelper:
             network_with_results = FreeEnergyCalculationNetwork(
                 **planned_network.dict(exclude={"results"}), results=alchem_results
             )
-        else:
-            # we'll only be able to do this realistically if we can store planned_network.json on alchemiscale
-            raise NotImplementedError(
-                "ASAP-Alchemy gather using network keys (-nk) is currently not implemented."
-            )
 
         return network_with_results
 
     def collect_errors(
         self,
-        planned_network: FreeEnergyCalculationNetwork,
+        planned_network: Optional[FreeEnergyCalculationNetwork] = None,
+        network_key: Optional[str] = None,
     ) -> list[AlchemiscaleFailure]:
         """
         Collect errors and tracebacks from failed tasks.
@@ -309,7 +326,13 @@ class AlchemiscaleHelper:
         Returns:
             List of AlchemiscaleFailure objects with errors and tracebacks for the failed tasks in the network.
         """
-        network_key = planned_network.results.network_key
+        if planned_network and network_key:
+            raise ValueError("Provide only one of `planned_network` or `network_key`")
+        if not network_key and not planned_network:
+            raise ValueError("Need to define one of `planned_network` or `network_key`.")
+        
+        if planned_network:
+            network_key = planned_network.results.network_key
         errored_tasks = self._client.get_network_tasks(network_key, status="error")
 
         error_data = []
