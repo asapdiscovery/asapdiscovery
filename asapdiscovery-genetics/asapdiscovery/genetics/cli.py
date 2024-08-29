@@ -55,17 +55,28 @@ def genetics():
     default="",
     help="Selection key to filter BLAST output. Provide either a keyword, or 'host: <species>'",
 )
+@blast_json
+@email
+@multimer
+@n_chains
+@gen_ref_pdb
 @click.option(
     "--plot-width",
     type=int,
     default=1500,
     help="Width for the multi-alignment plot.",
 )
-@blast_json
-@email
-@multimer
-@n_chains
-@gen_ref_pdb
+@click.option(
+    "--color-seq-match",
+    is_flag=True,
+    default=False,
+    help="Color aminoacid matches in html alignment: Red for exact match and yellow for same-group match.",
+)
+@click.option(
+    "--align-start-idx",
+    default=0,
+    help="Start index for reference aminoacids in html alignment (Useful when matching idxs to PyMOL labels)",
+)
 def seq_alignment(
     seq_file: str,
     seq_type: Optional[str] = None,
@@ -80,6 +91,8 @@ def seq_alignment(
     n_chains: int = 1,
     gen_ref_pdb: bool = False,
     output_dir: str = "output",
+    color_seq_match: bool = False,
+    align_start_idx: int = 0,
 ):
     """
     Find similarities between reference protein and its related proteins by sequence.
@@ -134,7 +147,7 @@ def seq_alignment(
         alignment = Alignment(matches_df, query, results_folder)
         file_prefix = alignment.query_label
         selection_fasta, plot = do_MSA(
-            alignment, sel_key, file_prefix, plot_width, n_chains
+            alignment, sel_key, file_prefix, plot_width, n_chains, color_seq_match, align_start_idx
         )
 
         # Generate PDB file for template if requested (only for the reference structure)

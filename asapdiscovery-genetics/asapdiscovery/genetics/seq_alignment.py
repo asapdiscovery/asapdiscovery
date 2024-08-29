@@ -8,8 +8,8 @@ from Bio import AlignIO, SeqIO
 # BioPython
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from bokeh.layouts import gridplot
-from bokeh.models import ColumnDataSource, Range1d
+from bokeh.layouts import column
+from bokeh.models import ColumnDataSource, Range1d, LinearAxis
 from bokeh.models.glyphs import Rect, Text
 
 # Bokeh imports
@@ -164,13 +164,40 @@ class Alignment:
         self.align_obj = AlignIO.read(alignment_file, "fasta")
         return alignment_file
 
-    def view_alignment(self, fontsize="9pt", plot_width=800, file_name="alignment"):
-        """Bokeh sequence alignment view
-        From: https://dmnfarrell.github.io/bioinformatics/bokeh-sequence-aligner"""
+    def view_alignment(self, fontsize="11pt", plot_width=800, file_name="alignment", color_by_group=False, start_idx=0, skip=4, max_missmatch=2):
+        """"Bokeh sequence alignment view
+            From: https://dmnfarrell.github.io/bioinformatics/bokeh-sequence-aligner
+
+        Parameters
+        ----------
+        fontsize : str, optional
+            Size of aminoacid one-letter IDs, by default "11pt"
+        plot_width : int, optional
+            width of alignment plot, by default 800
+        file_name : str, optional
+            suffix for html file, by default "alignment"
+        color_by_group : bool, optional
+            View mode where matching aminoacids are colored, by default False
+        start_idx : int, optional
+            Index of first aminiacid of reference sequence, by default 0
+        skip : int, optional
+            Skip for displayed indexes of reference sequence , by default 4
+        max_missmatch : int, optional
+            How many missmatches are tolerated for highlighted group match, by default 2
+
+        Returns
+        -------
+        (bokeh.Column, str)
+            Bokeh Column of layouts, path to saved html file.
+        """
+
         # The function takes a biopython alignment object as input.
         aln = self.align_obj
         seqs = [rec.seq for rec in (aln)]  # Each sequence input
         text = [i for s in list(seqs) for i in s]  # Al units joind on same list
+
+        N = len(seqs[0])
+        S = len(seqs)
 
         # Shorten the description for display (string between the last [*])
         def matches(x):
@@ -182,11 +209,37 @@ class Alignment:
         desc = [f"{matches(rec.description)} ({rec.id})" for rec in aln]
 
         # List with ALL colors
-        colors = get_colors_protein(seqs)
-        N = len(seqs[0])
-        S = len(seqs)
+        # By aminoacid group or exact match
+        if color_by_group:
+            col_colors = []
+            font_colors = []
+            for col in range(N): # Go through each column 
+                # Note: AlignIO item retrieval is done through a get_item function, so this has to be done with a loop
+                col_string = aln[:, col]
+                color, font_color = get_colors_by_aa_group(col_string, max_missmatch)
+                col_colors.append(color)
+                font_colors.append(font_color)
+            colors = col_colors * S
+            # Append each font_color list "colum-wise"
+            font_colors = np.array(font_colors).T.flatten()
+        else:
+            colors = get_colors_protein(seqs)
+            font_colors = ["black"]*len(colors)
 
-        x = np.arange(1, N + 1)
+        # Defining x indexes only for non-gap characters of ref sequence (seqs[0])
+        seq_array = np.array(list(seqs[0]))
+        x_non_gap = np.full(len(seqs[0]), ' ', dtype='<U3')
+        non_gap_idx = np.where(seq_array != '-')[0] 
+        current_idx = start_idx 
+        x_non_gap_locs = []
+        # Iterate to indexes (this way we skip the gaps in the middle)
+        for idx in non_gap_idx:  
+            if idx in non_gap_idx[::skip]:  # Skips every given index
+                x_non_gap[idx] = str(current_idx) 
+                x_non_gap_locs.append(idx)
+            current_idx += 1
+
+        x = np.arange(0, N)
         y = np.arange(0, S, 1)
         # creates a 2D grid of coords from the 1D arrays
         xx, yy = np.meshgrid(x, y)
@@ -202,17 +255,17 @@ class Alignment:
             dict(x=gx, y=gy, recty=recty, text=text, colors=colors)
         )
         plot_height = len(seqs) * 10 + 50
-        x_range = Range1d(0, N + 1, bounds="auto")  # (start, end)
+        x_range = Range1d(gx[0] - 1, N + 1, bounds="auto")  # (start, end)
         if N > 150:
             viewlen = 150
         else:
             viewlen = N
         # view_range is for the close up view
-        view_range = (0, viewlen)
+        view_range = (gx[0] - 1, viewlen)
         tools = "xpan, xwheel_zoom, reset, save"
 
         # entire sequence view (no text, with zoom)
-        p = figure(
+        p1 = figure(
             title=None,
             width=plot_width,
             height=plot_height,
@@ -220,8 +273,8 @@ class Alignment:
             y_range=desc,
             tools=tools,
             min_border=0,
-            toolbar_location="below",
         )
+        p1.toolbar_location = None
         # Rect simply places rectangles of wifth "width" into the positions defined by x and y
         rects = Rect(
             x="x",
@@ -233,31 +286,35 @@ class Alignment:
             fill_alpha=0.6,
         )
         # Source does mapping from keys in rects to values in ColumnDataSource definition
-        p.add_glyph(source, rects)
-        p.grid.visible = False
-        p.xaxis.major_label_text_font_style = "bold"
-        p.yaxis.major_label_text_font_size = "8pt"
-        p.yaxis.minor_tick_line_width = 0
-        p.yaxis.major_tick_line_width = 0
+        p1.add_glyph(source, rects)
+        p1.grid.visible = False
+        p1.xaxis.major_label_text_font_style = "bold"
+        p1.yaxis.major_label_text_font_size = "8pt"
+        p1.yaxis.minor_tick_line_width = 0
+        p1.yaxis.major_tick_line_width = 0
 
+        plot_height = len(seqs) * 20 + 30
         # sequence text view with ability to scroll along x axis
-        p1 = figure(
+        p2 = figure(
             title=None,
             width=plot_width,
             height=plot_height,
             x_range=view_range,
             y_range=desc,
-            tools="xpan,reset",
+            tools=tools,
             min_border=0,
             toolbar_location="below",
         )  # , lod_factor=1)
         # Text does the same thing as rectangles but placing letter (or words) instead, aligned accordingly
+        text_source = ColumnDataSource(
+            dict(x=gx, y=gy, recty=recty, text=text, colors=font_colors)
+        )
         glyph = Text(
             x="x",
             y="y",
             text="text",
+            text_color='colors', 
             text_align="center",
-            text_color="black",
             text_font_size=fontsize,
         )
         rects = Rect(
@@ -269,22 +326,44 @@ class Alignment:
             line_color=None,
             fill_alpha=0.4,
         )
-        p1.add_glyph(source, glyph)
-        p1.add_glyph(source, rects)
+        # Blank plot to hold the position labels
+        p_blank = figure(width=plot_width, height=40, x_range=view_range, y_range=Range1d(0,1), title=None, toolbar_location=None, tools="",outline_line_alpha=0)
+        p_blank.xaxis.visible = False
+        p_blank.yaxis.visible = False
+        p_blank.grid.visible = False
+        label_source = ColumnDataSource(
+            dict(x=x, y=[0.05]*len(x), text=x_non_gap)
+        )
+        labels = Text(
+            x="x",
+            y="y",
+            text="text",
+            text_color="black", 
+            text_align="center",
+           text_font_size=str(int(fontsize[:-2])-2) + "pt",
+       )
+        p2.add_glyph(text_source, glyph)
+        p2.add_glyph(source, rects)
+        p_blank.add_glyph(label_source, labels) 
 
-        p1.grid.visible = True
-        p1.xaxis.major_label_text_font_style = "bold"
-        p1.yaxis.major_label_text_font_style = "bold"
-        p1.yaxis.minor_tick_line_width = 0
-        p1.yaxis.major_tick_line_width = 0
+        view_range = Range1d(gx[0] - 1, viewlen)
+        p2.grid.visible = True
+        p2.xaxis.major_label_text_font_style = "bold"
+        p2.yaxis.major_label_text_font_style = "bold"
+        p2.yaxis.minor_tick_line_width = 0
+        p2.yaxis.major_tick_line_width = 0
+        p2.xaxis.major_label_text_font_size = '0pt'
+        p2.add_layout(LinearAxis(major_label_text_font_size='0pt', ticker=list(x_non_gap_locs)), 'above')
+        p2.x_range = view_range
+        p_blank.x_range = view_range
 
-        p = gridplot([[p], [p1]], toolbar_location="below")
+        p = column(p1, p_blank, p2)
 
         output_file(filename=f"{file_name}.html", title="Alignment result")
         save(p)
 
         return p, f"{file_name}.html"
-
+    
     @staticmethod
     def fasta_align_data(input_alignment, output_file):
         """Modify sequences in multi-seq alignment to remove gap characters '-'"""
@@ -327,6 +406,8 @@ def do_MSA(
     file_prefix: str,
     plot_width: int,
     n_chains: int,
+    color_by_group: bool,
+    start_alignment_idx: int,
 ):
     save_file = alignment.dir_save / file_prefix
     # Select sequeneces of interest
@@ -350,7 +431,7 @@ def do_MSA(
     print(f"A csv file {clean_csv} have been generated with the selected sequences")
 
     p, align_html = alignment.view_alignment(
-        plot_width=plot_width, file_name=f"{save_file}_alignment"
+        plot_width=plot_width, file_name=f"{save_file}_alignment", color_by_group=color_by_group, start_idx=start_alignment_idx,
     )
     print(f"A html file {align_html} have been generated with the aligned sequences")
 
@@ -361,35 +442,122 @@ def do_MSA(
 def get_colors_protein(seqs):
     """Make colors for bases in sequence
 
-    Args:
-        seqs (list, str): List or string with protein sequence
+    Parameters
+    ----------
+    seq : List[str]
+        List with protein sequences
 
-    Returns:
-        list: List with colors
+    Returns
+    -------
+    list[str]
+        List with colors
     """
+    # List of all aminoacids in the list of seqs, in the same list
     text = [i for s in list(seqs) for i in s]
-    aa_colors = {
-        "A": "red",  # Alanine
-        "R": "blue",  # Arginine
-        "N": "green",  # Asparagine
-        "D": "yellow",  # Aspartic acid
-        "C": "orange",  # Cysteine
-        "Q": "purple",  # Glutamine
-        "E": "cyan",  # Glutamic acid
-        "G": "magenta",  # Glycine
-        "H": "pink",  # Histidine
-        "I": "brown",  # Isoleucine
-        "L": "gray",  # Leucine
-        "K": "lime",  # Lysine
-        "M": "teal",  # Methionine
-        "F": "navy",  # Phenylalanine
-        "P": "olive",  # Proline
-        "S": "maroon",  # Serine
-        "T": "silver",  # Threonine
-        "W": "gold",  # Tryptophan
-        "Y": "skyblue",  # Tyrosine
-        "V": "violet",  # Valine
-        "-": "white",
-    }
-    colors = [aa_colors[i] for i in text]
+    colors = []
+    for aa in text:
+        amino = AAcid(aa)
+        colors.append(amino.get_aminoacid_color())
     return colors
+
+# Defining colors for each protein residue
+def get_colors_by_aa_group(seq: str, max_missmatch=2):
+    """Make fill and text color for exact and group aminoacid matches
+
+    Parameters
+    ----------
+    seq : str
+        String with protein sequence
+    max_missmatch : int, optional
+       Maximum number of group missmatches after which match won't be highlighted, by default 2
+
+    Returns
+    -------
+    str, list[str]
+        Fill color, Font colors
+    """
+
+    from collections import Counter
+    seq_len = len(seq)
+    aa_groups = [AAcid(aa).get_aminoacid_group() for aa in seq]
+    aa_counts = Counter(aa_groups)
+    max_group, max_group_count = aa_counts.most_common(1)[0]
+    # Default font color
+    font_color = ["black"]*seq_len
+    # Check the case where all aa's are the same
+    if seq == seq_len * seq[0]:
+        color = "red"
+    # Check the case where all aa's belong to the same group (with some max missmatches)
+    elif max_group_count >= seq_len-max_missmatch:
+        if max_group == None: # In case most "matches" are gaps
+            color = "white"
+        else:
+            color = "yellow"
+            # Make font red for missmatches
+            font_color = ["black" if item == max_group else "red" for item in aa_groups]
+    else:
+        color = "white"
+    return color, font_color
+
+class AAcid:
+    def __init__(self, letter_id):
+        """An aminoacid object 
+
+        Parameters
+        ----------
+        letter_id : str
+            Amino Acid one or three-letter identifier
+        """
+        from MDAnalysis.lib.util import convert_aa_code
+        # An empty aminoacid
+        if letter_id == "-":
+            self.one_letter_id = letter_id
+            self.three_letter_id = None
+        elif len(letter_id) == 1:
+            self.one_letter_id = letter_id
+            self.three_letter_id = convert_aa_code(letter_id)
+        elif len(letter_id == 3):
+            self.three_letter_id = letter_id
+            self.one_letter_id = convert_aa_code(letter_id) 
+        else:
+            raise ValueError("The input must be either the aminoacid 1 or 3-letter code")      
+        
+    def get_aminoacid_group(self):
+        agroups = {"aliphatic":["A", "V", "I", "L", "M"],
+                   "aromatic":["F", "W", "Y"],
+                   "neutral":["N", "Q", "S", "T"],
+                   "acidic":["D", "E"],
+                   "basic":["R", "H", "K"],
+                   "cys":["C"],
+                   "gly": ["G"],
+                   "pro":["P"]}
+        for key in agroups:
+            if self.one_letter_id in agroups[key]:
+                return key
+        return 
+    
+    def get_aminoacid_color(self):
+        aa_colors = {
+            "A": "red",  # Alanine
+            "R": "blue",  # Arginine
+            "N": "green",  # Asparagine
+            "D": "yellow",  # Aspartic acid
+            "C": "orange",  # Cysteine
+            "Q": "purple",  # Glutamine
+            "E": "cyan",  # Glutamic acid
+            "G": "magenta",  # Glycine
+            "H": "pink",  # Histidine
+            "I": "brown",  # Isoleucine
+            "L": "gray",  # Leucine
+            "K": "lime",  # Lysine
+            "M": "teal",  # Methionine
+            "F": "navy",  # Phenylalanine
+            "P": "olive",  # Proline
+            "S": "maroon",  # Serine
+            "T": "silver",  # Threonine
+            "W": "gold",  # Tryptophan
+            "Y": "skyblue",  # Tyrosine
+            "V": "violet",  # Valine
+            "-": "white",
+        }
+        return aa_colors[self.one_letter_id]
