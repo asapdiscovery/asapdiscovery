@@ -172,7 +172,7 @@ class AlchemiscaleHelper:
             A dict of the status type and the number of instances.
         """
         return self._client.get_network_status(network_key)
-    
+
     def network_exists(self, network_key: str) -> bool:
         """
         Check if a network exists on alchemiscale.
@@ -229,20 +229,22 @@ class AlchemiscaleHelper:
         """
         # collect results following the notebook from openFE
         results = []
-        
+
         if network_key:
             raise NotImplementedError(
                 "ASAP-Alchemy gather using network keys (-nk) is currently not implemented."
             )
-        
+
         if planned_network and network_key:
             raise ValueError("Provide only one of `planned_network` or `network_key`")
         if not network_key and not planned_network:
-            raise ValueError("Need to define one of `planned_network` or `network_key`.")
-        
+            raise ValueError(
+                "Need to define one of `planned_network` or `network_key`."
+            )
+
         if planned_network:
             network_key = planned_network.results.network_key
-    
+
         alchemiscale_network_results = self._client.get_network_results(
             network_key
         ).items()

@@ -334,16 +334,20 @@ def gather(
         click.echo(f"Network file provided: {network}, loading network.")
         if not Path(network).exists():
             raise FileNotFoundError(f"Network file {network} does not exist.")
-        
+
         planned_network = FreeEnergyCalculationNetwork.from_file(network)
         network_key = planned_network.results.network_key
 
     # check network key exists in alchemiscale
     try:
         if not client.network_exists(network_key=network_key):
-            raise ValueError(f"Network key {network_key} does not exist in Alchemiscale.")
+            raise ValueError(
+                f"Network key {network_key} does not exist in Alchemiscale."
+            )
     except Exception as e:
-        raise ValueError(f"Network key {network_key} does not exist in Alchemiscale.") from e    
+        raise ValueError(
+            f"Network key {network_key} does not exist in Alchemiscale."
+        ) from e
 
     # show the network status
     status = client.network_status(network_key=network_key)
@@ -522,7 +526,9 @@ def status(
         console.print(table)
     else:
         if network_key:
-            click.echo(f"Network key provided: {network_key}, prefering over network file.")
+            click.echo(
+                f"Network key provided: {network_key}, prefering over network file."
+            )
 
         else:
             click.echo(f"Network file provided: {network}, loading network.")
@@ -530,20 +536,24 @@ def status(
                 raise FileNotFoundError(f"Network file {network} does not exist.")
             planned_network = FreeEnergyCalculationNetwork.from_file(network)
             network_key = planned_network.results.network_key
-        
+
         # check the status
         try:
             if not client.network_exists(network_key=network_key):
-                raise ValueError(f"Network key {network_key} does not exist in Alchemiscale.")
+                raise ValueError(
+                    f"Network key {network_key} does not exist in Alchemiscale."
+                )
         except Exception as e:
-            raise ValueError(f"Network key {network_key} does not exist in Alchemiscale.") from e    
-        
+            raise ValueError(
+                f"Network key {network_key} does not exist in Alchemiscale."
+            ) from e
+
         client.network_status(network_key=network_key)
 
         # collect errors
         if errors or with_traceback:
             task_errors = client.collect_errors(network_key=network_key)
-            
+
             # output errors in readable format
             for failure in task_errors:
                 click.echo(click.style("Task:", bold=True))
