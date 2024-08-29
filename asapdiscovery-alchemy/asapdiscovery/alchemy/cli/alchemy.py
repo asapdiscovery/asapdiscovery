@@ -527,14 +527,8 @@ def status(
         console.print(table)
     else:
         if network_key:
-<<<<<<< Updated upstream
-            click.echo(
-                f"Network key provided: {network_key}, prefering over network file."
-            )
-=======
             if Path(network).exists():
                 click.echo(f"Network key provided: {network_key}, prefering over network file {network}.")
->>>>>>> Stashed changes
 
         else:
             click.echo(f"Network file provided: {network}, loading network.")
