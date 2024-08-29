@@ -38,8 +38,42 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
+from openmm import *
+from openmm.app import *
 
 solvent_types = list(_SOLVENT_TYPES)
+import numpy as np
+
+class MyCustomReporter(MinimizationReporter):
+    interval = 1 # report interval
+    energies = [] # array to record progress
+    
+    
+    def report(self, iteration, x, grad, args):
+        print("report called")
+        print("Iteration: ", iteration)
+        # print current system energy to screen 
+        if iteration % self.interval == 0:
+            print(iteration, args['system energy'])
+
+        logger.info(f"Minimization iteration {iteration}")
+        print(grad)
+        print(grad.shape) 
+        # get grad max in each dimension
+        grad_max = np.max(grad, axis=0)
+        print("MAX GRADS: ", grad_max)
+        print("MAX GRAD INDEX: ", np.argmax(grad_max, axis=0))      
+
+
+        # save energy at each iteration to an array we can use later
+        self.energies.append(args['system energy'])
+
+
+        # The report method must return a bool specifying if minimization should be stopped. 
+        # You can use this functionality for early termination.
+        return False
+
+
 
 
 class OpenMMPlatform(StringEnum):
@@ -298,7 +332,7 @@ class VanillaMDSimulator(SimulatorBase):
         if outpaths:
             if len(outpaths) != len(inputs):
                 raise ValueError("outpaths must be the same length as inputs")
-
+        print("HALLLLLOO")
         return self._dispatch(inputs, outpaths=outpaths, **kwargs)
 
     @multimethod
@@ -344,25 +378,25 @@ class VanillaMDSimulator(SimulatorBase):
         if not outpaths:
             outpaths = [None] * len(inputs)
         for (protein, ligand), outpath in zip(inputs, outpaths):
-            try:
-                tag = protein.stem + "_" + ligand.stem
-                if outpath:
-                    outpath = Path(outpath) / tag
-                else:
-                    outpath = self.output_dir / tag
-                if not outpath.exists():
-                    outpath.mkdir(parents=True)
-                res = self._simulate_loop(protein, ligand, outpath)
-                results.append(res)
-            except Exception as e:
-                if failure_mode == "skip":
-                    logger.error(f"Error processing {tag}: {e}")
-                elif failure_mode == "raise":
-                    raise e
-                else:
-                    raise ValueError(
-                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
-                    )
+            # try:
+            tag = protein.stem + "_" + ligand.stem
+            if outpath:
+                outpath = Path(outpath) / tag
+            else:
+                outpath = self.output_dir / tag
+            if not outpath.exists():
+                outpath.mkdir(parents=True)
+            res = self._simulate_loop(protein, ligand, outpath)
+            results.append(res)
+            # except Exception as e:
+            #     if failure_mode == "skip":
+            #         logger.error(f"Error processing {tag}: {e}")
+            #     elif failure_mode == "raise":
+            #         raise e
+            #     else:
+            #         raise ValueError(
+            #             f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                    # )
         return results
 
     def _simulate_loop(
@@ -571,9 +605,50 @@ class VanillaMDSimulator(SimulatorBase):
         )
         context = simulation.context
         context.setPositions(modeller.positions)
+        output_positions = context.getState(
+            getPositions=True, enforcePeriodicBox=True
+        ).getPositions(asNumpy=True)
 
+        # check if any are NaN with numpy
+        import numpy as np
+        print(output_positions)
+        is_nan = np.isnan(output_positions)
+        print(is_nan)
+        if np.any(is_nan):
+            raise ValueError("NaN in output positions")
+        print("NO NAN POSITIONS")
+
+        output_positions = context.getState(
+            getPositions=True, enforcePeriodicBox=False
+        ).getPositions(asNumpy=True)
+
+        forces = context.getState(
+            getForces=True, enforcePeriodicBox=False
+        ).getForces(asNumpy=True)
+        print("FORCES")
+        print(forces)
+        # find row with max forces
+        print("MAX FORCES")
+        max_force = np.max(forces, axis=0)
+        print(max_force)
+        # print(max_force.shape)
+        # find max force row index
+        max_force_index = np.argmax(forces, axis=0)
+        print("MAX FORCE INDEX")
+        print(max_force_index)
+        mdtop = mdtraj.Topology.from_openmm(modeller.topology).to_openmm()
+        # save pdb fiel
+        
+        with open(outpath / "premin.pdb", "w") as outfile:
+            PDBFile.writeFile(
+                mdtop,
+                output_positions,
+                file=outfile,
+                keepIds=True,
+            )
         # Minimize energy
-        simulation.minimizeEnergy()
+        cust_r = MyCustomReporter()
+        simulation.minimizeEnergy(reporter=cust_r)
 
         # Write minimized PDB
         output_positions = context.getState(
