@@ -261,7 +261,7 @@ def test_get_failures(
     monkeypatch.setattr(client._client, "get_task_failures", get_task_failures)
 
     # Collect errors and tracebacks
-    errors = client.collect_errors(planned_network=result_network)
+    errors = client.collect_errors(network_key=result_network.results.network_key)
     n_errors = len(errors)
     n_expected_errors = (
         108  # 18*3*2 (18 tasks, 1 dag/task, 3 units/dag, 2 failures/unit)
