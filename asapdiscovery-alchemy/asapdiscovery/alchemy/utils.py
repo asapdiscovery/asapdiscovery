@@ -159,27 +159,18 @@ class AlchemiscaleHelper:
 
     def network_status(
         self,
-        planned_network: Optional[FreeEnergyCalculationNetwork] = None,
-        network_key: Optional[str] = None,
+        network_key: str,
     ) -> dict[str, int]:
         """
         Get the status of the network from alchemiscale.
 
         Args:
-            planned_network: The network which we should look up in alchemiscale.
+            network_key: The network which we should look up in alchemiscale.
             network_key: The network key belonging to the network which we should look up in alchemiscale.
 
         Returns:
             A dict of the status type and the number of instances.
         """
-        if planned_network and network_key:
-            raise ValueError("Provide only one of `planned_network` or `network_key`")
-        if not network_key and not planned_network:
-            raise ValueError("Need to define one of `planned_network` or `network_key`.")
-
-        if planned_network:
-            network_key = planned_network.results.network_key
-
         return self._client.get_network_status(network_key)
     
     def network_exists(self, network_key: str) -> bool:
@@ -314,8 +305,7 @@ class AlchemiscaleHelper:
 
     def collect_errors(
         self,
-        planned_network: Optional[FreeEnergyCalculationNetwork] = None,
-        network_key: Optional[str] = None,
+        network_key: str,
     ) -> list[AlchemiscaleFailure]:
         """
         Collect errors and tracebacks from failed tasks.
@@ -326,13 +316,6 @@ class AlchemiscaleHelper:
         Returns:
             List of AlchemiscaleFailure objects with errors and tracebacks for the failed tasks in the network.
         """
-        if planned_network and network_key:
-            raise ValueError("Provide only one of `planned_network` or `network_key`")
-        if not network_key and not planned_network:
-            raise ValueError("Need to define one of `planned_network` or `network_key`.")
-        
-        if planned_network:
-            network_key = planned_network.results.network_key
         errored_tasks = self._client.get_network_tasks(network_key, status="error")
 
         error_data = []

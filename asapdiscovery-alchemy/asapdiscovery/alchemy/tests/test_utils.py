@@ -59,7 +59,7 @@ def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
         **tyk2_fec_network.dict(exclude={"results"}),
         results=AlchemiscaleResults(network_key=network_key),
     )
-    status = client.network_status(planned_network=result_network)
+    status = client.network_status(network_key=result_network.results.network_key)
     assert status == {"complete": 1}
 
 

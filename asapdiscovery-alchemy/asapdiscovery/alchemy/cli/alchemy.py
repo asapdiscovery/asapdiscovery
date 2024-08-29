@@ -521,46 +521,39 @@ def status(
         status_breakdown.stop()
         console.print(table)
     else:
-        using_network_key = False
         if network_key:
             click.echo(f"Network key provided: {network_key}, prefering over network file.")
-            using_network_key = True
-            try:
-                if not client.network_exists(network_key=network_key):
-                    raise ValueError(f"Network key {network_key} does not exist in Alchemiscale.")
-            except Exception as e:
-                raise ValueError(f"Network key {network_key} does not exist in Alchemiscale.") from e    
-            client.network_status(network_key=network_key)
 
         else:
             click.echo(f"Network file provided: {network}, loading network.")
             if not Path(network).exists():
                 raise FileNotFoundError(f"Network file {network} does not exist.")
             planned_network = FreeEnergyCalculationNetwork.from_file(network)
-            # check the status
-            client.network_status(planned_network=planned_network)
+            network_key = planned_network.results.network_key
+        
+        # check the status
+        try:
+            if not client.network_exists(network_key=network_key):
+                raise ValueError(f"Network key {network_key} does not exist in Alchemiscale.")
+        except Exception as e:
+            raise ValueError(f"Network key {network_key} does not exist in Alchemiscale.") from e    
+        
+        client.network_status(network_key=network_key)
 
-            # collect errors
-            if errors or with_traceback:
-                if using_network_key:
-                    task_errors = client.collect_errors(
-                        network_key=network_key,
-                    )
-                else:
-                    task_errors = client.collect_errors(
-                        planned_network=planned_network,
-                    )
-
-                # output errors in readable format
-                for failure in task_errors:
-                    click.echo(click.style("Task:", bold=True))
-                    click.echo(f"{failure.task_key}")
-                    click.echo(click.style("Error:", bold=True))
-                    click.echo(f"{failure.error}")
-                    if with_traceback:
-                        click.echo(click.style("Traceback:", bold=True))
-                        click.echo(f"{failure.traceback}")
-                    click.echo()
+        # collect errors
+        if errors or with_traceback:
+            task_errors = client.collect_errors(network_key=network_key)
+            
+            # output errors in readable format
+            for failure in task_errors:
+                click.echo(click.style("Task:", bold=True))
+                click.echo(f"{failure.task_key}")
+                click.echo(click.style("Error:", bold=True))
+                click.echo(f"{failure.error}")
+                if with_traceback:
+                    click.echo(click.style("Traceback:", bold=True))
+                    click.echo(f"{failure.traceback}")
+                click.echo()
 
 
 @alchemy.command(
