@@ -114,6 +114,8 @@ def vanilla_md(
             raise ValueError("No ligands provided and none found in pdb")
 
     protein_processed_path = output_dir / f"{pdb_path.stem}_processed.pdb"
+    protein_only_path = output_dir / f"{pdb_path.stem}_prot.pdb"
+    complex.target.to_pdb(protein_only_path)
     complex.to_pdb(protein_processed_path)
 
     combo = list(itertools.product([protein_processed_path], lig_paths))
