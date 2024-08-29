@@ -165,7 +165,6 @@ class AlchemiscaleHelper:
         Get the status of the network from alchemiscale.
 
         Args:
-            network_key: The network which we should look up in alchemiscale.
             network_key: The network key belonging to the network which we should look up in alchemiscale.
 
         Returns:
