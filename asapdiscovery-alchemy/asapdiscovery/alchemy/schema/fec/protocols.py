@@ -11,12 +11,12 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     AlchemicalSettings,
     IntegratorSettings,
     OpenMMEngineSettings,
-    SimulationSettings,
     OpenMMSolvationSettings,
+    SimulationSettings,
     SystemSettings,
 )
-from openff.units import unit as OFFUnit
 from openff.models.types import FloatQuantity
+from openff.units import unit as OFFUnit
 from pydantic import Field
 
 
@@ -35,6 +35,7 @@ class _ProtocolBase(_SchemaBase, abc.ABC):
 
 
 # DD TODO: extract defaults from below and make sure these make it into our implementations
+
 
 class RelativeHybridTopologySettings(_ProtocolBase):
     """A settings class for the RelativeHybridTopologyProtocol in OpenFE."""
