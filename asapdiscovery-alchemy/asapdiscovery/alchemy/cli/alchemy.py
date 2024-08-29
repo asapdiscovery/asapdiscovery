@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -281,8 +282,16 @@ def submit(
     "-n",
     "--network",
     type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
-    help="The name of the JSON file containing a planned FEC network.",
+    help="The name of the JSON file containing a submitted FEC network (typically 'planned_network.json').",
     default="planned_network.json",
+    show_default=True,
+)
+@click.option(
+    "-nk",
+    "--network_key",
+    type=click.STRING,
+    help="The network key of a submitted FEC network.",
+    default=None,
     show_default=True,
 )
 @click.option(
@@ -291,14 +300,19 @@ def submit(
     default=False,
     help="If we should allow missing results when gathering from alchemiscale.",
 )
-def gather(network: str, allow_missing: bool):
+def gather(
+    network: Optional[str] = False,
+    network_key: Optional[str] = False,
+    allow_missing: Optional[bool] = None,
+):
     """
     Gather the results from alchemiscale for the given network.
 
     Note: An error is raised if all calculations have not finished and allow-missing is False.
 
     Args:
-        network: The of the JSON file containing the FreeEnergyCalculationNetwork whos results we should gather.
+        network: The path of the JSON file containing the FreeEnergyCalculationNetwork whose results we should gather.
+        network_key: The `alchemsicale` network key of the network whose results we should gather.
         allow_missing: If we should allow missing results when trying to gather the network.
 
     Raises:
@@ -312,19 +326,48 @@ def gather(network: str, allow_missing: bool):
     client = AlchemiscaleHelper.from_settings()
 
     # load the network
-    planned_network = FreeEnergyCalculationNetwork.from_file(network)
+    using_network_key = False
+    if network_key:
+        if Path(network).exists():
+            click.echo(
+                f"Network key provided: {network_key}, prefering over network file {network}."
+            )
+        using_network_key = True
+    else:
+        click.echo(f"Network file provided: {network}, loading network.")
+        if not Path(network).exists():
+            raise FileNotFoundError(f"Network file {network} does not exist.")
+
+        planned_network = FreeEnergyCalculationNetwork.from_file(network)
+        network_key = planned_network.results.network_key
+
+    # check network key exists in alchemiscale
+    try:
+        if not client.network_exists(network_key=network_key):
+            raise ValueError(
+                f"Network key {network_key} does not exist in Alchemiscale."
+            )
+    except Exception as e:
+        raise ValueError(
+            f"Network key {network_key} does not exist in Alchemiscale."
+        ) from e
 
     # show the network status
-    status = client.network_status(planned_network=planned_network)
+    status = client.network_status(network_key=network_key)
     if not allow_missing and "waiting" in status:
         raise RuntimeError(
             "Not all calculations have finished, to collect the current results use the flag `--allow-missing`."
         )
 
     click.echo(
-        f"Gathering network results from Alchemiscale instance: {client._client.api_url} with key {planned_network.results.network_key}"
+        f"Gathering network results from Alchemiscale instance: {client._client.api_url} with key {network_key}"
     )
-    network_with_results = client.collect_results(planned_network=planned_network)
+
+    if using_network_key:
+        network_with_results = client.collect_results(network_key=network_key)
+    else:
+        network_with_results = client.collect_results(planned_network=planned_network)
+
     click.echo("Results gathered saving to file ...")
     network_with_results.to_file("result_network.json")
 
@@ -340,6 +383,15 @@ def gather(network: str, allow_missing: bool):
     help="The name of the JSON file containing a planned FEC network.",
     default="planned_network.json",
     show_default=True,
+    required=False,
+)
+@click.option(
+    "-nk",
+    "--network_key",
+    type=click.STRING,
+    help="The network key of the network to get the status of.",
+    default=None,
+    required=False,
 )
 @click.option(
     "-e",
@@ -363,12 +415,19 @@ def gather(network: str, allow_missing: bool):
     help="If the status of all running tasks in your scope should be displayed. "
     "This option will cause the command to ignore all other flags.",
 )
-def status(network: str, errors: bool, with_traceback: bool, all_networks: bool):
+def status(
+    network: str,
+    network_key: str,
+    errors: bool,
+    with_traceback: bool,
+    all_networks: bool,
+):
     """
     Get the status of the submitted network on alchemiscale.\f
 
     Args:
         network: The name of the JSON file containing the FreeEnergyCalculationNetwork we should check the status of.
+        network_key: The network key of the network to get the status of.
         errors: Flag to show errors from the tasks.
         with_traceback: Flag to show the complete traceback for the errored tasks.
         all_networks: If that status of all networks under the users scope should be displayed rather than for a single network.
@@ -388,9 +447,16 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
     console = rich.get_console()
     print_header(console)
 
+    args = [all_networks, network_key]
+
+    if sum([bool(arg) for arg in args]) > 1:
+        raise ValueError(
+            "Can not retrieve status for --network_key at the same time as --all-networks  Please flag only one of --network_key, --all-networks and --network_key"
+        )
     # launch the helper which will try to login
     client = AlchemiscaleHelper.from_settings()
     if all_networks:
+        click.echo("Getting status of all networks in scope")
         # show the results of all tasks in scope, this will print to terminal
         client._client.get_scope_status()
 
@@ -461,17 +527,37 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                 )
         status_breakdown.stop()
         console.print(table)
-
     else:
-        # load the network
-        planned_network = FreeEnergyCalculationNetwork.from_file(network)
+        if network_key:
+            if Path(network).exists():
+                click.echo(
+                    f"Network key provided: {network_key}, prefering over network file {network}."
+                )
+
+        else:
+            click.echo(f"Network file provided: {network}, loading network.")
+            if not Path(network).exists():
+                raise FileNotFoundError(f"Network file {network} does not exist.")
+            planned_network = FreeEnergyCalculationNetwork.from_file(network)
+            network_key = planned_network.results.network_key
+
         # check the status
-        client.network_status(planned_network=planned_network)
+        try:
+            if not client.network_exists(network_key=network_key):
+                raise ValueError(
+                    f"Network key {network_key} does not exist in Alchemiscale."
+                )
+        except Exception as e:
+            raise ValueError(
+                f"Network key {network_key} does not exist in Alchemiscale."
+            ) from e
+
+        client.network_status(network_key=network_key)
+
         # collect errors
         if errors or with_traceback:
-            task_errors = client.collect_errors(
-                planned_network,
-            )
+            task_errors = client.collect_errors(network_key=network_key)
+
             # output errors in readable format
             for failure in task_errors:
                 click.echo(click.style("Task:", bold=True))
