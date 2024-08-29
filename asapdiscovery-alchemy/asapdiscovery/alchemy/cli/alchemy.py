@@ -328,7 +328,8 @@ def gather(
     # load the network
     using_network_key = False
     if network_key:
-        click.echo(f"Network key provided: {network_key}, prefering over network file.")
+        if Path(network).exists():
+            click.echo(f"Network key provided: {network_key}, prefering over network file {network}.")
         using_network_key = True
     else:
         click.echo(f"Network file provided: {network}, loading network.")
@@ -526,9 +527,14 @@ def status(
         console.print(table)
     else:
         if network_key:
+<<<<<<< Updated upstream
             click.echo(
                 f"Network key provided: {network_key}, prefering over network file."
             )
+=======
+            if Path(network).exists():
+                click.echo(f"Network key provided: {network_key}, prefering over network file {network}.")
+>>>>>>> Stashed changes
 
         else:
             click.echo(f"Network file provided: {network}, loading network.")
