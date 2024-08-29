@@ -513,7 +513,7 @@ def get_colors_by_aa_group(seq: str, max_missmatch=2):
         color = "red"
     # Check the case where all aa's belong to the same group (with some max missmatches)
     elif max_group_count >= seq_len - max_missmatch:
-        if max_group == None:  # In case most "matches" are gaps
+        if max_group is None:  # In case most "matches" are gaps
             color = "white"
         else:
             color = "yellow"
