@@ -147,7 +147,13 @@ def seq_alignment(
         alignment = Alignment(matches_df, query, results_folder)
         file_prefix = alignment.query_label
         selection_fasta, plot = do_MSA(
-            alignment, sel_key, file_prefix, plot_width, n_chains, color_seq_match, align_start_idx
+            alignment,
+            sel_key,
+            file_prefix,
+            plot_width,
+            n_chains,
+            color_seq_match,
+            align_start_idx,
         )
 
         # Generate PDB file for template if requested (only for the reference structure)

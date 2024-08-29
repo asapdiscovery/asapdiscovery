@@ -78,7 +78,7 @@ def parse_blast(
                 df = pd.concat(dfs, axis=0, ignore_index=True, sort=False).dropna(
                     axis=1, how="all"
                 )
-    df.sort_values(by=['score'], ascending=False)
+    df.sort_values(by=["score"], ascending=False)
     return df
 
 
@@ -108,7 +108,7 @@ def get_blast_seqs(
     nhits : int, optional
         Number of hits, hitlist_size parameter in BLAST, by default 100
     nalign : int, optional
-        Number of alignments, alignments parameter in BLAST, by default 500 
+        Number of alignments, alignments parameter in BLAST, by default 500
     e_val_thresh : float, optional
         Threshold to filter BLAST results, by default 1e-20
     database : str, optional
@@ -386,7 +386,7 @@ def pdb_to_seq(pdb_input=Path, chain="A", fasta_out=None):
     seq_record = SeqRecord(biop_sequence, id=entry_name, description=description)
 
     # Save as fasta file
-    if fasta_out is None: 
+    if fasta_out is None:
         return seq_record
     else:
         with open(fasta_out, "w") as output_handle:
