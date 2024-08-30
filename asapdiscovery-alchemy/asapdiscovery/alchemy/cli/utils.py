@@ -282,7 +282,7 @@ def cinnabar_femap_get_largest_subnetwork(fe_map):
         fe_map_nx.remove_node(nodename)
         discarded_nodenames.append(nodename)
 
-    largest_sub_fe_map = cinnabar.FEMap().from_networkx(fe_map_nx)
+    largest_sub_fe_map = cinnabar.FEMap.from_networkx(fe_map_nx)
     print(largest_sub_fe_map)
     import sys
 
