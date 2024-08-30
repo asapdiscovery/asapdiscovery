@@ -226,12 +226,18 @@ class _FreeEnergyBase(_SchemaBase):
         1,
         description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
     )
-    lambda_settings: LambdaSettings = Field(LambdaSettings(), description="Lambda schedule settings.")
+    lambda_settings: LambdaSettings = Field(
+        LambdaSettings(), description="Lambda schedule settings."
+    )
 
     partial_charge_settings: OpenFFPartialChargeSettings = Field(
-        OpenFFPartialChargeSettings(), description="The method which should be used to generate the partial charges if not provided with the ligand."
+        OpenFFPartialChargeSettings(),
+        description="The method which should be used to generate the partial charges if not provided with the ligand.",
     )
-    output_settings: MultiStateOutputSettings = Field(MultiStateOutputSettings(), description="Settings for MultiState simulation output settings like writing to disk.")
+    output_settings: MultiStateOutputSettings = Field(
+        MultiStateOutputSettings(),
+        description="Settings for MultiState simulation output settings like writing to disk.",
+    )
 
     def to_openfe_protocol(self):
         protocol_settings = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings(
