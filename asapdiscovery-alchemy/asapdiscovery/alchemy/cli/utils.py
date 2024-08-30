@@ -259,3 +259,32 @@ def report_alchemize_clusters(alchemical_clusters, outsiders):
         ]
     )
     return alchemical_cluster_sizes, outsider_cluster_sizes, alchemical_num_in_clusters
+
+
+def cinnabar_femap_is_connected(fe_map):
+    """Checks whether the provided femap is connected. Convenience function to make function
+    naming clearer compared to cinnabar nomenclature."""
+    return fe_map.check_weakly_connected()
+
+
+def cinnabar_femap_get_largest_subnetwork(fe_map):
+    """From a disconnected femap, returns the subnetwork with the largest number of nodes"""
+    import networkx as nx
+    import itertools
+    import cinnabar
+
+    fe_map_nx = fe_map.graph
+    subnetworks_nodenames = sorted(
+        nx.strongly_connected_components(fe_map_nx), key=len, reverse=True
+    )
+    discarded_nodenames = []
+    for nodename in itertools.chain.from_iterable(subnetworks_nodenames[1:]):
+        fe_map_nx.remove_node(nodename)
+        discarded_nodenames.append(nodename)
+
+    largest_sub_fe_map = cinnabar.FEMap().from_networkx(fe_map_nx)
+    print(largest_sub_fe_map)
+    import sys
+
+    sys.exit()
+    return fe_map

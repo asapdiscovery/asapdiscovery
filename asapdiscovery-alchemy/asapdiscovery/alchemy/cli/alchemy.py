@@ -682,7 +682,12 @@ def predict(
     results to the relevant energy range.
     """
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header, upload_to_postera
+    from asapdiscovery.alchemy.cli.utils import (
+        print_header,
+        upload_to_postera,
+        cinnabar_femap_is_connected,
+        cinnabar_femap_get_largest_subnetwork,
+    )
     from asapdiscovery.alchemy.predict import (
         create_absolute_report,
         create_relative_report,
@@ -713,8 +718,21 @@ def predict(
         ligands.append(result_network.network.central_ligand)
 
     # convert to cinnabar fepmap to do the prediction via MLE
+    force_largest = True
     fe_map = result_network.results.to_fe_map()
-    fe_map.generate_absolute_values()
+    is_connected = cinnabar_femap_is_connected(fe_map)
+
+    if is_connected:
+        fe_map.generate_absolute_values()
+    elif not is_connected and force_largest:
+        fe_map = cinnabar_femap_get_largest_subnetwork(fe_map)
+        fe_map.generate_absolute_values()
+    else:
+        raise ValueError(
+            "Your network is missing edges resulting in a breakage where ligands (nodes) are "
+            "not connected to the network. If you would like to discard those disconnected ligands "
+            "(i.e. not make predictions on them), run predict using the '-fl/--force-largest' flag."
+        )
 
     # check if we have a protocol on the network already to draw experimental results from
     protocol = experimental_protocol or result_network.experimental_protocol
