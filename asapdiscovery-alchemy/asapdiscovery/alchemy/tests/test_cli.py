@@ -895,6 +895,74 @@ def test_prioritize_weight_not_set(monkeypatch):
     console.clear_live()
 
 
+def test_alchemy_predict_disconnected(tyk2_result_network, tmpdir):
+    """Test predicting the absolute and relative free energies with a disconnected network.
+    We also test that a warning is printed in the terminal
+    """
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network.to_file("result_network.json")
+
+        # now break the network in half
+
+        # run predict as normal - should return an error
+        result = runner.invoke(
+            alchemy,
+            ["predict"],
+        )
+        assert result.exit_code == 0
+        assert (
+            "Your network is missing edges resulting in a gap where ligands (nodes) are"
+            in result.stdout
+        )
+
+        # now run with force-largest
+        result = runner.invoke(
+            alchemy,
+            ["predict", "-fl"],
+        )
+        assert (
+            "Warning: removing 69 disconnected compounds: 18.5% of total in network"
+            in result.stdout
+        )
+        assert "Absolute predictions written" in result.stdout
+        assert "Relative predictions written" in result.stdout
+
+        # load the datasets and check the results match what's expected
+        absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
+
+        ##### once schema is updated; fix below to match what's in the resulting network:
+        # mol_data = absolute_dataframe.iloc[0]
+        # assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
+        # assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
+        # assert mol_data["label"] == "lig_ejm_31"
+        # assert mol_data["DG (kcal/mol) (FECS)"] == pytest.approx(-0.1332, abs=1e-4)
+        # assert mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+        #     0.0757, abs=1e-4
+        # )
+
+        # relative_dataframe = pd.read_csv("predictions-relative-tyk2-small-test.csv")
+        # relative_mol_data = relative_dataframe.iloc[0]
+        # assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
+        # assert (
+        #     relative_mol_data["SMILES_B"]
+        #     == "c1cc(c(c(c1)Cl)C(=O)Nc2ccnc(c2)NC(=O)C3CCC3)Cl"
+        # )
+        # assert relative_mol_data["Inchi_Key_A"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
+        # assert relative_mol_data["Inchi_Key_B"] == "YJMGZFGQBBEAQT-UHFFFAOYSA-N"
+        # assert relative_mol_data["labelA"] == "lig_ejm_31"
+        # assert relative_mol_data["labelB"] == "lig_ejm_47"
+        # assert relative_mol_data["DDG (kcal/mol) (FECS)"] == pytest.approx(
+        #     0.1115, abs=1e-4
+        # )
+        # assert relative_mol_data["uncertainty (kcal/mol) (FECS)"] == pytest.approx(
+        #     0.1497, abs=1e-4
+        # )
+
+
 def test_prep_alchemize(test_ligands_sdfile, tmpdir):
 
     with tmpdir.as_cwd():
