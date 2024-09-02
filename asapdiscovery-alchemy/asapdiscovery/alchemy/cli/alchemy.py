@@ -669,6 +669,13 @@ def stop(network_key: str):
     show_default=True,
     help="The name of the Postera molecule set to upload the results to.",
 )
+@click.option(
+    "-fl",
+    "--force-largest",
+    is_flag=True,
+    help="Make predictions using only the largest subnetwork present in the results. "
+    "Useful in cases where the network is disconnected by e.g. simulation failures.",
+)
 def predict(
     network: str,
     reference_units: str,
@@ -676,6 +683,7 @@ def predict(
     experimental_protocol: Optional[str] = None,
     target: Optional[TagEnumBase] = None,
     postera_molset_name: Optional[str] = None,
+    force_largest: Optional[bool] = False,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
@@ -718,7 +726,6 @@ def predict(
         ligands.append(result_network.network.central_ligand)
 
     # convert to cinnabar fepmap to do the prediction via MLE
-    force_largest = True
     fe_map = result_network.results.to_fe_map()
     is_connected = cinnabar_femap_is_connected(fe_map)
 
