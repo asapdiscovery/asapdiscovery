@@ -272,12 +272,13 @@ def cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console):
     workaround. Requires the original FreeEnergyCalculationNetwork to query results from.
 
     Returns a cinnabar FEMap that is fully connected"""
+    import itertools
+
+    import networkx as nx
     from asapdiscovery.alchemy.schema.fec import (
         AlchemiscaleResults,
         FreeEnergyCalculationNetwork,
     )
-    import networkx as nx
-    import itertools
     from rich.padding import Padding
 
     fe_map_nx = fe_map.graph

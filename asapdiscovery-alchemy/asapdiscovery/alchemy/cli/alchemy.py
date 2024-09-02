@@ -691,10 +691,10 @@ def predict(
     """
     import rich
     from asapdiscovery.alchemy.cli.utils import (
+        cinnabar_femap_get_largest_subnetwork,
+        cinnabar_femap_is_connected,
         print_header,
         upload_to_postera,
-        cinnabar_femap_is_connected,
-        cinnabar_femap_get_largest_subnetwork,
     )
     from asapdiscovery.alchemy.predict import (
         create_absolute_report,

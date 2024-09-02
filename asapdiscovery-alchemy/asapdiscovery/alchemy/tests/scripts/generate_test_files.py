@@ -5,9 +5,10 @@ You will need local copies of tyk2_small_network.json and tyk2_result_network.js
 """
 
 import json
+
 from asapdiscovery.alchemy.schema.fec import (
-    FreeEnergyCalculationNetwork,
     AlchemiscaleResults,
+    FreeEnergyCalculationNetwork,
     TransformationResult,
 )
 from openff.units import unit
