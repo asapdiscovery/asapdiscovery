@@ -197,6 +197,9 @@ class AlchemiscaleResults(_BaseResults):
         description="The alchemiscale key associated with this submited network, which is used to gather results from the client.",
     )
 
+    class Config:
+        allow_mutation = False
+
 
 class _FreeEnergyBase(_SchemaBase):
     """

@@ -725,11 +725,11 @@ def predict(
     if is_connected:
         fe_map.generate_absolute_values()
     elif not is_connected and force_largest:
-        fe_map = cinnabar_femap_get_largest_subnetwork(fe_map)
+        fe_map = cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console)
         fe_map.generate_absolute_values()
     else:
         raise ValueError(
-            "Your network is missing edges resulting in a breakage where ligands (nodes) are "
+            "Your network is missing edges resulting in a gap where ligands (nodes) are "
             "not connected to the network. If you would like to discard those disconnected ligands "
             "(i.e. not make predictions on them), run predict using the '-fl/--force-largest' flag."
         )
