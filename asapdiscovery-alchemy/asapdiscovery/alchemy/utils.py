@@ -132,8 +132,7 @@ class AlchemiscaleHelper:
         return active_network_weights
 
     def action_network(
-        self,
-        planned_network: FreeEnergyCalculationNetwork, repeats: int
+        self, planned_network: FreeEnergyCalculationNetwork, repeats: int
     ) -> list[Optional[ScopedKey]]:
         """
         For the given network which is already stored on alchemiscale create and action tasks.
@@ -150,11 +149,7 @@ class AlchemiscaleHelper:
 
         tasks = []
         for tf_sk in self._client.get_network_transformations(network_key):
-            tasks.extend(
-                self._client.create_tasks(
-                    tf_sk, count=repeats
-                )
-            )
+            tasks.extend(self._client.create_tasks(tf_sk, count=repeats))
 
         # now action the tasks to ensure they are picked up by compute.
         actioned_tasks = self._client.action_tasks(tasks, network_key)
