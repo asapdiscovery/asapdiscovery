@@ -224,7 +224,7 @@ def plan(
     "--repeats",
     type=click.INT,
     help="The total number of times each transformation should be ran on Alchemiscale, results will be averaged over "
-         "the successful repeats.",
+    "the successful repeats.",
     default=1,
     show_default=True,
 )
