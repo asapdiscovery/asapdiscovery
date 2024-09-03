@@ -28,7 +28,13 @@ from openff.units import unit as OFFUnit
     "mapper, argument, value",
     [
         pytest.param(LomapAtomMapper, "max3d", 30, id="Lomap"),
-        pytest.param(PersesAtomMapper, "coordinate_tolerance", 0.15, id="Perses", marks=pytest.mark.xfail(reason='upstream OpenFE #929')),
+        pytest.param(
+            PersesAtomMapper,
+            "coordinate_tolerance",
+            0.15,
+            id="Perses",
+            marks=pytest.mark.xfail(reason="upstream OpenFE #929"),
+        ),
         pytest.param(
             KartografAtomMapper, "map_exact_ring_matches_only", True, id="Kartograph"
         ),
