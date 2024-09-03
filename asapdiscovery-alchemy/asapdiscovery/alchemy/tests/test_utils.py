@@ -106,10 +106,10 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     )
     monkeypatch.setattr(client._client, "create_tasks", create_tasks)
     monkeypatch.setattr(client._client, "action_tasks", action_tasks)
+    task_replicas = 3  # the total number of times each task should be run
+    tasks = client.action_network(planned_network=result_network, repeats=task_replicas)
 
-    tasks = client.action_network(planned_network=result_network)
-
-    assert len(tasks) == (result_network.n_repeats + 1) * len(alchem_network.edges)
+    assert len(tasks) == (task_replicas * len(alchem_network.edges))
 
 
 def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):

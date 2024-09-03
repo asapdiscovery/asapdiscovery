@@ -133,13 +133,15 @@ class AlchemiscaleHelper:
 
     def action_network(
         self,
-        planned_network: FreeEnergyCalculationNetwork,
+        planned_network: FreeEnergyCalculationNetwork, repeats: int
     ) -> list[Optional[ScopedKey]]:
         """
         For the given network which is already stored on alchemiscale create and action tasks.
 
         Args:
             planned_network: The network which should action tasks for.
+            repeats: The number of times each transformation should be run, results will be averaged over the n
+                successful repeats.
 
         Returns:
             A list of actioned tasks for this network.
@@ -148,10 +150,9 @@ class AlchemiscaleHelper:
 
         tasks = []
         for tf_sk in self._client.get_network_transformations(network_key):
-            # the factory defines how many times the task should be repeated, so total runs is 1 + no of repeats
             tasks.extend(
                 self._client.create_tasks(
-                    tf_sk, count=planned_network.protocol_repeats + 1
+                    tf_sk, count=repeats
                 )
             )
 
