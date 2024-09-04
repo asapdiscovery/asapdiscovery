@@ -23,6 +23,7 @@ def smiles():
     ]
     return smiles
 
+
 @pytest.mark.parametrize(
     "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
 )
@@ -31,7 +32,6 @@ def test_gatinference_construct_by_latest(target):
     assert inference_cls is not None
     assert inference_cls.model_type == "GAT"
     assert target in inference_cls.targets
-
 
 
 def test_gatinference_construct_from_name(
@@ -191,6 +191,7 @@ def test_gatinference_predict_from_smiles_err_multi(smiles):
     assert isinstance(pred, float)
     assert isinstance(err, float)
 
+
 def test_gatinference_predict_from_smiles_err_multi(smiles):
     inference_cls = GATInference.from_latest_by_target("SARS-CoV-2-Mpro")
 
@@ -199,6 +200,7 @@ def test_gatinference_predict_from_smiles_err_multi(smiles):
     assert err is not None
     assert len(pred.shape) == 1
     assert len(err.shape) == 1
+
 
 def test_schnet_inference_construct():
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
@@ -229,7 +231,8 @@ def test_schnet_inference_predict_from_structure_file(docked_structure_file):
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     output = inference_cls.predict_from_structure_file(docked_structure_file)
-    # 
+    #
+
 
 def test_schnet_inference_predict_from_structure_file_err(docked_structure_file):
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
@@ -240,7 +243,6 @@ def test_schnet_inference_predict_from_structure_file_err(docked_structure_file)
     # check both are single floats
     assert isinstance(pred, float)
     assert isinstance(err, float)
-
 
 
 def test_schnet_inference_predict_from_structure_file_err_multi(docked_structure_file):
@@ -316,4 +318,3 @@ def test_e3nn_predict_from_structure_file_err_multi(docked_structure_file):
     assert len(err.shape) == 1
     np.all(np.isclose(pred, pred[0]))
     np.all(np.isclose(err, err[0]))
-
