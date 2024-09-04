@@ -260,7 +260,7 @@ class InferenceBase(BaseModel):
             else:
                 # iterates only once, just return the prediction
                 pred = output_tensor
-                err = np.nan
+                err = [np.nan]
             if return_err:
                 return pred, err
             else:
@@ -309,7 +309,7 @@ class GATInference(InferenceBase):
                 err = errfunc(aggregate_preds)
             else:
                 pred = output_tensor
-                err = np.nan
+                err = [np.nan]
 
             if return_err:
                 return pred, err
@@ -358,6 +358,7 @@ class GATInference(InferenceBase):
 
         data = [self.predict(pose["g"], return_err=return_err) for _, pose in ds]
         data = np.asarray(data)
+        data = np.squeeze(data, axis=-1)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -417,7 +418,7 @@ class StructuralInference(InferenceBase):
                 err = errfunc(aggregate_preds)
             else:
                 pred = output_tensor
-                err = np.nan
+                err = [np.nan]
 
             if return_err:
                 return pred, err
@@ -456,6 +457,7 @@ class StructuralInference(InferenceBase):
             ]
         data = [self.predict(p, return_err=return_err) for p in pose]
         data = np.asarray(data)
+        data = np.squeeze(data, axis=-1)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -518,6 +520,7 @@ class StructuralInference(InferenceBase):
         # Make predictions
         data = [self.predict(p, return_err=return_err) for p in pose]
         data = np.asarray(data)
+        data = np.squeeze(data, axis=-1)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
