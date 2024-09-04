@@ -183,9 +183,8 @@ def test_gatinference_predict_from_subset(test_data):
         assert res
 
 
-def test_gatinference_predict_from_smiles_err_multi(smiles):
+def test_gatinference_predict_from_smiles_err():
     inference_cls = GATInference.from_latest_by_target("SARS-CoV-2-Mpro")
-
     pred, err = inference_cls.predict_from_smiles("CCC", return_err=True)
     # check both are single floats
     assert isinstance(pred, float)
@@ -231,7 +230,8 @@ def test_schnet_inference_predict_from_structure_file(docked_structure_file):
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     output = inference_cls.predict_from_structure_file(docked_structure_file)
-    #
+    # check its a single float
+    assert isinstance(output, float)
 
 
 def test_schnet_inference_predict_from_structure_file_err(docked_structure_file):
