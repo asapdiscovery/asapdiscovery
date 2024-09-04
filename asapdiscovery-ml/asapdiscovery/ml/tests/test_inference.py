@@ -14,6 +14,15 @@ def docked_structure_file(scope="session"):
     return fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.pdb")
 
 
+@pytest.fixture()
+def smiles():
+    smiles = [
+        "CC1=CC(=O)C(=C(C1=O)C)C",
+        "CC1=CC(=O)C(=C(C1=O)C",
+        "CC1=CC(=O)C(=C(C1=O)C",
+    ]
+    return smiles
+
 @pytest.mark.parametrize(
     "target", ["SARS-CoV-2-Mpro", "SARS-CoV-2-Mac1", "MERS-CoV-Mpro"]
 )
@@ -22,6 +31,7 @@ def test_gatinference_construct_by_latest(target):
     assert inference_cls is not None
     assert inference_cls.model_type == "GAT"
     assert target in inference_cls.targets
+
 
 
 def test_gatinference_construct_from_name(
@@ -96,8 +106,11 @@ def test_gatinference_predict_from_smiles_err(test_data):
     smiles = [pose["smiles"] for _, pose in gds]
     assert inference_cls is not None
     pred, err = inference_cls.predict_from_smiles(smiles, return_err=True)
+    # check they are flat arrays
     assert pred is not None
     assert err is not None
+    assert len(pred.shape) == 1
+    assert len(err.shape) == 1
 
 
 # test inference dataset cls against training dataset cls
@@ -170,6 +183,23 @@ def test_gatinference_predict_from_subset(test_data):
         assert res
 
 
+def test_gatinference_predict_from_smiles_err_multi(smiles):
+    inference_cls = GATInference.from_latest_by_target("SARS-CoV-2-Mpro")
+
+    pred, err = inference_cls.predict_from_smiles("CCC", return_err=True)
+    # check both are single floats
+    assert isinstance(pred, float)
+    assert isinstance(err, float)
+
+def test_gatinference_predict_from_smiles_err_multi(smiles):
+    inference_cls = GATInference.from_latest_by_target("SARS-CoV-2-Mpro")
+
+    pred, err = inference_cls.predict_from_smiles(smiles, return_err=True)
+    assert pred is not None
+    assert err is not None
+    assert len(pred.shape) == 1
+    assert len(err.shape) == 1
+
 def test_schnet_inference_construct():
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
@@ -199,17 +229,32 @@ def test_schnet_inference_predict_from_structure_file(docked_structure_file):
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     output = inference_cls.predict_from_structure_file(docked_structure_file)
-    assert output is not None
-
+    # 
 
 def test_schnet_inference_predict_from_structure_file_err(docked_structure_file):
     inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
-    output, err = inference_cls.predict_from_structure_file(
+    pred, err = inference_cls.predict_from_structure_file(
         docked_structure_file, return_err=True
     )
-    assert output is not None
+    # check both are single floats
+    assert isinstance(pred, float)
+    assert isinstance(err, float)
+
+
+
+def test_schnet_inference_predict_from_structure_file_err_multi(docked_structure_file):
+    inference_cls = SchnetInference.from_latest_by_target("SARS-CoV-2-Mpro")
+    assert inference_cls is not None
+    pred, err = inference_cls.predict_from_structure_file(
+        [docked_structure_file, docked_structure_file], return_err=True
+    )
+    assert pred is not None
     assert err is not None
+    assert len(pred.shape) == 1
+    assert len(err.shape) == 1
+    np.all(np.isclose(pred, pred[0]))
+    np.all(np.isclose(err, err[0]))
 
 
 def test_schnet_inference_predict_from_pose(docked_structure_file):
@@ -244,14 +289,31 @@ def test_e3nn_predict_from_structure_file(docked_structure_file):
     inference_cls = E3nnInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
     output = inference_cls.predict_from_structure_file(docked_structure_file)
-    assert output is not None
+    # check its a single float
+    assert isinstance(output, float)
 
 
 def test_e3nn_predict_from_structure_file_err(docked_structure_file):
     inference_cls = E3nnInference.from_latest_by_target("SARS-CoV-2-Mpro")
     assert inference_cls is not None
-    output, err = inference_cls.predict_from_structure_file(
+    pred, err = inference_cls.predict_from_structure_file(
         docked_structure_file, return_err=True
     )
-    assert output is not None
+    # check both are single floats
+    assert isinstance(pred, float)
+    assert isinstance(err, float)
+
+
+def test_e3nn_predict_from_structure_file_err_multi(docked_structure_file):
+    inference_cls = E3nnInference.from_latest_by_target("SARS-CoV-2-Mpro")
+    assert inference_cls is not None
+    pred, err = inference_cls.predict_from_structure_file(
+        [docked_structure_file, docked_structure_file], return_err=True
+    )
+    assert pred is not None
     assert err is not None
+    assert len(pred.shape) == 1
+    assert len(err.shape) == 1
+    np.all(np.isclose(pred, pred[0]))
+    np.all(np.isclose(err, err[0]))
+
