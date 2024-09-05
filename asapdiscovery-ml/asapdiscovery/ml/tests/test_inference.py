@@ -96,7 +96,7 @@ def test_gatinference_predict_smiles_equivariant(test_data, target):
     assert_allclose(output1, output2, rtol=1e-5)
 
 
-def test_gatinference_predict_from_smiles_err(test_data):
+def test_gatinference_predict_from_smiles_err_gds(test_data):
     inference_cls = GATInference.from_model_name(
         "asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06"
     )
