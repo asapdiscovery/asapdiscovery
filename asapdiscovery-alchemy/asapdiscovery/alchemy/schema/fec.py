@@ -217,8 +217,7 @@ class _FreeEnergyBase(_SchemaBase):
     )
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
         settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.2.0"
-            small_molecule_forcefield="openff-2.2.0"
+            small_molecule_forcefield="openff-2.2.0",
         ),
         description="The force field settings used to parameterize the systems.",
     )
