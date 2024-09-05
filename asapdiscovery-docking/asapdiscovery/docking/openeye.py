@@ -203,8 +203,6 @@ class POSITDocker(DockingBase):
         retcode = poser.Dock(pose_res, lig, num_poses)
         return pose_res, retcode
 
-
-
     @dask_vmap(["inputs"], has_failure_mode=True)
     def _dock(
         self,
@@ -396,7 +394,6 @@ class POSITDocker(DockingBase):
                     raise ValueError(f"Unknown error handling option {failure_mode}")
 
         return docking_results
-
 
     def provenance(self) -> dict[str, str]:
         return {
