@@ -220,11 +220,21 @@ def plan(
     help="The name of the project in alchemiscale the network should be submitted to.",
     required=True,
 )
+@click.option(
+    "-r",
+    "--repeats",
+    type=click.INT,
+    help="The total number of times each transformation should be ran on Alchemiscale, results will be averaged over "
+    "the successful repeats.",
+    default=1,
+    show_default=True,
+)
 def submit(
     network: str,
     organization: str,
     campaign: str,
     project: str,
+    repeats: int,
 ):
     """
     Submit a local FreeEnergyCalculationNetwork to alchemiscale using the provided scope details. The network object
@@ -235,6 +245,7 @@ def submit(
         organization: The name of the organization this network should be submitted under always asap.
         campaign: The name of the campaign this network should be submitted under.
         project: The name of the project this network should be submitted under.
+        repeats: The total number of times each transformation should be ran.
     """
     from alchemiscale import Scope
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
@@ -265,7 +276,7 @@ def submit(
     submitted_network.to_file(network)
     # now action the tasks
     click.echo("Creating and actioning FEC tasks on Alchemiscale...")
-    task_ids = client.action_network(planned_network=submitted_network)
+    task_ids = client.action_network(planned_network=submitted_network, repeats=repeats)
     # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
