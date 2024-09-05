@@ -20,7 +20,6 @@ from asapdiscovery.docking.docking import (
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from pydantic import Field, PositiveInt, root_validator
-from multimethod import multimethod
 
 logger = logging.getLogger(__name__)
 
