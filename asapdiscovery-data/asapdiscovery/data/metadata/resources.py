@@ -20,6 +20,9 @@ EV_D68_3Cpro_SEQRES = pkg_resources.resource_filename(
 EV_A71_3Cpro_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/ev_a71_3cpro.yaml"
 )
+EV_A71_2Apro_SEQRES = pkg_resources.resource_filename(
+    __name__, "master_seqres/ev_a71_2apro.yaml"
+)
 ZIKV_NS2B_NS3pro_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/zikv_ns2b_ns3pro.yaml"
 )
@@ -42,6 +45,7 @@ seqres_data = {
     TargetTags("SARS-CoV-2-N-protein").value: SARS_CoV_2_N_protein_SEQRES,
     TargetTags("EV-D68-3Cpro").value: EV_D68_3Cpro_SEQRES,
     TargetTags("EV-A71-3Cpro").value: EV_A71_3Cpro_SEQRES,
+    TargetTags("EV-A71-2Apro").value: EV_A71_2Apro_SEQRES,
     TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_SEQRES,
     TargetTags("DENV-NS2B-NS3pro").value: DENV_NS2B_NS3pro_SEQRES,
     TargetTags("EV-A71-Capsid").value: EV_A71_Capsid_SEQRES,
@@ -87,6 +91,9 @@ master_structures = {
     "EV-A71-3Cpro": pkg_resources.resource_filename(
         __name__, "master_structures/ev_a71_3cpro.pdb"
     ),
+    "EV-A71-2Apro": pkg_resources.resource_filename(
+        __name__, "master_structures/ev_a71_2apro.pdb"
+    ),
     "ZIKV-NS2B-NS3pro": pkg_resources.resource_filename(
         __name__, "master_structures/zikv_ns2b_ns3pro.pdb"
     ),
@@ -110,6 +117,7 @@ active_site_chains = {
     "MERS-CoV-Mpro": "A",
     "EV-D68-3Cpro": "A",
     "EV-A71-3Cpro": "A",
+    "EV-A71-2Apro": "A",
     "ZIKV-NS2B-NS3pro": "B",
     "DENV-NS2B-NS3pro": "B",
     "EV-A71-Capsid": "A",

@@ -66,6 +66,7 @@ class GIFBlockData:
         "MERS-CoV-Mpro": "A",
         "EV-D68-3Cpro": "A",
         "EV-A71-3Cpro": "A",
+        "EV-A71-2Apro": "A",
         "EV-A71-Capsid": "A",
         "EV-D68-Capsid": "A",
         "DENV-NS2B-NS3pro": "B",
@@ -120,7 +121,12 @@ class GIFBlockData:
         "subP3": "21+22+40+38+71+69",
         "subP4": "42+43+39+73+59+60+61",
     }
-
+    pocket_dict_EV_A71_2Apro = {
+        "catalytic": "19+39+110+124+125+126",
+        "entry": "87+88+89+105+106+127",
+        "rhs": "84+85+86+128+129",
+        "rhs_prime": "82+83+98+100+131",
+    }
     pocket_dict_ZIKV_NS2B_NS3pro = {
         "subP1": "151+161+129+160+150+130+131+132+135+134",
         "subP1_prime": "51+52+36+35+133",
@@ -169,6 +175,13 @@ class GIFBlockData:
         "subP2": "blue",
         "subP3": "cyan",
         "subP4": "magenta",
+    }
+
+    color_dict_2Apro = {
+        "catalytic": "orange",
+        "entry": "yellow",
+        "rhs": "blue",
+        "rhs_prime": "magenta",
     }
     color_dict_NS2B_NS3pro = {
         "subP1": "yellow",
