@@ -200,6 +200,7 @@ def dask_vmap(kwargsnames, remove_falsy=True, has_failure_mode=False):
 
                 # flatten ragged list of lists
                 import itertools
+
                 results = list(itertools.chain(*results))
                 return results
 
