@@ -253,8 +253,6 @@ class _FreeEnergyBase(_SchemaBase):
     )
     protocol_repeats: int = Field(
         1,
-    protocol_repeats: int = Field(
-        1,
         description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
     )
     lambda_settings: LambdaSettings = Field(
