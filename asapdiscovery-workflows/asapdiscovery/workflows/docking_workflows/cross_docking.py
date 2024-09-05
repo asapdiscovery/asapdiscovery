@@ -208,7 +208,6 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         failure_mode=inputs.failure_mode,
         return_for_disk_backend=True,
     )
-
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     if n_results == 0:

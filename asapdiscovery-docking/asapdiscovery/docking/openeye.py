@@ -227,27 +227,32 @@ class POSITDocker(DockingBase):
 
         for set in inputs:
             try:
+                # make sure its a path
+                output_dir = Path(output_dir) if output_dir is not None else None
+
                 if output_dir is not None:
-                    docked_result_json_path = Path(
-                        Path(output_dir) / set.unique_name / "docking_result.json"
-                    )
+                    docked_result_path = Path(
+                        Path(output_dir) / set.unique_name)
+                    
+                    jsons = list(docked_result_path.glob("docked_result_*.json")) # can be multiple poses
+
 
                 # first check if output exists
                 if (
                     set.is_cacheable
                     and (output_dir is not None)
-                    and (docked_result_json_path.exists())
+                    and (len(jsons) > 0)
                 ):
                     logger.info(
                         f"Docking result for {set.unique_name} already exists, reading from disk"
                     )
-                    output_dir = Path(output_dir)
-                    if return_for_disk_backend:
-                        docking_results.append(docked_result_json_path)
-                    else:
-                        docking_results.append(
-                            POSITDockingResults.from_json_file(docked_result_json_path)
-                        )
+                    for docked_result_json_path in jsons:
+                        if return_for_disk_backend:
+                            docking_results.append(docked_result_json_path)
+                        else:
+                            docking_results.append(
+                                POSITDockingResults.from_json_file(docked_result_json_path)
+                            )
                 # run docking if output does not exist
                 else:
                     dus = set.to_design_units()
@@ -321,6 +326,7 @@ class POSITDocker(DockingBase):
                     if retcode == oedocking.OEDockingReturnCode_Success:
                         input_pairs = []
                         posed_ligands = []
+                        num_poses = pose_res.GetNumPoses()
                         for i, result in enumerate(pose_res.GetSinglePoseResults()):
                             posed_mol = result.GetPose()
                             prob = result.GetProbability()
@@ -340,6 +346,7 @@ class POSITDocker(DockingBase):
                                     result.GetPositMethod()
                                 ),
                                 "Pose_ID": i,
+                                "Num_Poses": num_poses,
                             }
                             posed_ligand.set_SD_data(sd_data)
                             posed_ligands.append(posed_ligand)
@@ -367,16 +374,18 @@ class POSITDocker(DockingBase):
                                     ],
                                     provenance=self.provenance(),
                                     pose_id=posed_ligand.tags["Pose_ID"],
+                                    num_poses=posed_ligand.tags["Num_Poses"],
                                 )
                             )
                         # Now we can decide if we want to return a path to the json file or the actual object
                         for docking_result in docking_results_objects:
+
+                            if output_dir is not None:
+                                json_path = docking_result.write_docking_files(output_dir)
                             if return_for_disk_backend:
-                                docking_results.append(docked_result_json_path)
+                                docking_results.append(json_path)
                             else:
                                 docking_results.append(docking_result)
-                            if output_dir is not None:
-                                docking_result.write_docking_files(output_dir)
 
             except Exception as e:
                 error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name} with error: {e}"
