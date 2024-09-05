@@ -25,6 +25,7 @@ from asapdiscovery.cli.cli_args import (
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
+from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.workflows.docking_workflows.cross_docking import (
     CrossDockingWorkflowInputs,
@@ -184,6 +185,18 @@ def large_scale(
     help="Whether to use dense conformer enumeration with OEOmega (slower, more accurate)",
 )
 @click.option(
+    "--posit-method",
+    type=click.Choice(POSIT_METHOD.get_names(), case_sensitive=False),
+    default="all",
+    help="The set of methods POSIT can use. Defaults to all.",
+)
+@click.option(
+    "--relax-mode",
+    type=click.Choice(POSIT_RELAX_MODE.get_names(), case_sensitive=False),
+    default="none",
+    help="When to check for relaxation either, 'clash', 'all', 'none'",
+)
+@click.option(
     "--allow-retries",
     is_flag=True,
     default=False,
@@ -226,6 +239,8 @@ def cross_docking(
     structure_selector: StructureSelector = StructureSelector.LEAVE_SIMILAR_OUT,
     use_omega: bool = False,
     omega_dense: bool = False,
+    posit_method: Optional[str] = POSIT_METHOD.ALL.name,
+    relax_mode: Optional[str] = POSIT_RELAX_MODE.NONE.name,
     num_poses: int = 1,
     allow_retries: bool = False,
     allow_final_clash: bool = False,
@@ -264,6 +279,8 @@ def cross_docking(
             failure_mode=failure_mode,
             use_omega=use_omega,
             omega_dense=omega_dense,
+            posit_method=POSIT_METHOD[posit_method],
+            relax_mode=POSIT_RELAX_MODE[relax_mode],
             num_poses=num_poses,
             allow_retries=allow_retries,
             ligands=ligands,

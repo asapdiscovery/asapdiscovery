@@ -14,6 +14,11 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     OpenFFPartialChargeSettings,
 )
 from openfe.protocols.openmm_utils.omm_settings import (
+    LambdaSettings,
+    MultiStateOutputSettings,
+    OpenFFPartialChargeSettings,
+)
+from openfe.protocols.openmm_utils.omm_settings import (
     IntegratorSettings,
     MultiStateSimulationSettings,
     OpenMMEngineSettings,
@@ -213,6 +218,7 @@ class _FreeEnergyBase(_SchemaBase):
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
         settings.OpenMMSystemGeneratorFFSettings(
             small_molecule_forcefield="openff-2.2.0"
+            small_molecule_forcefield="openff-2.2.0"
         ),
         description="The force field settings used to parameterize the systems.",
     )
@@ -224,7 +230,7 @@ class _FreeEnergyBase(_SchemaBase):
     )
     solvation_settings: OpenMMSolvationSettings = Field(
         OpenMMSolvationSettings(),
-        description="Settings controlling how the systems should be solvated.",
+        description="Settings controlling how the systems should be solvated using OpenMM.",
     )
     alchemical_settings: AlchemicalSettings = Field(
         AlchemicalSettings(softcore_LJ="gapsys"),
@@ -250,14 +256,22 @@ class _FreeEnergyBase(_SchemaBase):
     )
     protocol_repeats: int = Field(
         1,
+    protocol_repeats: int = Field(
+        1,
         description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
     )
-    lambda_settings: LambdaSettings = Field(LambdaSettings())
+    lambda_settings: LambdaSettings = Field(
+        LambdaSettings(), description="Lambda schedule settings."
+    )
 
     partial_charge_settings: OpenFFPartialChargeSettings = Field(
-        OpenFFPartialChargeSettings()
+        OpenFFPartialChargeSettings(),
+        description="The method which should be used to generate the partial charges if not provided with the ligand.",
     )
-    output_settings: MultiStateOutputSettings = Field(MultiStateOutputSettings())
+    output_settings: MultiStateOutputSettings = Field(
+        MultiStateOutputSettings(),
+        description="Settings for MultiState simulation output settings like writing to disk.",
+    )
 
     def to_openfe_protocol(self):
         protocol_settings = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings(
