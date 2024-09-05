@@ -209,9 +209,6 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         return_for_disk_backend=True,
     )
 
-    if isinstance(results[0], list):
-        results = [item for sublist in results for item in sublist]
-
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     if n_results == 0:
