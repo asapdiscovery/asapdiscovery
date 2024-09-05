@@ -14,13 +14,11 @@ from openfe.protocols.openmm_rfe.equil_rfe_settings import (
     OpenFFPartialChargeSettings,
 )
 from openfe.protocols.openmm_utils.omm_settings import (
+    IntegratorSettings,
     LambdaSettings,
     MultiStateOutputSettings,
-    OpenFFPartialChargeSettings,
-)
-from openfe.protocols.openmm_utils.omm_settings import (
-    IntegratorSettings,
     MultiStateSimulationSettings,
+    OpenFFPartialChargeSettings,
     OpenMMEngineSettings,
     OpenMMSolvationSettings,
 )
