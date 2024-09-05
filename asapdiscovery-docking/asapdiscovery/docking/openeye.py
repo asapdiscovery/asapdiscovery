@@ -228,18 +228,14 @@ class POSITDocker(DockingBase):
                 output_dir = Path(output_dir) if output_dir is not None else None
 
                 if output_dir is not None:
-                    docked_result_path = Path(
-                        Path(output_dir) / set.unique_name)
-                    
-                    jsons = list(docked_result_path.glob("docked_result_*.json")) # can be multiple poses
+                    docked_result_path = Path(Path(output_dir) / set.unique_name)
 
+                    jsons = list(
+                        docked_result_path.glob("docked_result_*.json")
+                    )  # can be multiple poses
 
                 # first check if output exists
-                if (
-                    set.is_cacheable
-                    and (output_dir is not None)
-                    and (len(jsons) > 0)
-                ):
+                if set.is_cacheable and (output_dir is not None) and (len(jsons) > 0):
                     logger.info(
                         f"Docking result for {set.unique_name} already exists, reading from disk"
                     )
@@ -248,7 +244,9 @@ class POSITDocker(DockingBase):
                             docking_results.append(docked_result_json_path)
                         else:
                             docking_results.append(
-                                POSITDockingResults.from_json_file(docked_result_json_path)
+                                POSITDockingResults.from_json_file(
+                                    docked_result_json_path
+                                )
                             )
                 # run docking if output does not exist
                 else:
@@ -378,7 +376,9 @@ class POSITDocker(DockingBase):
                         for docking_result in docking_results_objects:
 
                             if output_dir is not None:
-                                json_path = docking_result.write_docking_files(output_dir)
+                                json_path = docking_result.write_docking_files(
+                                    output_dir
+                                )
                             if return_for_disk_backend:
                                 docking_results.append(json_path)
                             else:
