@@ -132,14 +132,15 @@ class AlchemiscaleHelper:
         return active_network_weights
 
     def action_network(
-        self,
-        planned_network: FreeEnergyCalculationNetwork,
+        self, planned_network: FreeEnergyCalculationNetwork, repeats: int
     ) -> list[Optional[ScopedKey]]:
         """
         For the given network which is already stored on alchemiscale create and action tasks.
 
         Args:
             planned_network: The network which should action tasks for.
+            repeats: The number of times each transformation should be run, results will be averaged over the n
+                successful repeats.
 
         Returns:
             A list of actioned tasks for this network.
@@ -148,31 +149,38 @@ class AlchemiscaleHelper:
 
         tasks = []
         for tf_sk in self._client.get_network_transformations(network_key):
-            # the factory defines how many times the task should be repeated, so total runs is 1 + no of repeats
-            tasks.extend(
-                self._client.create_tasks(
-                    tf_sk, count=planned_network.protocol_repeats + 1
-                )
-            )
+            tasks.extend(self._client.create_tasks(tf_sk, count=repeats))
 
         # now action the tasks to ensure they are picked up by compute.
         actioned_tasks = self._client.action_tasks(tasks, network_key)
         return actioned_tasks
 
     def network_status(
-        self, planned_network: FreeEnergyCalculationNetwork
+        self,
+        network_key: str,
     ) -> dict[str, int]:
         """
         Get the status of the network from alchemiscale.
 
         Args:
-            planned_network: The network which we should look up in alchemiscale.
+            network_key: The network key belonging to the network which we should look up in alchemiscale.
 
         Returns:
             A dict of the status type and the number of instances.
         """
-        network_key = planned_network.results.network_key
         return self._client.get_network_status(network_key)
+
+    def network_exists(self, network_key: str) -> bool:
+        """
+        Check if a network exists on alchemiscale.
+
+        Args:
+            network_key: The network key belonging to the network which we should look up in alchemiscale.
+
+        Returns:
+            True if the network exists, False otherwise.
+        """
+        return self._client.check_exists(network_key)
 
     def restart_tasks(
         self,
@@ -202,23 +210,43 @@ class AlchemiscaleHelper:
         return restarted_tasks
 
     def collect_results(
-        self, planned_network: FreeEnergyCalculationNetwork
+        self,
+        planned_network: Optional[FreeEnergyCalculationNetwork] = None,
+        network_key: Optional[str] = None,
     ) -> FreeEnergyCalculationNetwork:
         """
         Collect the results for the given network.
 
         Args:
             planned_network: The network whose results we should collect.
+            network_key: The `alchemsicale` network key for the network whose results we should collect.
 
         Returns:
             A FreeEnergyCalculationNetwork with all current results. If any are missing and allow missing is false an error is raised.
         """
         # collect results following the notebook from openFE
         results = []
+
+        if network_key:
+            raise NotImplementedError(
+                "ASAP-Alchemy gather using network keys (-nk) is currently not implemented."
+            )
+
+        if planned_network and network_key:
+            raise ValueError("Provide only one of `planned_network` or `network_key`")
+        if not network_key and not planned_network:
+            raise ValueError(
+                "Need to define one of `planned_network` or `network_key`."
+            )
+
+        if planned_network:
+            network_key = planned_network.results.network_key
+
+        alchemiscale_network_results = self._client.get_network_results(
+            network_key
+        ).items()
         # use the process pool api point to gather all transformations for the network
-        for tf_sk, raw_result in self._client.get_network_results(
-            network=planned_network.results.network_key
-        ).items():
+        for _, raw_result in alchemiscale_network_results:
             if raw_result is None:
                 continue
             # format into our custom result schema and save
@@ -265,18 +293,18 @@ class AlchemiscaleHelper:
             )
 
         # save to a new results object as they are frozen
-        alchem_results = AlchemiscaleResults(
-            network_key=planned_network.results.network_key, results=results
-        )
-        network_with_results = FreeEnergyCalculationNetwork(
-            **planned_network.dict(exclude={"results"}), results=alchem_results
-        )
+        alchem_results = AlchemiscaleResults(network_key=network_key, results=results)
+
+        if planned_network:
+            network_with_results = FreeEnergyCalculationNetwork(
+                **planned_network.dict(exclude={"results"}), results=alchem_results
+            )
 
         return network_with_results
 
     def collect_errors(
         self,
-        planned_network: FreeEnergyCalculationNetwork,
+        network_key: str,
     ) -> list[AlchemiscaleFailure]:
         """
         Collect errors and tracebacks from failed tasks.
@@ -287,7 +315,6 @@ class AlchemiscaleHelper:
         Returns:
             List of AlchemiscaleFailure objects with errors and tracebacks for the failed tasks in the network.
         """
-        network_key = planned_network.results.network_key
         errored_tasks = self._client.get_network_tasks(network_key, status="error")
 
         error_data = []
