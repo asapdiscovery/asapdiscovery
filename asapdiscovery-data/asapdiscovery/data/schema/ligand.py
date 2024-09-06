@@ -28,7 +28,6 @@ from asapdiscovery.data.backend.openeye import (
     smiles_to_oemol,
 )
 from asapdiscovery.data.backend.rdkit import rdkit_mol_to_sdf_str
-
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
 from asapdiscovery.data.schema.identifiers import (
     ChargeProvenance,
@@ -346,7 +345,7 @@ class Ligand(DataModelAbstractBase):
         import openfe
 
         return openfe.SmallMoleculeComponent.from_rdkit(self.to_rdkit())
-    
+
     @classmethod
     def from_openfe(cls, mol: "openfe.SmallMoleculeComponent", **kwargs) -> "Ligand":
         """
@@ -444,7 +443,7 @@ class Ligand(DataModelAbstractBase):
 
         oemol = load_openeye_sdf(sdf_file)
         return cls.from_oemol(oemol, **kwargs)
-    
+
     @classmethod
     def from_sdf_str(cls, sdf_str: str, **kwargs) -> "Ligand":
         """
