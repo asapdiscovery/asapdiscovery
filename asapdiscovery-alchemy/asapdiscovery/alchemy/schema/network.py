@@ -3,6 +3,8 @@ from typing import Callable, Literal, Optional, Union
 
 import openfe
 from asapdiscovery.data.schema.ligand import Ligand
+from openfe.setup import LigandNetwork
+
 from pydantic import Field
 
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
@@ -165,6 +167,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
         self,
         ligands: list[Ligand],
         central_ligand: Optional[Ligand] = None,
+        graphml: Optional[str] = None,
     ) -> PlannedNetwork:
         """
         Generate a network with the configured settings.
@@ -174,37 +177,54 @@ class NetworkPlanner(_NetworkPlannerSettings):
         Args:
             ligands: The set of ligands which should be included in the network.
             central_ligand: The ligand which should be considered as the central node in a radial network
+            graphml: The graphml string representation of a network which should be used instead of generating a new one.
         """
 
-        # validate the inputs
-        if (
-            self.network_planning_method.type == "RadialPlanner"
-            and central_ligand is None
-        ):
-            raise RuntimeError(
-                "The radial type network requires a ligand to act as the central node."
-            )
 
-        # build the network planner
-        planner_data = {
-            "ligands": [
-                mol.to_openfe() for mol in ligands
-            ],  # need to convert to rdkit objects?
-            "mappers": [self.atom_mapping_engine.get_mapper()],
-            "scorer": self._get_scorer(),
-        }
+        if graphml is None: # plan a new network
+            if (
+                self.network_planning_method.type == "RadialPlanner"
+                and central_ligand is None
+            ):
+                raise RuntimeError(
+                    "The radial type network requires a ligand to act as the central node."
+                )
 
-        # add the central ligand if required
-        if self.network_planning_method.type == "RadialPlanner":
-            planner_data["central_ligand"] = central_ligand.to_openfe()
+            # build the network planner
+            planner_data = {
+                "ligands": [
+                    mol.to_openfe() for mol in ligands
+                ],  # need to convert to rdkit objects?
+                "mappers": [self.atom_mapping_engine.get_mapper()],
+                "scorer": self._get_scorer(),
+            }
+            # add the central ligand if required
+            if self.network_planning_method.type == "RadialPlanner":
+                planner_data["central_ligand"] = central_ligand.to_openfe()
 
-        network_method = self.network_planning_method.get_planning_function()
-        ligand_network = network_method(**planner_data)
+            network_method = self.network_planning_method.get_planning_function()
+            ligand_network = network_method(**planner_data)
+            provenance = self.atom_mapping_engine.provenance()
+        else: # use a pre-generated network
+            ligand_network = LigandNetwork.from_graphml(graphml)
+            if not ligand_network.is_connected():
+                raise ValueError(
+                    "The provided graphml does not represent a connected network."
+                )
+            if central_ligand:
+                raise ValueError(
+                    "Central ligand should not be provided when using a pre-generated graphml."
+                )
+            # extract ligands from the network
+            small_molecule_components = ligand_network.nodes()
+            rdkit_mols = [s.to_rdkit() for s in small_molecule_components]
+            ligands = [Ligand.from_rdkit(mol) for mol in rdkit_mols]
+            provenance = {"source": "pre-generated", "graphml": graphml}
 
         return PlannedNetwork(
             **self.dict(exclude={"type"}),
             ligands=ligands,
             central_ligand=central_ligand,
             graphml=ligand_network.to_graphml(),
-            provenance=self.atom_mapping_engine.provenance(),
+            provenance=provenance,
         )

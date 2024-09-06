@@ -383,6 +383,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         receptor: openfe.ProteinComponent,
         ligands: list["Ligand"],
         central_ligand: Optional["Ligand"] = None,
+        graphml: Optional[str] = None,
         experimental_protocol: Optional[str] = None,
         target: Optional[str] = None,
     ) -> FreeEnergyCalculationNetwork:
@@ -422,7 +423,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(
-            ligands=ligands, central_ligand=central_ligand
+            ligands=ligands, central_ligand=central_ligand, graphml=graphml
         )
 
         planned_fec_network = FreeEnergyCalculationNetwork(
