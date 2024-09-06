@@ -263,8 +263,8 @@ def report_alchemize_clusters(alchemical_clusters, outsiders):
     return alchemical_cluster_sizes, outsider_cluster_sizes, alchemical_num_in_clusters
 
 
-def cinnabar_femap_is_connected(fe_map: "FEMap") -> "FEMap":
-    """Checks whether the provided femap is connected. Convenience function to make function
+def cinnabar_femap_is_connected(fe_map: "FEMap") -> bool:
+    """Checks whether the provided femap is connected or not. Convenience function to make function
     naming clearer compared to cinnabar nomenclature."""
     return fe_map.check_weakly_connected()
 
@@ -273,7 +273,7 @@ def cinnabar_femap_get_largest_subnetwork(
     fe_map: "FEMap",
     result_network: "FreeEnergyCalculationNetwork",
     console: "rich.Console",
-):
+) -> "FEMap":
     """From a disconnected femap, returns the subnetwork with the largest number of nodes using a networkx
     workaround. Requires the original FreeEnergyCalculationNetwork to query results from.
 
