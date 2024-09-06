@@ -146,6 +146,7 @@ def sdf_str_to_rdkit_mol(sdf: str) -> Chem.Mol:
         ref.AddConformer(conf, assignId=True)
     return ref
 
+
 def rdkit_mol_to_sdf_str(mol: Chem.Mol) -> str:
     """
     Convert an RDKit molecule to a SDF string
