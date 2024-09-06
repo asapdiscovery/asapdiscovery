@@ -4,7 +4,6 @@ from typing import Callable, Literal, Optional, Union
 import openfe
 from asapdiscovery.data.schema.ligand import Ligand
 from openfe.setup import LigandNetwork
-
 from pydantic import Field
 
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
@@ -180,8 +179,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
             graphml: The graphml string representation of a network which should be used instead of generating a new one.
         """
 
-
-        if graphml is None: # plan a new network
+        if graphml is None:  # plan a new network
             if (
                 self.network_planning_method.type == "RadialPlanner"
                 and central_ligand is None
@@ -205,7 +203,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
             network_method = self.network_planning_method.get_planning_function()
             ligand_network = network_method(**planner_data)
             provenance = self.atom_mapping_engine.provenance()
-        else: # use a pre-generated network
+        else:  # use a pre-generated network
             ligand_network = LigandNetwork.from_graphml(graphml)
             if not ligand_network.is_connected():
                 raise ValueError(

@@ -80,7 +80,12 @@ def create(filename: str):
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="The file which contains the center ligand, only required by radial type networks.",
 )
-@click.option("-g", "--graphml", help="Read a graphml representation of the ligand network directly from file",     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False))
+@click.option(
+    "-g",
+    "--graphml",
+    help="Read a graphml representation of the ligand network directly from file",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+)
 @click.option(
     "-ep",
     "--experimental-protocol",
@@ -122,7 +127,6 @@ def plan(
         raise RuntimeError(
             "Please provide either a ligand file or a graphml file, not both."
         )
-    
 
     # nothing specified
     if ligands is None and graphml is None and alchemy_dataset is None:
@@ -145,6 +149,7 @@ def plan(
 
     if alchemy_dataset is not None:
         import tempfile
+
         if graphml:
             raise RuntimeError(
                 "Please provide either dataset file or a graphml file, not both."
@@ -188,7 +193,7 @@ def plan(
 
     if graphml is not None:
         # load the graphml file
-        with open(graphml, "r") as f:
+        with open(graphml) as f:
             graphml = f.read()
         click.echo("Graphml file loaded: Using explicit ligand network ...")
 

@@ -1,8 +1,9 @@
 import functools
+import itertools
 import logging
 from collections.abc import Iterable
 from typing import Optional, Union
-import itertools
+
 import dask
 import psutil
 from asapdiscovery.data.util.execution_utils import (
