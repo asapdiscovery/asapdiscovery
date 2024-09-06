@@ -766,6 +766,13 @@ def stop(network_key: str):
     show_default=True,
     help="The name of the Postera molecule set to upload the results to.",
 )
+@click.option(
+    "-fl",
+    "--force-largest",
+    is_flag=True,
+    help="Make predictions using only the largest subnetwork present in the results. "
+    "Useful in cases where the network is disconnected by e.g. simulation failures.",
+)
 def predict(
     network: str,
     reference_units: str,
@@ -773,13 +780,19 @@ def predict(
     experimental_protocol: Optional[str] = None,
     target: Optional[TagEnumBase] = None,
     postera_molset_name: Optional[str] = None,
+    force_largest: Optional[bool] = False,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header, upload_to_postera
+    from asapdiscovery.alchemy.cli.utils import (
+        cinnabar_femap_get_largest_subnetwork,
+        cinnabar_femap_is_connected,
+        print_header,
+        upload_to_postera,
+    )
     from asapdiscovery.alchemy.predict import (
         create_absolute_report,
         create_relative_report,
@@ -811,7 +824,19 @@ def predict(
 
     # convert to cinnabar fepmap to do the prediction via MLE
     fe_map = result_network.results.to_fe_map()
-    fe_map.generate_absolute_values()
+    is_connected = cinnabar_femap_is_connected(fe_map)
+
+    if is_connected:
+        fe_map.generate_absolute_values()
+    elif not is_connected and force_largest:
+        fe_map = cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console)
+        fe_map.generate_absolute_values()
+    else:
+        raise ValueError(
+            "Your network is missing edges resulting in a gap where ligands (nodes) are "
+            "not connected to the network. If you would like to discard those disconnected ligands "
+            "(i.e. not make predictions on them), run predict using the '-fl/--force-largest' flag."
+        )
 
     # check if we have a protocol on the network already to draw experimental results from
     protocol = experimental_protocol or result_network.experimental_protocol
