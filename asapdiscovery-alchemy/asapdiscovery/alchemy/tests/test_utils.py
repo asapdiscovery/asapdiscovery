@@ -59,7 +59,7 @@ def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
         **tyk2_fec_network.dict(exclude={"results"}),
         results=AlchemiscaleResults(network_key=network_key),
     )
-    status = client.network_status(planned_network=result_network)
+    status = client.network_status(network_key=result_network.results.network_key)
     assert status == {"complete": 1}
 
 
@@ -106,10 +106,10 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     )
     monkeypatch.setattr(client._client, "create_tasks", create_tasks)
     monkeypatch.setattr(client._client, "action_tasks", action_tasks)
+    task_replicas = 3  # the total number of times each task should be run
+    tasks = client.action_network(planned_network=result_network, repeats=task_replicas)
 
-    tasks = client.action_network(planned_network=result_network)
-
-    assert len(tasks) == (result_network.n_repeats + 1) * len(alchem_network.edges)
+    assert len(tasks) == (task_replicas * len(alchem_network.edges))
 
 
 def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):
@@ -261,7 +261,7 @@ def test_get_failures(
     monkeypatch.setattr(client._client, "get_task_failures", get_task_failures)
 
     # Collect errors and tracebacks
-    errors = client.collect_errors(planned_network=result_network)
+    errors = client.collect_errors(network_key=result_network.results.network_key)
     n_errors = len(errors)
     n_expected_errors = (
         108  # 18*3*2 (18 tasks, 1 dag/task, 3 units/dag, 2 failures/unit)
