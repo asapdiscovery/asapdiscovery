@@ -101,3 +101,4 @@ dependencies:
   - rich
   - alchemiscale-client
   - cinnabar >=0.4.1
+  - feflow =0.1.0
