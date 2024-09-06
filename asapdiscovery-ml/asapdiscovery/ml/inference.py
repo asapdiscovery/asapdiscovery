@@ -260,7 +260,7 @@ class InferenceBase(BaseModel):
             else:
                 # iterates only once, just return the prediction
                 pred = output_tensor
-                err = np.nan
+                err = np.asarray([np.nan])
             if return_err:
                 return pred, err
             else:
@@ -309,7 +309,7 @@ class GATInference(InferenceBase):
                 err = errfunc(aggregate_preds)
             else:
                 pred = output_tensor
-                err = np.nan
+                err = np.asarray([np.nan])
 
             if return_err:
                 return pred, err
@@ -423,7 +423,7 @@ class StructuralInference(InferenceBase):
                 err = errfunc(aggregate_preds)
             else:
                 pred = output_tensor
-                err = np.nan
+                err = np.asarray([np.nan])
 
             if return_err:
                 return pred, err
