@@ -5,8 +5,8 @@ import pandas as pd
 import rich
 
 if TYPE_CHECKING:
-    from asapdiscovery.data.schema.ligand import Ligand
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from asapdiscovery.data.schema.ligand import Ligand
     from cinnabar import FEMap
 
 
