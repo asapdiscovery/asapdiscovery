@@ -118,9 +118,21 @@ def plan(
     from asapdiscovery.data.readers.molfile import MolFileFactory
 
     # check mutually exclusive args
-    if ligands is None and alchemy_dataset is None:
+    if ligands and graphml:
+        raise RuntimeError(
+            "Please provide either a ligand file or a graphml file, not both."
+        )
+    
+
+    # nothing specified
+    if ligands is None and graphml is None and alchemy_dataset is None:
         raise RuntimeError(
             "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
+        )
+
+    if not name or alchemy_dataset:
+        raise RuntimeError(
+            "Please provide a name for the dataset or specify a dataset file."
         )
 
     click.echo("Loading FreeEnergyCalculationFactory ...")
@@ -133,7 +145,10 @@ def plan(
 
     if alchemy_dataset is not None:
         import tempfile
-
+        if graphml:
+            raise RuntimeError(
+                "Please provide either dataset file or a graphml file, not both."
+            )
         # load the set of posed ligands and the receptor from our dataset
         click.echo(f"Loading Ligands and protein from AlchemyDataSet {alchemy_dataset}")
         alchemy_ds = AlchemyDataSet.from_file(alchemy_dataset)
@@ -148,10 +163,15 @@ def plan(
             receptor = openfe.ProteinComponent.from_pdb_file(fp.name)
 
     else:
-        # load from separate files
-        click.echo(f"Loading Ligands from {ligands}")
-        # parse all required data/ assume sdf currently
-        input_ligands = MolFileFactory(filename=ligands).load()
+        if graphml:
+            # load from graphml
+            click.echo("Loading Ligands from graphml ...")
+            input_ligands = None
+        else:
+            # load from separate files
+            click.echo(f"Loading Ligands from {ligands}")
+            # parse all required data/ assume sdf currently
+            input_ligands = MolFileFactory(filename=ligands).load()
 
         click.echo(f"Loading protein from {receptor}")
         receptor = openfe.ProteinComponent.from_pdb_file(receptor)
