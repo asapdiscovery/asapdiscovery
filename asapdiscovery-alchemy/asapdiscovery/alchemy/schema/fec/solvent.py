@@ -3,10 +3,10 @@ from typing import Literal
 
 import gufe
 from asapdiscovery.alchemy.schema.fec.base import _SchemaBase
-
-from openff.units import unit as OFFUnit
 from openff.models.types import FloatQuantity
+from openff.units import unit as OFFUnit
 from pydantic import Field
+
 
 class SolventSettings(_SchemaBase):
     """

@@ -1,1 +1,1 @@
-from .base import SupportedProtocols, ProtocolSettingsBase
+from .base import ProtocolSettingsBase, SupportedProtocols

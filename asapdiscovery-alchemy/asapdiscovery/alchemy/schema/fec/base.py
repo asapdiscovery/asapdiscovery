@@ -193,8 +193,8 @@ class _FreeEnergyBase(_SchemaBase):
     )
 
     @classmethod
-    def with_protocol_defaults(protocol: SupportedProtocols):
-        ...
+    def with_protocol_defaults(protocol: SupportedProtocols): ...
+
 
 class FreeEnergyCalculationNetwork(_FreeEnergyBase):
     """

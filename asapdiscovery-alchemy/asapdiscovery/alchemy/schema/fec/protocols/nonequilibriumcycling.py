@@ -1,12 +1,16 @@
 from typing import Literal
 
 from feflow.protocols import NonEquilibriumCyclingProtocol
-from feflow.settings import NonEquilibriumCyclingSettings as NonEquilibriumCyclingSettings_
+from feflow.settings import (
+    NonEquilibriumCyclingSettings as NonEquilibriumCyclingSettings_,
+)
 
 from .base import ProtocolSettingsBase
 
 
-class NonEquilibriumCyclingSettings(NonEquilibriumCyclingSettings_, ProtocolSettingsBase):
+class NonEquilibriumCyclingSettings(
+    NonEquilibriumCyclingSettings_, ProtocolSettingsBase
+):
 
     type: Literal["NonEquilibriumCyclingSettings"] = "NonEquilibriumCyclingSettings"
 

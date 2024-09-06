@@ -1,6 +1,7 @@
 import abc
 import enum
 from typing import Literal
+
 from ...base import _SchemaBase
 
 
@@ -19,9 +20,7 @@ class ProtocolSettingsBase(_SchemaBase, abc.ABC):
 
     @abc.abstractmethod
     @classmethod
-    def from_defaults(cls):
-        ...
+    def from_defaults(cls): ...
 
     @abc.abstractmethod
-    def to_openfe_protocol(self): 
-        ...
+    def to_openfe_protocol(self): ...

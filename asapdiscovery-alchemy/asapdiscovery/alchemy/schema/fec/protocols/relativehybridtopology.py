@@ -1,12 +1,16 @@
 from typing import Literal
 
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocol
-from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolSettings as RelativeHybridTopologyProtocolSettings_
+from openfe.protocols.openmm_rfe import (
+    RelativeHybridTopologyProtocolSettings as RelativeHybridTopologyProtocolSettings_,
+)
 
 from .base import ProtocolSettingsBase
 
 
-class RelativeHybridTopologySettings(RelativeHybridTopologyProtocolSettings_, ProtocolSettingsBase):
+class RelativeHybridTopologySettings(
+    RelativeHybridTopologyProtocolSettings_, ProtocolSettingsBase
+):
 
     type: Literal["RelativeHybridTopologySettings"] = "RelativeHybridTopologySettings"
 
@@ -14,9 +18,9 @@ class RelativeHybridTopologySettings(RelativeHybridTopologyProtocolSettings_, Pr
     def from_defaults(cls):
         settings = RelativeHybridTopologyProtocol.default_settings()
 
-        #NOTE: remove this if we want to just take the default from `openfe` as
+        # NOTE: remove this if we want to just take the default from `openfe` as
         # it advances
-        settings.forcefield_settings.small_molecule_forcefield = 'openff-2.2.0'
+        settings.forcefield_settings.small_molecule_forcefield = "openff-2.2.0"
 
         settings.protocol_repeats = 1
 

@@ -4,11 +4,11 @@ from typing import Optional
 
 import click
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
+from asapdiscovery.alchemy.schema.fec.protocols import SupportedProtocols
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TagEnumBase,
     TargetTags,
 )
-from asapdiscovery.alchemy.schema.fec.protocols import SupportedProtocols
 
 
 @click.group(
@@ -45,7 +45,9 @@ def create(alchemical_protocol: str, filename: str):
 
     alchemical_protocol = SupportedProtocols[alchemical_protocol]
 
-    factory = FreeEnergyCalculationFactory.with_protocol_defaults(protocol=alchemical_protocol)
+    factory = FreeEnergyCalculationFactory.with_protocol_defaults(
+        protocol=alchemical_protocol
+    )
     factory.to_file(filename=filename)
 
 
