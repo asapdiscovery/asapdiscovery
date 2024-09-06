@@ -216,9 +216,8 @@ class NetworkPlanner(_NetworkPlannerSettings):
                     "Central ligand should not be provided when using a pre-generated graphml."
                 )
             # extract ligands from the network
-            small_molecule_components = ligand_network.nodes()
-            rdkit_mols = [s.to_rdkit() for s in small_molecule_components]
-            ligands = [Ligand.from_rdkit(mol) for mol in rdkit_mols]
+            small_molecule_components = ligand_network.nodes
+            ligands = [Ligand.from_openfe(mol) for mol in small_molecule_components]
             provenance = {"source": "pre-generated", "graphml": graphml}
 
         return PlannedNetwork(

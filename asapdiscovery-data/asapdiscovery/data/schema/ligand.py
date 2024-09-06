@@ -27,6 +27,8 @@ from asapdiscovery.data.backend.openeye import (
     set_SD_data,
     smiles_to_oemol,
 )
+from asapdiscovery.data.backend.rdkit import rdkit_mol_to_sdf_str
+
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
 from asapdiscovery.data.schema.identifiers import (
     ChargeProvenance,
@@ -344,6 +346,15 @@ class Ligand(DataModelAbstractBase):
         import openfe
 
         return openfe.SmallMoleculeComponent.from_rdkit(self.to_rdkit())
+    
+    @classmethod
+    def from_openfe(cls, mol: "openfe.SmallMoleculeComponent", **kwargs) -> "Ligand":
+        """
+        Create a Ligand from an openfe SmallMoleculeComponent
+        """
+        rdkit_mol = mol.to_rdkit()
+        sdf_str = rdkit_mol_to_sdf_str(rdkit_mol)
+        return cls.from_sdf_str(sdf_str, compound_name=mol.name, **kwargs)
 
     @classmethod
     def from_smiles(cls, smiles: str, **kwargs) -> "Ligand":
@@ -433,6 +444,15 @@ class Ligand(DataModelAbstractBase):
 
         oemol = load_openeye_sdf(sdf_file)
         return cls.from_oemol(oemol, **kwargs)
+    
+    @classmethod
+    def from_sdf_str(cls, sdf_str: str, **kwargs) -> "Ligand":
+        """
+        Create a Ligand from an SDF string
+        """
+        kwargs.pop("data", None)
+        mol = sdf_string_to_oemol(sdf_str)
+        return cls.from_oemol(mol, **kwargs)
 
     def to_sdf(self, filename: Union[str, Path], allow_append=False) -> None:
         """
