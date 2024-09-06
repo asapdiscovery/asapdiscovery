@@ -80,6 +80,7 @@ def create(filename: str):
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
     help="The file which contains the center ligand, only required by radial type networks.",
 )
+@click.option("-g", "--graphml", help="Read a graphml representation of the ligand network directly from file",     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False))
 @click.option(
     "-ep",
     "--experimental-protocol",
@@ -99,6 +100,7 @@ def plan(
     receptor: Optional[str] = None,
     ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
+    graphml: Optional[str] = None,
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
@@ -164,6 +166,12 @@ def plan(
 
         center_ligand = center_ligand[0]
 
+    if graphml is not None:
+        # load the graphml file
+        with open(graphml, "r") as f:
+            graphml = f.read()
+        click.echo("Graphml file loaded: Using explicit ligand network ...")
+
     click.echo("Creating FEC network ...")
     planned_network = factory.create_fec_dataset(
         dataset_name=name,
@@ -172,6 +180,7 @@ def plan(
         central_ligand=center_ligand,
         experimental_protocol=experimental_protocol,
         target=target,
+        graphml=graphml,
     )
     click.echo(f"Writing results to {name}")
     # output the data to a folder named after the dataset
