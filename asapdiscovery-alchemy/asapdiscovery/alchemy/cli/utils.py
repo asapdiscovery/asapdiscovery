@@ -293,7 +293,7 @@ def cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console):
     ]
 
     message = Padding(
-        f"Warning: removing {len(ligands_to_discard)} disconnected compounds: {round(len(ligands_to_discard)/len(fe_map_nx.nodes), 2)}% of total in network. "
+        f"Warning: removing {len(ligands_to_discard)} disconnected compounds: {round(len(ligands_to_discard)/len(fe_map_nx.nodes)*100, 2)}% of total in network. "
         f"These will not have results in the final output! Compound names: {ligands_to_discard}",
         (1, 0, 1, 0),
     )
