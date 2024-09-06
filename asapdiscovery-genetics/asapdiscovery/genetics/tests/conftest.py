@@ -1,6 +1,23 @@
 import pytest
+from asapdiscovery.data.testing.test_resources import fetch_test_file
+from asapdiscovery.genetics.seq_alignment import Alignment
+
 
 
 @pytest.fixture(scope="session")
-def example_fixture():
-    return "example"
+def protein_path():
+    return fetch_test_file("Mpro-P2660_0A_bound.pdb")
+
+@pytest.fixture(scope="session")
+def blast_xml_path():
+    return fetch_test_file("SARS_blast_results.xml")
+
+@pytest.fixture(scope="session")
+def blast_csv_path():
+    return fetch_test_file("SARS_blast_results.csv")
+
+@pytest.fixture(scope="session")
+def alignment(blast_csv_path, temp_path):
+    aln = Alignment(blast_csv_path, blast_csv_path['query'][0], temp_path)
+    return aln
+
