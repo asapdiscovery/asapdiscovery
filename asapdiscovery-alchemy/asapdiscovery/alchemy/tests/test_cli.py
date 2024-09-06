@@ -913,7 +913,8 @@ def test_alchemy_predict_disconnected_fail(tyk2_result_network_disconnected, tmp
     """
 
     runner = CliRunner()
-
+    console = rich.get_console()
+    console.clear_live()
     with tmpdir.as_cwd():
         # write the results file to local
         tyk2_result_network_disconnected.to_file("result_network_disconnected.json")
@@ -936,7 +937,8 @@ def test_alchemy_predict_disconnected_success(tyk2_result_network_disconnected, 
     """
 
     runner = CliRunner()
-
+    console = rich.get_console()
+    console.clear_live()
     with tmpdir.as_cwd():
         # write the results file to local
         tyk2_result_network_disconnected.to_file("result_network_disconnected.json")
