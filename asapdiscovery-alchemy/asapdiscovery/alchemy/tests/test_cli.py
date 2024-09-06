@@ -919,6 +919,7 @@ def test_alchemy_predict_disconnected(tyk2_result_network, tmpdir):
         tyk2_result_network.to_file("result_network.json")
 
         # now break the network in half
+        print(tyk2_result_network)
 
         # run predict as normal - should return an error
         result = runner.invoke(

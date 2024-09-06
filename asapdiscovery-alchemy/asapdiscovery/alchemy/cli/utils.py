@@ -302,8 +302,8 @@ def cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console):
     filtered_network_results = []
     for res in result_network.results.results:
         if (
-            not res.ligand_a in ligands_to_discard
-            and not res.ligand_b in ligands_to_discard
+            res.ligand_a not in ligands_to_discard
+            and res.ligand_b not in ligands_to_discard
         ):
             filtered_network_results.append(res)
 
