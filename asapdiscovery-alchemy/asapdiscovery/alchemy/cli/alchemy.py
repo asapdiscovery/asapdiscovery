@@ -8,6 +8,7 @@ from asapdiscovery.data.services.postera.manifold_data_validation import (
     TagEnumBase,
     TargetTags,
 )
+from asapdiscovery.alchemy.schema.fec.protocols import SupportedProtocols
 
 
 @click.group(
@@ -23,11 +24,17 @@ def alchemy():
     help_priority=1,
     short_help="Create a new free energy perturbation factory with default settings and save it to JSON file.",
 )
+@click.option(
+    "-ap",
+    "--alchemical-protocol",
+    type=click.Choice([e.value for e in SupportedProtocols], case_sensitive=True),
+    help="The name of the alchemical Protocol to use for all Transformations in this network.",
+)
 @click.argument(
     "filename",
     type=click.Path(exists=False, file_okay=True, dir_okay=False, writable=True),
 )
-def create(filename: str):
+def create(alchemical_protocol: str, filename: str):
     """
     Create a new free energy perturbation factory with default settings and save it to JSON file.
 
@@ -36,7 +43,9 @@ def create(filename: str):
     """
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
 
-    factory = FreeEnergyCalculationFactory()
+    alchemical_protocol = SupportedProtocols[alchemical_protocol]
+
+    factory = FreeEnergyCalculationFactory.with_protocol_defaults(protocol=alchemical_protocol)
     factory.to_file(filename=filename)
 
 

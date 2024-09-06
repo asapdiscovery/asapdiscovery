@@ -6,7 +6,10 @@ import openfe
 from alchemiscale import ScopedKey
 from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
 from asapdiscovery.alchemy.schema.fec.protocols import (
-    OPENFE_PROTOCOLS,
+    ProtocolSettingsBase,
+    SupportedProtocols,
+)
+from asapdiscovery.alchemy.schema.fec.protocols.relativehybridtopology import (
     RelativeHybridTopologySettings,
 )
 from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
@@ -179,87 +182,19 @@ class _FreeEnergyBase(_SchemaBase):
 
     type: Literal["_FreeEnergyBase"] = "_FreeEnergyBase"
 
-    protocol_settings: OPENFE_PROTOCOLS = Field(
-        RelativeHybridTopologySettings(),
-        description="The settings of the protocol which is to be"
-        "used. The protocol is determined by the settings provided.",
-    )
-    forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
-        settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.2.0"
-        ),
-        description="The force field settings used to parameterize the systems.",
-    )
-    thermo_settings: settings.ThermoSettings = Field(
-        settings.ThermoSettings(
-            temperature=298.15 * OFFUnit.kelvin, pressure=1 * OFFUnit.bar
-        ),
-        description="The settings for thermodynamic parameters.",
-    )
-    solvation_settings: OpenMMSolvationSettings = Field(
-        OpenMMSolvationSettings(),
-        description="Settings controlling how the systems should be solvated using OpenMM.",
-    )
-    alchemical_settings: AlchemicalSettings = Field(
-        AlchemicalSettings(softcore_LJ="gapsys"),
-        description="The alchemical protocol settings.",
-    )
-    engine_settings: OpenMMEngineSettings = Field(
-        OpenMMEngineSettings(), description="Openmm platform settings."
-    )
-    integrator_settings: IntegratorSettings = Field(
-        IntegratorSettings(),
-        description="Settings for the LangevinSplittingDynamicsMove integrator.",
-    )
-    simulation_settings: MultiStateSimulationSettings = Field(
-        MultiStateSimulationSettings(
-            equilibration_length=1.0 * OFFUnit.nanoseconds,
-            production_length=5.0 * OFFUnit.nanoseconds,
-        ),
-        description="Settings for simulation control, including lengths and writing to disk.",
-    )
     protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
         "RelativeHybridTopologyProtocol",
         description="The name of the OpenFE alchemical protocol to use.",
     )
-    protocol_repeats: int = Field(
-        1,
-        description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
-    )
-    lambda_settings: LambdaSettings = Field(
-        LambdaSettings(), description="Lambda schedule settings."
+    protocol_settings: ProtocolSettingsBase = Field(
+        RelativeHybridTopologySettings.from_defaults(),
+        description="The settings of the protocol which is to be"
+        "used. The protocol is determined by the settings provided.",
     )
 
-    partial_charge_settings: OpenFFPartialChargeSettings = Field(
-        OpenFFPartialChargeSettings(),
-        description="The method which should be used to generate the partial charges if not provided with the ligand.",
-    )
-    output_settings: MultiStateOutputSettings = Field(
-        MultiStateOutputSettings(),
-        description="Settings for MultiState simulation output settings like writing to disk.",
-    )
-
-    def to_openfe_protocol(self):
-        protocol_settings = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings(
-            # workaround type hint being base FF engine class
-            forcefield_settings=self.forcefield_settings,
-            thermo_settings=self.thermo_settings,
-            # system_settings=self.system_settings,
-            solvation_settings=self.solvation_settings,
-            alchemical_settings=self.alchemical_settings,
-            # alchemical_sampler_settings=self.alchemical_sampler_settings,
-            engine_settings=self.engine_settings,
-            integrator_settings=self.integrator_settings,
-            simulation_settings=self.simulation_settings,
-            lambda_settings=self.lambda_settings,
-            protocol_repeats=self.protocol_repeats,
-            partial_charge_settings=self.partial_charge_settings,
-            output_settings=self.output_settings,
-        )
-        return openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol(
-            settings=protocol_settings
-        )
-
+    @classmethod
+    def with_protocol_defaults(protocol: SupportedProtocols):
+        ...
 
 class FreeEnergyCalculationNetwork(_FreeEnergyBase):
     """
