@@ -194,9 +194,18 @@ files:
   - resource: prepared_alchemy_dataset.json
     sha256hash: c988455b3e60d84939666d521415da9c8318fc3b5b4d4606b88acc659763d46d
 
-  # TYK2 FEC network for testing
+  # TYK2 FEC networks for testing
   - resource: tyk2_small_network.json
     sha256hash: cf6d416ef4c802ad64d72966e2a8ce9115ef3dd87ffa9181309c7c5515b42a66
+  - resource: tyk2_small_custom_network.csv
+    sha256hash: be8e0d829c5ed7dd5ac0392c67cd6fbcfb3ca05a778cea67efd8b67f4161c53d
+  - resource: tyk2_small_custom_network_faulty_missing_comma.csv
+    sha256hash: b74a7dde635383697b749b01fe1113b37e99cd93355d85affe4a407736a238a7
+  - resource: tyk2_small_custom_network_faulty_with_header.csv
+    sha256hash: 1d88664d2090edc743617676b96cfa37021bdbe1c8b3a09f93b4b10dec8c7efd
+  - resource: tyk2_small_custom_network_faulty_with_spaces.csv
+    sha256hash: 0f1280779f09069037d7229befa57683126751e7837cda67a99e775256989403
+
 
   # SMILES file with fully defined chirality for testing
   - resource: chalcogran_defined.smi
