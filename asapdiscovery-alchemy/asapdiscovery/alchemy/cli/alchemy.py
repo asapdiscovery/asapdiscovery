@@ -130,10 +130,6 @@ def plan(
             "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
         )
 
-    if not name or alchemy_dataset:
-        raise RuntimeError(
-            "Please provide a name for the dataset or specify a dataset file."
-        )
 
     click.echo("Loading FreeEnergyCalculationFactory ...")
     # parse the factory is supplied else get the default
@@ -162,9 +158,10 @@ def plan(
             alchemy_ds.reference_complex.target.to_pdb_file(fp.name)
             receptor = openfe.ProteinComponent.from_pdb_file(fp.name)
 
+
     else:
         if graphml:
-            # load from graphml
+            # load from graphml further down the line
             click.echo("Loading Ligands from graphml ...")
             input_ligands = None
         else:
@@ -191,6 +188,9 @@ def plan(
         with open(graphml, "r") as f:
             graphml = f.read()
         click.echo("Graphml file loaded: Using explicit ligand network ...")
+
+    if not name:
+        raise RuntimeError("Please provide a name for the dataset.")
 
     click.echo("Creating FEC network ...")
     planned_network = factory.create_fec_dataset(
