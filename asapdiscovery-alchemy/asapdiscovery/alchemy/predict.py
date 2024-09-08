@@ -1006,16 +1006,17 @@ def clean_result_network(network, console=None):
     from collections import defaultdict
 
     import numpy as np
-    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork, TransformationResult
     from rich.padding import Padding
 
-    with open(network) as f:
-        d = json.load(f)
-        input_results = d["results"]["results"]
 
+    # load in to schema  and extract the results
+    network_schema  = FreeEnergyCalculationNetwork.parse_file(network)
+    input_results = network_schema.results.results
+    
     # 1. remove edges where DG is 0.0
     cleaned_results = [
-        result for result in input_results if not result["estimate"]["magnitude"] == 0.0
+        result for result in results if not result.estimate.magnitude == 0.0
     ]
 
     num_0_0_removed = len(input_results) - len(cleaned_results)
@@ -1024,7 +1025,7 @@ def clean_result_network(network, console=None):
 
     deduped_results_dict = defaultdict(list)
     for result in cleaned_results:
-        transform = f"{result['ligand_a']}~{result['ligand_b']}_{result['phase']}"
+        transform = f"{result.ligand_a}~{result.ligand_b}_{result.phase}"
         deduped_results_dict[transform].append(result)
 
     deduped_results = []
@@ -1032,14 +1033,15 @@ def clean_result_network(network, console=None):
         if len(results) > 1:
             # take the arithmetic mean of DG and dDG and add the replaced first result,
             # all provenance data is constant between these repeats anyway
-            mean_DG = np.mean([result["estimate"]["magnitude"] for result in results])
+            mean_DG = np.mean([result.estimate.magnitude for result in results])
             mean_dDG = np.mean(
-                [result["uncertainty"]["magnitude"] for result in results]
+                [result.uncertainty.magnitude for result in results]
             )
-            results[0]["estimate"]["magnitude"] = mean_DG
-            results[0]["uncertainty"]["magnitude"] = mean_dDG
+            result_data = results[0].dict(exclude={"estimate", "uncertainty"})
 
-        deduped_results.append(results[0])
+            tf_res = TransformationResult(estimate=mean_DG, uncertainty=mean_dDG **result_data)
+           
+        deduped_results.append(tf_res)
 
     num_dupes_removed = len(cleaned_results) - len(deduped_results)
     if console:
@@ -1049,11 +1051,6 @@ def clean_result_network(network, console=None):
         )
         console.print(message)
 
-    # replace the original results in the JSON dict with the new cleaned results and load in
-    # the FECNetwork using a temp file
-    d["results"]["results"] = deduped_results
-    with tempfile.NamedTemporaryFile(suffix=".json") as fp:
-        with open(fp.name, "w") as f:
-            json.dump(d, f)
 
-        return FreeEnergyCalculationNetwork.from_file(fp.name)
+
+    return FreeEnergyCalculationNetwork(**network_schema.dict(exclude={"results"}), results=deduped_results)
