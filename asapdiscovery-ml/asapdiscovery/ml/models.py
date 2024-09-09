@@ -9,6 +9,7 @@ import mtenn
 import pooch
 import requests
 import yaml
+from collections import defaultdict
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
 from mtenn.config import ModelType
@@ -664,7 +665,42 @@ class MLModelRegistry(BaseModel):
         dict[str, list[TargetTags]]
             Mapping of endpoints to targets
         """
-        return {model.endpoint: list(model.targets) for model in self.models.values()}
+        map = defaultdict(list)
+        for model in self.models.values():
+            map[model.endpoint].extend(list(model.targets))
+        
+        # uniquify
+        new_map = {}
+        for k, v in map.items():
+            
+            new_map[k] = list(set(v))
+        
+        return new_map
+    
+
+    
+    def get_target_endpoint_mapping(self) -> dict[TargetTags, list[str]]:
+        """
+        Get mapping of targets to endpoints
+
+        Returns
+        -------
+        dict[TargetTags, list[str]]
+            Mapping of targets to endpoints
+        """
+        map = defaultdict(list)
+        for model in self.models.values():
+            for target in model.targets:
+                map[target].append(model.endpoint)
+        
+        # uniquify
+        new_map = {}
+        for k, v in map.items():
+            
+            new_map[k] = list(set(v))
+        
+        return new_map
+       
 
     def get_model(self, name: str) -> MLModelSpec:
         """
