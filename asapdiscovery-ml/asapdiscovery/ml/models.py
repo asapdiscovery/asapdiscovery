@@ -1,5 +1,6 @@
 import os
 import warnings
+from collections import defaultdict
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union  # noqa: F401
@@ -9,7 +10,6 @@ import mtenn
 import pooch
 import requests
 import yaml
-from collections import defaultdict
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.ml.pretrained_models import asap_models_yaml
 from mtenn.config import ModelType
@@ -689,19 +689,20 @@ class MLModelRegistry(BaseModel):
         map = defaultdict(list)
         for model in self.models.values():
             map[model.endpoint].extend(list(model.targets))
-        
+
         # uniquify
         new_map = {}
         for k, v in map.items():
-            if any(v):            
+            if any(v):
                 new_map[k] = list(set(v))
             else:
                 new_map[k] = None
 
-        
         return new_map
-    
-    def get_endpoints_for_target(self, target: TargetTags, include_generic=True) -> list[str]:
+
+    def get_endpoints_for_target(
+        self, target: TargetTags, include_generic=True
+    ) -> list[str]:
         """
         Get list of endpoints for a target
 
@@ -717,14 +718,20 @@ class MLModelRegistry(BaseModel):
         List[str]
             List of endpoints
         """
-        endpts =  list({model.endpoint for model in self.models.values() if target in model.targets})
+        endpts = list(
+            {
+                model.endpoint
+                for model in self.models.values()
+                if target in model.targets
+            }
+        )
         if include_generic:
             extra = self.get_endpoints_for_target(None, include_generic=False)
             endpts.extend(extra)
         # uniquify
         endpts = list(set(endpts))
         return endpts
-    
+
     def endpoint_has_target(self, endpoint: str) -> bool:
         """
         Check if an endpoint has a target
@@ -742,7 +749,7 @@ class MLModelRegistry(BaseModel):
             Whether the endpoint has the target
         """
         return self.get_endpoint_target_mapping().get(endpoint) is not None
-    
+
     def get_target_endpoint_mapping(self) -> dict[TargetTags, list[str]]:
         """
         Get mapping of targets to endpoints
@@ -756,17 +763,16 @@ class MLModelRegistry(BaseModel):
         for model in self.models.values():
             for target in model.targets:
                 map[target].append(model.endpoint)
-        
+
         # uniquify
         new_map = {}
         for k, v in map.items():
-            if any(v):            
+            if any(v):
                 new_map[k] = list(set(v))
             else:
                 new_map[k] = None
-        
+
         return new_map
-    
 
     def reccomend_models_for_target(self, target: TargetTags) -> list[MLModelSpec]:
         """
@@ -776,9 +782,13 @@ class MLModelRegistry(BaseModel):
         models = []
         for p in epts:
             if ASAPMLModelRegistry.endpoint_has_target(p):
-                mod = ASAPMLModelRegistry.get_latest_model_for_target_and_endpoint(target, p)
+                mod = ASAPMLModelRegistry.get_latest_model_for_target_and_endpoint(
+                    target, p
+                )
             else:
-                mod = ASAPMLModelRegistry.get_latest_model_for_target_and_endpoint(None, p)
+                mod = ASAPMLModelRegistry.get_latest_model_for_target_and_endpoint(
+                    None, p
+                )
             models.append(mod)
 
         # clean for None

@@ -530,8 +530,9 @@ class MLModelScorer(ScorerBase):
     score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
     units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
-    targets: Any  = Field(
-        ..., description="Which targets can this model do predictions for" # FIXME: Optional[set[TargetTags]]
+    targets: Any = Field(
+        ...,
+        description="Which targets can this model do predictions for",  # FIXME: Optional[set[TargetTags]]
     )
     model_name: str = Field(..., description="String indicating which model to use")
     inference_cls: InferenceBase = Field(..., description="Inference class")
@@ -553,7 +554,7 @@ class MLModelScorer(ScorerBase):
                 model_name=inference_instance.model_name,
                 inference_cls=inference_instance,
             )
-        
+
     @staticmethod
     def from_latest_by_target_and_type(target: TargetTags, type: ModelType):
         """
@@ -582,9 +583,11 @@ class MLModelScorer(ScorerBase):
             model_name=inference_instance.model_name,
             inference_cls=inference_instance,
         )
-    
+
     @staticmethod
-    def load_model_specs(models: list["MLModelSpecBase"]) -> list["MLModelScorer"]: # noqa: F821
+    def load_model_specs(
+        models: list["MLModelSpecBase"],
+    ) -> list["MLModelScorer"]:  # noqa: F821
         """
         Load a list of models into scorers.
 
@@ -599,6 +602,7 @@ class MLModelScorer(ScorerBase):
             scorer = scorer_class.from_model_name(model.name)
             scorers.append(scorer)
         return scorers
+
 
 @register_ml_scorer
 class GATScorer(MLModelScorer):

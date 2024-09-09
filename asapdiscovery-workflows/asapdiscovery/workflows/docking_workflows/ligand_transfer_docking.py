@@ -125,9 +125,7 @@ class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):
         ge=0.0,
         description="POSIT confidence cutoff used to filter docking results",
     )
-    ml_score: bool = Field(
-        True, description="The name of the ml scorers to use"
-    )
+    ml_score: bool = Field(True, description="The name of the ml scorers to use")
     allow_dask_cuda: bool = Field(
         True,
         description="Whether to allow regenerating dask cuda cluster when in local mode",
@@ -341,11 +339,9 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     if inputs.ml_score:
         # check which endpoints are availabe for the target
         models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
-        ml_scorers = MLModelScorer.load_model_specs(
-            models=models
-        )
+        ml_scorers = MLModelScorer.load_model_specs(models=models)
         scorers.extend(ml_scorers)
-    
+
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
         write_results_to_multi_sdf(
