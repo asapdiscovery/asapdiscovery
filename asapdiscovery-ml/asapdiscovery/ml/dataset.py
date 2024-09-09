@@ -586,6 +586,7 @@ class GraphDataset(Dataset):
         cls,
         ligands: list[Ligand],
         exp_dict: dict = {},
+        smiles_featurizer=None,
     ):
         """
         Parameters
@@ -597,7 +598,10 @@ class GraphDataset(Dataset):
             compound will be added to the pose representation of each Complex containing
             a ligand witht that compound_id
         """
-        from asapdiscovery.data.backend.openeye import featurize_smiles
+        if smiles_featurizer is None:
+            from asapdiscovery.data.backend.openeye import featurize_smiles
+
+            smiles_featurizer = featurize_smiles
 
         # Function for encoding SMILES to a graph
         compounds = {}
@@ -611,7 +615,7 @@ class GraphDataset(Dataset):
             compound = ("NA", compound_id)
 
             # Featurize mol
-            feature_tensor, bond_list_tensor = featurize_smiles(smiles)
+            feature_tensor, bond_list_tensor = smiles_featurizer(smiles)
 
             # Gather experimental data
             try:
