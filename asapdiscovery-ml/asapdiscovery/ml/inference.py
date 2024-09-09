@@ -87,6 +87,31 @@ class InferenceBase(BaseModel):
             return None
         else:
             return cls.from_ml_model_spec(model_spec, **kwargs)
+        
+    def from_latest_by_target_and_endpoint(
+        cls,
+        target: TargetTags,
+        endpoint: str,
+        model_registry: MLModelRegistry = ASAPMLModelRegistry,
+        **kwargs,
+    ):
+        """
+        Create an InferenceBase object from the latest model for the latest target.
+
+        Returns
+        -------
+        InferenceBase
+            InferenceBase object created from latest model for latest target.
+        """
+        model_spec = model_registry.get_latest_model_for_target_and_endpoint_and_type(
+            target, endpoint, cls.model_type
+        )
+
+        if model_spec is None:
+            return None
+        else:
+            return cls.from_ml_model_spec(model_spec, **kwargs)
+        
 
     @classmethod
     def from_model_name(

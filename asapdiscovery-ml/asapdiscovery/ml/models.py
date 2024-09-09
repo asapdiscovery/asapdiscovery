@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union, Any, Set  # noqa: F401
 from urllib.parse import urljoin
 
+import os
 import mtenn
 import pooch
 import requests
@@ -151,6 +152,7 @@ class MLModelSpec(MLModelSpecBase):
             config_file=Path(config_file) if self.config_resource else None,
             last_updated=self.last_updated,
             targets=self.targets,
+            endpoint=self.endpoint,
             local_dir=Path(local_dir) if local_dir else None,
             mtenn_lower_pin=self.mtenn_lower_pin,
             mtenn_upper_pin=self.mtenn_upper_pin,
@@ -390,6 +392,7 @@ class RemoteEnsembleHelper(BaseModel):
                     type=model_data["type"],
                     last_updated=last_updated,
                     targets=set(model_data["targets"]),
+                    endpoint=model_data["endpoint"],
                     mtenn_lower_pin=model_data["mtenn_lower_pin"],
                     mtenn_upper_pin=(
                         model_data["mtenn_upper_pin"]
@@ -614,6 +617,16 @@ class MLModelRegistry(BaseModel):
         """
         return [model for model in self.models.values() if not model.targets]
 
+    def get_endpoints(self) -> list[str]:
+        """
+        Get list of endpoints
+
+        Returns
+        -------
+        List[str]
+            List of endpoints
+        """
+        return list({model.endpoint for model in self.models.values()})
 
     def get_model(self, name: str) -> MLModelSpec:
         """
@@ -711,7 +724,21 @@ class MLModelRegistry(BaseModel):
 
         return cls(models=models)
 
-# supress stdout while loading the model registry?
 
-# default model registry for all ASAP models
-ASAPMLModelRegistry = MLModelRegistry.from_yaml(asap_models_yaml)
+_asap_ml_debug = True if os.getenv("ASAP_ML_DEBUG") else False
+
+if _asap_ml_debug:
+    print("ASAP_ML_DEBUG MODE ENABLED")
+    print(f"ASAP Models YAML: {asap_models_yaml}")
+
+    # load raw, will show a bunch of warnings if things not working
+    # default model registry for all ASAP models
+    ASAPMLModelRegistry = MLModelRegistry.from_yaml(asap_models_yaml)
+    print("ASAP ML Model Registry loaded")
+else:
+    # load with UserWarning suppression
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ASAPMLModelRegistry = MLModelRegistry.from_yaml(asap_models_yaml)
+        
+
