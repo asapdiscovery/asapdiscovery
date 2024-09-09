@@ -411,6 +411,7 @@ def _protocol_to_target(protocol: str) -> str:
         target = None
     return target
 
+
 def _gather_weights(
     ensemble_directories: list[Path],
     model_tag: str,

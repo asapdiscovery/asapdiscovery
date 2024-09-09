@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
+from typing import Any, ClassVar, Dict, List, Optional, Union  # noqa: F401
 
 import dgl
 import mtenn
@@ -18,8 +18,6 @@ from asapdiscovery.ml.models import (
     MLModelSpec,
     MLModelSpecBase,
 )
-
-from typing import Any
 
 # static import of models from base yaml here
 from dgllife.utils import CanonicalAtomFeaturizer
@@ -41,10 +39,10 @@ class InferenceBase(BaseModel):
         arbitrary_types_allowed = True
         allow_extra = False
 
-
     targets: Optional[Any] = Field(
-        None, description="Targets that them model can predict for" # FIXME: should be Optional[Set[TargetTags]] but this causes issues with pydantic
-    ) 
+        None,
+        description="Targets that them model can predict for",  # FIXME: should be Optional[Set[TargetTags]] but this causes issues with pydantic
+    )
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
     model_spec: Optional[MLModelSpecBase] = Field(
