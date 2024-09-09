@@ -32,7 +32,7 @@ class MLModelBase(BaseModel):
     name: str = Field(..., description="Model name")
     type: ModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
-    targets: Any = Field(..., description="Biological targets of the model")
+    targets: Any = Field(..., description="Biological targets of the model") # FIXME: should be Optional[Set[TargetTags]] but this causes issues with pydantic
     mtenn_lower_pin: Version | None = Field(
         None, description="Lower bound on compatible mtenn versions (inclusive)."
     )

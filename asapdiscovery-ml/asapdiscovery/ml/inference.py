@@ -43,8 +43,8 @@ class InferenceBase(BaseModel):
 
 
     targets: Optional[Any] = Field(
-        None, description="Targets that them model can predict for"
-    )
+        None, description="Targets that them model can predict for" # FIXME: should be Optional[Set[TargetTags]] but this causes issues with pydantic
+    ) 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
     model_spec: Optional[MLModelSpecBase] = Field(

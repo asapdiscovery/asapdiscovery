@@ -405,8 +405,11 @@ def _protocol_to_target(protocol: str) -> str:
     protocol : str
         Protocol name
     """
-    target = PROTOCOLS[protocol]["target"]
-
+    try:
+        target = PROTOCOLS[protocol]["target"]
+    except:
+        target = None
+    return target
 
 def _gather_weights(
     ensemble_directories: list[Path],
