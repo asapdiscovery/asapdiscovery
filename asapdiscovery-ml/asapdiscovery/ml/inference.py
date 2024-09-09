@@ -260,7 +260,7 @@ class InferenceBase(BaseModel):
             else:
                 # iterates only once, just return the prediction
                 pred = output_tensor
-                err = np.nan
+                err = np.asarray([np.nan])
             if return_err:
                 return pred, err
             else:
@@ -309,7 +309,7 @@ class GATInference(InferenceBase):
                 err = errfunc(aggregate_preds)
             else:
                 pred = output_tensor
-                err = np.nan
+                err = np.asarray([np.nan])
 
             if return_err:
                 return pred, err
@@ -357,11 +357,7 @@ class GATInference(InferenceBase):
         )
 
         data = [self.predict(pose["g"], return_err=return_err) for _, pose in ds]
-        data = np.asarray(data)
-        # if it is 1D array, we need to convert to 2D
-        if len(data.shape) == 1:
-            data = data.reshape(1, -1)
-
+        data = np.asarray(data, dtype=np.float32)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -370,6 +366,12 @@ class GATInference(InferenceBase):
             preds = preds.item()
             if return_err:
                 errs = errs.item()
+
+        else:
+            # flatten the array if we have multiple inputs
+            preds = preds.flatten()
+            if return_err:
+                errs = errs.flatten()
 
         if return_err:
             return preds, errs
@@ -421,7 +423,7 @@ class StructuralInference(InferenceBase):
                 err = errfunc(aggregate_preds)
             else:
                 pred = output_tensor
-                err = np.nan
+                err = np.asarray([np.nan])
 
             if return_err:
                 return pred, err
@@ -459,11 +461,7 @@ class StructuralInference(InferenceBase):
                 p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
             ]
         data = [self.predict(p, return_err=return_err) for p in pose]
-        data = np.asarray(data)
-        # if it is 1D array, we need to convert to 2D
-        if len(data.shape) == 1:
-            data = data.reshape(1, -1)
-
+        data = np.asarray(data, dtype=np.float32)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -472,6 +470,12 @@ class StructuralInference(InferenceBase):
             preds = preds.item()
             if return_err:
                 errs = errs.item()
+
+        else:
+            # flatten the array if we have multiple inputs
+            preds = preds.flatten()
+            if return_err:
+                errs = errs.flatten()
 
         if return_err:
             return preds, errs
@@ -538,7 +542,11 @@ class StructuralInference(InferenceBase):
             preds = preds.item()
             if return_err:
                 errs = errs.item()
-
+        else:
+            # flatten the array if we have multiple inputs
+            preds = preds.flatten()
+            if return_err:
+                errs = errs.flatten()
         if return_err:
             return preds, errs
         else:

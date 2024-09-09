@@ -442,6 +442,18 @@ def test_alchemy_status_all(monkeypatch):
     )
 
 
+def test_alchemy_status_mutex():
+    runner = CliRunner()
+    result = runner.invoke(alchemy, ["status", "-n", "fakenetwork", "-nk", "1234"])
+    assert result.exit_code == 1  # will fail
+
+
+def test_alchemy_gather_mutex():
+    runner = CliRunner()
+    result = runner.invoke(alchemy, ["gather", "-n", "fakenetwork", "-nk", "1234"])
+    assert result.exit_code == 1  # will fail
+
+
 def test_alchemy_stop(monkeypatch):
     """Test canceling the actioned tasks on a network"""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
@@ -893,6 +905,57 @@ def test_prioritize_weight_not_set(monkeypatch):
 
     console = rich.get_console()
     console.clear_live()
+
+
+def test_alchemy_predict_disconnected_fail(tyk2_result_network_disconnected, tmpdir):
+    """Test predicting the absolute and relative free energies with a disconnected network.
+    We also test that a warning is printed in the terminal
+    """
+
+    runner = CliRunner()
+    console = rich.get_console()
+    console.clear_live()
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network_disconnected.to_file("result_network_disconnected.json")
+
+        # run predict as normal - should return an error
+        with pytest.raises(
+            ValueError,
+            match="Your network is missing edges resulting in a gap",
+        ):
+            runner.invoke(
+                alchemy,
+                ["predict", "-n", "result_network_disconnected.json"],
+                catch_exceptions=False,
+            )
+
+
+def test_alchemy_predict_disconnected_success(tyk2_result_network_disconnected, tmpdir):
+    """Test predicting the absolute and relative free energies with a disconnected network.
+    We also test that a warning is printed in the terminal
+    """
+
+    runner = CliRunner()
+    console = rich.get_console()
+    console.clear_live()
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network_disconnected.to_file("result_network_disconnected.json")
+
+        # run predict while forcing the largest subnetwork - should succeed with warnings
+        result = runner.invoke(
+            alchemy, ["predict", "-n", "result_network_disconnected.json", "-fl"]
+        )
+        assert result.exit_code == 0
+    print(result.stdout.replace("\n", ""))
+    assert (
+        "Warning: removing 3 disconnected compounds: 42.86% of total in network."
+        in result.stdout
+    )
+    assert "lig_ejm_43" in result.stdout
+    assert "lig_ejm_42" in result.stdout
+    assert "lig_ejm_50" in result.stdout
 
 
 def test_prep_alchemize(test_ligands_sdfile, tmpdir):

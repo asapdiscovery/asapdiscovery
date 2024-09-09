@@ -26,6 +26,10 @@ class StructureDirFactory(BaseModel):
     parent_dir: Path = Field(
         description="Directory containing structure files as PDBs."
     )
+    glob: str = Field(
+        default="*.pdb",
+        description="Regex pattern for matching PDB files in the directory.",
+    )
 
     @validator("parent_dir")
     def parent_dir_exists(cls, v):
@@ -59,7 +63,7 @@ class StructureDirFactory(BaseModel):
         List[Complex]
             List of Complex objects.
         """
-        pdb_files = list(self.parent_dir.rglob("*.pdb"))
+        pdb_files = list(self.parent_dir.glob(self.glob))
         # check all filenames are unique
         pdb_stems = [pdb_file.stem for pdb_file in pdb_files]
         unique = False
