@@ -1006,14 +1006,16 @@ def clean_result_network(network, console=None):
     from collections import defaultdict
 
     import numpy as np
-    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork, TransformationResult
+    from asapdiscovery.alchemy.schema.fec import (
+        FreeEnergyCalculationNetwork,
+        TransformationResult,
+    )
     from rich.padding import Padding
 
-
     # load in to schema  and extract the results
-    network_schema  = FreeEnergyCalculationNetwork.parse_file(network)
+    network_schema = FreeEnergyCalculationNetwork.parse_file(network)
     input_results = network_schema.results.results
-    
+
     # 1. remove edges where DG is 0.0
     cleaned_results = [
         result for result in results if not result.estimate.magnitude == 0.0
@@ -1034,13 +1036,13 @@ def clean_result_network(network, console=None):
             # take the arithmetic mean of DG and dDG and add the replaced first result,
             # all provenance data is constant between these repeats anyway
             mean_DG = np.mean([result.estimate.magnitude for result in results])
-            mean_dDG = np.mean(
-                [result.uncertainty.magnitude for result in results]
-            )
+            mean_dDG = np.mean([result.uncertainty.magnitude for result in results])
             result_data = results[0].dict(exclude={"estimate", "uncertainty"})
 
-            tf_res = TransformationResult(estimate=mean_DG, uncertainty=mean_dDG **result_data)
-           
+            tf_res = TransformationResult(
+                estimate=mean_DG, uncertainty=mean_dDG**result_data
+            )
+
         deduped_results.append(tf_res)
 
     num_dupes_removed = len(cleaned_results) - len(deduped_results)
@@ -1051,6 +1053,6 @@ def clean_result_network(network, console=None):
         )
         console.print(message)
 
-
-
-    return FreeEnergyCalculationNetwork(**network_schema.dict(exclude={"results"}), results=deduped_results)
+    return FreeEnergyCalculationNetwork(
+        **network_schema.dict(exclude={"results"}), results=deduped_results
+    )

@@ -770,7 +770,8 @@ def stop(network_key: str):
     "-c",
     "--clean",
     is_flag=True,
-    help="Whether or not to clean the incoming result network, e.g. in cases where some edges are imbalanced between complex/solvent or when DG==0.0.")
+    help="Whether or not to clean the incoming result network, e.g. in cases where some edges are imbalanced between complex/solvent or when DG==0.0.",
+)
 @click.option(
     "-fl",
     "--force-largest",
