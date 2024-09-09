@@ -1,10 +1,10 @@
+import os
 import warnings
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union  # noqa: F401
 from urllib.parse import urljoin
 
-import os
 import mtenn
 import pooch
 import requests
@@ -31,7 +31,9 @@ class MLModelBase(BaseModel):
         arbitrary_types_allowed = True
 
     name: str = Field(..., description="Model name")
-    endpoint: Any = Field(..., description="Endpoint for model") # FIXME: should be Optional[str] but this causes issues with pydantic
+    endpoint: Any = Field(
+        ..., description="Endpoint for model"
+    )  # FIXME: should be Optional[str] but this causes issues with pydantic
     type: ModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
     targets: Any = Field(
@@ -524,7 +526,9 @@ class MLModelRegistry(BaseModel):
         )
 
     def get_latest_model_for_target_and_type(
-        self, target: TargetTags, type: ModelType,
+        self,
+        target: TargetTags,
+        type: ModelType,
     ) -> MLModelSpec:
         """
         Get latest model spec for a target
@@ -548,8 +552,9 @@ class MLModelRegistry(BaseModel):
         else:
             return max(models, key=lambda model: model.last_updated)
 
-
-    def get_latest_model_for_target_and_endpoint(self, target: TargetTags, endpoint: str) -> MLModelSpec:
+    def get_latest_model_for_target_and_endpoint(
+        self, target: TargetTags, endpoint: str
+    ) -> MLModelSpec:
         """
         Get latest model spec for a target and endpoint
 
@@ -565,14 +570,22 @@ class MLModelRegistry(BaseModel):
         MLModelSpec
             Latest model spec
         """
-        models = [model for model in self.models.values() if target in model.targets and model.endpoint == endpoint]
+        models = [
+            model
+            for model in self.models.values()
+            if target in model.targets and model.endpoint == endpoint
+        ]
         if len(models) == 0:
-            warnings.warn(f"No models available for target {target} and endpoint {endpoint}")
+            warnings.warn(
+                f"No models available for target {target} and endpoint {endpoint}"
+            )
             return None
         else:
             return max(models, key=lambda model: model.last_updated)
 
-    def get_latest_model_for_target_and_endpoint_and_type(self, target: TargetTags, endpoint: str, type: ModelType) -> MLModelSpec:
+    def get_latest_model_for_target_and_endpoint_and_type(
+        self, target: TargetTags, endpoint: str, type: ModelType
+    ) -> MLModelSpec:
         """
         Get latest model spec for a target, endpoint and type
 
@@ -590,9 +603,17 @@ class MLModelRegistry(BaseModel):
         MLModelSpec
             Latest model spec
         """
-        models = [model for model in self.models.values() if target in model.targets and model.endpoint == endpoint and model.type == type]
+        models = [
+            model
+            for model in self.models.values()
+            if target in model.targets
+            and model.endpoint == endpoint
+            and model.type == type
+        ]
         if len(models) == 0:
-            warnings.warn(f"No models available for target {target}, endpoint {endpoint} and type {type}")
+            warnings.warn(
+                f"No models available for target {target}, endpoint {endpoint} and type {type}"
+            )
             return None
         else:
             return max(models, key=lambda model: model.last_updated)
@@ -612,7 +633,7 @@ class MLModelRegistry(BaseModel):
             List of model specs
         """
         return [model for model in self.models.values() if model.endpoint == endpoint]
-    
+
     def get_latest_model_for_endpoint(self, endpoint: str) -> MLModelSpec:
         """
         Get latest model spec for a given endpoint
@@ -655,7 +676,7 @@ class MLModelRegistry(BaseModel):
             List of endpoints
         """
         return list({model.endpoint for model in self.models.values()})
-    
+
     def get_endpoint_target_mapping(self) -> dict[str, list[TargetTags]]:
         """
         Get mapping of endpoints to targets
@@ -876,5 +897,3 @@ else:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         ASAPMLModelRegistry = MLModelRegistry.from_yaml(asap_models_yaml)
-
-
