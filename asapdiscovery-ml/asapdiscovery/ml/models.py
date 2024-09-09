@@ -1,7 +1,7 @@
 import warnings
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Optional, Union  # noqa: F401
+from typing import Dict, List, Optional, Union, Any, Set  # noqa: F401
 from urllib.parse import urljoin
 
 import mtenn
@@ -32,7 +32,7 @@ class MLModelBase(BaseModel):
     name: str = Field(..., description="Model name")
     type: ModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
-    targets: set[TargetTags] = Field(..., description="Biological targets of the model")
+    targets: Any = Field(..., description="Biological targets of the model")
     mtenn_lower_pin: Version | None = Field(
         None, description="Lower bound on compatible mtenn versions (inclusive)."
     )
@@ -327,6 +327,7 @@ class RemoteEnsembleHelper(BaseModel):
             return {}
 
         ensemble_models = {}
+        print("HELLOOO")
 
         for model in manifest:
             try:
@@ -337,6 +338,16 @@ class RemoteEnsembleHelper(BaseModel):
                         raise ValueError("Submodel should have only one key")
                     # get the name of the submodel
                     subname = list(submodel.keys())[0]
+                    if "targets" in model_data:
+                        tar = model_data["targets"]
+                        # check not a list of None
+                        if not all(tar):
+                            targets = None
+                        else:
+                            targets = set(tar)
+                    else:
+                        targets = None
+                    print(targets)
                     models.append(
                         MLModelSpec(
                             name=model + "_ens_" + subname,
@@ -347,7 +358,7 @@ class RemoteEnsembleHelper(BaseModel):
                             config_resource=model_data["config"]["resource"],
                             config_sha256hash=model_data["config"]["sha256hash"],
                             last_updated=model_data["last_updated"],
-                            targets=set(model_data["targets"]),
+                            targets=targets,
                             mtenn_lower_pin=(
                                 model_data["mtenn_lower_pin"]
                                 if "mtenn_lower_pin" in model_data

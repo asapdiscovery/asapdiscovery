@@ -19,6 +19,8 @@ from asapdiscovery.ml.models import (
     MLModelSpecBase,
 )
 
+from typing import Any
+
 # static import of models from base yaml here
 from dgllife.utils import CanonicalAtomFeaturizer
 from mtenn.config import E3NNModelConfig, GATModelConfig, ModelType, SchNetModelConfig
@@ -39,8 +41,9 @@ class InferenceBase(BaseModel):
         arbitrary_types_allowed = True
         allow_extra = False
 
-    targets: set[TargetTags] = Field(
-        ..., description="Targets that them model can predict for"
+
+    targets: Optional[Any] = Field(
+        None, description="Targets that them model can predict for"
     )
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
@@ -358,6 +361,9 @@ class GATInference(InferenceBase):
 
         data = [self.predict(pose["g"], return_err=return_err) for _, pose in ds]
         data = np.asarray(data, dtype=np.float32)
+        # if it is 1D array, we need to convert to 2D
+        if len(data.shape) == 1:
+            data = data.reshape(1, -1)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -462,6 +468,9 @@ class StructuralInference(InferenceBase):
             ]
         data = [self.predict(p, return_err=return_err) for p in pose]
         data = np.asarray(data, dtype=np.float32)
+        # if it is 1D array, we need to convert to 2D
+        if len(data.shape) == 1:
+            data = data.reshape(1, -1)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -530,7 +539,6 @@ class StructuralInference(InferenceBase):
         # Make predictions
         data = [self.predict(p, return_err=return_err) for p in pose]
         data = np.asarray(data)
-
         # if it is 1D array, we need to convert to 2D
         if len(data.shape) == 1:
             data = data.reshape(1, -1)
