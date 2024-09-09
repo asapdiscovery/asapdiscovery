@@ -783,3 +783,241 @@ class GraphDataset(Dataset):
     def __iter__(self):
         for s in self.structures:
             yield (s["compound"], s)
+
+
+class PyGGraphDataset(GraphDataset):
+    pass
+
+
+class DGLGraphDataset(Dataset):
+    """
+    Class for loading SMILES as graphs.
+    """
+
+    def __init__(self, compounds={}, structures=[]):
+        super().__init__()
+
+        self.compounds = compounds
+        self.structures = structures
+
+    @classmethod
+    def from_ligands(
+        cls,
+        ligands: list[Ligand],
+        exp_dict: dict = {},
+        node_featurizer=None,
+        edge_featurizer=None,
+    ):
+        """
+        Parameters
+        ----------
+        ligands : list[Ligands]
+            List of Ligand schema objects to build into a GraphDataset object
+        exp_dict : dict[str, dict[str, int | float]], optional
+            Dict mapping compound_id to an experimental results dict. The dict for a
+            compound will be added to the pose representation of each Complex containing
+            a ligand witht that compound_id
+        node_featurizer : BaseAtomFeaturizer, optional
+            Featurizer for node data
+        edge_featurizer : BaseBondFeaturizer, optional
+            Featurizer for edges
+        """
+
+        from dgllife.utils import SMILESToBigraph
+
+        # Function for encoding SMILES to a graph
+        smiles_to_g = SMILESToBigraph(
+            add_self_loop=True,
+            node_featurizer=node_featurizer,
+            edge_featurizer=edge_featurizer,
+        )
+
+        compounds = {}
+        structures = []
+        for i, lig in enumerate(ligands):
+            compound_id = lig.compound_name
+            smiles = lig.smiles
+
+            # Need a tuple to match DockedDataset, but the graph objects aren't
+            #  attached to a protein structure at all
+            compound = ("NA", compound_id)
+
+            # Generate DGL graph
+            g = smiles_to_g(smiles)
+
+            # Gather experimental data
+            try:
+                lig_exp_dict = lig.experimental_data.experimental_data
+                if lig.experimental_data.date_created:
+                    lig_exp_dict |= {"date_created": lig.experimental_data.date_created}
+            except AttributeError:
+                lig_exp_dict = {}
+            lig_exp_dict |= exp_dict.get(compound_id, {})
+
+            # Add data
+            try:
+                compounds[compound].append(i)
+            except KeyError:
+                compounds[compound] = [i]
+            structures.append(
+                {
+                    "smiles": smiles,
+                    "g": g,
+                    "compound": compound,
+                }
+                | lig_exp_dict
+            )
+
+        return cls(compounds, structures)
+
+    @classmethod
+    def from_exp_compounds(
+        cls,
+        exp_compounds,
+        exp_dict: dict = {},
+        node_featurizer=None,
+        edge_featurizer=None,
+    ):
+        """
+        Parameters
+        ----------
+        exp_compounds : List[schema.ExperimentalCompoundData]
+            List of compounds
+        exp_dict : dict[str, dict[str, int | float]], optional
+            Dict mapping compound_id to an experimental results dict. The dict for a
+            compound will be added to the pose representation of each Complex containing
+            a ligand witht that compound_id
+        node_featurizer : BaseAtomFeaturizer, optional
+            Featurizer for node data
+        edge_featurizer : BaseBondFeaturizer, optional
+            Featurizer for edges
+            Cache file for graph dataset
+
+        """
+        from dgllife.utils import SMILESToBigraph
+
+        # Function for encoding SMILES to a graph
+        smiles_to_g = SMILESToBigraph(
+            add_self_loop=True,
+            node_featurizer=node_featurizer,
+            edge_featurizer=edge_featurizer,
+        )
+
+        compounds = {}
+        structures = []
+        for i, exp_compound in enumerate(exp_compounds):
+            compound_id = exp_compound.compound_id
+            smiles = exp_compound.smiles
+
+            # Need a tuple to match DockedDataset, but the graph objects aren't
+            #  attached to a protein structure at all
+            compound = ("NA", compound_id)
+
+            # Generate DGL graph
+            g = smiles_to_g(smiles)
+
+            # Gather experimental data
+            lig_exp_dict = exp_compound.experimental_data.copy()
+            lig_exp_dict |= exp_dict.get(compound_id, {})
+            if exp_compound.date_created:
+                lig_exp_dict |= {"date_created": exp_compound.date_created}
+
+            # Add data
+            try:
+                compounds[compound].append(i)
+            except KeyError:
+                compounds[compound] = [i]
+            structures.append(
+                {
+                    "smiles": smiles,
+                    "g": g,
+                    "compound": compound,
+                }
+                | exp_compound.experimental_data
+                | exp_dict.get(compound_id, {})
+                | {"date_created": exp_compound.date_created}
+            )
+
+        return cls(compounds, structures)
+
+    def __len__(self):
+        return len(self.structures)
+
+    def __getitem__(self, idx):
+        """
+        Parameters
+        ----------
+        idx : int, tuple, list[tuple/int], tensor[tuple/int]
+            Index into dataset. Can either be a numerical index into the
+            structures or a tuple of (crystal structure, ligand compound id),
+            or a list/torch.tensor/numpy.ndarray of either of those types
+
+        Returns
+        -------
+        list[tuple]
+            List of tuples (crystal_structure, compound_id) for found structures
+        list[dict]
+            List of dictionaries with keys
+            - `g`: DGLGraph
+            - `compound`: tuple of (crystal_structure, compound_id)
+        """
+        import torch
+
+        # Extract idx from inside the tensor object
+        if torch.is_tensor(idx):
+            try:
+                idx = idx.item()
+            except ValueError:
+                idx = idx.tolist()
+
+        # Figure out the type of the index, and keep note of whether a list was
+        #  passed in or not
+        if isinstance(idx, int):
+            return_list = False
+            idx_type = int
+            idx = [idx]
+        elif isinstance(idx, slice):
+            return_list = True
+            idx_type = int
+            start, stop, step = idx.indices(len(self))
+            idx = list(range(start, stop, step))
+        else:
+            return_list = True
+            if isinstance(idx[0], bool):
+                idx_type = bool
+                if len(idx) != len(self.structures):
+                    raise IndexError("Index length must match number of structures.")
+            elif isinstance(idx[0], int):
+                idx_type = int
+            else:
+                idx_type = tuple
+                if (
+                    isinstance(idx, tuple)
+                    and (len(idx) == 2)
+                    and isinstance(idx[0], str)
+                    and isinstance(idx[1], str)
+                ):
+                    idx = [idx]
+                else:
+                    idx = [tuple(i) for i in idx]
+
+        # If idx is integral, assume it is indexing the structures list,
+        #  otherwise assume it's giving structure name
+        if idx_type is int:
+            str_idx_list = idx
+        elif idx_type is bool:
+            str_idx_list = [i for i in range(len(self.structures)) if idx[i]]
+        else:
+            # Need to find the structures that correspond to this compound(s)
+            str_idx_list = [i for c in idx for i in self.compounds[c]]
+
+        str_list = [self.structures[i] for i in str_idx_list]
+        compounds = [s["compound"] for s in str_list]
+        if return_list:
+            return list(zip(compounds, str_list))
+        else:
+            return (compounds[0], str_list[0])
+
+    def __iter__(self):
+        for s in self.structures:
+            yield (s["compound"], s)
