@@ -198,6 +198,10 @@ files:
   - resource: tyk2_small_network.json
     sha256hash: cf6d416ef4c802ad64d72966e2a8ce9115ef3dd87ffa9181309c7c5515b42a66
 
+  # TYK2 FEC network for testing (disconnected, i.e. missing edges)
+  - resource: tyk2_result_network_disconnected.json
+    sha256hash: 0468c9b0abffd68613fd8c391bd6422871beeb5ee075dbac3ad844526a6eb797
+
   # SMILES file with fully defined chirality for testing
   - resource: chalcogran_defined.smi
     sha256hash: 247e8d51cd6f404180bfe773a4eb2d6fae37b28919d1527d8b39e5286ea9755c

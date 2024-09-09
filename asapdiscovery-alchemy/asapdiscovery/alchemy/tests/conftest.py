@@ -44,6 +44,13 @@ def tyk2_result_network():
 
 
 @pytest.fixture(scope="session")
+def tyk2_result_network_disconnected():
+    """Return an FEC network with some results."""
+    fec_network = fetch_test_file("tyk2_result_network_disconnected.json")
+    return FreeEnergyCalculationNetwork.from_file(fec_network)
+
+
+@pytest.fixture(scope="session")
 def tyk2_reference_data():
     """Return a CSV in the CDD style of IC50 values for the tyk2 series."""
     return fetch_test_file("tyk2_reference_data.csv")
