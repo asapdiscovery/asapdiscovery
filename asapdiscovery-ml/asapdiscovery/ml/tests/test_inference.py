@@ -6,7 +6,6 @@ import torch
 from asapdiscovery.data.backend.openeye import load_openeye_pdb
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.inference import E3nnInference, GATInference, SchnetInference
-from asapdiscovery.ml.models import RemoteEnsembleHelper
 from numpy.testing import assert_allclose
 
 

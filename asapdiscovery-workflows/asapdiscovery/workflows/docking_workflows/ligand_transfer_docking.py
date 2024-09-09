@@ -35,7 +35,7 @@ from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     DockingWorkflowInputsBase,
 )
-from pydantic import Field, PositiveInt, root_validator, validator
+from pydantic import Field, PositiveInt, root_validator
 
 
 class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):

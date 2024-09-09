@@ -584,7 +584,7 @@ class MLModelScorer(ScorerBase):
         )
     
     @staticmethod
-    def load_model_specs(models: list["MLModelSpecBase"]) -> list["MLModelScorer"]:
+    def load_model_specs(models: list["MLModelSpecBase"]) -> list["MLModelScorer"]: # noqa: F821
         """
         Load a list of models into scorers.
 

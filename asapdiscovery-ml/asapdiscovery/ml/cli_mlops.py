@@ -414,7 +414,7 @@ def _protocol_to_target(protocol: str) -> str:
     """
     try:
         target = PROTOCOLS[protocol]["target"]
-    except:
+    except KeyError:
         target = None
     return target
 
@@ -430,7 +430,7 @@ def _protocol_to_readout(protocol: str) -> str:
     """
     try:
         readout = PROTOCOLS[protocol]["readout"]
-    except:
+    except KeyError:
         readout = None
     return readout
 
@@ -446,7 +446,7 @@ def _protocol_to_endpoint(protocol: str) -> str:
     """
     try:
         endpoint = PROTOCOLS[protocol]["endpoint"]
-    except:
+    except KeyError:
         endpoint = None
     return endpoint
 
