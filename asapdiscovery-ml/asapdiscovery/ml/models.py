@@ -30,6 +30,7 @@ class MLModelBase(BaseModel):
         arbitrary_types_allowed = True
 
     name: str = Field(..., description="Model name")
+    endpoint: Optional[str] = Field(..., description="Endpoint for model")
     type: ModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
     targets: Any = Field(..., description="Biological targets of the model") # FIXME: should be Optional[Set[TargetTags]] but this causes issues with pydantic
