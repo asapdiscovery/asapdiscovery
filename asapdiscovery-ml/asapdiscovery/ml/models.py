@@ -672,12 +672,55 @@ class MLModelRegistry(BaseModel):
         # uniquify
         new_map = {}
         for k, v in map.items():
-            
-            new_map[k] = list(set(v))
+            if any(v):            
+                new_map[k] = list(set(v))
+            else:
+                new_map[k] = None
+
         
         return new_map
     
+    def get_endpoints_for_target(self, target: TargetTags, include_generic=True) -> list[str]:
+        """
+        Get list of endpoints for a target
 
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get endpoints for
+        include_generic : bool, optional
+            Whether to include generic endpoints, by default True
+
+        Returns
+        -------
+        List[str]
+            List of endpoints
+        """
+        endpts =  list({model.endpoint for model in self.models.values() if target in model.targets})
+        if include_generic:
+            extra = self.get_endpoints_for_target(None, include_generic=False)
+            endpts.extend(extra)
+        # uniquify
+        endpts = list(set(endpts))
+        return endpts
+    
+    def endpoint_has_target(self, endpoint: str) -> bool:
+        """
+        Check if an endpoint has a target
+
+        Parameters
+        ----------
+        endpoint : str
+            Endpoint to check
+        target : TargetTags
+            Target to check
+
+        Returns
+        -------
+        bool
+            Whether the endpoint has the target
+        """
+        return self.get_endpoint_target_mapping().get(endpoint) is not None
     
     def get_target_endpoint_mapping(self) -> dict[TargetTags, list[str]]:
         """
@@ -696,11 +739,30 @@ class MLModelRegistry(BaseModel):
         # uniquify
         new_map = {}
         for k, v in map.items():
-            
-            new_map[k] = list(set(v))
+            if any(v):            
+                new_map[k] = list(set(v))
+            else:
+                new_map[k] = None
         
         return new_map
-       
+    
+
+    def reccomend_models_for_target(self, target: TargetTags) -> list[MLModelSpec]:
+        """
+        Get reccomended models for a target, including generic models without a target
+        """
+        epts = self.get_endpoints_for_target(target, include_generic=True)
+        models = []
+        for p in epts:
+            if ASAPMLModelRegistry.endpoint_has_target(p):
+                mod = ASAPMLModelRegistry.get_latest_model_for_target_and_endpoint(target, p)
+            else:
+                mod = ASAPMLModelRegistry.get_latest_model_for_target_and_endpoint(None, p)
+            models.append(mod)
+
+        # clean for None
+        models = [m for m in models if m is not None]
+        return models
 
     def get_model(self, name: str) -> MLModelSpec:
         """

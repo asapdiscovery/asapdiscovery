@@ -122,7 +122,7 @@ def input_json(func):
     )(func)
 
 
-def ml_scorer(func):
+def ml_scorers(func):
     return click.option(
         "--ml-scorer",
         type=click.Choice(
@@ -130,6 +130,15 @@ def ml_scorer(func):
         ),
         multiple=True,
         help="The names of the ml scorer to use, can be specified multiple times to use multiple ml scorers.",
+    )(func)
+
+# flag to run all ml scorers
+def ml_score(func):
+    return click.option(
+        "--ml-score",
+        is_flag=True,
+        default=False,
+        help="Whether to run all ml scorers",
     )(func)
 
 

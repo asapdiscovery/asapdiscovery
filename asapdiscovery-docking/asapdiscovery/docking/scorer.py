@@ -553,7 +553,7 @@ class MLModelScorer(ScorerBase):
                 model_name=inference_instance.model_name,
                 inference_cls=inference_instance,
             )
-
+        
     @staticmethod
     def from_latest_by_target_and_type(target: TargetTags, type: ModelType):
         """
@@ -582,7 +582,6 @@ class MLModelScorer(ScorerBase):
             model_name=inference_instance.model_name,
             inference_cls=inference_instance,
         )
-
 
 @register_ml_scorer
 class GATScorer(MLModelScorer):

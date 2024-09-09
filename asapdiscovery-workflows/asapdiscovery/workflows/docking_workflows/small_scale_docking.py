@@ -102,9 +102,10 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         3, description="Number of targets to dock each ligand against."
     )
 
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
+    ml_score: bool = Field(
+        True, description="Whether to use ML scoring in the docking pipeline"
     )
+
     allow_dask_cuda: bool = Field(
         True,
         description="Whether to allow regenerating dask cuda cluster when in local mode",
@@ -119,19 +120,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
 
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
 
 
 def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
