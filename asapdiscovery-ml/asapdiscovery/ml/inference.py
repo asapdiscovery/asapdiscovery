@@ -87,7 +87,8 @@ class InferenceBase(BaseModel):
             return None
         else:
             return cls.from_ml_model_spec(model_spec, **kwargs)
-        
+    
+    @classmethod
     def from_latest_by_target_and_endpoint(
         cls,
         target: TargetTags,

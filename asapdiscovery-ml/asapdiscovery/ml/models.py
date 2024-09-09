@@ -568,8 +568,33 @@ class MLModelRegistry(BaseModel):
             return None
         else:
             return max(models, key=lambda model: model.last_updated)
-        
-    def get_models_models_for_endpoint(self, endpoint: str) -> list[MLModelSpec]:
+
+    def get_latest_model_for_target_and_endpoint_and_type(self, target: TargetTags, endpoint: str, type: ModelType) -> MLModelSpec:
+        """
+        Get latest model spec for a target, endpoint and type
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get model for
+        endpoint : str
+            Endpoint to get model for
+        type : ModelType
+            Type of model to get
+
+        Returns
+        -------
+        MLModelSpec
+            Latest model spec
+        """
+        models = [model for model in self.models.values() if target in model.targets and model.endpoint == endpoint and model.type == type]
+        if len(models) == 0:
+            warnings.warn(f"No models available for target {target}, endpoint {endpoint} and type {type}")
+            return None
+        else:
+            return max(models, key=lambda model: model.last_updated)
+
+    def get_models_for_endpoint(self, endpoint: str) -> list[MLModelSpec]:
         """
         Get models for a given endpoint
 
@@ -627,6 +652,17 @@ class MLModelRegistry(BaseModel):
             List of endpoints
         """
         return list({model.endpoint for model in self.models.values()})
+    
+    def get_endpoint_target_mapping(self) -> dict[str, list[TargetTags]]:
+        """
+        Get mapping of endpoints to targets
+
+        Returns
+        -------
+        dict[str, list[TargetTags]]
+            Mapping of endpoints to targets
+        """
+        return {model.endpoint: list(model.targets) for model in self.models.values()}
 
     def get_model(self, name: str) -> MLModelSpec:
         """
@@ -740,5 +776,5 @@ else:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         ASAPMLModelRegistry = MLModelRegistry.from_yaml(asap_models_yaml)
-        
+
 
