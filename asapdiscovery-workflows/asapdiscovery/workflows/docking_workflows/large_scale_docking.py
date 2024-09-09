@@ -293,10 +293,10 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         # check which endpoints are availabe for the target
         models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
 
-        ml_scorers = MLModelScorer.load_models(
+        ml_scorers = MLModelScorer.load_model_specs(
             models=models
         )
-        scorers.append(ml_scorers)
+        scorers.extend(ml_scorers)
 
 
     # score results using multiple scoring functions

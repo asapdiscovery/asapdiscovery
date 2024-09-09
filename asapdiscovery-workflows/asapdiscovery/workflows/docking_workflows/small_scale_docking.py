@@ -297,12 +297,14 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         scorers.append(FINTScorer(target=inputs.target))
 
     # load ml scorers
-    if inputs.ml_scorers:
-        for ml_scorer in inputs.ml_scorers:
-            logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorers.append(
-                MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
-            )
+    if inputs.ml_score:
+        # check which endpoints are availabe for the target
+        models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
+
+        ml_scorers = MLModelScorer.load_model_specs(
+            models=models
+        )
+        scorers.extend(ml_scorers)
 
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")

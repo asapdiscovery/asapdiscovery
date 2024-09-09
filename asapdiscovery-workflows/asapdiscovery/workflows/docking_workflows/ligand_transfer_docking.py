@@ -125,8 +125,8 @@ class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):
         ge=0.0,
         description="POSIT confidence cutoff used to filter docking results",
     )
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
+    ml_score: bool = Field(
+        True, description="The name of the ml scorers to use"
     )
     allow_dask_cuda: bool = Field(
         True,
@@ -140,20 +140,6 @@ class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):
     md_openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
-
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
 
     @root_validator
     @classmethod
@@ -351,13 +337,15 @@ def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs
     scorers = [ChemGauss4Scorer()]
 
     # load ml scorers
-    if inputs.ml_scorers:
-        for ml_scorer in inputs.ml_scorers:
-            logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorers.append(
-                MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
-            )
-
+    # load ml scorers
+    if inputs.ml_score:
+        # check which endpoints are availabe for the target
+        models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
+        ml_scorers = MLModelScorer.load_model_specs(
+            models=models
+        )
+        scorers.extend(ml_scorers)
+    
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
         write_results_to_multi_sdf(

@@ -530,8 +530,8 @@ class MLModelScorer(ScorerBase):
     score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
     units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
-    targets: set[TargetTags] = Field(
-        ..., description="Which targets can this model do predictions for"
+    targets: Any  = Field(
+        ..., description="Which targets can this model do predictions for" # FIXME: Optional[set[TargetTags]]
     )
     model_name: str = Field(..., description="String indicating which model to use")
     inference_cls: InferenceBase = Field(..., description="Inference class")
@@ -582,6 +582,23 @@ class MLModelScorer(ScorerBase):
             model_name=inference_instance.model_name,
             inference_cls=inference_instance,
         )
+    
+    @staticmethod
+    def load_model_specs(models: list["MLModelSpecBase"]) -> list["MLModelScorer"]:
+        """
+        Load a list of models into scorers.
+
+        Parameters
+        ----------
+        models : list[MLModelSpecBase]
+            List of models to load
+        """
+        scorers = []
+        for model in models:
+            scorer_class = get_ml_scorer_cls_from_model_type(model.type)
+            scorer = scorer_class.from_model_name(model.name)
+            scorers.append(scorer)
+        return scorers
 
 @register_ml_scorer
 class GATScorer(MLModelScorer):
