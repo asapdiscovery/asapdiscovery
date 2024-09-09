@@ -199,7 +199,7 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
     if not readout:
         raise ValueError(f"readout type not found for {protocol_name}")
 
-    target = PROTOCOLS[protocol_name]["target"]
+    target = _protocol_to_target(protocol_name)
 
     if target is None:
         logger.info(
@@ -207,6 +207,14 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
         )  # some protocols don't have a target, e.g logD
     else:
         logger.info(f"Target for protocol {protocol_name} is {target}")
+
+    endpoint = _protocol_to_endpoint(protocol_name)
+    if endpoint is None:
+        raise ValueError(
+            f"Endpoint not found for protocol {protocol_name}"
+        )
+    else:
+        logger.info(f"Endpoint for protocol {protocol_name} is {endpoint}")
 
     # if its a string though, we need to check it is in allowed list of targets
     if isinstance(target, str):
@@ -410,6 +418,36 @@ def _protocol_to_target(protocol: str) -> str:
     except:
         target = None
     return target
+
+def _protocol_to_readout(protocol: str) -> str:
+    """
+    Converts a protocol name to a readout name
+
+    Parameters
+    ----------
+    protocol : str
+        Protocol name
+    """
+    try:
+        readout = PROTOCOLS[protocol]["readout"]
+    except:
+        readout = None
+    return readout
+
+def _protocol_to_endpoint(protocol: str) -> str:
+    """
+    Converts a protocol name to an endpoint name
+
+    Parameters
+    ----------
+    protocol : str
+        Protocol name
+    """
+    try:
+        endpoint = PROTOCOLS[protocol]["endpoint"]
+    except:
+        endpoint = None
+    return endpoint
 
 def _gather_weights(
     ensemble_directories: list[Path],

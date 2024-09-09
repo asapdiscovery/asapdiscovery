@@ -21,7 +21,6 @@ class MLModelBase(BaseModel):
     """
 
     class Config:
-        validate_assignment = True
 
         # Add custom encoders for semver Versions
         json_encoders = {Version: lambda v: str(v)}
@@ -30,7 +29,7 @@ class MLModelBase(BaseModel):
         arbitrary_types_allowed = True
 
     name: str = Field(..., description="Model name")
-    endpoint: Optional[str] = Field(..., description="Endpoint for model")
+    endpoint: Any = Field(..., description="Endpoint for model") # FIXME: should be Optional[str] but this causes issues with pydantic
     type: ModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
     targets: Any = Field(..., description="Biological targets of the model") # FIXME: should be Optional[Set[TargetTags]] but this causes issues with pydantic
