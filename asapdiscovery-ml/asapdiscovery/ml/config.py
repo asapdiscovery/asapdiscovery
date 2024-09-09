@@ -14,7 +14,13 @@ from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.stringenum import StringEnum
 from asapdiscovery.data.util.utils import extract_compounds_from_filenames
-from asapdiscovery.ml.dataset import DockedDataset, GraphDataset, GroupedDockedDataset
+from asapdiscovery.ml.dataset import (
+    DockedDataset,
+    DGLGraphDataset,
+    GraphDataset,
+    PyGGraphDataset,
+    GroupedDockedDataset,
+)
 from asapdiscovery.ml.es import (
     BestEarlyStopping,
     ConvergedEarlyStopping,
@@ -256,6 +262,8 @@ class DatasetType(StringEnum):
     """
 
     graph = "graph"
+    pyg_graph = "pyg_graph"
+    dgl_graph = "dgl_graph"
     structural = "structural"
 
 
@@ -496,6 +504,18 @@ class DatasetConfig(ConfigBase):
         match self.ds_type:
             case DatasetType.graph:
                 ds = GraphDataset.from_ligands(self.input_data, exp_dict=self.exp_data)
+            case DatasetType.pyg_graph:
+                ds = PyGGraphDataset.from_ligands(
+                    self.input_data, exp_dict=self.exp_data
+                )
+            case DatasetType.dgl_graph:
+                from dgllife.utils import CanonicalAtomFeaturizer
+
+                ds = DGLGraphDataset.from_ligands(
+                    self.input_data,
+                    exp_dict=self.exp_data,
+                    node_featurizer=CanonicalAtomFeaturizer(),
+                )
             case DatasetType.structural:
                 if self.grouped:
                     ds = GroupedDockedDataset.from_complexes(
