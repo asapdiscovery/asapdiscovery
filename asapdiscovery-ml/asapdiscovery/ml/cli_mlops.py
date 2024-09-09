@@ -210,9 +210,7 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
 
     endpoint = _protocol_to_endpoint(protocol_name)
     if endpoint is None:
-        raise ValueError(
-            f"Endpoint not found for protocol {protocol_name}"
-        )
+        raise ValueError(f"Endpoint not found for protocol {protocol_name}")
     else:
         logger.info(f"Endpoint for protocol {protocol_name} is {endpoint}")
 
@@ -420,6 +418,7 @@ def _protocol_to_target(protocol: str) -> str:
         target = None
     return target
 
+
 def _protocol_to_readout(protocol: str) -> str:
     """
     Converts a protocol name to a readout name
@@ -435,6 +434,7 @@ def _protocol_to_readout(protocol: str) -> str:
         readout = None
     return readout
 
+
 def _protocol_to_endpoint(protocol: str) -> str:
     """
     Converts a protocol name to an endpoint name
@@ -449,6 +449,7 @@ def _protocol_to_endpoint(protocol: str) -> str:
     except:
         endpoint = None
     return endpoint
+
 
 def _gather_weights(
     ensemble_directories: list[Path],
