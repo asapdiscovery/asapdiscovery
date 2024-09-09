@@ -30,6 +30,7 @@ gat_test:
   #  Versions will be checked as:
   #   `mtenn_lower_pin <= mtenn.__version__ < mtenn_upper_pin`
   #  If a pin is left blank, it will not be checked
+  endpoint: pIC50
   mtenn_lower_pin: "0.5.0"
   mtenn_upper_pin:
 
@@ -48,6 +49,7 @@ asapdiscovery-SARS-CoV-2-Mpro-GAT-2024.02.06:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  endpoint: pIC50
   mtenn_lower_pin: "0.5.0"
 
 asapdiscovery-SARS-CoV-2-Mac1-GAT-2024.02.06:
@@ -62,6 +64,7 @@ asapdiscovery-SARS-CoV-2-Mac1-GAT-2024.02.06:
   last_updated: 2024-02-06
   targets:
     - SARS-CoV-2-Mac1
+  endpoint: pIC50
   mtenn_lower_pin: "0.5.0"
 
 asapdiscovery-SARS-CoV-2-Mpro-schnet-2024.02.05:
@@ -77,6 +80,7 @@ asapdiscovery-SARS-CoV-2-Mpro-schnet-2024.02.05:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  endpoint: pIC50
   mtenn_lower_pin: "0.5.0"
 
 asapdiscovery-SARS-CoV-2-Mpro-e3nn-2024.02.06:
@@ -92,6 +96,7 @@ asapdiscovery-SARS-CoV-2-Mpro-e3nn-2024.02.06:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  endpoint: pIC50
   mtenn_lower_pin: "0.5.0"
 
 asapdiscovery-GAT-remote-ensemble:
