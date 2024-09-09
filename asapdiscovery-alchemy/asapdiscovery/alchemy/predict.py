@@ -1013,12 +1013,12 @@ def clean_result_network(network, console=None):
     from rich.padding import Padding
 
     # load in to schema  and extract the results
-    network_schema = FreeEnergyCalculationNetwork.parse_file(network)
+    network_schema = FreeEnergyCalculationNetwork.from_file(network)
     input_results = network_schema.results.results
 
     # 1. remove edges where DG is 0.0
     cleaned_results = [
-        result for result in results if not result.estimate.magnitude == 0.0
+        result for result in input_results if not result.estimate.magnitude == 0.0
     ]
 
     num_0_0_removed = len(input_results) - len(cleaned_results)
@@ -1040,8 +1040,11 @@ def clean_result_network(network, console=None):
             result_data = results[0].dict(exclude={"estimate", "uncertainty"})
 
             tf_res = TransformationResult(
-                estimate=mean_DG, uncertainty=mean_dDG**result_data
+                estimate=mean_DG, uncertainty=mean_dDG, **result_data
             )
+
+        else:
+            tf_res = results[0]
 
         deduped_results.append(tf_res)
 
@@ -1052,7 +1055,12 @@ def clean_result_network(network, console=None):
             (1, 0, 1, 0),
         )
         console.print(message)
-
-    return FreeEnergyCalculationNetwork(
-        **network_schema.dict(exclude={"results"}), results=deduped_results
+    print(deduped_results)
+    data = network_schema.dict(exclude={"results"})
+    data["results"] = deduped_results
+    fec = FreeEnergyCalculationNetwork(
+        **data
+        # , results=deduped_results
     )
+    # fec.results = deduped_results
+    return fec
