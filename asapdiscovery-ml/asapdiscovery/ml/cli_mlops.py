@@ -389,6 +389,7 @@ def _write_ensemble_manifest_yaml(
             "sha256hash": sha256sum(config_path),
         },
         "targets": [_protocol_to_target(protocol)],
+        "endpoint": _protocol_to_endpoint(protocol),
         "mtenn_lower_pin": mtenn.__version__,
         "last_updated": ISO_TODAY,
     }

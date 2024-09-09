@@ -327,7 +327,6 @@ class RemoteEnsembleHelper(BaseModel):
             return {}
 
         ensemble_models = {}
-        print("HELLOOO")
 
         for model in manifest:
             try:
@@ -347,7 +346,6 @@ class RemoteEnsembleHelper(BaseModel):
                             targets = set(tar)
                     else:
                         targets = None
-                    print(targets)
                     models.append(
                         MLModelSpec(
                             name=model + "_ens_" + subname,
@@ -359,6 +357,7 @@ class RemoteEnsembleHelper(BaseModel):
                             config_sha256hash=model_data["config"]["sha256hash"],
                             last_updated=model_data["last_updated"],
                             targets=targets,
+                            endpoint=model_data["endpoint"],
                             mtenn_lower_pin=(
                                 model_data["mtenn_lower_pin"]
                                 if "mtenn_lower_pin" in model_data
@@ -519,7 +518,7 @@ class MLModelRegistry(BaseModel):
         )
 
     def get_latest_model_for_target_and_type(
-        self, target: TargetTags, type: ModelType
+        self, target: TargetTags, type: ModelType,
     ) -> MLModelSpec:
         """
         Get latest model spec for a target
@@ -542,6 +541,79 @@ class MLModelRegistry(BaseModel):
             return None
         else:
             return max(models, key=lambda model: model.last_updated)
+
+
+    def get_latest_model_for_target_and_endpoint(self, target: TargetTags, endpoint: str) -> MLModelSpec:
+        """
+        Get latest model spec for a target and endpoint
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get model for
+        endpoint : str
+            Endpoint to get model for
+
+        Returns
+        -------
+        MLModelSpec
+            Latest model spec
+        """
+        models = [model for model in self.models.values() if target in model.targets and model.endpoint == endpoint]
+        if len(models) == 0:
+            warnings.warn(f"No models available for target {target} and endpoint {endpoint}")
+            return None
+        else:
+            return max(models, key=lambda model: model.last_updated)
+        
+    def get_models_models_for_endpoint(self, endpoint: str) -> list[MLModelSpec]:
+        """
+        Get models for a given endpoint
+
+        Parameters
+        ----------
+        endpoint : str
+            Endpoint to get models for
+
+        Returns
+        -------
+        List[MLModelSpec]
+            List of model specs
+        """
+        return [model for model in self.models.values() if model.endpoint == endpoint]
+    
+    def get_latest_model_for_endpoint(self, endpoint: str) -> MLModelSpec:
+        """
+        Get latest model spec for a given endpoint
+
+        Parameters
+        ----------
+        endpoint : str
+            Endpoint to get model for
+
+        Returns
+        -------
+        MLModelSpec
+            Latest model spec
+        """
+        models = self.get_models_models_for_endpoint(endpoint)
+        if len(models) == 0:
+            warnings.warn(f"No models available for endpoint {endpoint}")
+            return None
+        else:
+            return max(models, key=lambda model: model.last_updated)
+
+    def get_models_without_target(self) -> list[MLModelSpec]:
+        """
+        Get models without a target
+
+        Returns
+        -------
+        List[MLModelSpec]
+            List of model specs
+        """
+        return [model for model in self.models.values() if not model.targets]
+
 
     def get_model(self, name: str) -> MLModelSpec:
         """
@@ -622,6 +694,7 @@ class MLModelRegistry(BaseModel):
                         ),
                         last_updated=model_data["last_updated"],
                         targets=set(model_data["targets"]),
+                        endpoint=model_data["endpoint"],
                         mtenn_lower_pin=(
                             model_data["mtenn_lower_pin"]
                             if "mtenn_lower_pin" in model_data
@@ -638,6 +711,7 @@ class MLModelRegistry(BaseModel):
 
         return cls(models=models)
 
+# supress stdout while loading the model registry?
 
 # default model registry for all ASAP models
 ASAPMLModelRegistry = MLModelRegistry.from_yaml(asap_models_yaml)
