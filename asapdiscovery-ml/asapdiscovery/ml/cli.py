@@ -196,7 +196,7 @@ def build_gat(
     model_config = {
         "cache": model_config_cache,
         "overwrite_cache": overwrite_model_config_cache,
-        "model_type": ModelType.gat_pyg,
+        "model_type": ModelType.pyg_gat,
         "rand_seed": model_rand_seed,
         "weights_path": weights_path,
         "grouped": grouped,
@@ -1096,7 +1096,7 @@ def build_and_train_gat(
     model_config = {
         "cache": model_config_cache,
         "overwrite_cache": overwrite_model_config_cache,
-        "model_type": ModelType.gat_pyg,
+        "model_type": ModelType.pyg_gat,
         "rand_seed": model_rand_seed,
         "weights_path": weights_path,
         "grouped": grouped,
