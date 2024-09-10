@@ -146,7 +146,7 @@ def seq_alignment(
     for query in matches_df["query"].unique():
         alignment = Alignment(matches_df, query, results_folder)
         file_prefix = alignment.query_label
-        selection_fasta, plot = do_MSA(
+        alignment_out = do_MSA(
             alignment,
             sel_key,
             file_prefix,
@@ -158,7 +158,7 @@ def seq_alignment(
 
         # Generate PDB file for template if requested (only for the reference structure)
         if gen_ref_pdb:
-            pdb_entry = PDBEntry(seq=selection_fasta, type="fasta")
+            pdb_entry = PDBEntry(seq=alignment_out.select_file, type="fasta")
             pdb_file_record = pdb_entry.retrieve_pdb(
                 results_folder=results_folder, min_id_match=99.9, ref_only=True
             )

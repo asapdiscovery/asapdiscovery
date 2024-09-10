@@ -40,6 +40,8 @@ class Alignment:
         self.descripts = self.query_matches["description"].to_numpy()
         self.hosts = self.query_matches["host"].to_numpy()
         self.organisms = self.query_matches["organism"].to_numpy()
+
+        self.sucess = False
         return
 
     @staticmethod
@@ -127,6 +129,8 @@ class Alignment:
         filtered_ids = [self.ids[i] for i in filtered_idxs]
         filtered_seqs = [self.seqs[i] for i in filtered_idxs]
         filtered_descp = [self.descripts[i] for i in filtered_idxs]
+        filtered_hosts = [self.hosts[i] for i in filtered_idxs]
+        filtered_orgs = [self.organisms[i] for i in filtered_idxs]
 
         if len(filtered_seqs) > 0:
             if self.seqs[0] != filtered_seqs[0]:
@@ -142,6 +146,8 @@ class Alignment:
         self.seqs = filtered_seqs
         self.ids = filtered_ids
         self.descripts = filtered_descp
+        self.hosts = filtered_hosts
+        self.organisms = filtered_orgs
 
         records = []
         for r in range(len(self.ids)):
@@ -437,16 +443,18 @@ def do_MSA(
     else:
         select_file = alignment.select_keyword(select_mode, f"{save_file}.fasta")
 
-    print(f"A fasta file {select_file} have been generated with the selected sequences")
+    alignment.select_file = select_file
+    print(f"A fasta file {alignment.select_file} have been generated with the selected sequences")
 
     # Do multisequence alignment
     align_fasta = alignment.multi_seq_alignment(f"{save_file}_alignment.fasta")
+    alignment.align_file = align_fasta
     print(
-        f"A fasta file {align_fasta} have been generated with the multi-seq alignment"
+        f"A fasta file {alignment.align_file} have been generated with the multi-seq alignment"
     )
 
     # Save CSV for ColabFold step
-    clean_csv = alignment.csv_align_data(select_file, f"{save_file}.csv", n_chains)
+    clean_csv = alignment.csv_align_data(alignment.select_file, f"{save_file}.csv", n_chains)
     print(f"A csv file {clean_csv} have been generated with the selected sequences")
 
     p, align_html = alignment.view_alignment(
@@ -457,7 +465,8 @@ def do_MSA(
     )
     print(f"A html file {align_html} have been generated with the aligned sequences")
 
-    return select_file, p
+    alignment.sucess = True
+    return alignment
 
 
 # Defining colors for each protein residue

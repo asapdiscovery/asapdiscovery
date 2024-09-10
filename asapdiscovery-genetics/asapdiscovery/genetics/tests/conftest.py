@@ -16,8 +16,3 @@ def blast_xml_path():
 def blast_csv_path():
     return fetch_test_file("SARS_blast_results.csv")
 
-@pytest.fixture(scope="session")
-def alignment(blast_csv_path, temp_path):
-    aln = Alignment(blast_csv_path, blast_csv_path['query'][0], temp_path)
-    return aln
-
