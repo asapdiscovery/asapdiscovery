@@ -8,13 +8,16 @@ from alchemiscale import ScopedKey
 from gufe import settings
 from gufe.tokenization import GufeKey
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
-    AlchemicalSamplerSettings,
     AlchemicalSettings,
+    LambdaSettings,
+    MultiStateOutputSettings,
+    OpenFFPartialChargeSettings,
+)
+from openfe.protocols.openmm_utils.omm_settings import (
     IntegratorSettings,
+    MultiStateSimulationSettings,
     OpenMMEngineSettings,
-    SimulationSettings,
-    SolvationSettings,
-    SystemSettings,
+    OpenMMSolvationSettings,
 )
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
@@ -209,7 +212,7 @@ class _FreeEnergyBase(_SchemaBase):
     )
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
         settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.1.0"
+            small_molecule_forcefield="openff-2.2.0"
         ),
         description="The force field settings used to parameterize the systems.",
     )
@@ -219,22 +222,13 @@ class _FreeEnergyBase(_SchemaBase):
         ),
         description="The settings for thermodynamic parameters.",
     )
-    system_settings: SystemSettings = Field(
-        SystemSettings(), description="The nonbonded system settings."
-    )
-    solvation_settings: SolvationSettings = Field(
-        SolvationSettings(),
-        description="Settings controlling how the systems should be solvated.",
+    solvation_settings: OpenMMSolvationSettings = Field(
+        OpenMMSolvationSettings(),
+        description="Settings controlling how the systems should be solvated using OpenMM.",
     )
     alchemical_settings: AlchemicalSettings = Field(
-        AlchemicalSettings(), description="The alchemical protocol settings."
-    )
-    # note alchemical_sampler_settings.n_repeats specifies the number of times each transformation will be run
-    alchemical_sampler_settings: AlchemicalSamplerSettings = Field(
-        AlchemicalSamplerSettings(
-            n_repeats=1
-        ),  # Run one calculation in serial and parallise accross alchemiscale workers see n_repeats on the _FreeEnergyBase object
-        description="Settings for the Equilibrium Alchemical sampler, currently supporting either MultistateSampler, SAMSSampler or ReplicaExchangeSampler.",
+        AlchemicalSettings(softcore_LJ="gapsys"),
+        description="The alchemical protocol settings.",
     )
     engine_settings: OpenMMEngineSettings = Field(
         OpenMMEngineSettings(), description="Openmm platform settings."
@@ -243,8 +237,8 @@ class _FreeEnergyBase(_SchemaBase):
         IntegratorSettings(),
         description="Settings for the LangevinSplittingDynamicsMove integrator.",
     )
-    simulation_settings: SimulationSettings = Field(
-        SimulationSettings(
+    simulation_settings: MultiStateSimulationSettings = Field(
+        MultiStateSimulationSettings(
             equilibration_length=1.0 * OFFUnit.nanoseconds,
             production_length=5.0 * OFFUnit.nanoseconds,
         ),
@@ -254,33 +248,43 @@ class _FreeEnergyBase(_SchemaBase):
         "RelativeHybridTopologyProtocol",
         description="The name of the OpenFE alchemical protocol to use.",
     )
-    n_repeats: int = Field(
-        2,
+    protocol_repeats: int = Field(
+        1,
         description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
+    )
+    lambda_settings: LambdaSettings = Field(
+        LambdaSettings(), description="Lambda schedule settings."
+    )
+
+    partial_charge_settings: OpenFFPartialChargeSettings = Field(
+        OpenFFPartialChargeSettings(),
+        description="The method which should be used to generate the partial charges if not provided with the ligand.",
+    )
+    output_settings: MultiStateOutputSettings = Field(
+        MultiStateOutputSettings(),
+        description="Settings for MultiState simulation output settings like writing to disk.",
     )
 
     def to_openfe_protocol(self):
-        """Build the corresponding OpenFE protocol from the settings defined in this schema."""
-        # TODO we need some way to link the settings to the protocol for when we have other options
-        if self.protocol == "RelativeHybridTopologyProtocol":
-            protocol_class = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol
-            settings_class = (
-                openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings
-            )
-
-        protocol_settings = settings_class(
+        protocol_settings = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings(
             # workaround type hint being base FF engine class
             forcefield_settings=self.forcefield_settings,
             thermo_settings=self.thermo_settings,
-            system_settings=self.system_settings,
+            # system_settings=self.system_settings,
             solvation_settings=self.solvation_settings,
             alchemical_settings=self.alchemical_settings,
-            alchemical_sampler_settings=self.alchemical_sampler_settings,
+            # alchemical_sampler_settings=self.alchemical_sampler_settings,
             engine_settings=self.engine_settings,
             integrator_settings=self.integrator_settings,
             simulation_settings=self.simulation_settings,
+            lambda_settings=self.lambda_settings,
+            protocol_repeats=self.protocol_repeats,
+            partial_charge_settings=self.partial_charge_settings,
+            output_settings=self.output_settings,
         )
-        return protocol_class(settings=protocol_settings)
+        return openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol(
+            settings=protocol_settings
+        )
 
 
 class FreeEnergyCalculationNetwork(_FreeEnergyBase):
@@ -319,6 +323,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         """Overwrite the class config to freeze the results model"""
 
         allow_mutation = False
+        orm_mode = True
 
     def to_openfe_receptor(self) -> openfe.ProteinComponent:
         return openfe.ProteinComponent.from_json(self.receptor)

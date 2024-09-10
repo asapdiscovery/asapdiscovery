@@ -196,7 +196,11 @@ files:
 
   # TYK2 FEC network for testing
   - resource: tyk2_small_network.json
-    sha256hash: 7f49cff105c79fab2ca873f26bd4dc0d34a426ff48ce4ecc07a8f1544be8a0b1
+    sha256hash: cf6d416ef4c802ad64d72966e2a8ce9115ef3dd87ffa9181309c7c5515b42a66
+
+  # TYK2 FEC network for testing (disconnected, i.e. missing edges)
+  - resource: tyk2_result_network_disconnected.json
+    sha256hash: 0468c9b0abffd68613fd8c391bd6422871beeb5ee075dbac3ad844526a6eb797
 
   # SMILES file with fully defined chirality for testing
   - resource: chalcogran_defined.smi
@@ -275,7 +279,7 @@ files:
 
   # alchemy result testing
   - resource: tyk2_result_network.json
-    sha256hash: f1bc3f03c84a28cb6fecda38160afba7b860cfca27ffc39da4359da3957f80cc
+    sha256hash: 0deb89052985a3c2758c4e77160abd9afc22e3896b229618f28e8b18e9dc807a
 
   - resource: tyk2_reference_data.csv
     sha256hash: 5e73f6cf3b68defcffa5cf54c91ffb5ac1569688278a91c8032d4cd3426930cc
@@ -341,3 +345,7 @@ files:
 
   - resource: SARS_blast_results.csv
     sha256hash: 1867827bd921e269b44c88476c1dfad2f198266388eef15696eefbb669e24abd
+
+  - resource: tyk2_result_network_ddg0s.json
+    sha256hash: f9ba9049f40eaa41e108a4cea5efafc726d08729b636c1df61fa771677f4c093
+
