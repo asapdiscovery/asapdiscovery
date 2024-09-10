@@ -7,6 +7,7 @@ import pydantic
 import torch
 from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (
+    dgl_gat_args,
     ds_cache_overwrite,
     ds_config_cache_overwrite,
     ds_split_args,
@@ -2281,3 +2282,875 @@ def _build_trainer(
         trainer_config_cache.write_text(t.json())
 
     return t
+
+
+################################################################################
+# DGL and PyG-specific GAT methods
+@build.command(name="pyg_gat")
+@output_dir
+@save_weights
+@weights_path
+@trainer_config_cache
+@optim_args
+@wandb_args
+@model_config_cache
+@model_rand_seed
+@model_tag
+@mtenn_args
+@gat_args
+@es_args
+@graph_ds_args
+@ds_split_args
+@loss_args
+@trainer_args
+@overwrite_args
+@s3_args
+def build_pyg_gat(
+    output_dir: Path | None = None,
+    save_weights: str | None = None,
+    weights_path: Path | None = None,
+    trainer_config_cache: Path | None = None,
+    optimizer_type: OptimizerType | None = None,
+    lr: float | None = None,
+    weight_decay: float | None = None,
+    momentum: float | None = None,
+    dampening: float | None = None,
+    b1: float | None = None,
+    b2: float | None = None,
+    eps: float | None = None,
+    rho: float | None = None,
+    optimizer_config_cache: Path | None = None,
+    use_wandb: bool | None = None,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
+    grouped: bool | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
+    max_comb_neg: bool | None = None,
+    max_comb_scale: float | None = None,
+    pred_substrate: float | None = None,
+    pred_km: float | None = None,
+    comb_substrate: float | None = None,
+    comb_km: float | None = None,
+    model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
+    model_tag: str | None = None,
+    in_feats: int | None = None,
+    num_layers: int | None = None,
+    hidden_feats: str | None = None,
+    num_heads: str | None = None,
+    dropout: str | None = None,
+    alphas: str | None = None,
+    es_type: EarlyStoppingType | None = None,
+    es_patience: int | None = None,
+    es_n_check: int | None = None,
+    es_divergence: float | None = None,
+    es_burnin: int | None = None,
+    es_config_cache: Path | None = None,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    ds_split_type: DatasetSplitterType | None = None,
+    train_frac: float | None = None,
+    val_frac: float | None = None,
+    test_frac: float | None = None,
+    enforce_one: bool | None = None,
+    ds_rand_seed: int | None = None,
+    ds_split_config_cache: Path | None = None,
+    loss_type: LossFunctionType | None = None,
+    semiquant_fill: float | None = None,
+    loss_config_cache: Path | None = None,
+    auto_init: bool | None = None,
+    start_epoch: int | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None,
+    target_prop: str | None = None,
+    cont: bool | None = None,
+    loss_dict: dict | None = None,
+    device: torch.device | None = None,
+    data_aug: tuple[str] = (),
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
+):
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.pyg_gat,
+        "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "in_channels": in_feats,
+        "num_layers": num_layers,
+        "hidden_channels": hidden_feats,
+        "heads": num_heads,
+        "dropout": dropout,
+        "negative_slope": alphas,
+    }
+    es_config = {
+        "cache": es_config_cache,
+        "overwrite_cache": overwrite_es_config_cache,
+        "es_type": es_type,
+        "patience": es_patience,
+        "n_check": es_n_check,
+        "divergence": es_divergence,
+        "burnin": es_burnin,
+    }
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": False,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+    }
+
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "grouped": grouped,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
+
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
+
+    # Gather all the configs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "save_weights": save_weights,
+        "use_wandb": use_wandb,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
+    }
+
+    _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
+
+
+@build.command(name="dgl_gat")
+@output_dir
+@save_weights
+@weights_path
+@trainer_config_cache
+@optim_args
+@wandb_args
+@model_config_cache
+@model_rand_seed
+@model_tag
+@mtenn_args
+@dgl_gat_args
+@es_args
+@graph_ds_args
+@ds_split_args
+@loss_args
+@trainer_args
+@overwrite_args
+@s3_args
+def build_dgl_gat(
+    output_dir: Path | None = None,
+    save_weights: str | None = None,
+    weights_path: Path | None = None,
+    trainer_config_cache: Path | None = None,
+    optimizer_type: OptimizerType | None = None,
+    lr: float | None = None,
+    weight_decay: float | None = None,
+    momentum: float | None = None,
+    dampening: float | None = None,
+    b1: float | None = None,
+    b2: float | None = None,
+    eps: float | None = None,
+    rho: float | None = None,
+    optimizer_config_cache: Path | None = None,
+    use_wandb: bool | None = None,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
+    grouped: bool | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
+    max_comb_neg: bool | None = None,
+    max_comb_scale: float | None = None,
+    pred_substrate: float | None = None,
+    pred_km: float | None = None,
+    comb_substrate: float | None = None,
+    comb_km: float | None = None,
+    model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
+    model_tag: str | None = None,
+    in_feats: int | None = None,
+    num_layers: int | None = None,
+    hidden_feats: str | None = None,
+    num_heads: str | None = None,
+    feat_drops: str | None = None,
+    attn_drops: str | None = None,
+    alphas: str | None = None,
+    residuals: str | None = None,
+    agg_modes: str | None = None,
+    biases: str | None = None,
+    allow_zero_in_degree: bool | None = None,
+    es_type: EarlyStoppingType | None = None,
+    es_patience: int | None = None,
+    es_n_check: int | None = None,
+    es_divergence: float | None = None,
+    es_burnin: int | None = None,
+    es_config_cache: Path | None = None,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    ds_split_type: DatasetSplitterType | None = None,
+    train_frac: float | None = None,
+    val_frac: float | None = None,
+    test_frac: float | None = None,
+    enforce_one: bool | None = None,
+    ds_rand_seed: int | None = None,
+    ds_split_config_cache: Path | None = None,
+    loss_type: LossFunctionType | None = None,
+    semiquant_fill: float | None = None,
+    loss_config_cache: Path | None = None,
+    auto_init: bool | None = None,
+    start_epoch: int | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None,
+    target_prop: str | None = None,
+    cont: bool | None = None,
+    loss_dict: dict | None = None,
+    device: torch.device | None = None,
+    data_aug: tuple[str] = (),
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
+):
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.dgl_gat,
+        "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "in_feats": in_feats,
+        "num_layers": num_layers,
+        "hidden_feats": hidden_feats,
+        "num_heads": num_heads,
+        "feat_drops": feat_drops,
+        "attn_drops": attn_drops,
+        "alphas": alphas,
+        "residuals": residuals,
+        "agg_modes": agg_modes,
+        "biases": biases,
+        "allow_zero_in_degree": allow_zero_in_degree,
+    }
+    es_config = {
+        "cache": es_config_cache,
+        "overwrite_cache": overwrite_es_config_cache,
+        "es_type": es_type,
+        "patience": es_patience,
+        "n_check": es_n_check,
+        "divergence": es_divergence,
+        "burnin": es_burnin,
+    }
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": False,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+    }
+
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "grouped": grouped,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
+
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
+
+    # Gather all the configs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "save_weights": save_weights,
+        "use_wandb": use_wandb,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
+    }
+
+    _build_trainer(trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache)
+
+
+@build_and_train.command(name="pyg_gat")
+@output_dir
+@save_weights
+@weights_path
+@trainer_config_cache
+@optim_args
+@wandb_args
+@model_config_cache
+@model_rand_seed
+@model_tag
+@mtenn_args
+@gat_args
+@es_args
+@graph_ds_args
+@ds_split_args
+@loss_args
+@trainer_args
+@overwrite_args
+@s3_args
+def build_and_train_pyg_gat(
+    output_dir: Path | None = None,
+    save_weights: str | None = None,
+    weights_path: Path | None = None,
+    trainer_config_cache: Path | None = None,
+    optimizer_type: OptimizerType | None = None,
+    lr: float | None = None,
+    weight_decay: float | None = None,
+    momentum: float | None = None,
+    dampening: float | None = None,
+    b1: float | None = None,
+    b2: float | None = None,
+    eps: float | None = None,
+    rho: float | None = None,
+    optimizer_config_cache: Path | None = None,
+    use_wandb: bool | None = None,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
+    grouped: bool | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
+    max_comb_neg: bool | None = None,
+    max_comb_scale: float | None = None,
+    pred_substrate: float | None = None,
+    pred_km: float | None = None,
+    comb_substrate: float | None = None,
+    comb_km: float | None = None,
+    model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
+    model_tag: str | None = None,
+    in_feats: int | None = None,
+    num_layers: int | None = None,
+    hidden_feats: str | None = None,
+    num_heads: str | None = None,
+    dropout: str | None = None,
+    alphas: str | None = None,
+    es_type: EarlyStoppingType | None = None,
+    es_patience: int | None = None,
+    es_n_check: int | None = None,
+    es_divergence: float | None = None,
+    es_burnin: int | None = None,
+    es_config_cache: Path | None = None,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    ds_split_type: DatasetSplitterType | None = None,
+    train_frac: float | None = None,
+    val_frac: float | None = None,
+    test_frac: float | None = None,
+    enforce_one: bool | None = None,
+    ds_rand_seed: int | None = None,
+    ds_split_config_cache: Path | None = None,
+    loss_type: LossFunctionType | None = None,
+    semiquant_fill: float | None = None,
+    loss_config_cache: Path | None = None,
+    auto_init: bool | None = None,
+    start_epoch: int | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None,
+    target_prop: str | None = None,
+    cont: bool | None = None,
+    loss_dict: dict | None = None,
+    device: torch.device | None = None,
+    data_aug: tuple[str] = (),
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
+):
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.pyg_gat,
+        "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "in_channels": in_feats,
+        "num_layers": num_layers,
+        "hidden_channels": hidden_feats,
+        "heads": num_heads,
+        "dropout": dropout,
+        "negative_slope": alphas,
+    }
+    es_config = {
+        "cache": es_config_cache,
+        "overwrite_cache": overwrite_es_config_cache,
+        "es_type": es_type,
+        "patience": es_patience,
+        "n_check": es_n_check,
+        "divergence": es_divergence,
+        "burnin": es_burnin,
+    }
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": False,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+    }
+
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "grouped": grouped,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
+
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
+
+    # Gather all the configs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "save_weights": save_weights,
+        "use_wandb": use_wandb,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
+    }
+
+    t = _build_trainer(
+        trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache
+    )
+
+    t.initialize()
+    t.train()
+
+
+@build_and_train.command(name="dgl_gat")
+@output_dir
+@save_weights
+@weights_path
+@trainer_config_cache
+@optim_args
+@wandb_args
+@model_config_cache
+@model_rand_seed
+@model_tag
+@mtenn_args
+@dgl_gat_args
+@es_args
+@graph_ds_args
+@ds_split_args
+@loss_args
+@trainer_args
+@overwrite_args
+@s3_args
+def build_and_train_dgl_gat(
+    output_dir: Path | None = None,
+    save_weights: str | None = None,
+    weights_path: Path | None = None,
+    trainer_config_cache: Path | None = None,
+    optimizer_type: OptimizerType | None = None,
+    lr: float | None = None,
+    weight_decay: float | None = None,
+    momentum: float | None = None,
+    dampening: float | None = None,
+    b1: float | None = None,
+    b2: float | None = None,
+    eps: float | None = None,
+    rho: float | None = None,
+    optimizer_config_cache: Path | None = None,
+    use_wandb: bool | None = None,
+    wandb_project: str | None = None,
+    wandb_name: str | None = None,
+    extra_config: list[str] | None = None,
+    grouped: bool | None = None,
+    strategy: StrategyConfig | None = None,
+    pred_readout: ReadoutConfig | None = None,
+    combination: CombinationConfig | None = None,
+    comb_readout: ReadoutConfig | None = None,
+    max_comb_neg: bool | None = None,
+    max_comb_scale: float | None = None,
+    pred_substrate: float | None = None,
+    pred_km: float | None = None,
+    comb_substrate: float | None = None,
+    comb_km: float | None = None,
+    model_config_cache: Path | None = None,
+    model_rand_seed: int | None = None,
+    model_tag: str | None = None,
+    in_feats: int | None = None,
+    num_layers: int | None = None,
+    hidden_feats: str | None = None,
+    num_heads: str | None = None,
+    feat_drops: str | None = None,
+    attn_drops: str | None = None,
+    alphas: str | None = None,
+    residuals: str | None = None,
+    agg_modes: str | None = None,
+    biases: str | None = None,
+    allow_zero_in_degree: bool | None = None,
+    es_type: EarlyStoppingType | None = None,
+    es_patience: int | None = None,
+    es_n_check: int | None = None,
+    es_divergence: float | None = None,
+    es_burnin: int | None = None,
+    es_config_cache: Path | None = None,
+    exp_file: Path | None = None,
+    ds_cache: Path | None = None,
+    ds_config_cache: Path | None = None,
+    ds_split_type: DatasetSplitterType | None = None,
+    train_frac: float | None = None,
+    val_frac: float | None = None,
+    test_frac: float | None = None,
+    enforce_one: bool | None = None,
+    ds_rand_seed: int | None = None,
+    ds_split_config_cache: Path | None = None,
+    loss_type: LossFunctionType | None = None,
+    semiquant_fill: float | None = None,
+    loss_config_cache: Path | None = None,
+    auto_init: bool | None = None,
+    start_epoch: int | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None,
+    target_prop: str | None = None,
+    cont: bool | None = None,
+    loss_dict: dict | None = None,
+    device: torch.device | None = None,
+    data_aug: tuple[str] = (),
+    overwrite_trainer_config_cache: bool = False,
+    overwrite_optimizer_config_cache: bool = False,
+    overwrite_model_config_cache: bool = False,
+    overwrite_es_config_cache: bool = False,
+    overwrite_ds_config_cache: bool = False,
+    overwrite_ds_cache: bool = False,
+    overwrite_ds_split_config_cache: bool = False,
+    overwrite_loss_config_cache: bool = False,
+    s3_path: str | None = None,
+    upload_to_s3: bool | None = None,
+):
+    # Build each dict and pass to Trainer
+    optim_config = {
+        "cache": optimizer_config_cache,
+        "overwrite_cache": overwrite_optimizer_config_cache,
+        "optimizer_type": optimizer_type,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "momentum": momentum,
+        "dampening": dampening,
+        "b1": b1,
+        "b2": b2,
+        "eps": eps,
+        "rho": rho,
+    }
+    model_config = {
+        "cache": model_config_cache,
+        "overwrite_cache": overwrite_model_config_cache,
+        "model_type": ModelType.dgl_gat,
+        "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
+        "grouped": grouped,
+        "strategy": strategy,
+        "pred_readout": pred_readout,
+        "combination": combination,
+        "comb_readout": comb_readout,
+        "max_comb_neg": max_comb_neg,
+        "max_comb_scale": max_comb_scale,
+        "pred_substrate": pred_substrate,
+        "pred_km": pred_km,
+        "comb_substrate": comb_substrate,
+        "comb_km": comb_km,
+        "in_feats": in_feats,
+        "num_layers": num_layers,
+        "hidden_feats": hidden_feats,
+        "num_heads": num_heads,
+        "feat_drops": feat_drops,
+        "attn_drops": attn_drops,
+        "alphas": alphas,
+        "residuals": residuals,
+        "agg_modes": agg_modes,
+        "biases": biases,
+        "allow_zero_in_degree": allow_zero_in_degree,
+    }
+    es_config = {
+        "cache": es_config_cache,
+        "overwrite_cache": overwrite_es_config_cache,
+        "es_type": es_type,
+        "patience": es_patience,
+        "n_check": es_n_check,
+        "divergence": es_divergence,
+        "burnin": es_burnin,
+    }
+    ds_config = {
+        "cache": ds_config_cache,
+        "overwrite_cache": overwrite_ds_config_cache,
+        "exp_file": exp_file,
+        "is_structural": False,
+        "cache_file": ds_cache,
+        "overwrite": overwrite_ds_cache,
+    }
+
+    ds_splitter_config = {
+        "cache": ds_split_config_cache,
+        "overwrite_cache": overwrite_ds_split_config_cache,
+        "split_type": ds_split_type,
+        "grouped": grouped,
+        "train_frac": train_frac,
+        "val_frac": val_frac,
+        "test_frac": test_frac,
+        "enforce_one": enforce_one,
+        "rand_seed": ds_rand_seed,
+    }
+    loss_config = {
+        "cache": loss_config_cache,
+        "overwrite_cache": overwrite_loss_config_cache,
+        "loss_type": loss_type,
+        "semiquant_fill": semiquant_fill,
+    }
+    data_aug_configs = [
+        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
+        for aug_str in data_aug
+    ]
+
+    # Parse loss_dict
+    if loss_dict:
+        loss_dict = json.loads(loss_dict.read_text())
+
+    # Gather all the configs
+    trainer_kwargs = {
+        "optimizer_config": optim_config,
+        "model_config": model_config,
+        "es_config": es_config,
+        "ds_config": ds_config,
+        "ds_splitter_config": ds_splitter_config,
+        "loss_config": loss_config,
+        "data_aug_configs": data_aug_configs,
+        "auto_init": auto_init,
+        "start_epoch": start_epoch,
+        "n_epochs": n_epochs,
+        "batch_size": batch_size,
+        "target_prop": target_prop,
+        "cont": cont,
+        "loss_dict": loss_dict,
+        "device": device,
+        "output_dir": output_dir,
+        "save_weights": save_weights,
+        "use_wandb": use_wandb,
+        "wandb_project": wandb_project,
+        "wandb_name": wandb_name,
+        "extra_config": Trainer.parse_extra_config(extra_config),
+        "s3_path": s3_path,
+        "upload_to_s3": upload_to_s3,
+        "model_tag": model_tag,
+    }
+
+    t = _build_trainer(
+        trainer_kwargs, trainer_config_cache, overwrite_trainer_config_cache
+    )
+
+    t.initialize()
+    t.train()
