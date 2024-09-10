@@ -959,8 +959,7 @@ def test_alchemy_predict_disconnected_success(tyk2_result_network_disconnected, 
 
 
 def test_alchemy_predict_clean_sucess(tyk2_result_network_ddg0, tmpdir):
-    """Test predicting the absolute and relative free energies with a network with a DDG of 0.
-    """
+    """Test predicting the absolute and relative free energies with a network with a DDG of 0."""
 
     runner = CliRunner()
     console = rich.get_console()
@@ -971,7 +970,9 @@ def test_alchemy_predict_clean_sucess(tyk2_result_network_ddg0, tmpdir):
 
         # run predict as normal - should return an error
         result = runner.invoke(
-            alchemy, ["predict", "-n", "result_network_ddg0.json", "--clean"], catch_exceptions=False
+            alchemy,
+            ["predict", "-n", "result_network_ddg0.json", "--clean"],
+            catch_exceptions=False,
         )
         assert result.exit_code == 0
     print(result.stdout.replace("\n", ""))
