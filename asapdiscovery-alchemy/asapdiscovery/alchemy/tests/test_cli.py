@@ -948,7 +948,7 @@ def test_alchemy_predict_disconnected_success(tyk2_result_network_disconnected, 
             alchemy, ["predict", "-n", "result_network_disconnected.json", "-fl"]
         )
         assert result.exit_code == 0
-    print(result.stdout.replace("\n", ""))
+
     assert (
         "Warning: removing 3 disconnected compounds: 42.86% of total in network."
         in result.stdout
@@ -958,25 +958,45 @@ def test_alchemy_predict_disconnected_success(tyk2_result_network_disconnected, 
     assert "lig_ejm_50" in result.stdout
 
 
-def test_alchemy_predict_clean_sucess(tyk2_result_network_ddg0, tmpdir):
-    """Test predicting the absolute and relative free energies with a network with a DDG of 0."""
+def test_alchemy_predict_clean_fail(tyk2_result_network_ddg0s, tmpdir):
+    """Test that predicting the absolute and relative free energies with a network with a few DDGs of 0 fails."""
 
     runner = CliRunner()
     console = rich.get_console()
     console.clear_live()
     with tmpdir.as_cwd():
-        # write the results file to local
-        tyk2_result_network_ddg0.to_file("result_network_ddg0.json")
+        # run predict as normal while keeping largest subnetwork - should return an error
+        with pytest.raises(
+            RuntimeError,
+            match="The transformation lig_ejm_42-lig_ejm_50 has too many simulated legs",
+        ):
+            result = runner.invoke(
+                alchemy,
+                ["predict", "-n", tyk2_result_network_ddg0s, "-fl"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 1
 
-        # run predict as normal - should return an error
+
+def test_alchemy_predict_clean_success(tyk2_result_network_ddg0s, tmpdir):
+    """Test that predicting the absolute and relative free energies with a network with a few DDGs of 0 fails."""
+
+    runner = CliRunner()
+    console = rich.get_console()
+    console.clear_live()
+    with tmpdir.as_cwd():
+        # run predict as normal while keeping largest subnetwork and clean - should not return an error
         result = runner.invoke(
             alchemy,
-            ["predict", "-n", "result_network_ddg0.json", "--clean"],
+            ["predict", "-n", tyk2_result_network_ddg0s, "-fl", "--clean"],
             catch_exceptions=False,
         )
         assert result.exit_code == 0
-    print(result.stdout.replace("\n", ""))
-    assert "Removed 9 edges with DG==0.0" in result.stdout
+        assert "Removed 9 edges with DG==0.0" in result.stdout
+        assert (
+            "removed 1 edges to balance between complex/solvent replicates."
+            in result.stdout
+        )
 
 
 def test_prep_alchemize(test_ligands_sdfile, tmpdir):
