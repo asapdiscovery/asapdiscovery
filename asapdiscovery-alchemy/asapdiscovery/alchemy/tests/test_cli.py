@@ -958,6 +958,26 @@ def test_alchemy_predict_disconnected_success(tyk2_result_network_disconnected, 
     assert "lig_ejm_50" in result.stdout
 
 
+def test_alchemy_predict_clean_sucess(tyk2_result_network_ddg0, tmpdir):
+    """Test predicting the absolute and relative free energies with a network with a DDG of 0.
+    """
+
+    runner = CliRunner()
+    console = rich.get_console()
+    console.clear_live()
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network_ddg0.to_file("result_network_ddg0.json")
+
+        # run predict as normal - should return an error
+        result = runner.invoke(
+            alchemy, ["predict", "-n", "result_network_ddg0.json", "--clean"], catch_exceptions=False
+        )
+        assert result.exit_code == 0
+    print(result.stdout.replace("\n", ""))
+    assert "Removed 9 edges with DG==0.0" in result.stdout
+
+
 def test_prep_alchemize(test_ligands_sdfile, tmpdir):
 
     with tmpdir.as_cwd():
