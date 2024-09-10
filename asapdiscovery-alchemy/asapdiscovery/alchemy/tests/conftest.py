@@ -50,12 +50,6 @@ def tyk2_result_network_disconnected():
     return FreeEnergyCalculationNetwork.from_file(fec_network)
 
 
-@pytest.fixture(scope="session")
-def tyk2_result_network_ddg0s():
-    """Return an FEC network with some results that contain DDG=0.0 ."""
-    fec_network = fetch_test_file("tyk2_result_network_ddg0s.json")
-    return FreeEnergyCalculationNetwork.from_file(fec_network)
-
 
 @pytest.fixture(scope="session")
 def tyk2_reference_data():
