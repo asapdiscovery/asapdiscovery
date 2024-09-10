@@ -444,7 +444,9 @@ def do_MSA(
         select_file = alignment.select_keyword(select_mode, f"{save_file}.fasta")
 
     alignment.select_file = select_file
-    print(f"A fasta file {alignment.select_file} have been generated with the selected sequences")
+    print(
+        f"A fasta file {alignment.select_file} have been generated with the selected sequences"
+    )
 
     # Do multisequence alignment
     align_fasta = alignment.multi_seq_alignment(f"{save_file}_alignment.fasta")
@@ -454,7 +456,9 @@ def do_MSA(
     )
 
     # Save CSV for ColabFold step
-    clean_csv = alignment.csv_align_data(alignment.select_file, f"{save_file}.csv", n_chains)
+    clean_csv = alignment.csv_align_data(
+        alignment.select_file, f"{save_file}.csv", n_chains
+    )
     print(f"A csv file {clean_csv} have been generated with the selected sequences")
 
     p, align_html = alignment.view_alignment(
