@@ -321,7 +321,7 @@ class DatasetConfig(ConfigBase):
     def check_data_type(cls, values):
         inp = values["input_data"][0]
         match values["ds_type"]:
-            case DatasetType.graph:
+            case DatasetType.graph | DatasetType.dgl_graph | DatasetType.pyg_graph:
                 if not isinstance(inp, Ligand):
                     raise ValueError(
                         "Expected Ligand input data for graph-based model, but got "
