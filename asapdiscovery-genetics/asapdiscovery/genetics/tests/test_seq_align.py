@@ -25,7 +25,7 @@ def test_pdb_to_seq_no_out(protein_path):
         chain="A",
         fasta_out=None,
     )
-    assert isinstance(seq_record, SeqRecord.SeqRecord) 
+    assert isinstance(seq_record, SeqRecord.SeqRecord)
     assert len(seq_record.seq) > 0
 
 
