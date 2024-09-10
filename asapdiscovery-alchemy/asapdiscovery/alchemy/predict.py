@@ -1009,6 +1009,7 @@ def clean_result_network(network, console=None):
     from asapdiscovery.alchemy.schema.fec import (
         FreeEnergyCalculationNetwork,
         TransformationResult,
+        AlchemiscaleResults
     )
     from rich.padding import Padding
 
@@ -1055,12 +1056,13 @@ def clean_result_network(network, console=None):
             (1, 0, 1, 0),
         )
         console.print(message)
-    print(deduped_results)
     data = network_schema.dict(exclude={"results"})
-    data["results"] = deduped_results
-    fec = FreeEnergyCalculationNetwork(
-        **data
-        # , results=deduped_results
+    # unpack the deduped results into dicts
+    results = AlchemiscaleResults(results=deduped_results, network_key=network_schema.results.network_key).dict()
+    data["results"] = results
+
+    fec = FreeEnergyCalculationNetwork.parse_obj(
+        data
     )
     # fec.results = deduped_results
     return fec
