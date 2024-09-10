@@ -20,6 +20,7 @@ from asapdiscovery.ml.config import (
     OptimizerConfig,
 )
 from mtenn.config import (
+    DGLGATModelConfig,
     E3NNModelConfig,
     GATModelConfig,
     ModelConfigBase,
@@ -205,8 +206,10 @@ class Trainer(BaseModel):
             match config_kwargs["model_type"]:
                 case ModelType.GAT:
                     config_cls = GATModelConfig
-                case ModelType.gat_pyg:
+                case ModelType.pyg_gat:
                     config_cls = PyGGATModelConfig
+                case ModelType.dgl_gat:
+                    config_cls = DGLGATModelConfig
                 case ModelType.schnet:
                     config_cls = SchNetModelConfig
                 case ModelType.e3nn:
