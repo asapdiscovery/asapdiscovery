@@ -1,6 +1,5 @@
 import os
 import traceback
-from unittest import mock
 
 import pandas as pd
 import pytest
@@ -8,7 +7,6 @@ from asapdiscovery.genetics.blast import pdb_to_seq
 from asapdiscovery.genetics.cli import genetics as cli
 from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
 from click.testing import CliRunner
-from openmm import unit
 
 
 def click_success(result):
@@ -27,7 +25,7 @@ def test_pdb_to_seq_no_out(protein_path):
         chain="A",
         fasta_out=None,
     )
-    assert type(seq_record) == SeqRecord.SeqRecord
+    assert isinstance(seq_record, SeqRecord.SeqRecord) 
     assert len(seq_record.seq) > 0
 
 

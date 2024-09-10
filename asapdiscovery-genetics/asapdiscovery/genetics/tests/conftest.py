@@ -1,6 +1,5 @@
 import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.genetics.seq_alignment import Alignment
 
 
 @pytest.fixture(scope="session")
