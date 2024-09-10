@@ -556,6 +556,131 @@ def alphas(func):
 
 
 ################################################################################
+# GAT args
+def dgl_gat_args(func):
+    for fn in [
+        in_feats,
+        num_layers_dgl_gat,
+        hidden_feats_dgl,
+        num_heads_dgl,
+        feat_drops,
+        attn_drops,
+        alphas_dgl,
+        residuals,
+        agg_modes,
+        biases,
+        allow_zero_in_degree,
+    ]:
+        func = fn(func)
+
+    return func
+
+
+def num_layers_dgl_gat(func):
+    return click.option(
+        "--num-layers",
+        type=int,
+        help=(
+            "Number of GAT layers. Ignored if multiple values are passed for any "
+            "other GAT argument. To define a model with only one layer, this must be "
+            "explicitly set to 1."
+        ),
+    )(func)
+
+
+def hidden_feats_dgl(func):
+    return click.option(
+        "--hidden-feats",
+        help=(
+            "Output size of each GAT layer. This can either be a single value, which will "
+            "be broadcasted to each layer, or a comma-separated list with each value "
+            "corresponding to one layer in the model."
+        ),
+    )(func)
+
+
+def num_heads_dgl(func):
+    return click.option(
+        "--num-heads",
+        help=(
+            "Number of attention heads for each GAT layer. Passing a single value or "
+            "multiple values functions similarly as for --hidden-feats."
+        ),
+    )(func)
+
+
+def feat_drops(func):
+    return click.option(
+        "--feat-drops",
+        help=(
+            "Dropout of input features for each GAT layer. Passing a single value or "
+            "multiple values functions similarly as for --hidden-feats."
+        ),
+    )(func)
+
+
+def attn_drops(func):
+    return click.option(
+        "--attn-drops",
+        help=(
+            "Dropout of attention values for each GAT layer. Passing a single value or "
+            "multiple values functions similarly as for --hidden-feats."
+        ),
+    )(func)
+
+
+def alphas_dgl(func):
+    return click.option(
+        "--alphas",
+        help=(
+            "Hyperparameter for LeakyReLU gate for each GAT layer. Passing a single value "
+            "or multiple values functions similarly as for --hidden-feats."
+        ),
+    )(func)
+
+
+def residuals(func):
+    return click.option(
+        "--residuals",
+        help=(
+            "Whether to use residual connection for each GAT layer. Passing a single value "
+            "or multiple values functions similarly as for --hidden-feats."
+        ),
+    )(func)
+
+
+def agg_modes(func):
+    return click.option(
+        "--agg-modes",
+        help=(
+            "Which aggregation mode [flatten, mean] to use for each GAT layer. Passing a "
+            "single value or multiple values functions similarly as for --hidden-feats."
+        ),
+    )(func)
+
+
+def biases(func):
+    return click.option(
+        "--biases",
+        help=(
+            "Whether to use bias for each GAT layer. Passing a single value "
+            "or multiple values functions similarly as for --hidden-feats."
+        ),
+    )(func)
+
+
+def allow_zero_in_degree(func):
+    return click.option(
+        "--allow-zero-in-degree",
+        type=bool,
+        help="Allow zero in degree nodes for all graph layers.",
+    )(func)
+
+
+################################################################################
+
+
+################################################################################
 # SchNet args
 def schnet_args(func):
     for fn in [
