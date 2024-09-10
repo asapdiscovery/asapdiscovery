@@ -50,7 +50,6 @@ def tyk2_result_network_disconnected():
     return FreeEnergyCalculationNetwork.from_file(fec_network)
 
 
-
 @pytest.fixture(scope="session")
 def tyk2_reference_data():
     """Return a CSV in the CDD style of IC50 values for the tyk2 series."""
