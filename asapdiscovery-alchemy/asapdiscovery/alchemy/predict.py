@@ -1001,8 +1001,6 @@ def clean_result_network(network, console=None):
 
     returns the loaded FreeEnergyCalculationNetwork.
     """
-    import json
-    import tempfile
     from collections import defaultdict
 
     import numpy as np
