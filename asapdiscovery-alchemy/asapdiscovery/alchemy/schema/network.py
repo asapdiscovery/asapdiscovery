@@ -78,6 +78,11 @@ class CustomNetworkPlanner(_NetworkPlannerMethod):
     """Plan a user-set custom network"""
 
     type: Literal["CustomNetworkPlanner"] = "CustomNetworkPlanner"
+    custom_network_file: str = Field(
+        ...,
+        description="A CSV file which contains the custom network to be used for the ligand network.",
+    )
+
     from pydantic import validator
 
     def get_planning_function(self) -> Callable:
@@ -113,12 +118,22 @@ class CustomNetworkPlanner(_NetworkPlannerMethod):
     @staticmethod
     def read_custom_network_csv(csv_path):
         import csv
-
-        CustomNetworkPlanner.validate_custom_network_file(csv_path)
         with open(csv_path) as readfile:
             reader = csv.reader(readfile)
             edges = [edge for edge in reader]
         return edges
+    
+    def get_custom_network(self, ligands: Ligand) -> tuple[list[Ligand], list[list[str]]]:
+        specified_edges = self.read_custom_network_csv(self.custom_network_file)
+        ligand_names_in_network = [
+                ligand_name for edge in specified_edges for ligand_name in edge
+            ]
+        ligands = [
+                ligand
+                for ligand in ligands
+                if ligand.to_openfe().name in ligand_names_in_network
+            ]
+        return ligands, specified_edges
 
 
 class _NetworkPlannerSettings(_SchemaBase):
@@ -251,21 +266,11 @@ class NetworkPlanner(_NetworkPlannerSettings):
                 raise ValueError(
                     "When providing a custom network CSV (-cn), you must set network_planning_method:type: CustomNetworkPlanner in your free energy perturbation factory."
                 )
-            # find the set of ligands that are intended to be in the network;
-            # ignore the rest of the compounds.
-            specified_edges = CustomNetworkPlanner.read_custom_network_csv(
-                custom_network_file
-            )
-            ligand_names_in_network = [
-                ligand_name for edge in specified_edges for ligand_name in edge
-            ]
-            ligands = [
-                ligand
-                for ligand in ligands
-                if ligand.to_openfe().name in ligand_names_in_network
-            ]
+            # find the set of ligands that are intended to be in the network
+            custom_planner = CustomNetworkPlanner(custom_network_file=custom_network_file)
+            ligands, specified_edges = custom_planner.get_custom_network(ligands)
 
-            planner_data = {  # for some reason, OpenFE's `generate_network_from_names` takes in `mapper` instead of `mappers`
+            planner_data = { 
                 "ligands": [
                     mol.to_openfe() for mol in ligands
                 ],  # need to convert to rdkit objects?
