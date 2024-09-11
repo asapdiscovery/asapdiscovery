@@ -159,3 +159,8 @@ def test_ligands_sdfile(test_ligands, tmp_path):
     ) as f:
         write_ligands_to_multi_sdf(f.name, test_ligands, overwrite=True)
     return f.name
+
+
+@pytest.fixture()
+def tyk2_result_network_ddg0s():
+    return fetch_test_file("tyk2_result_network_ddg0s.json")

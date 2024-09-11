@@ -767,6 +767,12 @@ def stop(network_key: str):
     help="The name of the Postera molecule set to upload the results to.",
 )
 @click.option(
+    "-c",
+    "--clean",
+    is_flag=True,
+    help="Whether or not to clean the incoming result network, e.g. in cases where some edges are imbalanced between complex/solvent or when DG==0.0.",
+)
+@click.option(
     "-fl",
     "--force-largest",
     is_flag=True,
@@ -780,6 +786,7 @@ def predict(
     experimental_protocol: Optional[str] = None,
     target: Optional[TagEnumBase] = None,
     postera_molset_name: Optional[str] = None,
+    clean: Optional[bool] = False,
     force_largest: Optional[bool] = False,
 ):
     """
@@ -794,6 +801,7 @@ def predict(
         upload_to_postera,
     )
     from asapdiscovery.alchemy.predict import (
+        clean_result_network,
         create_absolute_report,
         create_relative_report,
         get_data_from_femap,
@@ -806,7 +814,15 @@ def predict(
     console = rich.get_console()
     print_header(console)
 
-    result_network = FreeEnergyCalculationNetwork.from_file(network)
+    if clean:
+        message = Padding(
+            f"Warning: cleaning incoming result network {network}. You may lose results.",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+        result_network = clean_result_network(network, console=console)
+    else:
+        result_network = FreeEnergyCalculationNetwork.from_file(network)
 
     message = Padding(
         f"Loaded FreeEnergyCalculationNetwork from [repr.filename]{network}[/repr.filename]",
