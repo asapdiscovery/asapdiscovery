@@ -44,4 +44,3 @@ gatmodel_test:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
   endpoint: pIC50
-
