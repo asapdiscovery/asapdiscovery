@@ -519,7 +519,6 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
                     "503": {"value": 1.1},
                 },
                 "modified_at": "2021-01-01T00:00:00Z",
-
             }
         ],
     }
