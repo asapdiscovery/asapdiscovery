@@ -118,21 +118,24 @@ class CustomNetworkPlanner(_NetworkPlannerMethod):
     @staticmethod
     def read_custom_network_csv(csv_path):
         import csv
+
         with open(csv_path) as readfile:
             reader = csv.reader(readfile)
             edges = [edge for edge in reader]
         return edges
-    
-    def get_custom_network(self, ligands: Ligand) -> tuple[list[Ligand], list[list[str]]]:
+
+    def get_custom_network(
+        self, ligands: Ligand
+    ) -> tuple[list[Ligand], list[list[str]]]:
         specified_edges = self.read_custom_network_csv(self.custom_network_file)
         ligand_names_in_network = [
-                ligand_name for edge in specified_edges for ligand_name in edge
-            ]
+            ligand_name for edge in specified_edges for ligand_name in edge
+        ]
         ligands = [
-                ligand
-                for ligand in ligands
-                if ligand.to_openfe().name in ligand_names_in_network
-            ]
+            ligand
+            for ligand in ligands
+            if ligand.to_openfe().name in ligand_names_in_network
+        ]
         return ligands, specified_edges
 
 
@@ -267,10 +270,12 @@ class NetworkPlanner(_NetworkPlannerSettings):
                     "When providing a custom network CSV (-cn), you must set network_planning_method:type: CustomNetworkPlanner in your free energy perturbation factory."
                 )
             # find the set of ligands that are intended to be in the network
-            custom_planner = CustomNetworkPlanner(custom_network_file=custom_network_file)
+            custom_planner = CustomNetworkPlanner(
+                custom_network_file=custom_network_file
+            )
             ligands, specified_edges = custom_planner.get_custom_network(ligands)
 
-            planner_data = { 
+            planner_data = {
                 "ligands": [
                     mol.to_openfe() for mol in ligands
                 ],  # need to convert to rdkit objects?
