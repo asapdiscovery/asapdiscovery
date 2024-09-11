@@ -276,9 +276,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
             ligands, specified_edges = custom_planner.get_custom_network(ligands)
 
             planner_data = {
-                "ligands": [
-                    mol.to_openfe() for mol in ligands
-                ],
+                "ligands": [mol.to_openfe() for mol in ligands],
                 "mapper": self.atom_mapping_engine.get_mapper(),
                 "names": specified_edges,
             }
