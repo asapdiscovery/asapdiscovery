@@ -166,11 +166,11 @@ def test_gatinference_predict_from_smiles_dataset(test_data, target):
     assert not np.allclose(output3, output_smiles_1, rtol=1e-5)
 
     # test predicting list of smiles
-    output_arr = inference_cls.predict_from_smiles([s1, s2, s3])
-    assert_allclose(
-        output_arr,
-        np.asarray([output_smiles_1, output_smiles_2, output_smiles_3]),
-    )
+    output_arr = inference_cls.predict_from_smiles([s1, s2, s3], return_err=False)
+    smiles_arr = np.array([output_smiles_1, output_smiles_2, output_smiles_3])
+    assert_allclose(output_arr, smiles_arr, rtol=1e-5),
+    # check they are the same shape
+    assert output_arr.shape == smiles_arr.shape
 
 
 def test_gatinference_predict_from_subset(test_data):

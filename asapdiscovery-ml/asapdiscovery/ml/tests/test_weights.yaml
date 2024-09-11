@@ -11,6 +11,8 @@ model1:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  endpoint: pIC50
+
 
 
 model2:
@@ -26,6 +28,7 @@ model2:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  endpoint: pIC50
 
 gatmodel_test:
   base_url: https://asap-discovery-ml-weights.asapdata.org/test/
@@ -40,3 +43,4 @@ gatmodel_test:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  endpoint: pIC50

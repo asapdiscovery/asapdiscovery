@@ -1,6 +1,5 @@
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional
 
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
@@ -51,7 +50,7 @@ from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic import Field, PositiveInt, validator
+from pydantic import Field, PositiveInt
 
 
 class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
@@ -102,9 +101,10 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         3, description="Number of targets to dock each ligand against."
     )
 
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
+    ml_score: bool = Field(
+        True, description="Whether to use ML scoring in the docking pipeline"
     )
+
     allow_dask_cuda: bool = Field(
         True,
         description="Whether to allow regenerating dask cuda cluster when in local mode",
@@ -118,20 +118,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     md_openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
-
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
 
 
 def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
@@ -309,12 +295,12 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         scorers.append(FINTScorer(target=inputs.target))
 
     # load ml scorers
-    if inputs.ml_scorers:
-        for ml_scorer in inputs.ml_scorers:
-            logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorers.append(
-                MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
-            )
+    if inputs.ml_score:
+        # check which endpoints are availabe for the target
+        models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
+
+        ml_scorers = MLModelScorer.load_model_specs(models=models)
+        scorers.extend(ml_scorers)
 
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
