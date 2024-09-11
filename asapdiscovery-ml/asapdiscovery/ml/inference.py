@@ -381,8 +381,8 @@ class GATInference(InferenceBase):
         ds = GraphDataset.from_ligands(
             ligands, node_featurizer=node_featurizer, edge_featurizer=edge_featurizer
         )
-
-        data = [self.predict(pose["g"], return_err=return_err) for _, pose in ds]
+        # always return a 2D array, then we can mask out the err dimension
+        data = [self.predict(pose["g"], return_err=True) for _, pose in ds]
         data = np.asarray(data, dtype=np.float32)
         # if it is 1D array, we need to convert to 2D
         if len(data.shape) == 1:
@@ -489,7 +489,8 @@ class StructuralInference(InferenceBase):
             pose = [
                 p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
             ]
-        data = [self.predict(p, return_err=return_err) for p in pose]
+        # always return a 2D array, then we can mask out the err dimension
+        data = [self.predict(p, return_err=True) for p in pose]
         data = np.asarray(data, dtype=np.float32)
         # if it is 1D array, we need to convert to 2D
         if len(data.shape) == 1:
@@ -560,7 +561,8 @@ class StructuralInference(InferenceBase):
             h.close()
 
         # Make predictions
-        data = [self.predict(p, return_err=return_err) for p in pose]
+        # always return a 2D array, then we can mask out the err dimension
+        data = [self.predict(p, return_err=True) for p in pose]
         data = np.asarray(data)
         # if it is 1D array, we need to convert to 2D
         if len(data.shape) == 1:
