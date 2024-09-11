@@ -177,9 +177,9 @@ def plot_model_preds_scatter(
 
     # Axis labels
     for ax in fg.axes[:, 0]:
-        ax.set_ylabel("Predicted $\mathrm{pIC}_{50}$")
+        ax.set_ylabel(r"Predicted $\mathrm{pIC}_{50}$")
     for ax in fg.axes[-1, :]:
-        ax.set_xlabel("Experimental $\mathrm{pIC}_{50}$")
+        ax.set_xlabel(r"Experimental $\mathrm{pIC}_{50}$")
 
     sns.move_legend(fg, loc="upper center", bbox_to_anchor=(0.5, 0), ncols=3)
 
