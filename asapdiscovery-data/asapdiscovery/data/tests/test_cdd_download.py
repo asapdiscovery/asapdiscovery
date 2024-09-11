@@ -518,6 +518,8 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
                     "502": {"value": 0.031},
                     "503": {"value": 1.1},
                 },
+                "modified_at": "2021-01-01T00:00:00Z",
+
             }
         ],
     }
@@ -551,6 +553,7 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
         assert ethanol_data[f"{assay_name}: IC50 CI (Lower) (µM)"] == 0.028
         assert ethanol_data[f"{assay_name}: IC50 CI (Upper) (µM)"] == 0.031
         assert ethanol_data[f"{assay_name}: Curve class"] == 1.1
+        assert ethanol_data["modified_at"] == "2021-01-01T00:00:00Z"
         # check the molecule identifiers
         mol_data = mock_molecule_response["objects"][0]
         assert mol_data["smiles"] == ethanol_data["Smiles"]
