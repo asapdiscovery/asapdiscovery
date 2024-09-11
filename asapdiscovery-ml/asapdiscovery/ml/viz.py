@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import pandas
 import seaborn as sns
 
@@ -8,7 +7,8 @@ def plot_split_losses(
     out_fn=None,
     splits=["train", "val", "test"],
     loss_label="Loss",
-    **kwargs
+    legend_title="label",
+    **kwargs,
 ):
     """
     Plot overall losses per split by training epoch.
@@ -30,7 +30,7 @@ def plot_split_losses(
     all_dfs = []
     for lab, pred_tracker in pred_tracker_dict.items():
         df = pred_tracker.to_plot_df(agg_compounds=True, agg_losses=True)
-        df["label"] = lab
+        df[legend_title] = lab
         all_dfs.append(df)
 
     all_dfs = pandas.concat(all_dfs, ignore_index=True)
@@ -43,7 +43,7 @@ def plot_split_losses(
         if len(pred_tracker_dict) > 1:
             # More than one different experiment, so use color for experiment and style
             #  for split
-            hue = "label"
+            hue = legend_title
             hue_order = list(pred_tracker_dict.keys())
             if len(splits) > 1:
                 style = "split"
@@ -63,6 +63,9 @@ def plot_split_losses(
         style = kwargs.pop("style", None)
         style_order = kwargs.pop("style_order", None)
 
+    # Other various kwargs
+    aspect = kwargs.pop("aspect", 1.5)
+
     # Make plot
     # fig = plt.figure(figsize=(7, 5))
     fg = sns.relplot(
@@ -74,8 +77,8 @@ def plot_split_losses(
         hue_order=hue_order,
         style_order=style_order,
         kind="line",
-        aspect=1.5,
-        **kwargs
+        aspect=aspect,
+        **kwargs,
     )
 
     # Set axes
@@ -122,13 +125,17 @@ def plot_model_preds_scatter(
     all_dfs = pandas.concat(all_dfs, ignore_index=True)
 
     # Subset by split and epoch
-    if use_epoch < 0:
-        use_epoch = all_dfs["epoch"].max()
-    # TODO Need to do this by model, otherwise we only get the model that trained for
-    #  the longest. probably using groupby
-    epoch_idx = all_dfs["epoch"] == use_epoch
+    epoch_idx = []
+    for lab, g in all_dfs.groupby("label"):
+        if use_epoch < 0:
+            cur_use_epoch = g["epoch"].max()
+        else:
+            cur_use_epoch = use_epoch
+        epoch_idx.extend(g.index[g["epoch"] == cur_use_epoch])
+
+    all_dfs = all_dfs.iloc[epoch_idx, :]
     split_idx = all_dfs["split"] == split
-    all_dfs = all_dfs.loc[epoch_idx & split_idx, :]
+    all_dfs = all_dfs.loc[split_idx, :]
 
     # Set so the legend looks nicer
     legend_text_mapper = {
@@ -138,7 +145,10 @@ def plot_model_preds_scatter(
     }
     all_dfs["Assay Range"] = list(map(legend_text_mapper.get, all_dfs["in_range"]))
 
-    plt.rc("font", size=18)
+    # If any facet_kws are passed in kwargs, update the defaults
+    facet_kws = {"sharex": False, "sharey": False} | kwargs.pop("facet_kws", {})
+
+    # plt.rc("font", size=18)
     fg = sns.relplot(
         data=all_dfs,
         x="target",
@@ -151,7 +161,8 @@ def plot_model_preds_scatter(
             "Above Assay Range": ">",
         },
         style_order=["Below Assay Range", "In Assay Range", "Above Assay Range"],
-        facet_kws={"sharex": False, "sharey": False},
+        facet_kws=facet_kws,
+        **kwargs,
     )
 
     # Figure title
@@ -162,11 +173,71 @@ def plot_model_preds_scatter(
     # min_val = loss_df.loc[:, ["target", "pred"]].values.flatten().min() - 0.5
     min_val = -0.5
     max_val = all_dfs.loc[:, ["target", "pred"]].values.flatten().max() + 0.5
+    # fg.set(ylim=(min_val, max_val), xlim=(min_val, max_val))
 
+    # Axis labels
     for ax in fg.axes[:, 0]:
         ax.set_ylabel("Predicted $\mathrm{pIC}_{50}$")
     for ax in fg.axes[-1, :]:
         ax.set_xlabel("Experimental $\mathrm{pIC}_{50}$")
+
+    sns.move_legend(fg, loc="upper center", bbox_to_anchor=(0.5, 0), ncols=3)
+
+    for lab, ax in fg.axes_dict.items():
+        # Set title
+        ax.set_title(lab, fontweight="bold")
+
+        # Plot y=x line
+        ax.plot(
+            [min_val, max_val],
+            [min_val, max_val],
+            color="black",
+            ls="--",
+        )
+
+        # Shade 0.5 pIC50 and 1 pIC50 regions
+        ax.fill_between(
+            [min_val, max_val],
+            [min_val - 0.5, max_val - 0.5],
+            [min_val + 0.5, max_val + 0.5],
+            color="gray",
+            alpha=0.2,
+        )
+        ax.fill_between(
+            [min_val, max_val],
+            [min_val - 1, max_val - 1],
+            [min_val + 1, max_val + 1],
+            color="gray",
+            alpha=0.2,
+        )
+
+        # Stats labels
+        stats_text = []
+        for stat, stat_label in zip(
+            ["mae", "rmse", "sp_r", "tau"],
+            ["MAE", "RMSE", "Spearman's $\\rho$", "Kendall's $\\tau$"],
+        ):
+            stats_str = (
+                f"{stat_label}: "
+                f"{stats_dict[lab]['test'][stat]['value']:0.2f}"
+                f"$_{{{stats_dict[lab]['test'][stat]['95ci_low']:0.2f}}}"
+                f"^{{{stats_dict[lab]['test'][stat]['95ci_high']:0.2f}}}$"
+            )
+            stats_text.append(stats_str)
+
+        # ax.text(
+        #     0.7,
+        #     0.01,
+        #     "\n".join(stats_text),
+        #     transform=ax.transAxes,
+        #     va="bottom",
+        #     # fontsize=14,
+        # )
+
+        # Make it a square
+        ax.set_aspect("equal", "box")
+        ax.set_xlim((min_val, max_val))
+        ax.set_ylim((min_val, max_val))
 
     if out_fn:
         fg.savefig(out_fn, bbox_inches="tight", dpi=200)
