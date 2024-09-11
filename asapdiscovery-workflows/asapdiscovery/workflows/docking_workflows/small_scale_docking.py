@@ -120,7 +120,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     )
 
 
-
 def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     """
     Run small scale docking on a set of ligands, against multiple targets
@@ -300,9 +299,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         # check which endpoints are availabe for the target
         models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
 
-        ml_scorers = MLModelScorer.load_model_specs(
-            models=models
-        )
+        ml_scorers = MLModelScorer.load_model_specs(models=models)
         scorers.extend(ml_scorers)
 
     if inputs.write_final_sdf:
