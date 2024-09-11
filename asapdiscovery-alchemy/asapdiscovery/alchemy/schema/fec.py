@@ -323,6 +323,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         """Overwrite the class config to freeze the results model"""
 
         allow_mutation = False
+        orm_mode = True
 
     def to_openfe_receptor(self) -> openfe.ProteinComponent:
         return openfe.ProteinComponent.from_json(self.receptor)

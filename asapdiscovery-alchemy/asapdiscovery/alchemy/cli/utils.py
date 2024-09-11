@@ -5,7 +5,9 @@ import pandas as pd
 import rich
 
 if TYPE_CHECKING:
+    from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.data.schema.ligand import Ligand
+    from cinnabar import FEMap
 
 
 def print_header(console: "rich.Console"):
@@ -259,3 +261,63 @@ def report_alchemize_clusters(alchemical_clusters, outsiders):
         ]
     )
     return alchemical_cluster_sizes, outsider_cluster_sizes, alchemical_num_in_clusters
+
+
+def cinnabar_femap_is_connected(fe_map: "FEMap") -> bool:
+    """Checks whether the provided femap is connected or not. Convenience function to make function
+    naming clearer compared to cinnabar nomenclature."""
+    return fe_map.check_weakly_connected()
+
+
+def cinnabar_femap_get_largest_subnetwork(
+    fe_map: "FEMap",
+    result_network: "FreeEnergyCalculationNetwork",
+    console: "rich.Console",
+) -> "FEMap":
+    """From a disconnected femap, returns the subnetwork with the largest number of nodes using a networkx
+    workaround. Requires the original FreeEnergyCalculationNetwork to query results from.
+
+    Returns a cinnabar FEMap that is fully connected"""
+    import itertools
+
+    import networkx as nx
+    from asapdiscovery.alchemy.schema.fec import (
+        AlchemiscaleResults,
+        FreeEnergyCalculationNetwork,
+    )
+    from rich.padding import Padding
+
+    fe_map_nx = fe_map.graph
+    subnetworks_nodenames = sorted(  # split the network into subnetworks
+        nx.strongly_connected_components(fe_map_nx), key=len, reverse=True
+    )
+
+    # ideally we'd just convert the adjust networkx back to a cinnabar fe_map but this isn't
+    # implemented yet in cinnabar. Instead just take these ligands out of the result_network
+    ligands_to_discard = [
+        ligand for ligand in itertools.chain.from_iterable(subnetworks_nodenames[1:])
+    ]
+
+    message = Padding(
+        f"Warning: removing {len(ligands_to_discard)} disconnected compounds: {round(len(ligands_to_discard)/len(fe_map_nx.nodes)*100, 2)}% of total in network. "
+        f"These will not have results in the final output! Compound names: {ligands_to_discard}",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+    filtered_network_results = []
+    for res in result_network.results.results:
+        if (
+            res.ligand_a not in ligands_to_discard
+            and res.ligand_b not in ligands_to_discard
+        ):
+            filtered_network_results.append(res)
+
+    # AlchemiscaleResults is immutable so need to construct a new results network with these new results
+    new_results = AlchemiscaleResults(
+        network_key=result_network.results.network_key, results=filtered_network_results
+    )
+    old_data = result_network.dict(exclude={"results"})
+    new_result_network = FreeEnergyCalculationNetwork(**old_data, results=new_results)
+
+    return new_result_network.results.to_fe_map()
