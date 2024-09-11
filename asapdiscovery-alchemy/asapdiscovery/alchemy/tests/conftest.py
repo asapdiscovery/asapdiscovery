@@ -164,3 +164,11 @@ def test_ligands_sdfile(test_ligands, tmp_path):
 @pytest.fixture()
 def tyk2_result_network_ddg0s():
     return fetch_test_file("tyk2_result_network_ddg0s.json")
+
+@pytest.fixture()
+def p38_graphml():
+    return fetch_test_file("p38.graphml")
+
+@pytest.fixture()
+def p38_protein():
+    return fetch_test_file("p38.pdb")

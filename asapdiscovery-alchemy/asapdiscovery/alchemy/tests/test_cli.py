@@ -107,6 +107,24 @@ def test_alchemy_plan_missing():
     )
 
 
+def test_plan_from_graphml(p38_graphml, p38_protein, tmpdir):
+    with tmpdir.as_cwd():
+        runner = CliRunner()
+        result = runner.invoke(
+            alchemy,
+            [
+                "plan",
+                "-g",
+                p38_graphml,
+                "-r",
+                p38_protein,
+                "-n",
+                "tst",
+            ],
+        )
+        assert result.exit_code == 0
+
+
 def test_alchemy_prep_create(tmpdir):
     """Test creating the alchemy prep workflow"""
 
@@ -1019,3 +1037,5 @@ def test_prep_alchemize(test_ligands_sdfile, tmpdir):
             ],
         )
         assert result.exit_code == 0
+
+
