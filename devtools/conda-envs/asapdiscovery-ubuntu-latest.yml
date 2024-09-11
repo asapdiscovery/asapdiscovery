@@ -93,8 +93,8 @@ dependencies:
   - logomaker
 
   # simulation
-  - openfe =>0.14.0
-  - gufe =>0.9.5
+  - openfe >=1.0.1
+  - gufe >=1.0.0
   - httpx
   - perses >=0.10.2
   - kartograf

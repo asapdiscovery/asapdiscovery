@@ -801,6 +801,11 @@ class DatasetSplitterConfig(ConfigBase):
                 dates_dict[date_created].append(i)
             except KeyError:
                 dates_dict[date_created] = [i]
+
+        # check if dates_dict is empty
+        if all(d == None for d in dates_dict.keys()) or not dates_dict:  # noqa: E711
+            raise ValueError("No dates found in dataset.")
+
         all_dates = np.asarray(list(dates_dict.keys()))
 
         # Sort the dates

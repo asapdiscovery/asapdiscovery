@@ -11,7 +11,7 @@ from asapdiscovery.cli.cli_args import (
     ligands,
     loglevel,
     md_args,
-    ml_scorer,
+    ml_score,
     output_dir,
     overwrite,
     pdb_file,
@@ -25,6 +25,7 @@ from asapdiscovery.cli.cli_args import (
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
+from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE
 from asapdiscovery.simulation.simulate import OpenMMPlatform
 from asapdiscovery.workflows.docking_workflows.cross_docking import (
     CrossDockingWorkflowInputs,
@@ -97,7 +98,7 @@ def docking():
 @output_dir
 @overwrite
 @input_json
-@ml_scorer
+@ml_score
 @loglevel
 @ref_chain
 @active_site_chain
@@ -124,7 +125,7 @@ def large_scale(
     dask_type: DaskType = DaskType.LOCAL,
     dask_n_workers: Optional[int] = None,
     failure_mode: FailureMode = FailureMode.SKIP,
-    ml_scorer: Optional[list[str]] = None,
+    ml_score: Optional[bool] = True,
     loglevel: Union[int, str] = logging.INFO,
     ref_chain: Optional[str] = None,
     active_site_chain: Optional[str] = None,
@@ -158,7 +159,7 @@ def large_scale(
             postera_molset_name=postera_molset_name,
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
-            ml_scorers=ml_scorer,
+            ml_score=ml_score,
             output_dir=output_dir,
             overwrite=overwrite,
             loglevel=loglevel,
@@ -182,6 +183,18 @@ def large_scale(
     is_flag=True,
     default=False,
     help="Whether to use dense conformer enumeration with OEOmega (slower, more accurate)",
+)
+@click.option(
+    "--posit-method",
+    type=click.Choice(POSIT_METHOD.get_names(), case_sensitive=False),
+    default="all",
+    help="The set of methods POSIT can use. Defaults to all.",
+)
+@click.option(
+    "--relax-mode",
+    type=click.Choice(POSIT_RELAX_MODE.get_names(), case_sensitive=False),
+    default="none",
+    help="When to check for relaxation either, 'clash', 'all', 'none'",
 )
 @click.option(
     "--allow-retries",
@@ -226,6 +239,8 @@ def cross_docking(
     structure_selector: StructureSelector = StructureSelector.LEAVE_SIMILAR_OUT,
     use_omega: bool = False,
     omega_dense: bool = False,
+    posit_method: Optional[str] = POSIT_METHOD.ALL.name,
+    relax_mode: Optional[str] = POSIT_RELAX_MODE.NONE.name,
     num_poses: int = 1,
     allow_retries: bool = False,
     allow_final_clash: bool = False,
@@ -264,6 +279,8 @@ def cross_docking(
             failure_mode=failure_mode,
             use_omega=use_omega,
             omega_dense=omega_dense,
+            posit_method=POSIT_METHOD[posit_method],
+            relax_mode=POSIT_RELAX_MODE[relax_mode],
             num_poses=num_poses,
             allow_retries=allow_retries,
             ligands=ligands,
@@ -314,7 +331,7 @@ def cross_docking(
 @output_dir
 @overwrite
 @input_json
-@ml_scorer
+@ml_score
 @md_args
 @loglevel
 @ref_chain
@@ -341,7 +358,7 @@ def small_scale(
     dask_type: DaskType = DaskType.LOCAL,
     dask_n_workers: Optional[int] = None,
     failure_mode: FailureMode = FailureMode.SKIP,
-    ml_scorer: Optional[list[str]] = None,
+    ml_score: Optional[bool] = True,
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
@@ -377,7 +394,7 @@ def small_scale(
             postera_molset_name=postera_molset_name,
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
-            ml_scorers=ml_scorer,
+            ml_score=ml_score,
             output_dir=output_dir,
             overwrite=overwrite,
             md=md,
@@ -464,7 +481,7 @@ def symexp_crystal_packing(
             postera_molset_name=postera_molset_name,
             cache_dir=cache_dir,
             save_to_cache=save_to_cache,
-            ml_scorers=ml_scorer,
+            ml_score=ml_score,
             output_dir=output_dir,
             overwrite=overwrite,
             loglevel=loglevel,
@@ -531,7 +548,7 @@ def symexp_crystal_packing(
 @output_dir
 @overwrite
 @input_json
-@ml_scorer
+@ml_score
 @md_args
 @loglevel
 @ref_chain
@@ -573,7 +590,7 @@ def ligand_transfer_docking(
     dask_n_workers: Optional[int] = None,
     failure_mode: FailureMode = FailureMode.SKIP,
     loglevel: Union[int, str] = logging.INFO,
-    ml_scorer: Optional[list[str]] = None,
+    ml_score: Optional[bool] = True,
     md: bool = False,
     md_steps: int = 2500000,  # 10 ns @ 4.0 fs timestep
     md_openmm_platform: OpenMMPlatform = OpenMMPlatform.Fastest,
@@ -616,7 +633,7 @@ def ligand_transfer_docking(
             overwrite=overwrite,
             allow_final_clash=allow_final_clash,
             loglevel=loglevel,
-            ml_scorers=ml_scorer,
+            ml_score=ml_score,
             md=md,
             md_steps=md_steps,
             md_openmm_platform=md_openmm_platform,
