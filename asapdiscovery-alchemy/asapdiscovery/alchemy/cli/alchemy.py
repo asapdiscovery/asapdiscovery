@@ -134,7 +134,6 @@ def plan(
             "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
         )
 
-
     click.echo("Loading FreeEnergyCalculationFactory ...")
     # parse the factory is supplied else get the default
     if factory_file is not None:
@@ -162,7 +161,6 @@ def plan(
         with tempfile.NamedTemporaryFile(suffix=".pdb") as fp:
             alchemy_ds.reference_complex.target.to_pdb_file(fp.name)
             receptor = openfe.ProteinComponent.from_pdb_file(fp.name)
-
 
     else:
         if graphml:
