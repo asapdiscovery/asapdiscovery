@@ -25,6 +25,7 @@ from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.genetics.fitness import target_has_fitness_data
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
+from asapdiscovery.ml.models import MLModelSpecBase
 from mtenn.config import ModelType
 from multimethod import multimethod
 from pydantic import BaseModel, Field, validator
@@ -586,7 +587,7 @@ class MLModelScorer(ScorerBase):
 
     @staticmethod
     def load_model_specs(
-        models: list["MLModelSpecBase"],
+        models: list[MLModelSpecBase],
     ) -> list["MLModelScorer"]:  # noqa: F821
         """
         Load a list of models into scorers.
