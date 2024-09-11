@@ -278,7 +278,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
             planner_data = {
                 "ligands": [
                     mol.to_openfe() for mol in ligands
-                ],  # need to convert to rdkit objects?
+                ],
                 "mapper": self.atom_mapping_engine.get_mapper(),
                 "names": specified_edges,
             }
