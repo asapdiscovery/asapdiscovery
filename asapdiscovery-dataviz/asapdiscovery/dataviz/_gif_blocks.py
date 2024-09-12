@@ -71,6 +71,7 @@ class GIFBlockData:
         "EV-D68-Capsid": "A",
         "DENV-NS2B-NS3pro": "B",
         "ZIKV-NS2B-NS3pro": "B",
+        "ZIKV-RdRppro": "A",
     }
 
     # define the residues that span the subpockets
@@ -190,7 +191,7 @@ class GIFBlockData:
         "subP2": "blue",
         "subP3": "cyan",
     }
-    color_dict_ZIKV_RdRppro = {
+    color_dict_RdRppro = {
         "undecided": "grey",
     }
     color_dict_Capsid = {

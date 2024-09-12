@@ -35,7 +35,7 @@ _FITNESS_DATA_IS_CROSSGENOME = {  # sets whether the fitness data we have for th
 
 _FITNESS_DATA_FIT_THRESHOLD = {  # sets threshold at which a mutant is considered 'fit' for the specific fitness experiment. Directed by Bloom et al.
     VirusTags("SARS-CoV-2").value: -1.0,
-    VirusTags("ZIKV").value: -1.0,
+    VirusTags("ZIKV").value: -1.0,  # this is OK for both NS2B-NS3pro and RdRppro
 }
 
 
