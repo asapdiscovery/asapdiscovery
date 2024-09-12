@@ -26,6 +26,9 @@ EV_A71_2Apro_SEQRES = pkg_resources.resource_filename(
 ZIKV_NS2B_NS3pro_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/zikv_ns2b_ns3pro.yaml"
 )
+ZIKV_RdRppro_SEQRES = pkg_resources.resource_filename(
+    __name__, "master_seqres/zikv_rdrppro.yaml"
+)
 DENV_NS2B_NS3pro_SEQRES = pkg_resources.resource_filename(
     __name__, "master_seqres/denv_ns2b_ns3pro.yaml"
 )
@@ -47,6 +50,7 @@ seqres_data = {
     TargetTags("EV-A71-3Cpro").value: EV_A71_3Cpro_SEQRES,
     TargetTags("EV-A71-2Apro").value: EV_A71_2Apro_SEQRES,
     TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_SEQRES,
+    TargetTags("ZIKV-RdRppro").value: ZIKV_RdRppro_SEQRES,
     TargetTags("DENV-NS2B-NS3pro").value: DENV_NS2B_NS3pro_SEQRES,
     TargetTags("EV-A71-Capsid").value: EV_A71_Capsid_SEQRES,
     TargetTags("EV-D68-Capsid").value: EV_D68_Capsid_SEQRES,
@@ -61,11 +65,16 @@ ZIKV_NS2B_NS3pro_fitness_data = pkg_resources.resource_filename(
     __name__, "aa_fitness_zikv_ns2b3.json"
 )
 
+ZIKV_RdRppro_fitness_data = pkg_resources.resource_filename(
+    __name__, "aa_fitness_zikv_rdrppro.json"
+)
+
 targets_with_fitness_data = [
     TargetTags("SARS-CoV-2-Mpro"),
     TargetTags("SARS-CoV-2-Mac1"),
     TargetTags("SARS-CoV-2-N-protein"),
     TargetTags("ZIKV-NS2B-NS3pro"),
+    TargetTags("ZIKV-RdRppro"),
 ]
 
 # Reference PDB files to align targets to for consistent dataviz
@@ -97,6 +106,9 @@ master_structures = {
     "ZIKV-NS2B-NS3pro": pkg_resources.resource_filename(
         __name__, "master_structures/zikv_ns2b_ns3pro.pdb"
     ),
+    "ZIKV-RdRppro": pkg_resources.resource_filename(
+        __name__, "master_structures/zikv_rdrppro.pdb"
+    ),
     "DENV-NS2B-NS3pro": pkg_resources.resource_filename(
         __name__, "master_structures/denv_ns2b_ns3pro.pdb"
     ),
@@ -119,6 +131,7 @@ active_site_chains = {
     "EV-A71-3Cpro": "A",
     "EV-A71-2Apro": "A",
     "ZIKV-NS2B-NS3pro": "B",
+    "ZIKV-RdRppro": "A",
     "DENV-NS2B-NS3pro": "B",
     "EV-A71-Capsid": "A",
     "EV-D68-Capsid": "A",
