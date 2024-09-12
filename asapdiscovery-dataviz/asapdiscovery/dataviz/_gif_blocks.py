@@ -133,6 +133,7 @@ class GIFBlockData:
         "subP2": "152+83+75+81+82+72",
         "subP3": "153+154+155",
     }
+    pocket_dict_ZIKV-RdRppro = {}
 
     pocket_dict_DENV_NS2B_NS3pro = {
         "subP1": "135+151+161+159+129+150+130+132+131",
@@ -189,6 +190,7 @@ class GIFBlockData:
         "subP2": "blue",
         "subP3": "cyan",
     }
+    color_dict_ZIKV-RdRppro = {}
     color_dict_Capsid = {
         "hydrophic_trap": "orange",
         "tube_region": "blue",
