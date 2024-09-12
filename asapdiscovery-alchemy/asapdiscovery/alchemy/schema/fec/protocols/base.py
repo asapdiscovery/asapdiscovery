@@ -5,7 +5,7 @@ from typing import Literal
 from ...base import _SchemaBase
 
 
-class SupportedProtocols(enum.Enum, str):
+class SupportedProtocols(enum.Enum):
     RelativeHybridTopologyProtocol = "RelativeHybridTopologyProtocol"
     NonEquilibriumCyclingProtocol = "NonEquilibriumCyclingProtocol"
 
@@ -18,9 +18,10 @@ class ProtocolSettingsBase(_SchemaBase, abc.ABC):
 
     type: Literal["_ProtocolBase"] = "_ProtocolBase"
 
-    @abc.abstractmethod
     @classmethod
-    def from_defaults(cls): ...
+    @abc.abstractmethod
+    def from_defaults(cls):
+        ...
 
     @abc.abstractmethod
     def to_openfe_protocol(self): ...

@@ -14,11 +14,14 @@ class NonEquilibriumCyclingSettings(
 
     type: Literal["NonEquilibriumCyclingSettings"] = "NonEquilibriumCyclingSettings"
 
+    @classmethod
     def from_defaults(cls):
         settings = NonEquilibriumCyclingProtocol.default_settings()
-
         return cls(**dict(settings))
 
     def to_openfe_protocol(self):
-        protocol_settings = NonEquilibriumCyclingSettings_(**dict(self))
+        settings = dict(self)
+        settings.pop('type')
+
+        protocol_settings = NonEquilibriumCyclingSettings_(settings)
         return NonEquilibriumCyclingProtocol(settings=protocol_settings)

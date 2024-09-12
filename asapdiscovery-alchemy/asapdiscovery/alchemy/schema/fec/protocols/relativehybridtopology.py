@@ -27,5 +27,8 @@ class RelativeHybridTopologySettings(
         return cls(**dict(settings))
 
     def to_openfe_protocol(self):
-        protocol_settings = RelativeHybridTopologyProtocolSettings_(**dict(self))
+        settings = dict(self)
+        settings.pop('type')
+
+        protocol_settings = RelativeHybridTopologyProtocolSettings_(**settings)
         return RelativeHybridTopologyProtocol(settings=protocol_settings)

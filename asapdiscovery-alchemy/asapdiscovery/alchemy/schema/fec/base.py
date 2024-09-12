@@ -1,10 +1,11 @@
 import warnings
 from collections import Counter
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import openfe
 from alchemiscale import ScopedKey
 from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.alchemy.schema.fec.solvent import  SolventSettings
 from asapdiscovery.alchemy.schema.fec.protocols import (
     ProtocolSettingsBase,
     SupportedProtocols,
@@ -12,21 +13,12 @@ from asapdiscovery.alchemy.schema.fec.protocols import (
 from asapdiscovery.alchemy.schema.fec.protocols.relativehybridtopology import (
     RelativeHybridTopologySettings,
 )
+from asapdiscovery.alchemy.schema.fec.protocols.nonequilibriumcycling import (
+    NonEquilibriumCyclingSettings,
+)
 from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
 from gufe import settings
 from gufe.tokenization import GufeKey
-from openfe.protocols.openmm_rfe.equil_rfe_settings import (
-    AlchemicalSettings,
-    LambdaSettings,
-    MultiStateOutputSettings,
-    OpenFFPartialChargeSettings,
-)
-from openfe.protocols.openmm_utils.omm_settings import (
-    IntegratorSettings,
-    MultiStateSimulationSettings,
-    OpenMMEngineSettings,
-    OpenMMSolvationSettings,
-)
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
@@ -181,19 +173,33 @@ class _FreeEnergyBase(_SchemaBase):
     """
 
     type: Literal["_FreeEnergyBase"] = "_FreeEnergyBase"
-
-    protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
+    protocol: Literal["RelativeHybridTopologyProtocol", "NonEquilibriumCyclingProtocol"] = Field(
         "RelativeHybridTopologyProtocol",
         description="The name of the OpenFE alchemical protocol to use.",
     )
-    protocol_settings: ProtocolSettingsBase = Field(
+    protocol_settings: Union[RelativeHybridTopologySettings, NonEquilibriumCyclingSettings] = Field(
         RelativeHybridTopologySettings.from_defaults(),
         description="The settings of the protocol which is to be"
         "used. The protocol is determined by the settings provided.",
     )
+    solvent_settings: SolventSettings = Field(
+        SolventSettings(),
+        description="The solvent settings which should be used during the free energy calculations.",
+    )
 
     @classmethod
-    def with_protocol_defaults(protocol: SupportedProtocols): ...
+    def with_protocol_defaults(cls, protocol: SupportedProtocols):
+
+        if protocol is SupportedProtocols.NonEquilibriumCyclingProtocol:
+            from asapdiscovery.alchemy.schema.fec.protocols.nonequilibriumcycling import NonEquilibriumCyclingSettings
+            return cls(
+                    protocol="NonEquilibriumCyclingProtocol",
+                    protocol_settings=NonEquilibriumCyclingSettings.from_defaults())
+        elif protocol is SupportedProtocols.RelativeHybridTopologyProtocol:
+            from asapdiscovery.alchemy.schema.fec.protocols.relativehybridtopology import RelativeHybridTopologySettings
+            return cls(
+                    protocol="RelativeHybridTopologyProtocol",
+                    protocol_settings=RelativeHybridTopologySettings.from_defaults())
 
 
 class FreeEnergyCalculationNetwork(_FreeEnergyBase):
