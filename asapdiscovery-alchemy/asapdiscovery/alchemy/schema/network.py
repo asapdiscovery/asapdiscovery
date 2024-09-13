@@ -74,6 +74,25 @@ class MinimalRedundantPlanner(_NetworkPlannerMethod):
         )
 
 
+class CustomNetworkPlanner(_NetworkPlannerMethod):
+    """Plan a user-set custom network"""
+
+    type: Literal["CustomNetworkPlanner"] = "CustomNetworkPlanner"
+
+    edges: list[tuple[str, str]] = Field(
+        ...,
+        description="A list of tuples with ligand names which define the transformation edges.",
+    )
+
+    def get_planning_function(self) -> Callable:
+        def _plan_from_names(ligands, mappers, *args, **kwargs):
+            # format the data to fit the planing method
+            data = {"ligands": ligands, "mapper": mappers[0], "names": self.edges}
+            return openfe.ligand_network_planning.generate_network_from_names(**data)
+
+        return _plan_from_names
+
+
 class _NetworkPlannerSettings(_SchemaBase):
     """
     The Network planner settings which configure how the FEC networks should be constructed.
@@ -92,7 +111,11 @@ class _NetworkPlannerSettings(_SchemaBase):
         description="The method which should be used to score the proposed atom mappings by the atom mapping engine.",
     )
     network_planning_method: Union[
-        RadialPlanner, MaximalPlanner, MinimalSpanningPlanner, MinimalRedundantPlanner
+        RadialPlanner,
+        MaximalPlanner,
+        MinimalSpanningPlanner,
+        MinimalRedundantPlanner,
+        CustomNetworkPlanner,
     ] = Field(
         MinimalRedundantPlanner(),
         description="The way in which the ligand network should be connected. Note radial requires a central ligand node.",

@@ -107,6 +107,54 @@ def test_alchemy_plan_missing():
     )
 
 
+def test_alchemy_plan_custom_file(
+    tyk2_small_custom_network, tmpdir, tyk2_ligands, tyk2_protein
+):
+    """Make sure we can plan a network using a custom defined network."""
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the files to the current folder
+        tyk2_protein.to_pdb_file("tyk2_protein.pdb")
+        # write the ligands to a single sdf file
+        with Chem.SDWriter("tyk2_ligands.sdf") as output:
+            for ligand in tyk2_ligands:
+                output.write(ligand.to_rdkit())
+
+        # call the cli
+        result = runner.invoke(
+            alchemy,
+            [
+                "plan",
+                "-n",
+                "tyk2-testing",
+                "-l",
+                "tyk2_ligands.sdf",
+                "-r",
+                "tyk2_protein.pdb",
+                "-cn",
+                tyk2_small_custom_network,
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Using custom network specified in" in result.stdout
+        # try and open the planned network
+        network = FreeEnergyCalculationNetwork.from_file(
+            "tyk2-testing/planned_network.json"
+        )
+        # make sure all ligands are in the network
+        assert len(network.network.ligands) == len(tyk2_ligands)
+        # check the edges used are stored and match what we expect
+        expected_edges = [
+            ("lig_ejm_46", "lig_jmc_23"),
+            ("lig_jmc_23", "lig_jmc_28"),
+            ("lig_ejm_31", "lig_ejm_46"),
+        ]
+        for edge in network.network.network_planning_method.edges:
+            assert edge in expected_edges
+
+
 def test_alchemy_prep_create(tmpdir):
     """Test creating the alchemy prep workflow"""
 
