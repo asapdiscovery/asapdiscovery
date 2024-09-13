@@ -5,6 +5,7 @@ import pandas as pd
 from asapdiscovery.data.metadata.resources import (
     SARS_CoV_2_fitness_data,
     ZIKV_NS2B_NS3pro_fitness_data,
+    ZIKV_RdRppro_fitness_data,
     targets_with_fitness_data,
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -19,9 +20,12 @@ _TARGET_TO_GENE = {  # contains some entries for finding targets when subselecti
     TargetTags("SARS-CoV-2-N-protein").value: "N",
 }
 
-_VIRUS_TO_FITNESS_DATA = {  # points to the vendored fitness data.
-    VirusTags("SARS-CoV-2").value: SARS_CoV_2_fitness_data,
-    VirusTags("ZIKV").value: ZIKV_NS2B_NS3pro_fitness_data,
+_TARGET_TO_FITNESS_DATA = {  # points to the vendored fitness data.
+    TargetTags("SARS-CoV-2-Mpro").value: SARS_CoV_2_fitness_data,
+    TargetTags("SARS-CoV-2-Mac1").value: SARS_CoV_2_fitness_data,
+    TargetTags("SARS-CoV-2-N-protein").value: SARS_CoV_2_fitness_data,
+    TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_fitness_data,
+    TargetTags("ZIKV-RdRppro").value: ZIKV_RdRppro_fitness_data,
 }
 
 _FITNESS_DATA_IS_CROSSGENOME = {  # sets whether the fitness data we have for this virus is the whole genome or a single target.
@@ -31,7 +35,7 @@ _FITNESS_DATA_IS_CROSSGENOME = {  # sets whether the fitness data we have for th
 
 _FITNESS_DATA_FIT_THRESHOLD = {  # sets threshold at which a mutant is considered 'fit' for the specific fitness experiment. Directed by Bloom et al.
     VirusTags("SARS-CoV-2").value: -1.0,
-    VirusTags("ZIKV").value: -1.0,
+    VirusTags("ZIKV").value: -1.0,  # this is OK for both NS2B-NS3pro and RdRppro
 }
 
 
@@ -206,7 +210,7 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
     # find the virus that corresponds to the target
     virus = TargetVirusMap[target]
     # find the fitness data that corresponds to the virus
-    fitness_data = _VIRUS_TO_FITNESS_DATA[virus]
+    fitness_data = _TARGET_TO_FITNESS_DATA[target]
     # read the fitness data into a dataframe
     with open(fitness_data) as f:
         data = json.load(f)
