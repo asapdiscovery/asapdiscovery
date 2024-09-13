@@ -35,7 +35,6 @@ def tyk2_fec_network():
     fec_network = fetch_test_file("tyk2_small_network.json")
     return FreeEnergyCalculationNetwork.from_file(fec_network)
 
-
 @pytest.fixture(scope="session")
 def tyk2_result_network():
     """Return an FEC network with some results."""
@@ -47,6 +46,17 @@ def tyk2_result_network():
 def tyk2_reference_data():
     """Return a CSV in the CDD style of IC50 values for the tyk2 series."""
     return fetch_test_file("tyk2_reference_data.csv")
+
+
+@pytest.fixture(scope="session")
+def tyk2_small_custom_network():
+    """The path to a csv file which can be used to plan a tyk2 network."""
+    return fetch_test_file("tyk2_small_custom_network.csv")
+
+
+@pytest.fixture(scope="session")
+def tyk2_small_custom_network_faulty_with_spaces():
+    return fetch_test_file("tyk2_small_custom_network_faulty_with_spaces.csv")
 
 
 @pytest.fixture(scope="function")

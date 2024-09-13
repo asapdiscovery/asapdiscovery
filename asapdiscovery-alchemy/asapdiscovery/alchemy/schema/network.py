@@ -78,65 +78,23 @@ class CustomNetworkPlanner(_NetworkPlannerMethod):
     """Plan a user-set custom network"""
 
     type: Literal["CustomNetworkPlanner"] = "CustomNetworkPlanner"
-    custom_network_file: str = Field(
+
+    edges: list[tuple[str, str]] = Field(
         ...,
-        description="A CSV file which contains the custom network to be used for the ligand network.",
+        description="A list of tuples with ligand names which define the transformation edges.",
     )
 
-    from pydantic import validator
-
     def get_planning_function(self) -> Callable:
-        return openfe.ligand_network_planning.generate_network_from_names
+        def _plan_from_names(ligands, mappers, *args, **kwargs):
+            # format the data to fit the planing method
+            data = {
+                "ligands": ligands,
+                "mapper": mappers[0],
+                "names": self.edges
+            }
+            return openfe.ligand_network_planning.generate_network_from_names(**data)
 
-    @validator("custom_network_file", check_fields=False)
-    def validate_custom_network_file(cls, v):
-        from pathlib import Path
-
-        import pandas as pd
-
-        path = Path(v)
-        if not path.exists():
-            raise ValueError(f"Custom network file doesn't exist: {v}")
-
-        # do some checks on the input data.
-        try:
-            custom_network_df = pd.read_csv(v, header=None)
-        except pd.errors.EmptyDataError:
-            raise ValueError(f"Custom network file {v} is empty.")
-        for i, row in custom_network_df.iterrows():
-            if any(" " in entry for entry in row):
-                raise ValueError(
-                    f"Custom network file contains an empty space (' ') at index {i+1}, please remove any spaces."
-                )
-            if row.isnull().values.any() or any(entry.rsplit() == [] for entry in row):
-                raise ValueError(
-                    f"Custom network file contains an empty entry at index {i+1}"
-                )
-
-        return v
-
-    @staticmethod
-    def read_custom_network_csv(csv_path):
-        import csv
-
-        with open(csv_path) as readfile:
-            reader = csv.reader(readfile)
-            edges = [edge for edge in reader]
-        return edges
-
-    def get_custom_network(
-        self, ligands: Ligand
-    ) -> tuple[list[Ligand], list[list[str]]]:
-        specified_edges = self.read_custom_network_csv(self.custom_network_file)
-        ligand_names_in_network = [
-            ligand_name for edge in specified_edges for ligand_name in edge
-        ]
-        ligands = [
-            ligand
-            for ligand in ligands
-            if ligand.to_openfe().name in ligand_names_in_network
-        ]
-        return ligands, specified_edges
+        return _plan_from_names
 
 
 class _NetworkPlannerSettings(_SchemaBase):
@@ -234,7 +192,6 @@ class NetworkPlanner(_NetworkPlannerSettings):
         self,
         ligands: list[Ligand],
         central_ligand: Optional[Ligand] = None,
-        custom_network_file: Optional[str] = None,
     ) -> PlannedNetwork:
         """
         Generate a network with the configured settings.
@@ -244,7 +201,6 @@ class NetworkPlanner(_NetworkPlannerSettings):
         Args:
             ligands: The set of ligands which should be included in the network.
             central_ligand: The ligand which should be considered as the central node in a radial network
-            custom_network_file: An optional path to a custom network specified as a CSV file where each line contains <lig_a,lig_b>, on the next line <lig_b,lig_x>, etc
         """
 
         # validate the inputs
@@ -255,39 +211,15 @@ class NetworkPlanner(_NetworkPlannerSettings):
             raise RuntimeError(
                 "The radial type network requires a ligand to act as the central node."
             )
-        if (
-            self.network_planning_method.type == "CustomNetworkPlanner"
-            and not custom_network_file
-        ):
-            raise ValueError(
-                "When setting network_planning_method:type: CustomNetworkPlanner in your free energy perturbation factory, you must provide a custom network CSV (-cn)."
-            )
 
         # build the network planner
-        if custom_network_file:
-            if not self.network_planning_method.type == "CustomNetworkPlanner":
-                raise ValueError(
-                    "When providing a custom network CSV (-cn), you must set network_planning_method:type: CustomNetworkPlanner in your free energy perturbation factory."
-                )
-            # find the set of ligands that are intended to be in the network
-            custom_planner = CustomNetworkPlanner(
-                custom_network_file=custom_network_file
-            )
-            ligands, specified_edges = custom_planner.get_custom_network(ligands)
-
-            planner_data = {
-                "ligands": [mol.to_openfe() for mol in ligands],
-                "mapper": self.atom_mapping_engine.get_mapper(),
-                "names": specified_edges,
-            }
-        else:
-            planner_data = {
-                "ligands": [
-                    mol.to_openfe() for mol in ligands
-                ],  # need to convert to rdkit objects?
-                "mappers": [self.atom_mapping_engine.get_mapper()],
-                "scorer": self._get_scorer(),
-            }
+        planner_data = {
+            "ligands": [
+                mol.to_openfe() for mol in ligands
+            ],  # need to convert to rdkit objects?
+            "mappers": [self.atom_mapping_engine.get_mapper()],
+            "scorer": self._get_scorer(),
+        }
 
         # add the central ligand if required
         if self.network_planning_method.type == "RadialPlanner":

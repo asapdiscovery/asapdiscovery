@@ -172,8 +172,13 @@ def plan(
         center_ligand = center_ligand[0]
 
     if custom_network_file is not None:
+        from asapdiscovery.alchemy.schema.network import CustomNetworkPlanner
+        from asapdiscovery.alchemy.utils import extract_custom_ligand_network
         click.echo(
             f"Using custom network specified in {custom_network_file}, ignoring network mapper settings and central ligand if supplied."
+        )
+        factory.network_planner.network_planning_method = CustomNetworkPlanner(
+            edges=extract_custom_ligand_network(custom_network_file)
         )
     click.echo("Creating FEC network ...")
     planned_network = factory.create_fec_dataset(
@@ -181,7 +186,6 @@ def plan(
         receptor=receptor,
         ligands=input_ligands,
         central_ligand=center_ligand,
-        custom_network_file=custom_network_file,
         experimental_protocol=experimental_protocol,
         target=target,
     )
