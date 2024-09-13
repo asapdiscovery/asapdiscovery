@@ -424,11 +424,15 @@ def test_cdd_download_remove_radicals(monkeypatch):
 
 def test_extracting_invalid_transforms(tyk2_small_custom_network_faulty_missing_comma):
     """Make sure an error is raised if the file is not formated correctly."""
-    with pytest.raises(ValueError, match="Custom network file contains an empty entry at index 2"):
+    with pytest.raises(
+        ValueError, match="Custom network file contains an empty entry at index 2"
+    ):
         extract_custom_ligand_network(tyk2_small_custom_network_faulty_missing_comma)
 
 
-def test_extracting_transforms_wtih_spaces(tyk2_small_custom_network_faulty_with_spaces):
+def test_extracting_transforms_wtih_spaces(
+    tyk2_small_custom_network_faulty_with_spaces,
+):
     """Make sure we can extract names even with poor formatting."""
 
     edges = extract_custom_ligand_network(tyk2_small_custom_network_faulty_with_spaces)

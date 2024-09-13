@@ -15,12 +15,12 @@ from asapdiscovery.alchemy.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.alchemy.schema.network import (
+    CustomNetworkPlanner,
     MaximalPlanner,
     MinimalRedundantPlanner,
     MinimalSpanningPlanner,
     NetworkPlanner,
     RadialPlanner,
-    CustomNetworkPlanner,
 )
 from asapdiscovery.alchemy.utils import extract_custom_ligand_network
 from openff.units import unit as OFFUnit

@@ -174,6 +174,7 @@ def plan(
     if custom_network_file is not None:
         from asapdiscovery.alchemy.schema.network import CustomNetworkPlanner
         from asapdiscovery.alchemy.utils import extract_custom_ligand_network
+
         click.echo(
             f"Using custom network specified in {custom_network_file}, ignoring network mapper settings and central ligand if supplied."
         )

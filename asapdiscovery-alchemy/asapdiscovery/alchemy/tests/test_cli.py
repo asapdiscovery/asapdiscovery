@@ -107,7 +107,9 @@ def test_alchemy_plan_missing():
     )
 
 
-def test_alchemy_plan_custom_file(tyk2_small_custom_network, tmpdir, tyk2_ligands, tyk2_protein):
+def test_alchemy_plan_custom_file(
+    tyk2_small_custom_network, tmpdir, tyk2_ligands, tyk2_protein
+):
     """Make sure we can plan a network using a custom defined network."""
 
     runner = CliRunner()
@@ -144,7 +146,11 @@ def test_alchemy_plan_custom_file(tyk2_small_custom_network, tmpdir, tyk2_ligand
         # make sure all ligands are in the network
         assert len(network.network.ligands) == len(tyk2_ligands)
         # check the edges used are stored and match what we expect
-        expected_edges = [('lig_ejm_46', 'lig_jmc_23'), ('lig_jmc_23', 'lig_jmc_28'), ('lig_ejm_31', 'lig_ejm_46')]
+        expected_edges = [
+            ("lig_ejm_46", "lig_jmc_23"),
+            ("lig_jmc_23", "lig_jmc_28"),
+            ("lig_ejm_31", "lig_ejm_46"),
+        ]
         for edge in network.network.network_planning_method.edges:
             assert edge in expected_edges
 

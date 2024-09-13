@@ -35,6 +35,7 @@ def tyk2_fec_network():
     fec_network = fetch_test_file("tyk2_small_network.json")
     return FreeEnergyCalculationNetwork.from_file(fec_network)
 
+
 @pytest.fixture(scope="session")
 def tyk2_result_network():
     """Return an FEC network with some results."""
