@@ -56,6 +56,11 @@ def tyk2_small_custom_network():
 
 
 @pytest.fixture(scope="session")
+def tyk2_small_custom_network_faulty_missing_comma():
+    return fetch_test_file("tyk2_small_custom_network_faulty_missing_comma.csv")
+
+
+@pytest.fixture(scope="session")
 def tyk2_small_custom_network_faulty_with_spaces():
     return fetch_test_file("tyk2_small_custom_network_faulty_with_spaces.csv")
 
