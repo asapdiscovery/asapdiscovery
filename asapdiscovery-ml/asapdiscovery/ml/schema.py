@@ -668,7 +668,7 @@ class TrainingPredictionTracker(BaseModel):
         else:
             return target_val_dict
 
-    def to_plot_df(self, agg_compounds=False, agg_losses=False):
+    def to_plot_df(self, agg_compounds=False, agg_losses=False, target_prop="pIC50"):
         """
         Convenience function for returning loss values in a DatFrame that can be used
         immediately for plotting.
@@ -680,6 +680,8 @@ class TrainingPredictionTracker(BaseModel):
         agg_losses : bool, default=False
             Aggregate (by weighted mean) all different types of loss values for each
             compound
+        target_prop : str, default="pIC50"
+            Target property to pull values for
 
         Returns
         -------
@@ -698,7 +700,7 @@ class TrainingPredictionTracker(BaseModel):
         loss_dict = self.get_losses(agg_compounds=agg_compounds, agg_losses=agg_losses)
         preds_dict = self.get_predictions()
         target_vals_dict, in_range_dict = self.get_target_vals(
-            "pIC50", return_range=True
+            target_prop, return_range=True
         )
 
         for sp, split_dict in loss_dict.items():
