@@ -244,7 +244,7 @@ class ScorerBase(BaseModel):
     Base class for scoring functions.
     """
 
-    score_type: ScoreType = Field(ScoreType.INVALID, description="Type of score", allow_mutation=False)
+    score_type: ScoreType = Field(ScoreType.INVALID, description="Type of score")
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
@@ -359,7 +359,7 @@ class ChemGauss4Scorer(ScorerBase):
 
     """
 
-    score_type: ScoreType = Field(ScoreType.chemgauss4, description="Type of score", allow_mutation=False)
+    score_type: ScoreType = Field(ScoreType.chemgauss4, description="Type of score")
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
 
     @dask_vmap(["inputs"])
@@ -446,7 +446,7 @@ class FINTScorer(ScorerBase):
     Overloaded to accept DockingResults, Complexes, or Paths to PDB files.
     """
 
-    score_type: ScoreType = Field(ScoreType.FINT, description="Type of score", allow_mutation=False)
+    score_type: ScoreType = Field(ScoreType.FINT, description="Type of score")
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
     target: TargetTags = Field(..., description="Which target to use for scoring")
 
@@ -552,7 +552,7 @@ class MLModelScorer(ScorerBase):
     """
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
-    score_type: ScoreType = Field(..., description="Type of score", allow_mutation=False)
+    score_type: ScoreType = Field(..., description="Type of score")
     endpoint: Optional[str] = Field(None, description="Endpoint biological property")
     units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
@@ -579,8 +579,8 @@ class MLModelScorer(ScorerBase):
                 targets=inference_instance.targets,
                 model_name=inference_instance.model_name,
                 inference_cls=inference_instance,
-                endpoint=inference_instance.endpoint,
-                score_type = endpoint_to_score_type(inference_instance.endpoint)
+                endpoint=inference_instance.model_spec.endpoint,
+                score_type = endpoint_to_score_type(inference_instance.model_spec.endpoint)
             )
 
     @staticmethod
@@ -610,8 +610,8 @@ class MLModelScorer(ScorerBase):
             targets=inference_instance.targets,
             model_name=inference_instance.model_name,
             inference_cls=inference_instance,
-            endpoint=inference_instance.endpoint,
-            score_type = endpoint_to_score_type(inference_instance.endpoint)
+            endpoint=inference_instance.model_spec.endpoint,
+            score_type = endpoint_to_score_type(inference_instance.model_spec.endpoint)
         )
 
     @staticmethod
@@ -641,7 +641,6 @@ class GATScorer(MLModelScorer):
     """
 
     model_type: ClassVar[ModelType.GAT] = ModelType.GAT
-    score_type: ClassVar[ScoreType.GAT] = ScoreType.GAT
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
     @dask_vmap(["inputs"])
@@ -726,7 +725,6 @@ class E3MLModelScorer(MLModelScorer):
     """
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
-    score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
     units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @dask_vmap(["inputs"])
@@ -793,7 +791,6 @@ class SchnetScorer(E3MLModelScorer):
     """
 
     model_type: ClassVar[ModelType.schnet] = ModelType.schnet
-    score_type: ClassVar[ScoreType.schnet] = ScoreType.schnet
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
 
@@ -804,7 +801,6 @@ class E3NNScorer(E3MLModelScorer):
     """
 
     model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
-    score_type: ClassVar[ScoreType.e3nn] = ScoreType.e3nn
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
 
