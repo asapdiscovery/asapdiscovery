@@ -290,7 +290,8 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     if inputs.ml_score:
         # check which endpoints are availabe for the target
         models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
-
+        for model in models:
+            logger.info(f"Adding ML scorer for target {inputs.target} with model {model.name}")
         ml_scorers = MLModelScorer.load_model_specs(models=models)
         scorers.extend(ml_scorers)
 
