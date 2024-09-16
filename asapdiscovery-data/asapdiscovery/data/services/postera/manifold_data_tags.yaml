@@ -102,7 +102,7 @@ manifold_outputs:
         - FEC
         - FEC-uncertainty # a bit of an abuse but it works
       postfix: msk
-  
+
   - computed: # LogD
       prefix: in-silico
       units: LogD

@@ -75,7 +75,7 @@ def endpoint_and_model_type_to_score_type(endpoint: str, model_type: str) -> Sco
         Score type
     """
     if model_type == ModelType.GAT:
-        if endpoint == "pIC50": # TODO: make this an enum
+        if endpoint == "pIC50":  # TODO: make this an enum
             return ScoreType.GAT_pIC50
         elif endpoint == "LogD":
             return ScoreType.GAT_LogD
@@ -591,7 +591,9 @@ class MLModelScorer(ScorerBase):
                 model_name=inference_instance.model_name,
                 inference_cls=inference_instance,
                 endpoint=inference_instance.model_spec.endpoint,
-                score_type = endpoint_and_model_type_to_score_type(inference_instance.model_spec.endpoint, cls.model_type)
+                score_type=endpoint_and_model_type_to_score_type(
+                    inference_instance.model_spec.endpoint, cls.model_type
+                ),
             )
 
     @staticmethod
@@ -622,7 +624,9 @@ class MLModelScorer(ScorerBase):
             model_name=inference_instance.model_name,
             inference_cls=inference_instance,
             endpoint=inference_instance.model_spec.endpoint,
-            score_type = endpoint_and_model_type_to_score_type(inference_instance.model_spec.endpoint, cls.model_type)
+            score_type=endpoint_and_model_type_to_score_type(
+                inference_instance.model_spec.endpoint, cls.model_type
+            ),
         )
 
     @staticmethod
@@ -683,7 +687,10 @@ class GATScorer(MLModelScorer):
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
             sc = Score.from_score_and_docking_result(
-                gat_score, self.score_type, self.units, inp,
+                gat_score,
+                self.score_type,
+                self.units,
+                inp,
             )
             # overwrite the input with the path to the file
             if return_for_disk_backend:

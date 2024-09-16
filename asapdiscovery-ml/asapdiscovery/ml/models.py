@@ -773,8 +773,10 @@ class MLModelRegistry(BaseModel):
                 new_map[k] = None
 
         return new_map
-    
-    def get_latest_model_for_target_type_and_endpoint(self, target: str, type: str, endpoint: str) -> MLModelSpec:
+
+    def get_latest_model_for_target_type_and_endpoint(
+        self, target: str, type: str, endpoint: str
+    ) -> MLModelSpec:
         """
         Get latest model spec for a target, type and endpoint
 
@@ -806,7 +808,7 @@ class MLModelRegistry(BaseModel):
             return None
         else:
             return max(models, key=lambda model: model.last_updated)
-        
+
     def get_model_types_for_endpoint(self, endpoint: str) -> list[str]:
         """
         Get model types for an endpoint
@@ -839,11 +841,11 @@ class MLModelRegistry(BaseModel):
             for m in self.get_model_types_for_endpoint(p):
                 if ASAPMLModelRegistry.endpoint_has_target(p):
                     mod = ASAPMLModelRegistry.get_latest_model_for_target_type_and_endpoint(
-                        target, m,  p
+                        target, m, p
                     )
                 else:
                     mod = ASAPMLModelRegistry.get_latest_model_for_target_type_and_endpoint(
-                        None, m,  p
+                        None, m, p
                     )
                 models.append(mod)
 
