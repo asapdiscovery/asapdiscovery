@@ -207,11 +207,11 @@ class Alignment:
         """
 
         # The function takes a biopython alignment object as input.
-        aln = self.align_obj
+        aln = self.align_obj[::-1] # So output are ordered from top to bottom
         seqs = [rec.seq for rec in (aln)]  # Each sequence input
         text = [i for s in list(seqs) for i in s]  # Al units joind on same list
 
-        N = len(seqs[0])
+        N = len(seqs[-1])
         S = len(seqs)
 
         # Shorten the description for display (string between the last [*])
@@ -241,9 +241,9 @@ class Alignment:
             colors = get_colors_protein(seqs)
             font_colors = ["black"] * len(colors)
 
-        # Defining x indexes only for non-gap characters of ref sequence (seqs[0])
-        seq_array = np.array(list(seqs[0]))
-        x_non_gap = np.full(len(seqs[0]), " ", dtype="<U3")
+        # Defining x indexes only for non-gap characters of ref sequence (seqs[-1])
+        seq_array = np.array(list(seqs[-1]))
+        x_non_gap = np.full(len(seqs[-1]), " ", dtype="<U3")
         non_gap_idx = np.where(seq_array != "-")[0]
         current_idx = start_idx
         x_non_gap_locs = []
@@ -536,6 +536,39 @@ def get_colors_by_aa_group(seq: str, max_missmatch=2):
         color = "white"
     return color, font_color
 
+_AMINO_ACID_GROUPS = {
+    "aliphatic": ["A", "V", "I", "L", "M"],
+    "aromatic": ["F", "W", "Y"],
+    "neutral": ["N", "Q", "S", "T"],
+    "acidic": ["D", "E"],
+    "basic": ["R", "H", "K"],
+    "cys": ["C"],
+    "gly": ["G"],
+    "pro": ["P"],
+}
+_AMINO_ACID_COLORS = {
+    "A": "red",  # Alanine
+    "R": "blue",  # Arginine
+    "N": "green",  # Asparagine
+    "D": "yellow",  # Aspartic acid
+    "C": "orange",  # Cysteine
+    "Q": "purple",  # Glutamine
+    "E": "cyan",  # Glutamic acid
+    "G": "magenta",  # Glycine
+    "H": "pink",  # Histidine
+    "I": "brown",  # Isoleucine
+    "L": "gray",  # Leucine
+    "K": "lime",  # Lysine
+    "M": "teal",  # Methionine
+    "F": "navy",  # Phenylalanine
+    "P": "olive",  # Proline
+    "S": "maroon",  # Serine
+    "T": "silver",  # Threonine
+    "W": "gold",  # Tryptophan
+    "Y": "skyblue",  # Tyrosine
+    "V": "violet",  # Valine
+    "-": "white",
+}
 
 class AAcid:
     def __init__(self, letter_id):
@@ -546,7 +579,7 @@ class AAcid:
         letter_id : str
             Amino Acid one or three-letter identifier
         """
-        from MDAnalysis.lib.util import convert_aa_code
+        from Bio.SeqUtils import seq1,seq3
 
         # An empty aminoacid
         if letter_id == "-":
@@ -554,53 +587,20 @@ class AAcid:
             self.three_letter_id = None
         elif len(letter_id) == 1:
             self.one_letter_id = letter_id
-            self.three_letter_id = convert_aa_code(letter_id)
+            self.three_letter_id = seq3(letter_id)
         elif len(letter_id == 3):
             self.three_letter_id = letter_id
-            self.one_letter_id = convert_aa_code(letter_id)
+            self.one_letter_id = seq1(letter_id)
         else:
             raise ValueError(
                 "The input must be either the aminoacid 1 or 3-letter code"
             )
 
     def get_aminoacid_group(self):
-        agroups = {
-            "aliphatic": ["A", "V", "I", "L", "M"],
-            "aromatic": ["F", "W", "Y"],
-            "neutral": ["N", "Q", "S", "T"],
-            "acidic": ["D", "E"],
-            "basic": ["R", "H", "K"],
-            "cys": ["C"],
-            "gly": ["G"],
-            "pro": ["P"],
-        }
-        for key in agroups:
-            if self.one_letter_id in agroups[key]:
+        for key in _AMINO_ACID_GROUPS:
+            if self.one_letter_id in _AMINO_ACID_GROUPS[key]:
                 return key
         return
 
     def get_aminoacid_color(self):
-        aa_colors = {
-            "A": "red",  # Alanine
-            "R": "blue",  # Arginine
-            "N": "green",  # Asparagine
-            "D": "yellow",  # Aspartic acid
-            "C": "orange",  # Cysteine
-            "Q": "purple",  # Glutamine
-            "E": "cyan",  # Glutamic acid
-            "G": "magenta",  # Glycine
-            "H": "pink",  # Histidine
-            "I": "brown",  # Isoleucine
-            "L": "gray",  # Leucine
-            "K": "lime",  # Lysine
-            "M": "teal",  # Methionine
-            "F": "navy",  # Phenylalanine
-            "P": "olive",  # Proline
-            "S": "maroon",  # Serine
-            "T": "silver",  # Threonine
-            "W": "gold",  # Tryptophan
-            "Y": "skyblue",  # Tyrosine
-            "V": "violet",  # Valine
-            "-": "white",
-        }
-        return aa_colors[self.one_letter_id]
+        return _AMINO_ACID_COLORS[self.one_letter_id]
