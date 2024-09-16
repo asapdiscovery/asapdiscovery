@@ -67,8 +67,8 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         Whether to allow retries for docking failures
     n_select : PositiveInt
         Number of targets to dock each ligand against.
-    ml_scorers : ModelType, optional
-        The name of the ml scorers to use.
+    ml_score: bool, optional
+        Whether to use ML scoring in the docking pipeline
     md : bool, optional
         Whether to run MD on the docked poses
     md_steps : PositiveInt, optional
@@ -298,6 +298,10 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     if inputs.ml_score:
         # check which endpoints are availabe for the target
         models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
+        for model in models:
+            logger.info(
+                f"Adding ML scorer for target {inputs.target} with model {model.name}"
+            )
 
         ml_scorers = MLModelScorer.load_model_specs(models=models)
         scorers.extend(ml_scorers)

@@ -774,22 +774,80 @@ class MLModelRegistry(BaseModel):
 
         return new_map
 
+    def get_latest_model_for_target_type_and_endpoint(
+        self, target: str, type: str, endpoint: str
+    ) -> MLModelSpec:
+        """
+        Get latest model spec for a target, type and endpoint
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get model for
+        type : ModelType
+            Type of model to get
+        endpoint : str
+            Endpoint to get model for
+
+        Returns
+        -------
+        MLModelSpec
+            Latest model spec
+        """
+        models = [
+            model
+            for model in self.models.values()
+            if target in model.targets
+            and model.endpoint == endpoint
+            and model.type == type
+        ]
+        if len(models) == 0:
+            warnings.warn(
+                f"No models available for target {target}, endpoint {endpoint} and type {type}"
+            )
+            return None
+        else:
+            return max(models, key=lambda model: model.last_updated)
+
+    def get_model_types_for_endpoint(self, endpoint: str) -> list[str]:
+        """
+        Get model types for an endpoint
+
+        Parameters
+        ----------
+        endpoint : str
+            Endpoint to get model types for
+
+        Returns
+        -------
+        List[str]
+            List of model types
+        """
+        return list(
+            {model.type for model in self.models.values() if model.endpoint == endpoint}
+        )
+
     def reccomend_models_for_target(self, target: TargetTags) -> list[MLModelSpec]:
         """
         Get reccomended models for a target, including generic models without a target
         """
+        if target not in TargetTags.get_values():
+            raise ValueError(
+                f"Target {target} not valid, must be one of {TargetTags.get_values()}"
+            )
         epts = self.get_endpoints_for_target(target, include_generic=True)
         models = []
         for p in epts:
-            if ASAPMLModelRegistry.endpoint_has_target(p):
-                mod = ASAPMLModelRegistry.get_latest_model_for_target_and_endpoint(
-                    target, p
-                )
-            else:
-                mod = ASAPMLModelRegistry.get_latest_model_for_target_and_endpoint(
-                    None, p
-                )
-            models.append(mod)
+            for m in self.get_model_types_for_endpoint(p):
+                if ASAPMLModelRegistry.endpoint_has_target(p):
+                    mod = ASAPMLModelRegistry.get_latest_model_for_target_type_and_endpoint(
+                        target, m, p
+                    )
+                else:
+                    mod = ASAPMLModelRegistry.get_latest_model_for_target_type_and_endpoint(
+                        None, m, p
+                    )
+                models.append(mod)
 
         # clean for None
         models = [m for m in models if m is not None]
