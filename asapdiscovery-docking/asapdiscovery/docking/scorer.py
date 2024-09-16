@@ -880,7 +880,7 @@ class SymClashScorer(ScorerBase):
     in neighboring unit cells.
     """
 
-    score_type: ClassVar[ScoreType.sym_clash] = ScoreType.sym_clash
+    score_type: ScoreType = Field(ScoreType.sym_clash, description="Type of score")
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
 
     count_clashing_pairs: bool = Field(
