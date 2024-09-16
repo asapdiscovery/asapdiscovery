@@ -40,7 +40,8 @@ class ScoreType(str, Enum):
 
     chemgauss4 = "chemgauss4"
     FINT = "FINT"
-    GAT = "GAT"
+    GAT_PIC50 = "GAT-pIC50"
+    GAT_LogD = "GAT-LogD"
     schnet = "schnet"
     e3nn = "e3nn"
     sym_clash = "sym_clash"
@@ -58,12 +59,35 @@ class ScoreUnits(str, Enum):
     INVALID = "INVALID"
 
 
+
+def endpoint_to_score_type(endpoint: str) -> ScoreType:
+    """
+    Convert an endpoint to a score type.
+
+    Parameters
+    ----------
+    endpoint : str
+        Endpoint to convert
+
+    Returns
+    -------
+    ScoreType
+        Score type
+    """
+    if endpoint == "pIC50": # TODO: make this an enum
+        return ScoreType.GAT_PIC50
+    elif endpoint == "LogD":
+        return ScoreType.GAT_LogD
+    else:
+        raise ValueError(f"Endpoint {endpoint} not recognized")
+
 # this can possibly be done with subclasses and some aliases, but will do for now
 
 _SCORE_MANIFOLD_ALIAS = {
     ScoreType.chemgauss4: DockingResultCols.DOCKING_SCORE_POSIT.value,
     ScoreType.FINT: DockingResultCols.FITNESS_SCORE_FINT.value,
-    ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
+    ScoreType.GAT_PIC50: DockingResultCols.COMPUTED_GAT_PIC50.value,
+    ScoreType.GAT_LogD: DockingResultCols.COMPUTED_GAT_LOGD.value,
     ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
     ScoreType.e3nn: DockingResultCols.COMPUTED_E3NN_PIC50.value,
     ScoreType.INVALID: None,
@@ -220,7 +244,7 @@ class ScorerBase(BaseModel):
     Base class for scoring functions.
     """
 
-    score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
+    score_type: ScoreType = Field(ScoreType.INVALID, description="Type of score", allow_mutation=False)
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
@@ -335,7 +359,7 @@ class ChemGauss4Scorer(ScorerBase):
 
     """
 
-    score_type: ClassVar[ScoreType.chemgauss4] = ScoreType.chemgauss4
+    score_type: ScoreType = Field(ScoreType.chemgauss4, description="Type of score", allow_mutation=False)
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
 
     @dask_vmap(["inputs"])
@@ -422,7 +446,7 @@ class FINTScorer(ScorerBase):
     Overloaded to accept DockingResults, Complexes, or Paths to PDB files.
     """
 
-    score_type: ClassVar[ScoreType.FINT] = ScoreType.FINT
+    score_type: ScoreType = Field(ScoreType.FINT, description="Type of score", allow_mutation=False)
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
     target: TargetTags = Field(..., description="Which target to use for scoring")
 
@@ -528,7 +552,8 @@ class MLModelScorer(ScorerBase):
     """
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
-    score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
+    score_type: ScoreType = Field(..., description="Type of score", allow_mutation=False)
+    endpoint: Optional[str] = Field(None, description="Endpoint biological property")
     units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     targets: Any = Field(
@@ -554,6 +579,8 @@ class MLModelScorer(ScorerBase):
                 targets=inference_instance.targets,
                 model_name=inference_instance.model_name,
                 inference_cls=inference_instance,
+                endpoint=inference_instance.endpoint,
+                score_type = endpoint_to_score_type(inference_instance.endpoint)
             )
 
     @staticmethod
@@ -583,6 +610,8 @@ class MLModelScorer(ScorerBase):
             targets=inference_instance.targets,
             model_name=inference_instance.model_name,
             inference_cls=inference_instance,
+            endpoint=inference_instance.endpoint,
+            score_type = endpoint_to_score_type(inference_instance.endpoint)
         )
 
     @staticmethod

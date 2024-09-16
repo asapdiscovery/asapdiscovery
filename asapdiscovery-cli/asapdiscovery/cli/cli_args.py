@@ -138,7 +138,7 @@ def ml_score(func):
     return click.option(
         "--ml-score",
         is_flag=True,
-        default=False,
+        default=True,
         help="Whether to run all ml scorers",
     )(func)
 
