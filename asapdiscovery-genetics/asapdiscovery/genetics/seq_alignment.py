@@ -207,7 +207,7 @@ class Alignment:
         """
 
         # The function takes a biopython alignment object as input.
-        aln = self.align_obj[::-1] # So output are ordered from top to bottom
+        aln = self.align_obj[::-1]  # So output are ordered from top to bottom
         seqs = [rec.seq for rec in (aln)]  # Each sequence input
         text = [i for s in list(seqs) for i in s]  # Al units joind on same list
 
@@ -536,6 +536,7 @@ def get_colors_by_aa_group(seq: str, max_missmatch=2):
         color = "white"
     return color, font_color
 
+
 _AMINO_ACID_GROUPS = {
     "aliphatic": ["A", "V", "I", "L", "M"],
     "aromatic": ["F", "W", "Y"],
@@ -570,6 +571,7 @@ _AMINO_ACID_COLORS = {
     "-": "white",
 }
 
+
 class AAcid:
     def __init__(self, letter_id):
         """An aminoacid object
@@ -579,7 +581,7 @@ class AAcid:
         letter_id : str
             Amino Acid one or three-letter identifier
         """
-        from Bio.SeqUtils import seq1,seq3
+        from Bio.SeqUtils import seq1, seq3
 
         # An empty aminoacid
         if letter_id == "-":
