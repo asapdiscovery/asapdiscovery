@@ -8,6 +8,7 @@ def plot_split_losses(
     splits=["train", "val", "test"],
     loss_label="Loss",
     legend_title="label",
+    label_trans=None,
     **kwargs,
 ):
     """
@@ -23,6 +24,13 @@ def plot_split_losses(
         Which splits to actually plot
     loss_label : str, default="Loss"
         What to label the y-axis of the plot
+    legend_title : str, default="label"
+        Column name for the dict keys, which will be used as the Legend title by default
+    label_trans : callable, optional
+        Function that should take a string as input and return a dict mapping
+        str -> str. This function will be applied to each label, and each key in the
+        output will be added as a column to the DataFrame with its corresponding value
+        as the entry for that row in DF
     kwargs : dict
         Anything else to pass directly to relplot
     """
@@ -31,6 +39,13 @@ def plot_split_losses(
     for lab, pred_tracker in pred_tracker_dict.items():
         df = pred_tracker.to_plot_df(agg_compounds=True, agg_losses=True)
         df[legend_title] = lab
+
+        # Apply label transform and add any new columns
+        if callable(label_trans):
+            new_cols = label_trans(lab)
+            for k, v in new_cols.items():
+                df[k] = v
+
         all_dfs.append(df)
 
     all_dfs = pandas.concat(all_dfs, ignore_index=True)
