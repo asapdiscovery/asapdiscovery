@@ -2,9 +2,7 @@ import os
 import traceback
 
 import pandas as pd
-import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from asapdiscovery.ml.cli_mlops import _gather_and_clean_data
 from asapdiscovery.ml.cli_mlops import mlops as cli
 from click.testing import CliRunner
 from unittest.mock import Mock, patch
