@@ -5,7 +5,7 @@ from asapdiscovery.ml.cli_mlops import _gather_and_clean_data
 from click.testing import CliRunner
 import os
 import traceback
-from mock import patch
+from mock import patch, Mock
 import pandas as pd
 
 
@@ -26,6 +26,8 @@ def mock_gather_and_clean_data(*args, **kwargs) -> pd.DataFrame:
 
 
 @patch("asapdiscovery.ml.cli_mlops._gather_and_clean_data", mock_gather_and_clean_data)
+@patch("asapdiscovery.data.services.aws.s3.S3.push_file", Mock(return_value=None))
+@patch("asapdiscovery.data.services.aws.s3.S3.push_dir", Mock(return_value=None))
 def test_mlops_run(tmp_path):
 
     runner = CliRunner()
