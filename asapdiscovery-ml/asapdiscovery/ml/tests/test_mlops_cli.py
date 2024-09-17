@@ -1,11 +1,11 @@
 import os
 import traceback
+from unittest.mock import Mock, patch
 
 import pandas as pd
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.cli_mlops import mlops as cli
 from click.testing import CliRunner
-from unittest.mock import Mock, patch
 
 
 def click_success(result):
