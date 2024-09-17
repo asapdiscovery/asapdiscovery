@@ -34,7 +34,7 @@ def test_mlops_run(tmp_path):
 
     # mock WANDB credentials
     os.environ["WANDB_PROJECT"] = "dummy"
-    os.environ["WANDB_MODE"] = "offline"
+    os.environ["WANDB_MODE"] = "disabled"
     os.environ["WANDB_DIR"] = str(tmp_path)
 
     # mock CDD credentials
