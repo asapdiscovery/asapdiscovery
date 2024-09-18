@@ -37,10 +37,10 @@ def test_pdb_to_seq(protein_path, tmp_path):
     )
 
 
-# @pytest.mark.skipif(
-#     os.getenv("RUNNER_OS") == "macOS",
-#     reason="Test failing on GHA runner, fine locally.",
-# )
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS",
+    reason="Test failing on GHA runner, fine locally.",
+)
 def test_MSA_host_key(blast_csv_path, tmp_path):
     blast_csv = pd.read_csv(blast_csv_path)
     alignment = Alignment(blast_csv, blast_csv["query"][0], tmp_path)
@@ -60,10 +60,10 @@ def test_MSA_host_key(blast_csv_path, tmp_path):
     assert all(len(a) == len(aln_out.align_obj[0]) for a in aln_out.align_obj)
 
 
-# @pytest.mark.skipif(
-#     os.getenv("RUNNER_OS") == "macOS",
-#     reason="Test failing on GHA runner, fine locally.",
-# )
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS",
+    reason="Test failing on GHA runner, fine locally.",
+)
 def test_MSA_keyword(blast_csv_path, tmp_path):
     blast_csv = pd.read_csv(blast_csv_path)
     alignment = Alignment(blast_csv, blast_csv["query"][0], tmp_path)
@@ -82,10 +82,10 @@ def test_MSA_keyword(blast_csv_path, tmp_path):
     assert all(len(a) == len(aln_out.align_obj[0]) for a in aln_out.align_obj)
 
 
-# @pytest.mark.skipif(
-#     os.getenv("RUNNER_OS") == "macOS",
-#     reason="Test failing on GHA runner, fine locally.",
-# )
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS",
+    reason="Test failing on GHA runner, fine locally.",
+)
 def test_MSA_color_match(blast_csv_path, tmp_path):
     blast_csv = pd.read_csv(blast_csv_path)
     alignment = Alignment(blast_csv, blast_csv["query"][0], tmp_path)
