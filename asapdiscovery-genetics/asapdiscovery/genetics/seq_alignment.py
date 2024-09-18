@@ -178,7 +178,7 @@ class Alignment:
         color_by_group=False,
         start_idx=0,
         skip=4,
-        max_missmatch=2,
+        max_mismatch=2,
     ):
         """ "Bokeh sequence alignment view
             From: https://dmnfarrell.github.io/bioinformatics/bokeh-sequence-aligner
@@ -197,8 +197,8 @@ class Alignment:
             Index of first aminiacid of reference sequence, by default 0
         skip : int, optional
             Skip for displayed indexes of reference sequence , by default 4
-        max_missmatch : int, optional
-            How many missmatches are tolerated for highlighted group match, by default 2
+        max_mismatch : int, optional
+            How many mismatches are tolerated for highlighted group match, by default 2
 
         Returns
         -------
@@ -231,7 +231,7 @@ class Alignment:
             for col in range(N):  # Go through each column
                 # Note: AlignIO item retrieval is done through a get_item function, so this has to be done with a loop
                 col_string = aln[:, col]
-                color, font_color = get_colors_by_aa_group(col_string, max_missmatch)
+                color, font_color = get_colors_by_aa_group(col_string, max_mismatch)
                 col_colors.append(color)
                 font_colors.append(font_color)
             colors = col_colors * S
@@ -433,6 +433,7 @@ def do_MSA(
     n_chains: int,
     color_by_group: bool,
     start_alignment_idx: int,
+    max_mismatch: int,
 ):
     save_file = alignment.dir_save / file_prefix
     # Select sequeneces of interest
@@ -466,6 +467,7 @@ def do_MSA(
         file_name=f"{save_file}_alignment",
         color_by_group=color_by_group,
         start_idx=start_alignment_idx,
+        max_mismatch=max_mismatch,
     )
     print(f"A html file {align_html} have been generated with the aligned sequences")
 
@@ -497,15 +499,15 @@ def get_colors_protein(seqs):
 
 
 # Defining colors for each protein residue
-def get_colors_by_aa_group(seq: str, max_missmatch=2):
+def get_colors_by_aa_group(seq: str, max_mismatch: int):
     """Make fill and text color for exact and group aminoacid matches
 
     Parameters
     ----------
     seq : str
         String with protein sequence
-    max_missmatch : int, optional
-       Maximum number of group missmatches after which match won't be highlighted, by default 2
+    max_mismatch : int
+       Maximum number of group mismatches after which match won't be highlighted
 
     Returns
     -------
@@ -524,13 +526,13 @@ def get_colors_by_aa_group(seq: str, max_missmatch=2):
     # Check the case where all aa's are the same
     if seq == seq_len * seq[0]:
         color = "red"
-    # Check the case where all aa's belong to the same group (with some max missmatches)
-    elif max_group_count >= seq_len - max_missmatch:
+    # Check the case where all aa's belong to the same group (with some max mismatches)
+    elif max_group_count >= seq_len - max_mismatch:
         if max_group is None:  # In case most "matches" are gaps
             color = "white"
         else:
             color = "yellow"
-            # Make font red for missmatches
+            # Make font red for mismatches
             font_color = ["black" if item == max_group else "red" for item in aa_groups]
     else:
         color = "white"

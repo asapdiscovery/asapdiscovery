@@ -77,6 +77,11 @@ def genetics():
     default=0,
     help="Start index for reference aminoacids in html alignment (Useful when matching idxs to PyMOL labels)",
 )
+@click.option(
+    "--max-mismatches",
+    default=2,
+    help="Maximum number of aminoacid group missmatches to be allowed in color-seq-match mode.",
+)
 def seq_alignment(
     seq_file: str,
     seq_type: Optional[str] = None,
@@ -93,6 +98,7 @@ def seq_alignment(
     output_dir: str = "output",
     color_seq_match: bool = False,
     align_start_idx: int = 0,
+    max_mismatches: int = 2,
 ):
     """
     Find similarities between reference protein and its related proteins by sequence.
@@ -154,6 +160,7 @@ def seq_alignment(
             n_chains,
             color_seq_match,
             align_start_idx,
+            max_mismatches,
         )
 
         # Generate PDB file for template if requested (only for the reference structure)

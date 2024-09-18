@@ -52,6 +52,7 @@ def test_MSA_host_key(blast_csv_path, tmp_path):
         n_chains=1,
         color_by_group=False,
         start_alignment_idx=0,
+        max_mismatch=2,
     )
     assert aln_out.sucess
     assert all("Homo sapiens" in a or "Not found" in a for a in aln_out.hosts)
@@ -74,6 +75,7 @@ def test_MSA_keyword(blast_csv_path, tmp_path):
         n_chains=1,
         color_by_group=False,
         start_alignment_idx=0,
+        max_mismatch=2,
     )
     assert aln_out.sucess
     assert len(aln_out.align_obj) == 3
@@ -95,6 +97,7 @@ def test_MSA_color_match(blast_csv_path, tmp_path):
         n_chains=1,
         color_by_group=True,
         start_alignment_idx=0,
+        max_mismatch=2,
     )
     assert aln_out.sucess
 
