@@ -583,8 +583,6 @@ class MLModelRegistry(BaseModel):
         else:
             return max(models, key=lambda model: model.last_updated)
 
-
-
     def get_models_for_endpoint(self, endpoint: str) -> list[MLModelSpec]:
         """
         Get models for a given endpoint
