@@ -112,7 +112,7 @@ def test_registry_get_models_for_target_and_type():
     models = ASAPMLModelRegistry.get_models_for_target_and_type(
         "SARS-CoV-2-Mpro", "GAT"
     )
-    assert type(models) == list
+    assert isinstance(models, list)
     assert len(models) > 0
     for model in models:
         assert model.type == "GAT"
@@ -172,7 +172,7 @@ def test_registry_get_models_without_target():
 
 def test_registry_get_endpoints():
     endpoints = ASAPMLModelRegistry.get_endpoints()
-    assert isinstance(models, list)
+    assert isinstance(endpoints, list)
     assert len(endpoints) > 0
 
 
