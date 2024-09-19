@@ -1,5 +1,6 @@
 from typing import Literal
 
+from gufe.settings import OpenMMSystemGeneratorFFSettings
 from feflow.protocols import NonEquilibriumCyclingProtocol
 from feflow.settings import (
     NonEquilibriumCyclingSettings as NonEquilibriumCyclingSettings_,
@@ -13,6 +14,10 @@ class NonEquilibriumCyclingSettings(
 ):
 
     type: Literal["NonEquilibriumCyclingSettings"] = "NonEquilibriumCyclingSettings"
+
+    # NOTE: temporary override of feflow type hint missing
+    # remove once merged: https://github.com/OpenFreeEnergy/feflow/pull/88
+    forcefield_settings: OpenMMSystemGeneratorFFSettings
 
     @classmethod
     def from_defaults(cls):
