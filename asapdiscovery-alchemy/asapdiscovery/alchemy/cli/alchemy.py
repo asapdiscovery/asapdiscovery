@@ -92,6 +92,12 @@ def create(alchemical_protocol: str, filename: str):
     help="The file which contains the center ligand, only required by radial type networks.",
 )
 @click.option(
+    "-cn",
+    "--custom-network-file",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="An optional path to a custom network specified as a CSV file where each line contains <lig_a,lig_b>, on the next line <lig_b,lig_x>, etc.",
+)
+@click.option(
     "-ep",
     "--experimental-protocol",
     help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
@@ -110,6 +116,7 @@ def plan(
     receptor: Optional[str] = None,
     ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
+    custom_network_file: Optional[str] = None,
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
@@ -175,6 +182,16 @@ def plan(
 
         center_ligand = center_ligand[0]
 
+    if custom_network_file is not None:
+        from asapdiscovery.alchemy.schema.network import CustomNetworkPlanner
+        from asapdiscovery.alchemy.utils import extract_custom_ligand_network
+
+        click.echo(
+            f"Using custom network specified in {custom_network_file}, ignoring network mapper settings and central ligand if supplied."
+        )
+        factory.network_planner.network_planning_method = CustomNetworkPlanner(
+            edges=extract_custom_ligand_network(custom_network_file)
+        )
     click.echo("Creating FEC network ...")
     planned_network = factory.create_fec_dataset(
         dataset_name=name,

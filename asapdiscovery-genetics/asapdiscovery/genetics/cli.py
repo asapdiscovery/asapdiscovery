@@ -55,17 +55,33 @@ def genetics():
     default="",
     help="Selection key to filter BLAST output. Provide either a keyword, or 'host: <species>'",
 )
+@blast_json
+@email
+@multimer
+@n_chains
+@gen_ref_pdb
 @click.option(
     "--plot-width",
     type=int,
     default=1500,
     help="Width for the multi-alignment plot.",
 )
-@blast_json
-@email
-@multimer
-@n_chains
-@gen_ref_pdb
+@click.option(
+    "--color-seq-match",
+    is_flag=True,
+    default=False,
+    help="Color aminoacid matches in html alignment: Red for exact match and yellow for same-group match.",
+)
+@click.option(
+    "--align-start-idx",
+    default=0,
+    help="Start index for reference aminoacids in html alignment (Useful when matching idxs to PyMOL labels)",
+)
+@click.option(
+    "--max-mismatches",
+    default=2,
+    help="Maximum number of aminoacid group missmatches to be allowed in color-seq-match mode.",
+)
 def seq_alignment(
     seq_file: str,
     seq_type: Optional[str] = None,
@@ -80,6 +96,9 @@ def seq_alignment(
     n_chains: int = 1,
     gen_ref_pdb: bool = False,
     output_dir: str = "output",
+    color_seq_match: bool = False,
+    align_start_idx: int = 0,
+    max_mismatches: int = 2,
 ):
     """
     Find similarities between reference protein and its related proteins by sequence.
@@ -101,17 +120,16 @@ def seq_alignment(
             "The option input-type must be either 'fasta', 'pdb' or 'pre-calc'"
         )
 
-    n_chains = 1
     if multimer:
         n_chains = n_chains
+    else:
+        n_chains = 1
     # Create folder if doesn't already exists
     results_folder = Path(output_dir)
     results_folder.mkdir(parents=True, exist_ok=True)
 
     if "host" in sel_key:
-        if len(email) > 0:
-            user_email = email
-        else:
+        if len(email) < 0:
             raise ValueError(
                 "If a host selection is requested, an email must be provided"
             )
@@ -127,20 +145,27 @@ def seq_alignment(
         e_val_thresh=e_thr,
         database="refseq_protein",
         verbose=False,
-        email=user_email,
+        email=email,
     )
 
     # Perform alignment for each entry in the FASTA file
     for query in matches_df["query"].unique():
         alignment = Alignment(matches_df, query, results_folder)
         file_prefix = alignment.query_label
-        selection_fasta, plot = do_MSA(
-            alignment, sel_key, file_prefix, plot_width, n_chains
+        alignment_out = do_MSA(
+            alignment,
+            sel_key,
+            file_prefix,
+            plot_width,
+            n_chains,
+            color_seq_match,
+            align_start_idx,
+            max_mismatches,
         )
 
         # Generate PDB file for template if requested (only for the reference structure)
         if gen_ref_pdb:
-            pdb_entry = PDBEntry(seq=selection_fasta, type="fasta")
+            pdb_entry = PDBEntry(seq=alignment_out.select_file, type="fasta")
             pdb_file_record = pdb_entry.retrieve_pdb(
                 results_folder=results_folder, min_id_match=99.9, ref_only=True
             )

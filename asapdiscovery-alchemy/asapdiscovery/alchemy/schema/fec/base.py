@@ -342,7 +342,8 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(
-            ligands=ligands, central_ligand=central_ligand
+            ligands=ligands,
+            central_ligand=central_ligand,
         )
 
         planned_fec_network = FreeEnergyCalculationNetwork(
