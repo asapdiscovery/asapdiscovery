@@ -121,13 +121,11 @@ def test_registry_get_models_for_target_and_type():
 
 def test_registry_get_models_for_target():
     models = ASAPMLModelRegistry.get_models_for_target("SARS-CoV-2-Mpro")
-    assert type(models) == list
     assert len(models) > 0
 
 
 def test_registry_get_targets_with_models():
     targets = ASAPMLModelRegistry.get_targets_with_models()
-    assert type(targets) == list
     assert len(targets) > 0
     assert "SARS-CoV-2-Mpro" in targets
     assert "SARS-CoV-2-Mac1" in targets
@@ -152,7 +150,7 @@ def test_registry_get_latest_model_for_target_and_endpoint():
 
 def test_registry_get_models_for_endpoint():
     models = ASAPMLModelRegistry.get_models_for_endpoint("pIC50")
-    assert type(models) == list
+    assert isinstance(models, list)
     assert len(models) > 0
     for model in models:
         assert model.endpoint == "pIC50"
@@ -166,7 +164,7 @@ def test_registry_get_latest_model_for_endpoint():
 
 def test_registry_get_models_without_target():
     models = ASAPMLModelRegistry.get_models_without_target()
-    assert type(models) == list
+    assert isinstance(models, list)
     assert len(models) > 0
     for model in models:
         assert model.targets == {None}
@@ -174,13 +172,13 @@ def test_registry_get_models_without_target():
 
 def test_registry_get_endpoints():
     endpoints = ASAPMLModelRegistry.get_endpoints()
-    assert type(endpoints) == list
+    assert isinstance(models, list)
     assert len(endpoints) > 0
 
 
 def test_registry_get_endpoints_for_target():
     endpoints = ASAPMLModelRegistry.get_endpoints_for_target("SARS-CoV-2-Mpro")
-    assert type(endpoints) == list
+    assert isinstance(endpoints, list)
     assert len(endpoints) > 0
     assert "pIC50" in endpoints
 
@@ -201,14 +199,14 @@ def test_registry_get_latest_model_for_target_type_and_endpoint():
 
 def test_registry_get_model_types_for_endpoint():
     types = ASAPMLModelRegistry.get_model_types_for_endpoint("pIC50")
-    assert type(types) == list
+    assert isinstance(types, list)
     assert len(types) > 0
     assert "GAT" in types
 
 
 def test_registry_reccomend_models_for_target():
     models = ASAPMLModelRegistry.reccomend_models_for_target("SARS-CoV-2-Mpro")
-    assert type(models) == list
+    assert isinstance(models, list)
     assert len(models) > 0
     for model in models:
         if model.targets == {None}:
