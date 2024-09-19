@@ -20,8 +20,7 @@ class ProtocolSettingsBase(_SchemaBase, abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_defaults(cls):
-        ...
+    def from_defaults(cls): ...
 
     @abc.abstractmethod
     def to_openfe_protocol(self): ...

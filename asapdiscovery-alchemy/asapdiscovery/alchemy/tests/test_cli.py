@@ -28,11 +28,7 @@ def test_alchemy_create(tmpdir):
     with tmpdir.as_cwd():
         result = runner.invoke(
             alchemy,
-            ["create",
-             '-ap',
-             'NonEquilibriumCyclingProtocol',
-             "workflow.json"
-            ],
+            ["create", "-ap", "NonEquilibriumCyclingProtocol", "workflow.json"],
         )
         assert result.exit_code == 0
         # make sure we can load the factory

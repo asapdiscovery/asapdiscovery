@@ -1,10 +1,10 @@
 from typing import Literal
 
-from gufe.settings import OpenMMSystemGeneratorFFSettings
 from feflow.protocols import NonEquilibriumCyclingProtocol
 from feflow.settings import (
     NonEquilibriumCyclingSettings as NonEquilibriumCyclingSettings_,
 )
+from gufe.settings import OpenMMSystemGeneratorFFSettings
 
 from .base import ProtocolSettingsBase
 
@@ -26,7 +26,7 @@ class NonEquilibriumCyclingSettings(
 
     def to_openfe_protocol(self):
         settings = dict(self)
-        settings.pop('type')
+        settings.pop("type")
 
         protocol_settings = NonEquilibriumCyclingSettings_(settings)
         return NonEquilibriumCyclingProtocol(settings=protocol_settings)
