@@ -522,7 +522,7 @@ class MLModelRegistry(BaseModel):
             List of targets with models
         """
         return list(
-            {target.value for model in self.models.values() for target in model.targets}
+            {target for model in self.models.values() for target in model.targets}
         )
 
     def get_latest_model_for_target_and_type(
@@ -583,41 +583,6 @@ class MLModelRegistry(BaseModel):
         else:
             return max(models, key=lambda model: model.last_updated)
 
-    def get_latest_model_for_target_and_endpoint_and_type(
-        self, target: TargetTags, endpoint: str, type: ModelType
-    ) -> MLModelSpec:
-        """
-        Get latest model spec for a target, endpoint and type
-
-        Parameters
-        ----------
-        target : TargetTags
-            Target to get model for
-        endpoint : str
-            Endpoint to get model for
-        type : ModelType
-            Type of model to get
-
-        Returns
-        -------
-        MLModelSpec
-            Latest model spec
-        """
-        models = [
-            model
-            for model in self.models.values()
-            if target in model.targets
-            and model.endpoint == endpoint
-            and model.type == type
-        ]
-        if len(models) == 0:
-            warnings.warn(
-                f"No models available for target {target}, endpoint {endpoint} and type {type}"
-            )
-            return None
-        else:
-            return max(models, key=lambda model: model.last_updated)
-
     def get_models_for_endpoint(self, endpoint: str) -> list[MLModelSpec]:
         """
         Get models for a given endpoint
@@ -648,7 +613,7 @@ class MLModelRegistry(BaseModel):
         MLModelSpec
             Latest model spec
         """
-        models = self.get_models_models_for_endpoint(endpoint)
+        models = self.get_models_for_endpoint(endpoint)
         if len(models) == 0:
             warnings.warn(f"No models available for endpoint {endpoint}")
             return None
@@ -664,7 +629,7 @@ class MLModelRegistry(BaseModel):
         List[MLModelSpec]
             List of model specs
         """
-        return [model for model in self.models.values() if not model.targets]
+        return [model for model in self.models.values() if not any(model.targets)]
 
     def get_endpoints(self) -> list[str]:
         """
