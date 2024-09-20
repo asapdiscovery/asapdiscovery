@@ -6,11 +6,11 @@ from feflow.settings import (
 )
 from gufe.settings import OpenMMSystemGeneratorFFSettings
 
-from .base import ProtocolSettingsBase
+from asapdiscovery.alchemy.schema.fec.protocols.base import _ProtocolSettingsBase
 
 
 class NonEquilibriumCyclingSettings(
-    NonEquilibriumCyclingSettings_, ProtocolSettingsBase
+    NonEquilibriumCyclingSettings_, _ProtocolSettingsBase
 ):
 
     type: Literal["NonEquilibriumCyclingSettings"] = "NonEquilibriumCyclingSettings"
@@ -20,13 +20,10 @@ class NonEquilibriumCyclingSettings(
     forcefield_settings: OpenMMSystemGeneratorFFSettings
 
     @classmethod
-    def from_defaults(cls):
+    def _from_defaults(cls):
         settings = NonEquilibriumCyclingProtocol.default_settings()
         return cls(**dict(settings))
 
     def to_openfe_protocol(self):
-        settings = dict(self)
-        settings.pop("type")
-
-        protocol_settings = NonEquilibriumCyclingSettings_(settings)
+        protocol_settings = NonEquilibriumCyclingSettings_(**self.dict(exclude={"type"}))
         return NonEquilibriumCyclingProtocol(settings=protocol_settings)

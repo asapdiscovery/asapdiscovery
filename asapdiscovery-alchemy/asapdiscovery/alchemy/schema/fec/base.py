@@ -6,7 +6,6 @@ import openfe
 from alchemiscale import ScopedKey
 from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
 from asapdiscovery.alchemy.schema.fec.protocols import (
-    ProtocolSettingsBase,
     SupportedProtocols,
 )
 from asapdiscovery.alchemy.schema.fec.protocols.nonequilibriumcycling import (
@@ -17,10 +16,8 @@ from asapdiscovery.alchemy.schema.fec.protocols.relativehybridtopology import (
 )
 from asapdiscovery.alchemy.schema.fec.solvent import SolventSettings
 from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
-from gufe import settings
 from gufe.tokenization import GufeKey
 from openff.models.types import FloatQuantity
-from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
 
 if TYPE_CHECKING:
@@ -173,15 +170,7 @@ class _FreeEnergyBase(_SchemaBase):
     """
 
     type: Literal["_FreeEnergyBase"] = "_FreeEnergyBase"
-    protocol: Literal[
-        "RelativeHybridTopologyProtocol", "NonEquilibriumCyclingProtocol"
-    ] = Field(
-        "RelativeHybridTopologyProtocol",
-        description="The name of the OpenFE alchemical protocol to use.",
-    )
-    protocol_settings: Union[
-        RelativeHybridTopologySettings, NonEquilibriumCyclingSettings
-    ] = Field(
+    protocol_settings: Union[RelativeHybridTopologySettings, NonEquilibriumCyclingSettings] = Field(
         RelativeHybridTopologySettings.from_defaults(),
         description="The settings of the protocol which is to be"
         "used. The protocol is determined by the settings provided.",
@@ -200,7 +189,6 @@ class _FreeEnergyBase(_SchemaBase):
             )
 
             return cls(
-                protocol="NonEquilibriumCyclingProtocol",
                 protocol_settings=NonEquilibriumCyclingSettings.from_defaults(),
             )
         elif protocol is SupportedProtocols.RelativeHybridTopologyProtocol:
@@ -209,7 +197,6 @@ class _FreeEnergyBase(_SchemaBase):
             )
 
             return cls(
-                protocol="RelativeHybridTopologyProtocol",
                 protocol_settings=RelativeHybridTopologySettings.from_defaults(),
             )
 

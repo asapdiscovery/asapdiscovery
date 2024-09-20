@@ -1,1 +1,1 @@
-from .base import ProtocolSettingsBase, SupportedProtocols
+from asapdiscovery.alchemy.schema.fec.protocols.base import _ProtocolSettingsBase, SupportedProtocols
