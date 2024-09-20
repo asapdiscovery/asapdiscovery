@@ -913,7 +913,7 @@ class MLModelRegistry(BaseModel):
                 warnings.warn(f"Failed to load model {model}, skipping. Error: {e}")
 
         return cls(models=models)
-    
+
     def refresh_registry(self):
         """
         Refresh the registry
