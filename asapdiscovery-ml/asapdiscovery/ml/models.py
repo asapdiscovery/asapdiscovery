@@ -1,5 +1,4 @@
 import os
-import uuid
 import warnings
 from collections import defaultdict
 from datetime import date, datetime
