@@ -18,8 +18,6 @@ class RelativeHybridTopologySettings(
     def _from_defaults(cls):
         settings = RelativeHybridTopologyProtocol.default_settings()
 
-        # NOTE: remove this if we want to just take the default from `openfe` as
-        # it advances
         # set some of our preferred settings
         # only run the calculation once per dag, repeats are done via separate tasks in alchemiscale
         settings.protocol_repeats = 1

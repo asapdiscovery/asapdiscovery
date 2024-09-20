@@ -27,7 +27,8 @@ class _ProtocolSettingsBase(_SchemaBase, abc.ABC):
         from openff.units import unit
 
         protocol_settings = cls._from_defaults()
-        # Set the small molecule force field
+        # NOTE: remove this if we want to just take the default from `openfe` as
+        # it advances
         protocol_settings.forcefield_settings.small_molecule_forcefield = "openff-2.2.0"
         # Thermo settings
         protocol_settings.thermo_settings.temperature = 298.15 * unit.kelvin
