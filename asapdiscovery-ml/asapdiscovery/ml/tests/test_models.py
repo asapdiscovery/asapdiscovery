@@ -219,5 +219,3 @@ def test_refresh_registry():
     prev_time = ASAPMLModelRegistry.time_updated
     ASAPMLModelRegistry.update_registry()
     assert ASAPMLModelRegistry.time_updated != prev_time
-
-

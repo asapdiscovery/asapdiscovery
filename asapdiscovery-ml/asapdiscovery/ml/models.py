@@ -1,11 +1,12 @@
 import os
+import uuid
 import warnings
 from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union  # noqa: F401
 from urllib.parse import urljoin
-import uuid
+
 import mtenn
 import pooch
 import requests
@@ -459,7 +460,8 @@ class MLModelRegistry(BaseModel):
         ..., description="Models in the model registry, keyed by name"
     )
     source_yaml: Optional[str] = Field(
-        None, description="Source yaml file for model registry")
+        None, description="Source yaml file for model registry"
+    )
     time_updated: datetime = Field(datetime.utcnow(), description="Time last updated")
 
     def get_models_for_target_and_type(
@@ -850,21 +852,22 @@ class MLModelRegistry(BaseModel):
         model_types = {model.type.value for model in self.models.values()}
         return list(model_types)
 
-
     def update_registry(self):
         """
         Refresh the model registry by checking for new models
         """
         if not self.source_yaml:
-            raise ValueError("No source yaml file provided for model registry, cannot update")
+            raise ValueError(
+                "No source yaml file provided for model registry, cannot update"
+            )
         new_models = self.parse_yaml_to_models_dict(self.source_yaml)
         self.models = new_models
         self.time_updated = datetime.utcnow()
 
-
-
     @staticmethod
-    def parse_yaml_to_models_dict(yaml_file: Union[str, Path]) -> dict[str, MLModelSpecBase]:
+    def parse_yaml_to_models_dict(
+        yaml_file: Union[str, Path]
+    ) -> dict[str, MLModelSpecBase]:
         """
         Parse models registry from yaml spec file
 
@@ -937,8 +940,6 @@ class MLModelRegistry(BaseModel):
         """
         models = cls.parse_yaml_to_models_dict(yaml_file)
         return cls(models=models, source_yaml=yaml_file)
-
-
 
 
 _asap_ml_debug = True if os.getenv("ASAP_ML_DEBUG") else False
