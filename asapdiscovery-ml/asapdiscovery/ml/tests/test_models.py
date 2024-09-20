@@ -216,4 +216,8 @@ def test_registry_reccomend_models_for_target():
 
 def test_refresh_registry():
     # just check its functional
-    ASAPMLModelRegistry.refresh_registry()
+    prev_time = ASAPMLModelRegistry.time_updated
+    ASAPMLModelRegistry.update_registry()
+    assert ASAPMLModelRegistry.time_updated != prev_time
+
+
