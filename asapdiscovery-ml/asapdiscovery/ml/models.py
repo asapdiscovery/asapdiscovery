@@ -913,6 +913,12 @@ class MLModelRegistry(BaseModel):
                 warnings.warn(f"Failed to load model {model}, skipping. Error: {e}")
 
         return cls(models=models)
+    
+    def refresh_registry(self):
+        """
+        Refresh the registry
+        """
+        self = MLModelRegistry.from_yaml(asap_models_yaml)
 
 
 _asap_ml_debug = True if os.getenv("ASAP_ML_DEBUG") else False

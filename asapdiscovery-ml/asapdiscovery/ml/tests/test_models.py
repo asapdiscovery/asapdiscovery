@@ -212,3 +212,8 @@ def test_registry_reccomend_models_for_target():
         if model.targets == {None}:
             continue
         assert "SARS-CoV-2-Mpro" in model.targets
+
+
+def test_refresh_registry():
+    # just check its functional
+    ASAPMLModelRegistry.refresh_registry()
