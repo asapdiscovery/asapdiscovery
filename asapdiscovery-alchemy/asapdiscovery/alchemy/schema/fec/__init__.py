@@ -8,7 +8,6 @@ from asapdiscovery.alchemy.schema.fec.base import (
 )
 from asapdiscovery.alchemy.schema.fec.solvent import SolventSettings
 
-
 __all__ = [
     "AlchemiscaleFailure",
     "AlchemiscaleResults",
@@ -16,5 +15,5 @@ __all__ = [
     "FreeEnergyCalculationFactory",
     "FreeEnergyCalculationNetwork",
     "TransformationResult",
-    "SolventSettings"
+    "SolventSettings",
 ]
