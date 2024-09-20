@@ -212,7 +212,7 @@ class _FreeEnergyBase(_SchemaBase):
     )
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
         settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.2.0"
+            small_molecule_forcefield="openff-2.2.0",
         ),
         description="The force field settings used to parameterize the systems.",
     )
@@ -427,7 +427,8 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
 
         # start by trying to plan the network
         planned_network = self.network_planner.generate_network(
-            ligands=ligands, central_ligand=central_ligand
+            ligands=ligands,
+            central_ligand=central_ligand,
         )
 
         planned_fec_network = FreeEnergyCalculationNetwork(
