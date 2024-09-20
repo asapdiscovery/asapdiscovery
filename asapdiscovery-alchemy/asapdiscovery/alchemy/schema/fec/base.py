@@ -5,9 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 import openfe
 from alchemiscale import ScopedKey
 from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.alchemy.schema.fec.protocols import (
-    SupportedProtocols,
-)
+from asapdiscovery.alchemy.schema.fec.protocols import SupportedProtocols
 from asapdiscovery.alchemy.schema.fec.protocols.nonequilibriumcycling import (
     NonEquilibriumCyclingSettings,
 )
@@ -170,7 +168,9 @@ class _FreeEnergyBase(_SchemaBase):
     """
 
     type: Literal["_FreeEnergyBase"] = "_FreeEnergyBase"
-    protocol_settings: Union[RelativeHybridTopologySettings, NonEquilibriumCyclingSettings] = Field(
+    protocol_settings: Union[
+        RelativeHybridTopologySettings, NonEquilibriumCyclingSettings
+    ] = Field(
         RelativeHybridTopologySettings.from_defaults(),
         description="The settings of the protocol which is to be"
         "used. The protocol is determined by the settings provided.",

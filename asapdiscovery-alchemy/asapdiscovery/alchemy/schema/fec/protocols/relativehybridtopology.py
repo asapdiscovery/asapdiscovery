@@ -1,12 +1,11 @@
 from typing import Literal
 
+from asapdiscovery.alchemy.schema.fec.protocols.base import _ProtocolSettingsBase
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocol
 from openfe.protocols.openmm_rfe import (
     RelativeHybridTopologyProtocolSettings as RelativeHybridTopologyProtocolSettings_,
 )
 from openff.units import unit
-
-from asapdiscovery.alchemy.schema.fec.protocols.base import _ProtocolSettingsBase
 
 
 class RelativeHybridTopologySettings(
@@ -31,5 +30,7 @@ class RelativeHybridTopologySettings(
         return cls(**dict(settings))
 
     def to_openfe_protocol(self):
-        protocol_settings = RelativeHybridTopologyProtocolSettings_(**self.dict(exclude={"type"}))
+        protocol_settings = RelativeHybridTopologyProtocolSettings_(
+            **self.dict(exclude={"type"})
+        )
         return RelativeHybridTopologyProtocol(settings=protocol_settings)

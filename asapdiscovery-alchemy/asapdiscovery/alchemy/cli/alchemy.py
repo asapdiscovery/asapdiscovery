@@ -23,14 +23,14 @@ def alchemy():
 @alchemy.command(
     help_priority=1,
     short_help="Create a new free energy perturbation factory with default settings for the given protocol "
-               "and save it to JSON file.",
+    "and save it to JSON file.",
 )
 @click.option(
     "-ap",
     "--alchemical-protocol",
     type=click.Choice([e.value for e in SupportedProtocols], case_sensitive=True),
     help="The name of the alchemical Protocol to use for all Transformations in this network.",
-    default="RelativeHybridTopologyProtocol"
+    default="RelativeHybridTopologyProtocol",
 )
 @click.argument(
     "filename",
@@ -118,7 +118,7 @@ def create(alchemical_protocol: str, filename: str):
     "--alchemical-protocol",
     type=click.Choice([e.value for e in SupportedProtocols], case_sensitive=True),
     help="The name of the alchemical Protocol to use for all Transformations in this network.",
-    default="RelativeHybridTopologyProtocol"
+    default="RelativeHybridTopologyProtocol",
 )
 def plan(
     alchemical_protocol: str,
@@ -156,7 +156,9 @@ def plan(
         factory = FreeEnergyCalculationFactory.from_file(factory_file)
 
     else:
-        click.echo(f"Creating default FreeEnergyCalculationFactory with protocol {alchemical_protocol}")
+        click.echo(
+            f"Creating default FreeEnergyCalculationFactory with protocol {alchemical_protocol}"
+        )
         factory = FreeEnergyCalculationFactory.with_protocol_defaults(
             protocol=SupportedProtocols[alchemical_protocol]
         )

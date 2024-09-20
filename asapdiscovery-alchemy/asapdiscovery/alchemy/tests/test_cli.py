@@ -20,11 +20,22 @@ from click.testing import CliRunner
 from rdkit import Chem
 
 
-@pytest.mark.parametrize("protocol, expected_settings", [
-    pytest.param(None, "RelativeHybridTopologySettings", id="default protocol"),
-    pytest.param("RelativeHybridTopologyProtocol", "RelativeHybridTopologySettings", id="RelativeHybridTopologySettings"),
-    pytest.param("NonEquilibriumCyclingProtocol", "NonEquilibriumCyclingSettings", id="NonEquilibriumCyclingSettings")
-])
+@pytest.mark.parametrize(
+    "protocol, expected_settings",
+    [
+        pytest.param(None, "RelativeHybridTopologySettings", id="default protocol"),
+        pytest.param(
+            "RelativeHybridTopologyProtocol",
+            "RelativeHybridTopologySettings",
+            id="RelativeHybridTopologySettings",
+        ),
+        pytest.param(
+            "NonEquilibriumCyclingProtocol",
+            "NonEquilibriumCyclingSettings",
+            id="NonEquilibriumCyclingSettings",
+        ),
+    ],
+)
 def test_alchemy_create(tmpdir, protocol, expected_settings):
     """Test making a workflow file using the cli"""
 
@@ -34,10 +45,7 @@ def test_alchemy_create(tmpdir, protocol, expected_settings):
         protocol_cmd = ["-ap", protocol] if protocol is not None else []
         result = runner.invoke(
             alchemy,
-            ["create",
-             *protocol_cmd,
-             "workflow.json"
-            ],
+            ["create", *protocol_cmd, "workflow.json"],
         )
         assert result.exit_code == 0
         # make sure we can load the factory
@@ -45,21 +53,41 @@ def test_alchemy_create(tmpdir, protocol, expected_settings):
         # check that we have the correct protocol
         assert factory.protocol_settings.type == expected_settings
         # make sure our generic settings are updated
-        assert factory.protocol_settings.forcefield_settings.small_molecule_forcefield == "openff-2.2.0"
-        assert factory.protocol_settings.thermo_settings.temperature.m_as("kelvin") == 298.15
+        assert (
+            factory.protocol_settings.forcefield_settings.small_molecule_forcefield
+            == "openff-2.2.0"
+        )
+        assert (
+            factory.protocol_settings.thermo_settings.temperature.m_as("kelvin")
+            == 298.15
+        )
         # need to use approx for precision issues in the conversion
-        assert pytest.approx(factory.protocol_settings.thermo_settings.pressure.m_as("bar")) == 1.0
+        assert (
+            pytest.approx(
+                factory.protocol_settings.thermo_settings.pressure.m_as("bar")
+            )
+            == 1.0
+        )
 
 
 @pytest.mark.parametrize(
-    "protocol, expected_type", [
-        pytest.param("RelativeHybridTopologyProtocol", "RelativeHybridTopologySettings",
-                     id="RelativeHybridTopologySettings"),
-        pytest.param("NonEquilibriumCyclingProtocol", "NonEquilibriumCyclingSettings",
-                     id="NonEquilibriumCyclingSettings")
-    ]
+    "protocol, expected_type",
+    [
+        pytest.param(
+            "RelativeHybridTopologyProtocol",
+            "RelativeHybridTopologySettings",
+            id="RelativeHybridTopologySettings",
+        ),
+        pytest.param(
+            "NonEquilibriumCyclingProtocol",
+            "NonEquilibriumCyclingSettings",
+            id="NonEquilibriumCyclingSettings",
+        ),
+    ],
 )
-def test_alchemy_plan_from_raw(tmpdir, tyk2_protein, tyk2_ligands, protocol, expected_type):
+def test_alchemy_plan_from_raw(
+    tmpdir, tyk2_protein, tyk2_ligands, protocol, expected_type
+):
     """Make sure we can plan networks using the CLI"""
 
     runner = CliRunner()
@@ -84,7 +112,7 @@ def test_alchemy_plan_from_raw(tmpdir, tyk2_protein, tyk2_ligands, protocol, exp
                 "-r",
                 "tyk2_protein.pdb",
                 "-ap",
-                protocol
+                protocol,
             ],
         )
         assert result.exit_code == 0
@@ -96,7 +124,10 @@ def test_alchemy_plan_from_raw(tmpdir, tyk2_protein, tyk2_ligands, protocol, exp
         assert len(network.network.ligands) == len(tyk2_ligands)
         # make sure the default protocol is used
         assert network.protocol_settings.type == expected_type
-        assert f"Creating default FreeEnergyCalculationFactory with protocol {protocol}" in result.stdout
+        assert (
+            f"Creating default FreeEnergyCalculationFactory with protocol {protocol}"
+            in result.stdout
+        )
 
 
 def test_alchemy_plan_from_alchemy_dataset(tmpdir):
