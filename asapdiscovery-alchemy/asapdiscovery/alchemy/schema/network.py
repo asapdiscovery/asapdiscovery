@@ -8,7 +8,7 @@ from pydantic import Field
 
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
 from .base import _SchemaBase
-from .utils import check_ligand_series_uniqueness_and_names
+from ..utils import check_ligand_series_uniqueness_and_names
 
 
 

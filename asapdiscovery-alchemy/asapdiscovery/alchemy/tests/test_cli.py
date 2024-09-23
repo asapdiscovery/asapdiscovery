@@ -14,6 +14,7 @@ from asapdiscovery.alchemy.schema.prep_workflow import (
     AlchemyDataSet,
     AlchemyPrepWorkflow,
 )
+from openfe.setup import LigandNetwork
 from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from click.testing import CliRunner
@@ -167,11 +168,22 @@ def test_plan_from_graphml(p38_graphml, p38_protein, tmpdir):
                 "-r",
                 p38_protein,
                 "-n",
-                "tst",
+                "graphml-test",
             ],
         )
         assert result.exit_code == 0
-        
+        # try and open the planned network
+        network = FreeEnergyCalculationNetwork.from_file(
+            "graphml-test/planned_network.json"
+        )
+        # load graphml with openfe and check the ligands are in the network
+        with open(p38_graphml, "r") as f:
+            graphml_str = f.read()
+        ligand_network = LigandNetwork.from_graphml(graphml_str)
+
+        # make sure all ligands are in the network
+        assert len(network.network.ligands) == len(ligand_network.nodes)
+
 
 
 def test_alchemy_prep_create(tmpdir):
