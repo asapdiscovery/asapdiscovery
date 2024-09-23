@@ -1098,5 +1098,3 @@ def test_prep_alchemize(test_ligands_sdfile, tmpdir):
             ],
         )
         assert result.exit_code == 0
-
-

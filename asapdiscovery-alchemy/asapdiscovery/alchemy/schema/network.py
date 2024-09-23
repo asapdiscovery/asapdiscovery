@@ -11,7 +11,6 @@ from .base import _SchemaBase
 from ..utils import check_ligand_series_uniqueness_and_names
 
 
-
 class _NetworkPlannerMethod(_SchemaBase, abc.ABC):
     """
     The network planner method and settings which control the type of network produced.
@@ -186,13 +185,13 @@ class PlannedNetwork(_NetworkPlannerSettings):
         ligand_network = LigandNetwork.from_graphml(graphml)
         if not ligand_network.is_connected():
             raise ValueError(
-                    "The provided graphml does not represent a connected network."
+                "The provided graphml does not represent a connected network."
             )
         # extract ligands from the network
         small_molecule_components = ligand_network.nodes
 
         ligands = [Ligand.from_openfe(mol) for mol in small_molecule_components]
-        
+
         check_ligand_series_uniqueness_and_names(ligands)
 
         provenance = {"source": "pre-generated", "graphml": graphml}
@@ -202,7 +201,6 @@ class PlannedNetwork(_NetworkPlannerSettings):
             graphml=graphml,
             provenance=provenance,
         )
-
 
 
 class NetworkPlanner(_NetworkPlannerSettings):
