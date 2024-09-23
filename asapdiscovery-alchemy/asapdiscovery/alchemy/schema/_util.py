@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
 
+
 def check_ligand_series_uniqueness_and_names(ligands: list["Ligand"]) -> None:
     """
     Check the ligands are unique and have names.
