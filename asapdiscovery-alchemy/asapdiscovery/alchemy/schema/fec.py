@@ -387,7 +387,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         self,
         dataset_name: str,
         receptor: openfe.ProteinComponent,
-        ligands: Optional[list["Ligand"]]=None,
+        ligands: Optional[list["Ligand"]] = None,
         central_ligand: Optional["Ligand"] = None,
         graphml: Optional[str] = None,
         experimental_protocol: Optional[str] = None,

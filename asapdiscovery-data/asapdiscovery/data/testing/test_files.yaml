@@ -363,6 +363,6 @@ files:
 
   - resource: p38.pdb
     sha256hash: 3f0bf718644e7c29f5200cd3def4240ac25ef5fb1948b2e64deb5015d8a45aa4
-    
+
   - resource: sample_training_data.csv
     sha256hash: 7b126d8981406b6991347edd8ea47c8d53bbe6df8f3cbd2933dcfa53e233473c

@@ -171,7 +171,6 @@ def test_plan_from_graphml(p38_graphml, p38_protein, tmpdir):
             ],
         )
         assert result.exit_code == 0
-        
 
 
 def test_alchemy_prep_create(tmpdir):
@@ -1086,5 +1085,3 @@ def test_prep_alchemize(test_ligands_sdfile, tmpdir):
             ],
         )
         assert result.exit_code == 0
-
-

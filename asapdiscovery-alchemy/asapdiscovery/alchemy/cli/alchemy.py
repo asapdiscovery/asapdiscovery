@@ -134,10 +134,10 @@ def plan(
         raise RuntimeError(
             "Please provide either a ligand file or a graphml file, not both."
         )
-    
+
     if graphml and custom_network_file:
         raise RuntimeError(
-            "Please provide either a graphml file or a custom network file, not both."  
+            "Please provide either a graphml file or a custom network file, not both."
         )
 
     # nothing specified
