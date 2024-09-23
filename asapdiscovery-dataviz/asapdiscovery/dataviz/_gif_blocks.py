@@ -66,10 +66,12 @@ class GIFBlockData:
         "MERS-CoV-Mpro": "A",
         "EV-D68-3Cpro": "A",
         "EV-A71-3Cpro": "A",
+        "EV-A71-2Apro": "A",
         "EV-A71-Capsid": "A",
         "EV-D68-Capsid": "A",
         "DENV-NS2B-NS3pro": "B",
         "ZIKV-NS2B-NS3pro": "B",
+        "ZIKV-RdRppro": "A",
     }
 
     # define the residues that span the subpockets
@@ -120,13 +122,19 @@ class GIFBlockData:
         "subP3": "21+22+40+38+71+69",
         "subP4": "42+43+39+73+59+60+61",
     }
-
+    pocket_dict_EV_A71_2Apro = {
+        "catalytic": "19+39+110+124+125+126",
+        "entry": "87+88+89+105+106+127",
+        "rhs": "84+85+86+128+129",
+        "rhs_prime": "82+83+98+100+131",
+    }
     pocket_dict_ZIKV_NS2B_NS3pro = {
         "subP1": "151+161+129+160+150+130+131+132+135+134",
         "subP1_prime": "51+52+36+35+133",
         "subP2": "152+83+75+81+82+72",
         "subP3": "153+154+155",
     }
+    pocket_dict_ZIKV_RdRppro = {"undecided": "1"}
 
     pocket_dict_DENV_NS2B_NS3pro = {
         "subP1": "135+151+161+159+129+150+130+132+131",
@@ -170,11 +178,21 @@ class GIFBlockData:
         "subP3": "cyan",
         "subP4": "magenta",
     }
+
+    color_dict_2Apro = {
+        "catalytic": "orange",
+        "entry": "yellow",
+        "rhs": "blue",
+        "rhs_prime": "magenta",
+    }
     color_dict_NS2B_NS3pro = {
         "subP1": "yellow",
         "subP1_prime": "orange",
         "subP2": "blue",
         "subP3": "cyan",
+    }
+    color_dict_RdRppro = {
+        "undecided": "grey",
     }
     color_dict_Capsid = {
         "hydrophic_trap": "orange",

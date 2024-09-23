@@ -1,10 +1,9 @@
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional
 
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelector
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema.complex import Complex
@@ -44,7 +43,7 @@ from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic import Field, PositiveInt, validator
+from pydantic import Field, PositiveInt
 
 
 class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
@@ -90,23 +89,9 @@ class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):
         description="Whether to allow retries in docking with varying settings, warning: more expensive",
     )
 
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
+    ml_score: bool = Field(
+        True, description="Whether to use ML scoring in the docking pipeline"
     )
-
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
 
 
 def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
@@ -246,11 +231,14 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     # TODO: fix, see issue 560
     logger.info("Selecting pairs for docking based on MCS")
-    selector = MCSSelector()
+    selector = RascalMCESSelector()
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
         n_select=inputs.n_select,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        failure_mode=inputs.failure_mode,
     )
 
     n_pairs = len(pairs)
@@ -299,14 +287,15 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
         scorers.append(FINTScorer(target=inputs.target))
 
     # load ml scorers
-    if inputs.ml_scorers:
-        for ml_scorer in inputs.ml_scorers:
-            logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorer = MLModelScorer.from_latest_by_target_and_type(
-                inputs.target, ml_scorer
+    if inputs.ml_score:
+        # check which endpoints are availabe for the target
+        models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
+        for model in models:
+            logger.info(
+                f"Adding ML scorer for target {inputs.target} with model {model.name}"
             )
-            if scorer:
-                scorers.append(scorer)
+        ml_scorers = MLModelScorer.load_model_specs(models=models)
+        scorers.extend(ml_scorers)
 
     # score results using multiple scoring functions
     logger.info("Scoring docking results")

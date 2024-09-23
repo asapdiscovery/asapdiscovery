@@ -44,9 +44,32 @@ def tyk2_result_network():
 
 
 @pytest.fixture(scope="session")
+def tyk2_result_network_disconnected():
+    """Return an FEC network with some results."""
+    fec_network = fetch_test_file("tyk2_result_network_disconnected.json")
+    return FreeEnergyCalculationNetwork.from_file(fec_network)
+
+
+@pytest.fixture(scope="session")
 def tyk2_reference_data():
     """Return a CSV in the CDD style of IC50 values for the tyk2 series."""
     return fetch_test_file("tyk2_reference_data.csv")
+
+
+@pytest.fixture(scope="session")
+def tyk2_small_custom_network():
+    """The path to a csv file which can be used to plan a tyk2 network."""
+    return fetch_test_file("tyk2_small_custom_network.csv")
+
+
+@pytest.fixture(scope="session")
+def tyk2_small_custom_network_faulty_missing_comma():
+    return fetch_test_file("tyk2_small_custom_network_faulty_missing_comma.csv")
+
+
+@pytest.fixture(scope="session")
+def tyk2_small_custom_network_faulty_with_spaces():
+    return fetch_test_file("tyk2_small_custom_network_faulty_with_spaces.csv")
 
 
 @pytest.fixture(scope="function")
@@ -152,3 +175,8 @@ def test_ligands_sdfile(test_ligands, tmp_path):
     ) as f:
         write_ligands_to_multi_sdf(f.name, test_ligands, overwrite=True)
     return f.name
+
+
+@pytest.fixture()
+def tyk2_result_network_ddg0s():
+    return fetch_test_file("tyk2_result_network_ddg0s.json")

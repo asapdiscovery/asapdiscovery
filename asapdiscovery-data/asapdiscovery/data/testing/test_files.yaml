@@ -194,9 +194,22 @@ files:
   - resource: prepared_alchemy_dataset.json
     sha256hash: c988455b3e60d84939666d521415da9c8318fc3b5b4d4606b88acc659763d46d
 
-  # TYK2 FEC network for testing
+  # TYK2 FEC networks for testing
   - resource: tyk2_small_network.json
-    sha256hash: 7f49cff105c79fab2ca873f26bd4dc0d34a426ff48ce4ecc07a8f1544be8a0b1
+    sha256hash: cf6d416ef4c802ad64d72966e2a8ce9115ef3dd87ffa9181309c7c5515b42a66
+  - resource: tyk2_small_custom_network.csv
+    sha256hash: be8e0d829c5ed7dd5ac0392c67cd6fbcfb3ca05a778cea67efd8b67f4161c53d
+  - resource: tyk2_small_custom_network_faulty_missing_comma.csv
+    sha256hash: b74a7dde635383697b749b01fe1113b37e99cd93355d85affe4a407736a238a7
+  - resource: tyk2_small_custom_network_faulty_with_header.csv
+    sha256hash: 1d88664d2090edc743617676b96cfa37021bdbe1c8b3a09f93b4b10dec8c7efd
+  - resource: tyk2_small_custom_network_faulty_with_spaces.csv
+    sha256hash: 0f1280779f09069037d7229befa57683126751e7837cda67a99e775256989403
+
+
+  # TYK2 FEC network for testing (disconnected, i.e. missing edges)
+  - resource: tyk2_result_network_disconnected.json
+    sha256hash: 0468c9b0abffd68613fd8c391bd6422871beeb5ee075dbac3ad844526a6eb797
 
   # SMILES file with fully defined chirality for testing
   - resource: chalcogran_defined.smi
@@ -275,7 +288,7 @@ files:
 
   # alchemy result testing
   - resource: tyk2_result_network.json
-    sha256hash: f1bc3f03c84a28cb6fecda38160afba7b860cfca27ffc39da4359da3957f80cc
+    sha256hash: 0deb89052985a3c2758c4e77160abd9afc22e3896b229618f28e8b18e9dc807a
 
   - resource: tyk2_reference_data.csv
     sha256hash: 5e73f6cf3b68defcffa5cf54c91ffb5ac1569688278a91c8032d4cd3426930cc
@@ -331,3 +344,19 @@ files:
 
   - resource: tyk2_one_lig.sdf
     sha256hash: 182f6882a0160d041159ccedabc7fd3c7e74f07bf52d4e9974b91eb090f68485
+
+  - resource: Mpro-YP_009725301_AFold_processed.pdb
+    sha256hash: 3cdc93de0186243d790e7abd61d77eacde649f547f3d0cd0aaa58243631431f8
+
+  # asap-genetics testing
+  - resource: SARS_blast_results.xml
+    sha256hash: d6e59d1f6b2eeee5162cca4dbeee7ffcd56eeeabdb733a505ff86ee1588cf8f6
+
+  - resource: SARS_blast_results.csv
+    sha256hash: 1867827bd921e269b44c88476c1dfad2f198266388eef15696eefbb669e24abd
+
+  - resource: tyk2_result_network_ddg0s.json
+    sha256hash: f9ba9049f40eaa41e108a4cea5efafc726d08729b636c1df61fa771677f4c093
+
+  - resource: sample_training_data.csv
+    sha256hash: 7b126d8981406b6991347edd8ea47c8d53bbe6df8f3cbd2933dcfa53e233473c
