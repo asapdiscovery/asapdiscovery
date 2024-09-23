@@ -156,7 +156,7 @@ def test_alchemy_plan_custom_file(
             assert edge in expected_edges
 
 
-def test_plan_from_graphml(p38_graphml, p38_protein, tmpdir):
+def test_plan_from_graphml(p38_graphml, p38_protein, p38_ligand_names, tmpdir):
     with tmpdir.as_cwd():
         runner = CliRunner()
         result = runner.invoke(
@@ -183,6 +183,11 @@ def test_plan_from_graphml(p38_graphml, p38_protein, tmpdir):
 
         # make sure all ligands are in the network
         assert len(network.network.ligands) == len(ligand_network.nodes)
+
+        # test the names are the same as in the PLB
+        ligname_set = {ligand.compound_name for ligand in network.network.ligands}
+        assert ligname_set == p38_ligand_names
+
 
 
 def test_alchemy_prep_create(tmpdir):
