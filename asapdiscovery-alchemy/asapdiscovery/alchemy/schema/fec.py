@@ -22,9 +22,9 @@ from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
 
+from ._util import check_ligand_series_uniqueness_and_names
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
-from ._util import check_ligand_series_uniqueness_and_names
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand

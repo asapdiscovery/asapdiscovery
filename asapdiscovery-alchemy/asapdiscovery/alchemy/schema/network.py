@@ -6,9 +6,10 @@ from asapdiscovery.data.schema.ligand import Ligand
 from openfe.setup import LigandNetwork
 from pydantic import Field
 
+from ._util import check_ligand_series_uniqueness_and_names
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
 from .base import _SchemaBase
-from ._util import check_ligand_series_uniqueness_and_names
+
 
 class _NetworkPlannerMethod(_SchemaBase, abc.ABC):
     """
