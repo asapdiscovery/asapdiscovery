@@ -1,5 +1,4 @@
 import warnings
-from collections import Counter
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import gufe
@@ -25,7 +24,7 @@ from pydantic import BaseSettings, Field
 
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
-from ..utils import check_ligand_series_uniqueness_and_names
+from ._util import check_ligand_series_uniqueness_and_names
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
