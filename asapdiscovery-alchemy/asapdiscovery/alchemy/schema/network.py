@@ -170,6 +170,34 @@ class PlannedNetwork(_NetworkPlannerSettings):
             ligands.insert(0, self.central_ligand.to_openfe())
         return ligands
 
+    @classmethod
+    def from_graphml(cls, graphml: str) -> "PlannedNetwork":
+        """
+        Build a PlannedNetwork from a graphml string.
+
+        Args:
+            graphml: The graphml string representation of the network.
+
+        Returns:
+            A PlannedNetwork object with the ligands and central ligand if present.
+        """
+        ligand_network = LigandNetwork.from_graphml(graphml)
+        if not ligand_network.is_connected():
+            raise ValueError(
+                    "The provided graphml does not represent a connected network."
+            )
+        # extract ligands from the network
+        small_molecule_components = ligand_network.nodes
+        ligands = [Ligand.from_openfe(mol) for mol in small_molecule_components]
+        provenance = {"source": "pre-generated", "graphml": graphml}
+        return cls(
+            ligands=ligands,
+            central_ligand=None,
+            graphml=graphml,
+            provenance=provenance,
+        )
+
+
 
 class NetworkPlanner(_NetworkPlannerSettings):
     """
@@ -189,7 +217,6 @@ class NetworkPlanner(_NetworkPlannerSettings):
         self,
         ligands: list[Ligand],
         central_ligand: Optional[Ligand] = None,
-        graphml: Optional[str] = None,
     ) -> PlannedNetwork:
         """
         Generate a network with the configured settings.
@@ -199,52 +226,37 @@ class NetworkPlanner(_NetworkPlannerSettings):
         Args:
             ligands: The set of ligands which should be included in the network.
             central_ligand: The ligand which should be considered as the central node in a radial network
-            graphml: The graphml string representation of a network which should be used instead of generating a new one.
         """
 
-        if graphml is None:  # plan a new network
-            if (
-                self.network_planning_method.type == "RadialPlanner"
-                and central_ligand is None
-            ):
-                raise RuntimeError(
-                    "The radial type network requires a ligand to act as the central node."
-                )
+        # validate the inputs
+        if (
+            self.network_planning_method.type == "RadialPlanner"
+            and central_ligand is None
+        ):
+            raise RuntimeError(
+                "The radial type network requires a ligand to act as the central node."
+            )
 
-            # build the network planner
-            planner_data = {
-                "ligands": [
-                    mol.to_openfe() for mol in ligands
-                ],  # need to convert to rdkit objects?
-                "mappers": [self.atom_mapping_engine.get_mapper()],
-                "scorer": self._get_scorer(),
-            }
-            # add the central ligand if required
-            if self.network_planning_method.type == "RadialPlanner":
-                planner_data["central_ligand"] = central_ligand.to_openfe()
+        # build the network planner
+        planner_data = {
+            "ligands": [
+                mol.to_openfe() for mol in ligands
+            ],  # need to convert to rdkit objects?
+            "mappers": [self.atom_mapping_engine.get_mapper()],
+            "scorer": self._get_scorer(),
+        }
 
-            network_method = self.network_planning_method.get_planning_function()
-            ligand_network = network_method(**planner_data)
-            provenance = self.atom_mapping_engine.provenance()
-        else:  # use a pre-generated network
-            ligand_network = LigandNetwork.from_graphml(graphml)
-            if not ligand_network.is_connected():
-                raise ValueError(
-                    "The provided graphml does not represent a connected network."
-                )
-            if central_ligand:
-                raise ValueError(
-                    "Central ligand should not be provided when using a pre-generated graphml."
-                )
-            # extract ligands from the network
-            small_molecule_components = ligand_network.nodes
-            ligands = [Ligand.from_openfe(mol) for mol in small_molecule_components]
-            provenance = {"source": "pre-generated", "graphml": graphml}
+        # add the central ligand if required
+        if self.network_planning_method.type == "RadialPlanner":
+            planner_data["central_ligand"] = central_ligand.to_openfe()
+
+        network_method = self.network_planning_method.get_planning_function()
+        ligand_network = network_method(**planner_data)
 
         return PlannedNetwork(
             **self.dict(exclude={"type"}),
             ligands=ligands,
             central_ligand=central_ligand,
             graphml=ligand_network.to_graphml(),
-            provenance=provenance,
+            provenance=self.atom_mapping_engine.provenance(),
         )
