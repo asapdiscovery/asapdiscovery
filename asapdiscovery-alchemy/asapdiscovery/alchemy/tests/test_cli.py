@@ -189,7 +189,6 @@ def test_plan_from_graphml(p38_graphml, p38_protein, p38_ligand_names, tmpdir):
         assert ligname_set == p38_ligand_names
 
 
-
 def test_alchemy_prep_create(tmpdir):
     """Test creating the alchemy prep workflow"""
 
