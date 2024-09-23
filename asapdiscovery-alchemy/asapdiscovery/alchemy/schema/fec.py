@@ -25,6 +25,7 @@ from pydantic import BaseSettings, Field
 
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
+from .utils import check_ligand_series_uniqueness_and_names
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
@@ -386,7 +387,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         self,
         dataset_name: str,
         receptor: openfe.ProteinComponent,
-        ligands: list["Ligand"],
+        ligands: Optional[list["Ligand"]]=None,
         central_ligand: Optional["Ligand"] = None,
         graphml: Optional[str] = None,
         experimental_protocol: Optional[str] = None,
@@ -409,33 +410,21 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
          Returns:
              The planned FEC network which can be executed locally or submitted to alchemiscale.
         """
-        # check that all ligands are unique in the series
+        # generate the network
         if ligands:
-            if len(set(ligands)) != len(ligands):
-                count = Counter(ligands)
-                duplicated = [
-                    key.compound_name for key, value in count.items() if value > 1
-                ]
-                raise ValueError(
-                    f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}"
-                )
+            check_ligand_series_uniqueness_and_names(ligands)
+            # start by trying to plan the network
+            planned_network = self.network_planner.generate_network(
+                ligands=ligands,
+                central_ligand=central_ligand,
+            )
+        # pre-generated network
+        elif graphml:
+            # equivalent name checks in constructor
+            planned_network = PlannedNetwork.from_graphml(graphml)
 
-            # if any ligands lack a name, then raise an exception; important for
-            # ligands to have names for human-readable result gathering downstream
-            if missing := len(
-                [ligand for ligand in ligands if not ligand.compound_name]
-            ):
-                raise ValueError(
-                    f"{missing} of {len(ligands)} ligands do not have names; names are required for ligands for downstream results handling"
-                )
-        elif not graphml:
-            raise ValueError("No ligands or graphml provided to create the network.")
-
-        # start by trying to plan the network
-        planned_network = self.network_planner.generate_network(
-            ligands=ligands,
-            central_ligand=central_ligand,
-        )
+        else:
+            raise ValueError("Either ligands or a graphml file must be provided.")
 
         planned_fec_network = FreeEnergyCalculationNetwork(
             dataset_name=dataset_name,

@@ -8,6 +8,8 @@ from pydantic import Field
 
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
 from .base import _SchemaBase
+from .utils import check_ligand_series_uniqueness_and_names
+
 
 
 class _NetworkPlannerMethod(_SchemaBase, abc.ABC):
@@ -188,7 +190,11 @@ class PlannedNetwork(_NetworkPlannerSettings):
             )
         # extract ligands from the network
         small_molecule_components = ligand_network.nodes
+
         ligands = [Ligand.from_openfe(mol) for mol in small_molecule_components]
+        
+        check_ligand_series_uniqueness_and_names(ligands)
+
         provenance = {"source": "pre-generated", "graphml": graphml}
         return cls(
             ligands=ligands,

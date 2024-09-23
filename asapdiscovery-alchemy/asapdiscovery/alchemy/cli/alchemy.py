@@ -202,7 +202,7 @@ def plan(
         # load the graphml file
         with open(graphml) as f:
             graphml = f.read()
-        click.echo("Graphml file loaded: Using explicit ligand network ...")
+        click.echo("Graphml file loaded: Using explicit ligand network.")
 
     if not name:
         raise RuntimeError("Please provide a name for the dataset.")
