@@ -9,6 +9,7 @@ from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
+from asapdiscovery.alchemy.utils import extract_custom_ligand_network
 from gufe.protocols import ProtocolDAGResult, ProtocolUnitResult
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
@@ -419,3 +420,22 @@ def test_cdd_download_remove_radicals(monkeypatch):
     )
     assert len(molecules) == 1
     assert molecules[0].compound_name == "ethanol"
+
+
+def test_extracting_invalid_transforms(tyk2_small_custom_network_faulty_missing_comma):
+    """Make sure an error is raised if the file is not formated correctly."""
+    with pytest.raises(
+        ValueError, match="Custom network file contains an empty entry at index 2"
+    ):
+        extract_custom_ligand_network(tyk2_small_custom_network_faulty_missing_comma)
+
+
+def test_extracting_transforms_wtih_spaces(
+    tyk2_small_custom_network_faulty_with_spaces,
+):
+    """Make sure we can extract names even with poor formatting."""
+
+    edges = extract_custom_ligand_network(tyk2_small_custom_network_faulty_with_spaces)
+    for edge in edges:
+        for ligand_name in edge:
+            assert " " not in ligand_name

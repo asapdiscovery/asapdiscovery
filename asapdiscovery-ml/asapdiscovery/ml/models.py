@@ -1,7 +1,9 @@
+import os
 import warnings
-from datetime import date
+from collections import defaultdict
+from datetime import date, datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union  # noqa: F401
+from typing import Any, Dict, List, Optional, Set, Union  # noqa: F401
 from urllib.parse import urljoin
 
 import mtenn
@@ -21,7 +23,6 @@ class MLModelBase(BaseModel):
     """
 
     class Config:
-        validate_assignment = True
 
         # Add custom encoders for semver Versions
         json_encoders = {Version: lambda v: str(v)}
@@ -30,16 +31,20 @@ class MLModelBase(BaseModel):
         arbitrary_types_allowed = True
 
     name: str = Field(..., description="Model name")
+    endpoint: Any = Field(
+        ..., description="Endpoint for model"
+    )  # FIXME: should be Optional[str] but this causes issues with pydantic
     type: ModelType = Field(..., description="Model type")
     last_updated: date = Field(..., description="Last updated datetime")
-    targets: set[TargetTags] = Field(..., description="Biological targets of the model")
+    targets: Any = Field(
+        ..., description="Biological targets of the model"
+    )  # FIXME: should be Optional[Set[TargetTags]] but this causes issues with pydantic
     mtenn_lower_pin: Version | None = Field(
         None, description="Lower bound on compatible mtenn versions (inclusive)."
     )
     mtenn_upper_pin: Version | None = Field(
         None, description="Upper bound on compatible mtenn versions (exclusive)."
     )
-    # class variable ensemble = False
 
     @validator("mtenn_lower_pin", "mtenn_upper_pin", pre=True)
     def cast_versions(cls, v):
@@ -152,6 +157,7 @@ class MLModelSpec(MLModelSpecBase):
             config_file=Path(config_file) if self.config_resource else None,
             last_updated=self.last_updated,
             targets=self.targets,
+            endpoint=self.endpoint,
             local_dir=Path(local_dir) if local_dir else None,
             mtenn_lower_pin=self.mtenn_lower_pin,
             mtenn_upper_pin=self.mtenn_upper_pin,
@@ -338,6 +344,15 @@ class RemoteEnsembleHelper(BaseModel):
                         raise ValueError("Submodel should have only one key")
                     # get the name of the submodel
                     subname = list(submodel.keys())[0]
+                    if "targets" in model_data:
+                        tar = model_data["targets"]
+                        # check not a list of None
+                        if not all(tar):
+                            targets = None
+                        else:
+                            targets = set(tar)
+                    else:
+                        targets = None
                     models.append(
                         MLModelSpec(
                             name=model + "_ens_" + subname,
@@ -348,7 +363,8 @@ class RemoteEnsembleHelper(BaseModel):
                             config_resource=model_data["config"]["resource"],
                             config_sha256hash=model_data["config"]["sha256hash"],
                             last_updated=model_data["last_updated"],
-                            targets=set(model_data["targets"]),
+                            targets=targets,
+                            endpoint=model_data["endpoint"],
                             mtenn_lower_pin=(
                                 model_data["mtenn_lower_pin"]
                                 if "mtenn_lower_pin" in model_data
@@ -381,6 +397,7 @@ class RemoteEnsembleHelper(BaseModel):
                     type=model_data["type"],
                     last_updated=last_updated,
                     targets=set(model_data["targets"]),
+                    endpoint=model_data["endpoint"],
                     mtenn_lower_pin=model_data["mtenn_lower_pin"],
                     mtenn_upper_pin=(
                         model_data["mtenn_upper_pin"]
@@ -441,6 +458,10 @@ class MLModelRegistry(BaseModel):
     models: dict[str, MLModelSpecBase] = Field(
         ..., description="Models in the model registry, keyed by name"
     )
+    source_yaml: Optional[str] = Field(
+        None, description="Source yaml file for model registry"
+    )
+    time_updated: datetime = Field(datetime.utcnow(), description="Time last updated")
 
     def get_models_for_target_and_type(
         self, target: TargetTags, type: ModelType
@@ -505,11 +526,13 @@ class MLModelRegistry(BaseModel):
             List of targets with models
         """
         return list(
-            {target.value for model in self.models.values() for target in model.targets}
+            {target for model in self.models.values() for target in model.targets}
         )
 
     def get_latest_model_for_target_and_type(
-        self, target: TargetTags, type: ModelType
+        self,
+        target: TargetTags,
+        type: ModelType,
     ) -> MLModelSpec:
         """
         Get latest model spec for a target
@@ -532,6 +555,272 @@ class MLModelRegistry(BaseModel):
             return None
         else:
             return max(models, key=lambda model: model.last_updated)
+
+    def get_latest_model_for_target_and_endpoint(
+        self, target: TargetTags, endpoint: str
+    ) -> MLModelSpec:
+        """
+        Get latest model spec for a target and endpoint
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get model for
+        endpoint : str
+            Endpoint to get model for
+
+        Returns
+        -------
+        MLModelSpec
+            Latest model spec
+        """
+        models = [
+            model
+            for model in self.models.values()
+            if target in model.targets and model.endpoint == endpoint
+        ]
+        if len(models) == 0:
+            warnings.warn(
+                f"No models available for target {target} and endpoint {endpoint}"
+            )
+            return None
+        else:
+            return max(models, key=lambda model: model.last_updated)
+
+    def get_models_for_endpoint(self, endpoint: str) -> list[MLModelSpec]:
+        """
+        Get models for a given endpoint
+
+        Parameters
+        ----------
+        endpoint : str
+            Endpoint to get models for
+
+        Returns
+        -------
+        List[MLModelSpec]
+            List of model specs
+        """
+        return [model for model in self.models.values() if model.endpoint == endpoint]
+
+    def get_latest_model_for_endpoint(self, endpoint: str) -> MLModelSpec:
+        """
+        Get latest model spec for a given endpoint
+
+        Parameters
+        ----------
+        endpoint : str
+            Endpoint to get model for
+
+        Returns
+        -------
+        MLModelSpec
+            Latest model spec
+        """
+        models = self.get_models_for_endpoint(endpoint)
+        if len(models) == 0:
+            warnings.warn(f"No models available for endpoint {endpoint}")
+            return None
+        else:
+            return max(models, key=lambda model: model.last_updated)
+
+    def get_models_without_target(self) -> list[MLModelSpec]:
+        """
+        Get models without a target
+
+        Returns
+        -------
+        List[MLModelSpec]
+            List of model specs
+        """
+        return [model for model in self.models.values() if not any(model.targets)]
+
+    def get_endpoints(self) -> list[str]:
+        """
+        Get list of endpoints
+
+        Returns
+        -------
+        List[str]
+            List of endpoints
+        """
+        return list({model.endpoint for model in self.models.values()})
+
+    def get_endpoint_target_mapping(self) -> dict[str, list[TargetTags]]:
+        """
+        Get mapping of endpoints to targets
+
+        Returns
+        -------
+        dict[str, list[TargetTags]]
+            Mapping of endpoints to targets
+        """
+        map = defaultdict(list)
+        for model in self.models.values():
+            map[model.endpoint].extend(list(model.targets))
+
+        # uniquify
+        new_map = {}
+        for k, v in map.items():
+            if any(v):
+                new_map[k] = list(set(v))
+            else:
+                new_map[k] = None
+
+        return new_map
+
+    def get_endpoints_for_target(
+        self, target: TargetTags, include_generic=True
+    ) -> list[str]:
+        """
+        Get list of endpoints for a target
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get endpoints for
+        include_generic : bool, optional
+            Whether to include generic endpoints, by default True
+
+        Returns
+        -------
+        List[str]
+            List of endpoints
+        """
+        endpts = list(
+            {
+                model.endpoint
+                for model in self.models.values()
+                if target in model.targets
+            }
+        )
+        if include_generic:
+            extra = self.get_endpoints_for_target(None, include_generic=False)
+            endpts.extend(extra)
+        # uniquify
+        endpts = list(set(endpts))
+        return endpts
+
+    def endpoint_has_target(self, endpoint: str) -> bool:
+        """
+        Check if an endpoint has a target
+
+        Parameters
+        ----------
+        endpoint : str
+            Endpoint to check
+        target : TargetTags
+            Target to check
+
+        Returns
+        -------
+        bool
+            Whether the endpoint has the target
+        """
+        return self.get_endpoint_target_mapping().get(endpoint) is not None
+
+    def get_target_endpoint_mapping(self) -> dict[TargetTags, list[str]]:
+        """
+        Get mapping of targets to endpoints
+
+        Returns
+        -------
+        dict[TargetTags, list[str]]
+            Mapping of targets to endpoints
+        """
+        map = defaultdict(list)
+        for model in self.models.values():
+            for target in model.targets:
+                map[target].append(model.endpoint)
+
+        # uniquify
+        new_map = {}
+        for k, v in map.items():
+            if any(v):
+                new_map[k] = list(set(v))
+            else:
+                new_map[k] = None
+
+        return new_map
+
+    def get_latest_model_for_target_type_and_endpoint(
+        self, target: str, type: str, endpoint: str
+    ) -> MLModelSpec:
+        """
+        Get latest model spec for a target, type and endpoint
+
+        Parameters
+        ----------
+        target : TargetTags
+            Target to get model for
+        type : ModelType
+            Type of model to get
+        endpoint : str
+            Endpoint to get model for
+
+        Returns
+        -------
+        MLModelSpec
+            Latest model spec
+        """
+        models = [
+            model
+            for model in self.models.values()
+            if target in model.targets
+            and model.endpoint == endpoint
+            and model.type == type
+        ]
+        if len(models) == 0:
+            warnings.warn(
+                f"No models available for target {target}, endpoint {endpoint} and type {type}"
+            )
+            return None
+        else:
+            return max(models, key=lambda model: model.last_updated)
+
+    def get_model_types_for_endpoint(self, endpoint: str) -> list[str]:
+        """
+        Get model types for an endpoint
+
+        Parameters
+        ----------
+        endpoint : str
+            Endpoint to get model types for
+
+        Returns
+        -------
+        List[str]
+            List of model types
+        """
+        return list(
+            {model.type for model in self.models.values() if model.endpoint == endpoint}
+        )
+
+    def reccomend_models_for_target(self, target: TargetTags) -> list[MLModelSpec]:
+        """
+        Get reccomended models for a target, including generic models without a target
+        """
+        if target not in TargetTags.get_values():
+            raise ValueError(
+                f"Target {target} not valid, must be one of {TargetTags.get_values()}"
+            )
+        epts = self.get_endpoints_for_target(target, include_generic=True)
+        models = []
+        for p in epts:
+            for m in self.get_model_types_for_endpoint(p):
+                if ASAPMLModelRegistry.endpoint_has_target(p):
+                    mod = ASAPMLModelRegistry.get_latest_model_for_target_type_and_endpoint(
+                        target, m, p
+                    )
+                else:
+                    mod = ASAPMLModelRegistry.get_latest_model_for_target_type_and_endpoint(
+                        None, m, p
+                    )
+                models.append(mod)
+
+        # clean for None
+        models = [m for m in models if m is not None]
+        return models
 
     def get_model(self, name: str) -> MLModelSpec:
         """
@@ -562,10 +851,24 @@ class MLModelRegistry(BaseModel):
         model_types = {model.type.value for model in self.models.values()}
         return list(model_types)
 
-    @classmethod
-    def from_yaml(cls, yaml_file: Union[str, Path]) -> "MLModelRegistry":
+    def update_registry(self):
         """
-        Make model registry from yaml spec file
+        Refresh the model registry by checking for new models
+        """
+        if not self.source_yaml:
+            raise ValueError(
+                "No source yaml file provided for model registry, cannot update"
+            )
+        new_models = self.parse_yaml_to_models_dict(self.source_yaml)
+        self.models = new_models
+        self.time_updated = datetime.utcnow()
+
+    @staticmethod
+    def parse_yaml_to_models_dict(
+        yaml_file: Union[str, Path]
+    ) -> dict[str, MLModelSpecBase]:
+        """
+        Parse models registry from yaml spec file
 
         Parameters
         ----------
@@ -573,8 +876,8 @@ class MLModelRegistry(BaseModel):
 
         Returns
         -------
-        MLModelRegistry
-            Model registry
+        dict[str, MLModelSpecBase]
+            Dictionary of model specs
         """
         if not Path(yaml_file).exists():
             raise FileNotFoundError(f"Yaml spec file {yaml_file} does not exist")
@@ -612,6 +915,7 @@ class MLModelRegistry(BaseModel):
                         ),
                         last_updated=model_data["last_updated"],
                         targets=set(model_data["targets"]),
+                        endpoint=model_data["endpoint"],
                         mtenn_lower_pin=(
                             model_data["mtenn_lower_pin"]
                             if "mtenn_lower_pin" in model_data
@@ -626,8 +930,29 @@ class MLModelRegistry(BaseModel):
             except Exception as e:
                 warnings.warn(f"Failed to load model {model}, skipping. Error: {e}")
 
-        return cls(models=models)
+        return models
+
+    @classmethod
+    def from_yaml(cls, yaml_file: str) -> "MLModelRegistry":
+        """
+        Make model registry from yaml spec file
+        """
+        models = cls.parse_yaml_to_models_dict(yaml_file)
+        return cls(models=models, source_yaml=yaml_file)
 
 
-# default model registry for all ASAP models
-ASAPMLModelRegistry = MLModelRegistry.from_yaml(asap_models_yaml)
+_asap_ml_debug = True if os.getenv("ASAP_ML_DEBUG") else False
+
+if _asap_ml_debug:
+    print("ASAP_ML_DEBUG MODE ENABLED")
+    print(f"ASAP Models YAML: {asap_models_yaml}")
+
+    # load raw, will show a bunch of warnings if things not working
+    # default model registry for all ASAP models
+    ASAPMLModelRegistry = MLModelRegistry.from_yaml(asap_models_yaml)
+    print("ASAP ML Model Registry loaded")
+else:
+    # load with UserWarning suppression
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ASAPMLModelRegistry = MLModelRegistry.from_yaml(asap_models_yaml)

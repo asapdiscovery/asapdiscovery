@@ -468,3 +468,33 @@ def is_valid_receptor_system(target: "PreppedTarget") -> bool:
             return False
 
     return True
+
+
+def extract_custom_ligand_network(csv_file: str) -> list[tuple[str, str]]:
+    """
+    Extract the named transformations from the csv file which should be used during the network planning stage.
+
+    Args:
+        csv_file: The path to the csv file we should extract the named edges from.
+
+    Returns:
+        A list of tuples containing the names of the ligands which make up each edge of the network.
+    """
+    import pandas as pd
+
+    # do some checks on the input data.
+    try:
+        custom_network_df = pd.read_csv(csv_file, header=None)
+    except pd.errors.EmptyDataError:
+        raise ValueError(f"Custom network file {csv_file} is empty.")
+
+    edges = []
+    for i, row in custom_network_df.iterrows():
+        row_data = [str(value).strip() for value in row.values]
+        if row.isnull().values.any() or any(entry.rsplit() == [] for entry in row_data):
+            raise ValueError(
+                f"Custom network file contains an empty entry at index {i+1}"
+            )
+        # if no errors extract the data
+        edges.append(tuple(row_data))
+    return edges
