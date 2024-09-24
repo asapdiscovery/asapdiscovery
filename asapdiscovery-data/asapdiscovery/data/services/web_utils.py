@@ -9,11 +9,12 @@ class _BaseWebAPI(abc.ABC):
     A general web API interface base class which sets a requests session and handles API tokens.
     """
 
-    def __init__(self, url, api_version, api_key, **kwargs):
+    def __init__(self, url, api_version, api_key, timeout=500, **kwargs):
         self.url = url
         self.version = api_version
         self.api_url = f"{self.url}/api/{self.version}"
         self.token = api_key
+        self.timeout = timeout
         self._setup_requests_session()
 
     def _setup_requests_session(self, retries=3, backoff_factor=0.5):

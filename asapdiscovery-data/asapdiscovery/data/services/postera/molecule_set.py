@@ -89,6 +89,7 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
 class MoleculeSetAPI(_BaseWebAPI):
     """Connection and commands for PostEra Molecule Set API"""
 
+
     @staticmethod
     def _check_response_for_perm_error(response: dict):
         detail = response.get("detail")
@@ -150,6 +151,7 @@ class MoleculeSetAPI(_BaseWebAPI):
                 "molecules": data,
                 "name": molecule_set_name,
             },
+            timeout=self.timeout,
         )
         response_json = response.json()
         logger.debug(
@@ -164,7 +166,7 @@ class MoleculeSetAPI(_BaseWebAPI):
             return response_json[MoleculeSetKeys.id.value]
 
     def _read_page(self, url: str, page: int) -> tuple[pd.DataFrame, str]:
-        response = self._session.get(url, params={"page": page})
+        response = self._session.get(url, params={"page": page}, timeout=self.timeout)
         response.raise_for_status()
         response_json = response.json()
         return response_json["results"], response_json["paginationInfo"]["hasNext"]
@@ -243,6 +245,8 @@ class MoleculeSetAPI(_BaseWebAPI):
         url = f"{self.molecule_set_url}/{molecule_set_id}"
         response = self._session.get(
             url,
+            timeout=self.timeout,
+
         )
         response_json = response.json()
         logger.debug(
@@ -263,7 +267,7 @@ class MoleculeSetAPI(_BaseWebAPI):
 
         """
         url = f"{self.molecule_set_url}/{molecule_set_id}"
-        response = self._session.delete(url)
+        response = self._session.delete(url, timeout=self.timeout)
         # no response body for delete
         logger.debug(
             f"Postera MoleculeSetAPI.destroy response: {response}, status code: {response.status_code}"
@@ -410,6 +414,8 @@ class MoleculeSetAPI(_BaseWebAPI):
             json={
                 "newMolecules": data,
             },
+            timeout=self.timeout,
+
         )
         response_json = response.json()
         logger.debug(
@@ -452,7 +458,7 @@ class MoleculeSetAPI(_BaseWebAPI):
         url = f"{self.molecule_set_url}/{molecule_set_id}/update_molecules/"
 
         response = self._session.patch(
-            url, json={"moleculesToUpdate": data, "overwrite": overwrite}
+            url, json={"moleculesToUpdate": data, "overwrite": overwrite}, timeout=self.timeout
         )
         response_json = response.json()
 
