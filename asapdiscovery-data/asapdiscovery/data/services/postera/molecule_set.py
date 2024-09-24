@@ -89,7 +89,6 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
 class MoleculeSetAPI(_BaseWebAPI):
     """Connection and commands for PostEra Molecule Set API"""
 
-
     @staticmethod
     def _check_response_for_perm_error(response: dict):
         detail = response.get("detail")
@@ -246,7 +245,6 @@ class MoleculeSetAPI(_BaseWebAPI):
         response = self._session.get(
             url,
             timeout=self.timeout,
-
         )
         response_json = response.json()
         logger.debug(
@@ -415,7 +413,6 @@ class MoleculeSetAPI(_BaseWebAPI):
                 "newMolecules": data,
             },
             timeout=self.timeout,
-
         )
         response_json = response.json()
         logger.debug(
@@ -458,7 +455,9 @@ class MoleculeSetAPI(_BaseWebAPI):
         url = f"{self.molecule_set_url}/{molecule_set_id}/update_molecules/"
 
         response = self._session.patch(
-            url, json={"moleculesToUpdate": data, "overwrite": overwrite}, timeout=self.timeout
+            url,
+            json={"moleculesToUpdate": data, "overwrite": overwrite},
+            timeout=self.timeout,
         )
         response_json = response.json()
 
