@@ -231,7 +231,7 @@ class POSITDocker(DockingBase):
                     docked_result_path = Path(Path(output_dir) / set.unique_name)
 
                     jsons = list(
-                        docked_result_path.glob("docked_result_*.json")
+                        docked_result_path.glob("docking_result_*.json")
                     )  # can be multiple poses
 
                 # first check if output exists
