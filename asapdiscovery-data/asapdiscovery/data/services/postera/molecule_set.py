@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 def _batch(iterable, n=1):
-    l = len(iterable)  #noqa: E741
-    for ndx in range(0, l, n): #noqa: E741
+    l = len(iterable)  # noqa: E741
+    for ndx in range(0, l, n):  # noqa: E741
         yield iterable[ndx : min(ndx + n, l)]
 
 
