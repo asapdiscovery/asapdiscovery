@@ -94,7 +94,6 @@ class MoleculeUpdateList(list[MoleculeUpdate]):
 class MoleculeSetAPI(_BaseWebAPI):
     """Connection and commands for PostEra Molecule Set API"""
 
-
     @staticmethod
     def _check_response_for_perm_error(response: dict):
         detail = response.get("detail")
@@ -251,7 +250,6 @@ class MoleculeSetAPI(_BaseWebAPI):
         response = self._session.get(
             url,
             timeout=self.timeout,
-
         )
         response_json = response.json()
         logger.debug(
@@ -420,7 +418,6 @@ class MoleculeSetAPI(_BaseWebAPI):
                 "newMolecules": data,
             },
             timeout=self.timeout,
-
         )
         response_json = response.json()
         logger.debug(
@@ -484,7 +481,7 @@ class MoleculeSetAPI(_BaseWebAPI):
                     f"Update failed for molecule set batch {molecule_set_id}, with response: {response_json}, status code: {response.status_code}"
                 ) from e
             
-            return molecules_updated
+        return molecules_updated
 
     def update_molecules_from_df_with_manifold_validation(
         self,
