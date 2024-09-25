@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import ClassVar, Dict, List, Optional, Union  # noqa: F401
+from typing import Any, ClassVar, Dict, List, Optional, Union  # noqa: F401
 
 import dgl
 import mtenn
@@ -39,8 +39,9 @@ class InferenceBase(BaseModel):
         arbitrary_types_allowed = True
         allow_extra = False
 
-    targets: set[TargetTags] = Field(
-        ..., description="Targets that them model can predict for"
+    targets: Optional[Any] = Field(
+        None,
+        description="Targets that them model can predict for",  # FIXME: should be Optional[Set[TargetTags]] but this causes issues with pydantic
     )
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
     model_name: str = Field(..., description="Name of model to use")
@@ -81,6 +82,31 @@ class InferenceBase(BaseModel):
         )
 
         if model_spec is None:  # No model found, return None
+            return None
+        else:
+            return cls.from_ml_model_spec(model_spec, **kwargs)
+
+    @classmethod
+    def from_latest_by_target_and_endpoint(
+        cls,
+        target: TargetTags,
+        endpoint: str,
+        model_registry: MLModelRegistry = ASAPMLModelRegistry,
+        **kwargs,
+    ):
+        """
+        Create an InferenceBase object from the latest model for the latest target.
+
+        Returns
+        -------
+        InferenceBase
+            InferenceBase object created from latest model for latest target.
+        """
+        model_spec = model_registry.get_latest_model_for_target_and_endpoint_and_type(
+            target, endpoint, cls.model_type
+        )
+
+        if model_spec is None:
             return None
         else:
             return cls.from_ml_model_spec(model_spec, **kwargs)
@@ -260,7 +286,7 @@ class InferenceBase(BaseModel):
             else:
                 # iterates only once, just return the prediction
                 pred = output_tensor
-                err = np.nan
+                err = np.asarray([np.nan])
             if return_err:
                 return pred, err
             else:
@@ -309,7 +335,7 @@ class GATInference(InferenceBase):
                 err = errfunc(aggregate_preds)
             else:
                 pred = output_tensor
-                err = np.nan
+                err = np.asarray([np.nan])
 
             if return_err:
                 return pred, err
@@ -355,9 +381,12 @@ class GATInference(InferenceBase):
         ds = GraphDataset.from_ligands(
             ligands, node_featurizer=node_featurizer, edge_featurizer=edge_featurizer
         )
-
-        data = [self.predict(pose["g"], return_err=return_err) for _, pose in ds]
-        data = np.asarray(data)
+        # always return a 2D array, then we can mask out the err dimension
+        data = [self.predict(pose["g"], return_err=True) for _, pose in ds]
+        data = np.asarray(data, dtype=np.float32)
+        # if it is 1D array, we need to convert to 2D
+        if len(data.shape) == 1:
+            data = data.reshape(1, -1)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -366,6 +395,12 @@ class GATInference(InferenceBase):
             preds = preds.item()
             if return_err:
                 errs = errs.item()
+
+        else:
+            # flatten the array if we have multiple inputs
+            preds = preds.flatten()
+            if return_err:
+                errs = errs.flatten()
 
         if return_err:
             return preds, errs
@@ -417,7 +452,7 @@ class StructuralInference(InferenceBase):
                 err = errfunc(aggregate_preds)
             else:
                 pred = output_tensor
-                err = np.nan
+                err = np.asarray([np.nan])
 
             if return_err:
                 return pred, err
@@ -454,8 +489,12 @@ class StructuralInference(InferenceBase):
             pose = [
                 p[1] for p in DatasetConfig.fix_e3nn_labels([(None, p) for p in pose])
             ]
-        data = [self.predict(p, return_err=return_err) for p in pose]
-        data = np.asarray(data)
+        # always return a 2D array, then we can mask out the err dimension
+        data = [self.predict(p, return_err=True) for p in pose]
+        data = np.asarray(data, dtype=np.float32)
+        # if it is 1D array, we need to convert to 2D
+        if len(data.shape) == 1:
+            data = data.reshape(1, -1)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -464,6 +503,12 @@ class StructuralInference(InferenceBase):
             preds = preds.item()
             if return_err:
                 errs = errs.item()
+
+        else:
+            # flatten the array if we have multiple inputs
+            preds = preds.flatten()
+            if return_err:
+                errs = errs.flatten()
 
         if return_err:
             return preds, errs
@@ -516,8 +561,12 @@ class StructuralInference(InferenceBase):
             h.close()
 
         # Make predictions
-        data = [self.predict(p, return_err=return_err) for p in pose]
+        # always return a 2D array, then we can mask out the err dimension
+        data = [self.predict(p, return_err=True) for p in pose]
         data = np.asarray(data)
+        # if it is 1D array, we need to convert to 2D
+        if len(data.shape) == 1:
+            data = data.reshape(1, -1)
         preds = data[:, 0]
         if return_err:
             errs = data[:, 1]
@@ -526,7 +575,11 @@ class StructuralInference(InferenceBase):
             preds = preds.item()
             if return_err:
                 errs = errs.item()
-
+        else:
+            # flatten the array if we have multiple inputs
+            preds = preds.flatten()
+            if return_err:
+                errs = errs.flatten()
         if return_err:
             return preds, errs
         else:

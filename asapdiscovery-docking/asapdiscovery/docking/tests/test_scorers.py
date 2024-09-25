@@ -76,6 +76,7 @@ def test_meta_scorer_df(results_multi):
             ChemGauss4Scorer(),
             GATScorer.from_latest_by_target("SARS-CoV-2-Mpro"),
             SchnetScorer.from_latest_by_target("SARS-CoV-2-Mpro"),
+            E3NNScorer.from_latest_by_target("SARS-CoV-2-Mpro"),
         ]
     )
 

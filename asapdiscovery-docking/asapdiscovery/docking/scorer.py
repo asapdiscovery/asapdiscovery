@@ -25,6 +25,7 @@ from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.genetics.fitness import target_has_fitness_data
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
+from asapdiscovery.ml.models import MLModelSpecBase
 from mtenn.config import ModelType
 from multimethod import multimethod
 from pydantic import BaseModel, Field, validator
@@ -39,9 +40,10 @@ class ScoreType(str, Enum):
 
     chemgauss4 = "chemgauss4"
     FINT = "FINT"
-    GAT = "GAT"
-    schnet = "schnet"
-    e3nn = "e3nn"
+    GAT_pIC50 = "GAT-pIC50"
+    GAT_LogD = "GAT-LogD"
+    schnet_pIC50 = "schnet-pIC50"
+    e3nn_pIC50 = "e3nn-pIC50"
     sym_clash = "sym_clash"
     INVALID = "INVALID"
 
@@ -57,14 +59,49 @@ class ScoreUnits(str, Enum):
     INVALID = "INVALID"
 
 
-# this can possibly be done with subclasses and some aliases, but will do for now
+# TODO: this is a massive kludge, need to refactor
+def endpoint_and_model_type_to_score_type(endpoint: str, model_type: str) -> ScoreType:
+    """
+    Convert an endpoint to a score type.
+
+    Parameters
+    ----------
+    endpoint : str
+        Endpoint to convert
+
+    Returns
+    -------
+    ScoreType
+        Score type
+    """
+    if model_type == ModelType.GAT:
+        if endpoint == "pIC50":  # TODO: make this an enum
+            return ScoreType.GAT_pIC50
+        elif endpoint == "LogD":
+            return ScoreType.GAT_LogD
+        else:
+            raise ValueError(f"Endpoint {endpoint} not recognized, for GAT")
+    elif model_type == ModelType.schnet:
+        if endpoint == "pIC50":
+            return ScoreType.schnet_pIC50
+        else:
+            raise ValueError(f"Endpoint {endpoint} not recognized, for Schnet")
+    elif model_type == ModelType.e3nn:
+        if endpoint == "pIC50":
+            return ScoreType.e3nn_pIC50
+        else:
+            raise ValueError(f"Endpoint {endpoint} not recognized for E3NN")
+    else:
+        raise ValueError(f"Model type {model_type} not recognized")
+
 
 _SCORE_MANIFOLD_ALIAS = {
     ScoreType.chemgauss4: DockingResultCols.DOCKING_SCORE_POSIT.value,
     ScoreType.FINT: DockingResultCols.FITNESS_SCORE_FINT.value,
-    ScoreType.GAT: DockingResultCols.COMPUTED_GAT_PIC50.value,
-    ScoreType.schnet: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
-    ScoreType.e3nn: DockingResultCols.COMPUTED_E3NN_PIC50.value,
+    ScoreType.GAT_pIC50: DockingResultCols.COMPUTED_GAT_PIC50.value,
+    ScoreType.GAT_LogD: DockingResultCols.COMPUTED_GAT_LOGD.value,
+    ScoreType.schnet_pIC50: DockingResultCols.COMPUTED_SCHNET_PIC50.value,
+    ScoreType.e3nn_pIC50: DockingResultCols.COMPUTED_E3NN_PIC50.value,
     ScoreType.INVALID: None,
     ScoreType.sym_clash: DockingResultCols.SYMEXP_CLASH_NUM.value,
     "target_name": DockingResultCols.DOCKING_STRUCTURE_POSIT.value,
@@ -201,7 +238,6 @@ class Score(BaseModel):
                 dtype = type(df["input"].iloc[0])
                 df["input"] = df["input"].apply(lambda x: x.json())
                 made_json = True
-
         indices = set(df.columns) - {"score_type", "score", "units"}
         df = df.pivot(
             index=indices,
@@ -221,7 +257,7 @@ class ScorerBase(BaseModel):
     Base class for scoring functions.
     """
 
-    score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
+    score_type: ScoreType = Field(ScoreType.INVALID, description="Type of score")
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @abc.abstractmethod
@@ -336,7 +372,7 @@ class ChemGauss4Scorer(ScorerBase):
 
     """
 
-    score_type: ClassVar[ScoreType.chemgauss4] = ScoreType.chemgauss4
+    score_type: ScoreType = Field(ScoreType.chemgauss4, description="Type of score")
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
 
     @dask_vmap(["inputs"])
@@ -423,7 +459,7 @@ class FINTScorer(ScorerBase):
     Overloaded to accept DockingResults, Complexes, or Paths to PDB files.
     """
 
-    score_type: ClassVar[ScoreType.FINT] = ScoreType.FINT
+    score_type: ScoreType = Field(ScoreType.FINT, description="Type of score")
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
     target: TargetTags = Field(..., description="Which target to use for scoring")
 
@@ -529,11 +565,13 @@ class MLModelScorer(ScorerBase):
     """
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
-    score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
+    score_type: ScoreType = Field(..., description="Type of score")
+    endpoint: Optional[str] = Field(None, description="Endpoint biological property")
     units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
-    targets: set[TargetTags] = Field(
-        ..., description="Which targets can this model do predictions for"
+    targets: Any = Field(
+        ...,
+        description="Which targets can this model do predictions for",  # FIXME: Optional[set[TargetTags]]
     )
     model_name: str = Field(..., description="String indicating which model to use")
     inference_cls: InferenceBase = Field(..., description="Inference class")
@@ -554,6 +592,10 @@ class MLModelScorer(ScorerBase):
                 targets=inference_instance.targets,
                 model_name=inference_instance.model_name,
                 inference_cls=inference_instance,
+                endpoint=inference_instance.model_spec.endpoint,
+                score_type=endpoint_and_model_type_to_score_type(
+                    inference_instance.model_spec.endpoint, cls.model_type
+                ),
             )
 
     @staticmethod
@@ -583,7 +625,30 @@ class MLModelScorer(ScorerBase):
             targets=inference_instance.targets,
             model_name=inference_instance.model_name,
             inference_cls=inference_instance,
+            endpoint=inference_instance.model_spec.endpoint,
+            score_type=endpoint_and_model_type_to_score_type(
+                inference_instance.model_spec.endpoint, cls.model_type
+            ),
         )
+
+    @staticmethod
+    def load_model_specs(
+        models: list[MLModelSpecBase],
+    ) -> list["MLModelScorer"]:  # noqa: F821
+        """
+        Load a list of models into scorers.
+
+        Parameters
+        ----------
+        models : list[MLModelSpecBase]
+            List of models to load
+        """
+        scorers = []
+        for model in models:
+            scorer_class = get_ml_scorer_cls_from_model_type(model.type)
+            scorer = scorer_class.from_model_name(model.name)
+            scorers.append(scorer)
+        return scorers
 
 
 @register_ml_scorer
@@ -593,7 +658,6 @@ class GATScorer(MLModelScorer):
     """
 
     model_type: ClassVar[ModelType.GAT] = ModelType.GAT
-    score_type: ClassVar[ScoreType.GAT] = ScoreType.GAT
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
     @dask_vmap(["inputs"])
@@ -625,7 +689,10 @@ class GATScorer(MLModelScorer):
         for inp in inputs:
             gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
             sc = Score.from_score_and_docking_result(
-                gat_score, self.score_type, self.units, inp
+                gat_score,
+                self.score_type,
+                self.units,
+                inp,
             )
             # overwrite the input with the path to the file
             if return_for_disk_backend:
@@ -678,7 +745,6 @@ class E3MLModelScorer(MLModelScorer):
     """
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
-    score_type: ClassVar[ScoreType.INVALID] = ScoreType.INVALID
     units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
     @dask_vmap(["inputs"])
@@ -745,7 +811,6 @@ class SchnetScorer(E3MLModelScorer):
     """
 
     model_type: ClassVar[ModelType.schnet] = ModelType.schnet
-    score_type: ClassVar[ScoreType.schnet] = ScoreType.schnet
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
 
@@ -756,7 +821,6 @@ class E3NNScorer(E3MLModelScorer):
     """
 
     model_type: ClassVar[ModelType.e3nn] = ModelType.e3nn
-    score_type: ClassVar[ScoreType.e3nn] = ScoreType.e3nn
     units: ClassVar[ScoreUnits.pIC50] = ScoreUnits.pIC50
 
 
@@ -818,7 +882,7 @@ class SymClashScorer(ScorerBase):
     in neighboring unit cells.
     """
 
-    score_type: ClassVar[ScoreType.sym_clash] = ScoreType.sym_clash
+    score_type: ScoreType = Field(ScoreType.sym_clash, description="Type of score")
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
 
     count_clashing_pairs: bool = Field(

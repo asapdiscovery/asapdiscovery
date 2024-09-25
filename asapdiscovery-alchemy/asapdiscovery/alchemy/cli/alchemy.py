@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -80,6 +81,12 @@ def create(filename: str):
     help="The file which contains the center ligand, only required by radial type networks.",
 )
 @click.option(
+    "-cn",
+    "--custom-network-file",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="An optional path to a custom network specified as a CSV file where each line contains <lig_a,lig_b>, on the next line <lig_b,lig_x>, etc.",
+)
+@click.option(
     "-ep",
     "--experimental-protocol",
     help="The name of the experimental protocol in the CDD vault that should be associated with this Alchemy network.",
@@ -98,6 +105,7 @@ def plan(
     receptor: Optional[str] = None,
     ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
+    custom_network_file: Optional[str] = None,
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
@@ -163,6 +171,16 @@ def plan(
 
         center_ligand = center_ligand[0]
 
+    if custom_network_file is not None:
+        from asapdiscovery.alchemy.schema.network import CustomNetworkPlanner
+        from asapdiscovery.alchemy.utils import extract_custom_ligand_network
+
+        click.echo(
+            f"Using custom network specified in {custom_network_file}, ignoring network mapper settings and central ligand if supplied."
+        )
+        factory.network_planner.network_planning_method = CustomNetworkPlanner(
+            edges=extract_custom_ligand_network(custom_network_file)
+        )
     click.echo("Creating FEC network ...")
     planned_network = factory.create_fec_dataset(
         dataset_name=name,
@@ -219,11 +237,21 @@ def plan(
     help="The name of the project in alchemiscale the network should be submitted to.",
     required=True,
 )
+@click.option(
+    "-r",
+    "--repeats",
+    type=click.INT,
+    help="The total number of times each transformation should be ran on Alchemiscale, results will be averaged over "
+    "the successful repeats.",
+    default=1,
+    show_default=True,
+)
 def submit(
     network: str,
     organization: str,
     campaign: str,
     project: str,
+    repeats: int,
 ):
     """
     Submit a local FreeEnergyCalculationNetwork to alchemiscale using the provided scope details. The network object
@@ -234,6 +262,7 @@ def submit(
         organization: The name of the organization this network should be submitted under always asap.
         campaign: The name of the campaign this network should be submitted under.
         project: The name of the project this network should be submitted under.
+        repeats: The total number of times each transformation should be ran.
     """
     from alchemiscale import Scope
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
@@ -264,7 +293,7 @@ def submit(
     submitted_network.to_file(network)
     # now action the tasks
     click.echo("Creating and actioning FEC tasks on Alchemiscale...")
-    task_ids = client.action_network(planned_network=submitted_network)
+    task_ids = client.action_network(planned_network=submitted_network, repeats=repeats)
     # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
@@ -281,8 +310,16 @@ def submit(
     "-n",
     "--network",
     type=click.Path(resolve_path=True, readable=True, file_okay=True, dir_okay=False),
-    help="The name of the JSON file containing a planned FEC network.",
+    help="The name of the JSON file containing a submitted FEC network (typically 'planned_network.json').",
     default="planned_network.json",
+    show_default=True,
+)
+@click.option(
+    "-nk",
+    "--network_key",
+    type=click.STRING,
+    help="The network key of a submitted FEC network.",
+    default=None,
     show_default=True,
 )
 @click.option(
@@ -291,14 +328,19 @@ def submit(
     default=False,
     help="If we should allow missing results when gathering from alchemiscale.",
 )
-def gather(network: str, allow_missing: bool):
+def gather(
+    network: Optional[str] = False,
+    network_key: Optional[str] = False,
+    allow_missing: Optional[bool] = None,
+):
     """
     Gather the results from alchemiscale for the given network.
 
     Note: An error is raised if all calculations have not finished and allow-missing is False.
 
     Args:
-        network: The of the JSON file containing the FreeEnergyCalculationNetwork whos results we should gather.
+        network: The path of the JSON file containing the FreeEnergyCalculationNetwork whose results we should gather.
+        network_key: The `alchemsicale` network key of the network whose results we should gather.
         allow_missing: If we should allow missing results when trying to gather the network.
 
     Raises:
@@ -312,19 +354,48 @@ def gather(network: str, allow_missing: bool):
     client = AlchemiscaleHelper.from_settings()
 
     # load the network
-    planned_network = FreeEnergyCalculationNetwork.from_file(network)
+    using_network_key = False
+    if network_key:
+        if Path(network).exists():
+            click.echo(
+                f"Network key provided: {network_key}, prefering over network file {network}."
+            )
+        using_network_key = True
+    else:
+        click.echo(f"Network file provided: {network}, loading network.")
+        if not Path(network).exists():
+            raise FileNotFoundError(f"Network file {network} does not exist.")
+
+        planned_network = FreeEnergyCalculationNetwork.from_file(network)
+        network_key = planned_network.results.network_key
+
+    # check network key exists in alchemiscale
+    try:
+        if not client.network_exists(network_key=network_key):
+            raise ValueError(
+                f"Network key {network_key} does not exist in Alchemiscale."
+            )
+    except Exception as e:
+        raise ValueError(
+            f"Network key {network_key} does not exist in Alchemiscale."
+        ) from e
 
     # show the network status
-    status = client.network_status(planned_network=planned_network)
+    status = client.network_status(network_key=network_key)
     if not allow_missing and "waiting" in status:
         raise RuntimeError(
             "Not all calculations have finished, to collect the current results use the flag `--allow-missing`."
         )
 
     click.echo(
-        f"Gathering network results from Alchemiscale instance: {client._client.api_url} with key {planned_network.results.network_key}"
+        f"Gathering network results from Alchemiscale instance: {client._client.api_url} with key {network_key}"
     )
-    network_with_results = client.collect_results(planned_network=planned_network)
+
+    if using_network_key:
+        network_with_results = client.collect_results(network_key=network_key)
+    else:
+        network_with_results = client.collect_results(planned_network=planned_network)
+
     click.echo("Results gathered saving to file ...")
     network_with_results.to_file("result_network.json")
 
@@ -340,6 +411,15 @@ def gather(network: str, allow_missing: bool):
     help="The name of the JSON file containing a planned FEC network.",
     default="planned_network.json",
     show_default=True,
+    required=False,
+)
+@click.option(
+    "-nk",
+    "--network_key",
+    type=click.STRING,
+    help="The network key of the network to get the status of.",
+    default=None,
+    required=False,
 )
 @click.option(
     "-e",
@@ -363,12 +443,19 @@ def gather(network: str, allow_missing: bool):
     help="If the status of all running tasks in your scope should be displayed. "
     "This option will cause the command to ignore all other flags.",
 )
-def status(network: str, errors: bool, with_traceback: bool, all_networks: bool):
+def status(
+    network: str,
+    network_key: str,
+    errors: bool,
+    with_traceback: bool,
+    all_networks: bool,
+):
     """
     Get the status of the submitted network on alchemiscale.\f
 
     Args:
         network: The name of the JSON file containing the FreeEnergyCalculationNetwork we should check the status of.
+        network_key: The network key of the network to get the status of.
         errors: Flag to show errors from the tasks.
         with_traceback: Flag to show the complete traceback for the errored tasks.
         all_networks: If that status of all networks under the users scope should be displayed rather than for a single network.
@@ -388,9 +475,16 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
     console = rich.get_console()
     print_header(console)
 
+    args = [all_networks, network_key]
+
+    if sum([bool(arg) for arg in args]) > 1:
+        raise ValueError(
+            "Can not retrieve status for --network_key at the same time as --all-networks  Please flag only one of --network_key, --all-networks and --network_key"
+        )
     # launch the helper which will try to login
     client = AlchemiscaleHelper.from_settings()
     if all_networks:
+        click.echo("Getting status of all networks in scope")
         # show the results of all tasks in scope, this will print to terminal
         client._client.get_scope_status()
 
@@ -461,17 +555,37 @@ def status(network: str, errors: bool, with_traceback: bool, all_networks: bool)
                 )
         status_breakdown.stop()
         console.print(table)
-
     else:
-        # load the network
-        planned_network = FreeEnergyCalculationNetwork.from_file(network)
+        if network_key:
+            if Path(network).exists():
+                click.echo(
+                    f"Network key provided: {network_key}, prefering over network file {network}."
+                )
+
+        else:
+            click.echo(f"Network file provided: {network}, loading network.")
+            if not Path(network).exists():
+                raise FileNotFoundError(f"Network file {network} does not exist.")
+            planned_network = FreeEnergyCalculationNetwork.from_file(network)
+            network_key = planned_network.results.network_key
+
         # check the status
-        client.network_status(planned_network=planned_network)
+        try:
+            if not client.network_exists(network_key=network_key):
+                raise ValueError(
+                    f"Network key {network_key} does not exist in Alchemiscale."
+                )
+        except Exception as e:
+            raise ValueError(
+                f"Network key {network_key} does not exist in Alchemiscale."
+            ) from e
+
+        client.network_status(network_key=network_key)
+
         # collect errors
         if errors or with_traceback:
-            task_errors = client.collect_errors(
-                planned_network,
-            )
+            task_errors = client.collect_errors(network_key=network_key)
+
             # output errors in readable format
             for failure in task_errors:
                 click.echo(click.style("Task:", bold=True))
@@ -669,6 +783,19 @@ def stop(network_key: str):
     show_default=True,
     help="The name of the Postera molecule set to upload the results to.",
 )
+@click.option(
+    "-c",
+    "--clean",
+    is_flag=True,
+    help="Whether or not to clean the incoming result network, e.g. in cases where some edges are imbalanced between complex/solvent or when DG==0.0.",
+)
+@click.option(
+    "-fl",
+    "--force-largest",
+    is_flag=True,
+    help="Make predictions using only the largest subnetwork present in the results. "
+    "Useful in cases where the network is disconnected by e.g. simulation failures.",
+)
 def predict(
     network: str,
     reference_units: str,
@@ -676,14 +803,22 @@ def predict(
     experimental_protocol: Optional[str] = None,
     target: Optional[TagEnumBase] = None,
     postera_molset_name: Optional[str] = None,
+    clean: Optional[bool] = False,
+    force_largest: Optional[bool] = False,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header, upload_to_postera
+    from asapdiscovery.alchemy.cli.utils import (
+        cinnabar_femap_get_largest_subnetwork,
+        cinnabar_femap_is_connected,
+        print_header,
+        upload_to_postera,
+    )
     from asapdiscovery.alchemy.predict import (
+        clean_result_network,
         create_absolute_report,
         create_relative_report,
         get_data_from_femap,
@@ -696,7 +831,15 @@ def predict(
     console = rich.get_console()
     print_header(console)
 
-    result_network = FreeEnergyCalculationNetwork.from_file(network)
+    if clean:
+        message = Padding(
+            f"Warning: cleaning incoming result network {network}. You may lose results.",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+        result_network = clean_result_network(network, console=console)
+    else:
+        result_network = FreeEnergyCalculationNetwork.from_file(network)
 
     message = Padding(
         f"Loaded FreeEnergyCalculationNetwork from [repr.filename]{network}[/repr.filename]",
@@ -714,7 +857,19 @@ def predict(
 
     # convert to cinnabar fepmap to do the prediction via MLE
     fe_map = result_network.results.to_fe_map()
-    fe_map.generate_absolute_values()
+    is_connected = cinnabar_femap_is_connected(fe_map)
+
+    if is_connected:
+        fe_map.generate_absolute_values()
+    elif not is_connected and force_largest:
+        fe_map = cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console)
+        fe_map.generate_absolute_values()
+    else:
+        raise ValueError(
+            "Your network is missing edges resulting in a gap where ligands (nodes) are "
+            "not connected to the network. If you would like to discard those disconnected ligands "
+            "(i.e. not make predictions on them), run predict using the '-fl/--force-largest' flag."
+        )
 
     # check if we have a protocol on the network already to draw experimental results from
     protocol = experimental_protocol or result_network.experimental_protocol

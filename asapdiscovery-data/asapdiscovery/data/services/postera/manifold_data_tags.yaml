@@ -36,10 +36,12 @@ virus:
   EV-A71:
     - 3Cpro
     - Capsid
+    - 2Apro
   DENV:
     - NS2B-NS3pro
   ZIKV:
     - NS2B-NS3pro
+    - RdRppro
 
 # requires both units and tools specified even if empty for clarity.
 manifold_outputs:
@@ -99,6 +101,13 @@ manifold_outputs:
       tools:
         - FEC
         - FEC-uncertainty # a bit of an abuse but it works
+      postfix: msk
+
+  - computed: # LogD
+      prefix: in-silico
+      units: LogD
+      tools:
+        - GAT
       postfix: msk
 
   - md-pose:

@@ -989,3 +989,78 @@ def download_cdd_data(protocol_name: str) -> pd.DataFrame:
     )
 
     return formatted_data
+
+
+def clean_result_network(network, console=None):
+    """
+    Cleans an incoming result network JSON file from some issues that might occur. Current procedures:
+    - removes edges that have DG==0.0, this happens when there is inconsistent stereo annotation in input ligands
+    such that after stereo enumeration there are duplicate ligands.
+    - cleans imbalanced complex/solvent legs, e.g. when some have failed or when stereo expansion was done unintentionally.
+    Averages duplicate legs to come to a single value.
+
+    returns the loaded FreeEnergyCalculationNetwork.
+    """
+    from collections import defaultdict
+
+    import numpy as np
+    from asapdiscovery.alchemy.schema.fec import (
+        AlchemiscaleResults,
+        FreeEnergyCalculationNetwork,
+        TransformationResult,
+    )
+    from rich.padding import Padding
+
+    # load in to schema  and extract the results
+    network_schema = FreeEnergyCalculationNetwork.from_file(network)
+    input_results = network_schema.results.results
+
+    # 1. remove edges where DG is 0.0
+    cleaned_results = [
+        result for result in input_results if not result.estimate.magnitude == 0.0
+    ]
+
+    num_0_0_removed = len(input_results) - len(cleaned_results)
+
+    # 2. balance between complex/solvent replicates, such that n=N=1
+
+    deduped_results_dict = defaultdict(list)
+    for result in cleaned_results:
+        transform = f"{result.ligand_a}~{result.ligand_b}_{result.phase}"
+        deduped_results_dict[transform].append(result)
+
+    deduped_results = []
+    for _, results in deduped_results_dict.items():
+        if len(results) > 1:
+            # take the arithmetic mean of DG and dDG and add the replaced first result,
+            # all provenance data is constant between these repeats anyway
+            mean_DG = np.mean([result.estimate.magnitude for result in results])
+            mean_dDG = np.mean([result.uncertainty.magnitude for result in results])
+            result_data = results[0].dict(exclude={"estimate", "uncertainty"})
+
+            tf_res = TransformationResult(
+                estimate=mean_DG, uncertainty=mean_dDG, **result_data
+            )
+
+        else:
+            tf_res = results[0]
+
+        deduped_results.append(tf_res)
+
+    num_dupes_removed = len(cleaned_results) - len(deduped_results)
+    if console:
+        message = Padding(
+            f"Cleaned incoming result network. Removed {num_0_0_removed} edges with DG==0.0 kcal/mol and removed {num_dupes_removed} edges to balance between complex/solvent replicates.",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+    data = network_schema.dict(exclude={"results"})
+    # unpack the deduped results into dicts
+    results = AlchemiscaleResults(
+        results=deduped_results, network_key=network_schema.results.network_key
+    ).dict()
+    data["results"] = results
+
+    fec = FreeEnergyCalculationNetwork.parse_obj(data)
+    # fec.results = deduped_results
+    return fec
