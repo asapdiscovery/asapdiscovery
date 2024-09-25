@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 def _batch(iterable, n=1):
     l = len(iterable)
     for ndx in range(0, l, n):
-        yield iterable[ndx:min(ndx + n, l)]
+        yield iterable[ndx : min(ndx + n, l)]
+
 
 class MoleculeSetKeys(StringEnum):
     """Keys for the response from the PostEra API when creating, getting or modifying a molecule set"""
@@ -462,7 +463,9 @@ class MoleculeSetAPI(_BaseWebAPI):
         molecules_updated = []
         for data_batch in _batch(data, n=100):
             response = self._session.patch(
-                url, json={"moleculesToUpdate": data_batch, "overwrite": overwrite}, timeout=self.timeout
+                url,
+                json={"moleculesToUpdate": data_batch, "overwrite": overwrite},
+                timeout=self.timeout,
             )
             response_json = response.json()
 
@@ -473,14 +476,14 @@ class MoleculeSetAPI(_BaseWebAPI):
             response.raise_for_status()
 
             try:
-                updated =  response_json["moleculesUpdated"]
+                updated = response_json["moleculesUpdated"]
                 molecules_updated.extend(updated)
 
             except Exception as e:
                 raise ValueError(
                     f"Update failed for molecule set batch {molecule_set_id}, with response: {response_json}, status code: {response.status_code}"
                 ) from e
-            
+
         return molecules_updated
 
     def update_molecules_from_df_with_manifold_validation(
