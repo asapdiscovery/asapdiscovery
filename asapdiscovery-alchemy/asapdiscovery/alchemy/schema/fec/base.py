@@ -276,7 +276,8 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                 transformation = openfe.Transformation(
                     stateA=system_a,
                     stateB=system_b,
-                    mapping={"ligand": mapping},
+                    # provide a single mapping
+                    mapping=mapping,
                     protocol=protocol,  # use protocol created above
                     name=f"{system_a.name}_{system_b.name}",
                 )
