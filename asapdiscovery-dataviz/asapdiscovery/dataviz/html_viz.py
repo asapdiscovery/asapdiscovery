@@ -40,7 +40,7 @@ from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.genetics.fitness import (
     _FITNESS_DATA_FIT_THRESHOLD,
     get_fitness_scores_bloom_by_target,
-    parse_fitness_json,
+    parse_fitness_input,
     target_has_fitness_data,
 )
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
@@ -121,7 +121,7 @@ class HTMLVisualizer(VisualizerBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if target_has_fitness_data(self.target):
-            self.fitness_data = parse_fitness_json(self.target)
+            self.fitness_data = parse_fitness_input(self.target)
             self.fitness_data_logoplots = get_fitness_scores_bloom_by_target(
                 self.target
             )
@@ -381,6 +381,7 @@ class HTMLVisualizer(VisualizerBase):
         data = []
         viz_data = []
         for i, inp in enumerate(inputs):
+            failure_mode = "raise"
             try:
                 cmplx, liglist = inp
                 if self.write_to_disk:
@@ -838,7 +839,7 @@ class HTMLVisualizer(VisualizerBase):
             site_df_unfit = pd.DataFrame(
                 [
                     {
-                        "gene": site_df_fit["gene"].values[0],
+                        # "gene": site_df_fit["gene"].values[0], # don't need this
                         "site": resi,
                         "mutant": "X",
                         "fitness": -0.00001,

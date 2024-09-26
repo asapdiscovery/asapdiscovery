@@ -75,7 +75,7 @@ ZIKV_RdRppro_fitness_data = pkg_resources.resource_filename(
 
 targets_with_fitness_data = [
     TargetTags("SARS-CoV-2-Mpro"),
-    TargetTags("MERS-CoV-Mpro")
+    TargetTags("MERS-CoV-Mpro"),
     TargetTags("SARS-CoV-2-Mac1"),
     TargetTags("SARS-CoV-2-N-protein"),
     TargetTags("ZIKV-NS2B-NS3pro"),
