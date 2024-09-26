@@ -638,4 +638,7 @@ def test_openfe_roundtrip_charges():
         # now convert back
         molecule_from_fe = Ligand.from_openfe(fe_mol)
         assert molecule.charge_provenance == molecule_from_fe.charge_provenance
-        assert molecule.tags["atom.dprop.PartialCharge"] == molecule_from_fe.tags["atom.dprop.PartialCharge"]
+        assert (
+            molecule.tags["atom.dprop.PartialCharge"]
+            == molecule_from_fe.tags["atom.dprop.PartialCharge"]
+        )
