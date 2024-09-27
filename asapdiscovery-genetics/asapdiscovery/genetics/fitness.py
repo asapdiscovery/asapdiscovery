@@ -41,7 +41,7 @@ _FITNESS_DATA_FIT_THRESHOLD = {  # sets threshold at which a mutant is considere
     VirusTags("ZIKV").value: -1.0,  # this is OK for both NS2B-NS3pro and RdRppro
     VirusTags(
         "MERS-CoV"
-    ).value: 0.001,  # this is NextStrain, so anything higher than 0 is a counted mutation
+    ).value: 0.1,  # this is NextStrain, so anything higher than 0 is a counted mutation
 }
 
 
@@ -234,6 +234,23 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
             axis=1,
         )
         fitness_scores_df["chain"] = active_site_chains[target]
+
+        if target == "MERS-CoV-Mpro":
+            # need to subselect from M gene Mpro.
+            seq = []
+            for (_, wt), __ in fitness_scores_df.groupby(by=["site", "wildtype"]):
+                seq.append(wt)
+            print("".join(seq))
+            # compare sequence of DF with seqres sequence in metadata
+
+            import sys
+
+            sys.exit()
+            # fitness_scores_bloom = fitness_scores_bloom[
+            #     fitness_scores_bloom["site"].between(209, 372)
+            # ]
+            # fitness_scores_bloom["site"] -= 204  # PDB starts at resindex 5
+            # fitness_scores_bloom["chain"] = "A"
         return fitness_scores_df
 
     # read the fitness data into a dataframe
