@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch.nn import CrossEntropyLoss as TorchCrossEntropyLoss
 from torch.nn import GaussianNLLLoss as TorchGaussianNLLLoss
@@ -85,8 +86,10 @@ class MSELoss(TorchMSELoss):
         # r > 0 -> measurement is above thresh, want to count if pred < target
         mask = torch.tensor(
             [
-                1.0 if r == 0 else ((r < 0) == (t < i))
-                for i, t, r in zip(pred.flatten(), target.flatten(), in_range.flatten())
+                1.0 if ((r == 0) or (r is None)) else ((r < 0) == (t < i))
+                for i, t, r in zip(
+                    np.ravel(pred.detach()), np.ravel(target), np.ravel(in_range)
+                )
             ]
         )
         mask = mask.to(pred.device)
