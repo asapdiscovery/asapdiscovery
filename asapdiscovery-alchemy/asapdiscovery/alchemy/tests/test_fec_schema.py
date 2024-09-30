@@ -216,14 +216,16 @@ def test_fec_to_openfe_protocol():
 
     # change some default settings to make sure they are passed on
     factory = FreeEnergyCalculationFactory()
-    factory.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
-    protocol = factory.to_openfe_protocol()
+    factory.protocol_settings.simulation_settings.equilibration_length = (
+        0.5 * OFFUnit.nanoseconds
+    )
+    protocol = factory.protocol_settings.to_openfe_protocol()
     assert isinstance(
         protocol, openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol
     )
     assert (
         protocol.settings.simulation_settings.equilibration_length
-        == factory.simulation_settings.equilibration_length
+        == factory.protocol_settings.simulation_settings.equilibration_length
     )
 
 
@@ -262,7 +264,9 @@ def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
     # change the default settings to make sure they propagated
     # change the lomap timeout
     factory.network_planner.atom_mapping_engine.timeout = 30
-    factory.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
+    factory.protocol_settings.simulation_settings.equilibration_length = (
+        0.5 * OFFUnit.nanoseconds
+    )
     # plan a network
     planned_network = factory.create_fec_dataset(
         dataset_name="TYK2-test-dataset", receptor=tyk2_protein, ligands=tyk2_ligands
