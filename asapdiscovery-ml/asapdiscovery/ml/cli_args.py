@@ -1383,3 +1383,27 @@ def sweep_start_only(func):
 
 
 ################################################################################
+
+
+################################################################################
+# Helper functions
+def kvp_list_to_dict(kvp_list_str):
+    """
+    Convert a string that consists of a comma-separated list of <key>:<value> pairs into
+    a dict.
+
+    Parameters
+    ----------
+    kvp_list_str : str
+        String from CLI containing key:value pairs
+
+    Returns
+    -------
+    dict
+        Python dict built from the input string
+    """
+
+    return {kvp.split(":")[0]: kvp.split(":")[1] for kvp in kvp_list_str.split(",")}
+
+
+################################################################################

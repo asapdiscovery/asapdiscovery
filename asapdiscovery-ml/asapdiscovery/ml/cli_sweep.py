@@ -11,6 +11,7 @@ from asapdiscovery.ml.cli_args import (
     es_args,
     gat_args,
     graph_ds_args,
+    kvp_list_to_dict,
     loss_args,
     model_config_cache,
     model_rand_seed,
@@ -228,14 +229,8 @@ def sweep_gat(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -474,14 +469,8 @@ def sweep_schnet(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -722,14 +711,8 @@ def sweep_e3nn(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -980,14 +963,8 @@ def sweep_visnet(
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
