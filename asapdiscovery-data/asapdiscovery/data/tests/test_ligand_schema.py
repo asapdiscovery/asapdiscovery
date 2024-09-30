@@ -613,3 +613,32 @@ def test_partial_charge_conversion(tmpdir):
         # make sure openfe picks up the user charges from sdf
         with pytest.warns(UserWarning, match=charge_warn):
             _ = SmallMoleculeComponent.from_sdf_file("test.sdf")
+
+
+def test_openfe_roundtrip_charges():
+    """
+    Make sure we can round trip molecules to and from openfe which also have partial charges
+    """
+    molecule = Ligand.from_smiles("C", compound_name="test")
+    # set some fake charges
+    molecule.tags["atom.dprop.PartialCharge"] = (
+        "-0.10868 0.02717 0.02717 0.02717 0.02717"
+    )
+    molecule.charge_provenance = {
+        "protocol": {"type": "OpenFF", "charge_method": "am1bcc"},
+        "provenance": {"openff": 1},
+    }
+
+    charge_warn = "Partial charges have been provided, these will preferentially be used instead of generating new partial charges"
+
+    # test converting to openfe
+    with pytest.warns(UserWarning, match=charge_warn):
+        # make sure the charge warning is triggered
+        fe_mol = molecule.to_openfe()
+        # now convert back
+        molecule_from_fe = Ligand.from_openfe(fe_mol)
+        assert molecule.charge_provenance == molecule_from_fe.charge_provenance
+        assert (
+            molecule.tags["atom.dprop.PartialCharge"]
+            == molecule_from_fe.tags["atom.dprop.PartialCharge"]
+        )
