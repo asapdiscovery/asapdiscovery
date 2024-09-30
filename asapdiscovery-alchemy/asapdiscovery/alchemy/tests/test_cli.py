@@ -1,5 +1,6 @@
-import pathlib
 import os
+import pathlib
+
 import pandas as pd
 import pytest
 import rich
@@ -810,6 +811,7 @@ def test_alchemy_predict_ccd_data(
             0.2615, abs=1e-4
         )
 
+
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
@@ -995,6 +997,7 @@ def test_alchemy_predict_disconnected_fail(tyk2_result_network_disconnected, tmp
                 catch_exceptions=False,
             )
 
+
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
@@ -1046,6 +1049,7 @@ def test_alchemy_predict_clean_fail(tyk2_result_network_ddg0s, tmpdir):
                 catch_exceptions=False,
             )
             assert result.exit_code == 1
+
 
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
