@@ -8,6 +8,7 @@ from openeye import (  # noqa: F401
     oedepict,
     oedocking,
     oeff,
+    oegraphsim,
     oegrid,
     oeomega,
     oequacpac,
@@ -664,7 +665,6 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     rmol = oechem.OEMol()
     ims.SetConfTest(oechem.OEOmegaConfTest())
     if ims.openstring(sdf_str):
-
         for mol in ims.GetOEMols():
             rmol = mol.CreateCopy()
             break  # only return the first molecule
@@ -913,7 +913,6 @@ def get_SD_data(mol: oechem.OEMolBase) -> dict[str, list]:
     # we'll add to all the conformers and return that dict of lists.
 
     if isinstance(mol, oechem.OEMol):
-
         # Get the data from the molecule
         molecule_tags = _get_SD_data(mol)
 
