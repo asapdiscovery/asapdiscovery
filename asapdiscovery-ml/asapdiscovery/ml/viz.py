@@ -185,10 +185,8 @@ def plot_model_preds_scatter(
     fg.figure.suptitle("Test Set Predictions", fontweight="bold")
 
     # Axes bounds
-    # min_val = loss_df.loc[:, ["target", "pred"]].values.flatten().min() - 0.5
     min_val = -0.5
     max_val = all_dfs.loc[:, ["target", "pred"]].values.flatten().max() + 0.5
-    # fg.set(ylim=(min_val, max_val), xlim=(min_val, max_val))
 
     # Axis labels
     for ax in fg.axes[:, 0]:
@@ -240,14 +238,14 @@ def plot_model_preds_scatter(
             )
             stats_text.append(stats_str)
 
-        # ax.text(
-        #     0.7,
-        #     0.01,
-        #     "\n".join(stats_text),
-        #     transform=ax.transAxes,
-        #     va="bottom",
-        #     # fontsize=14,
-        # )
+        ax.text(
+            0.7,
+            0.01,
+            "\n".join(stats_text),
+            transform=ax.transAxes,
+            va="bottom",
+            # fontsize=14,
+        )
 
         # Make it a square
         ax.set_aspect("equal", "box")
