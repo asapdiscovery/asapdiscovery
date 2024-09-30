@@ -104,7 +104,6 @@ jobs:
                        --cov=asapdiscovery-modeling \
                        --cov=asapdiscovery-simulation \
                         --cov=asapdiscovery-genetics \
-                       asapdiscovery-alchemy/asapdiscovery/alchemy/tests \
                        asapdiscovery-data/asapdiscovery/data/tests \
                        asapdiscovery-dataviz/asapdiscovery/dataviz/tests \
                        asapdiscovery-docking/asapdiscovery/docking/tests \
@@ -112,6 +111,8 @@ jobs:
                        asapdiscovery-modeling/asapdiscovery/modeling/tests \
                        asapdiscovery-simulation/asapdiscovery/simulation/tests \
                        asapdiscovery-genetics/asapdiscovery/genetics/tests
+        
+        pytest --color=yes asapdiscovery-alchemy/asapdiscovery/alchemy/tests
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3
