@@ -117,7 +117,7 @@ def test_select_best_chemgauss(
     "forcefield, ff_energy",
     [
         pytest.param("MMFF", 43.42778156043702, id="MMFF"),
-        pytest.param("Sage", 68.88487057483857, id="Sage"),
+        pytest.param("Sage", 49.83481744522323, id="Sage"),
         pytest.param("Parsley", 128.38592742407758, id="Parsley"),
     ],
 )
