@@ -26,7 +26,6 @@ class TestDocking:
         assert len(results) == 1
         assert results[0].probability > 0.0
 
-
     def test_docking_omega_dense_fails_no_omega(self):
         with pytest.raises(
             ValueError, match="Cannot use omega_dense without use_omega"
