@@ -145,7 +145,7 @@ def _train_single_model(
     )
 
     t_gat = Trainer(
-        target_prop=target_prop,
+        target_props=[target_prop],
         optimizer_config=optimizer_config,
         model_config=gat_model_config,
         es_config=es_config,
