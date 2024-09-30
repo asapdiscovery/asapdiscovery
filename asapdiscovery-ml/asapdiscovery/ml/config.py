@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import pickle as pkl
 from collections.abc import Iterator
+from copy import deepcopy
 from glob import glob
 from pathlib import Path
 from typing import Any
@@ -523,7 +524,8 @@ class DatasetConfig(ConfigBase):
 
     @staticmethod
     def fix_e3nn_labels(ds, grouped=False):
-        for _, data in ds:
+        new_ds = deepcopy(ds)
+        for _, data in new_ds:
             if grouped:
                 for pose in data["poses"]:
                     # Check if this pose has already been adjusted
@@ -542,7 +544,7 @@ class DatasetConfig(ConfigBase):
                 data["x"] = torch.nn.functional.one_hot(data["z"] - 1, 100).float()
                 data["z"] = data["lig"].reshape((-1, 1)).float()
 
-        return ds
+        return new_ds
 
 
 class DatasetSplitterType(StringEnum):
