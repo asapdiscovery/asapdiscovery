@@ -479,7 +479,6 @@ def test_build_and_train_graph(exp_file, tmp_path):
     # Load and check stuff
     pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
     assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
-    print({k: len(v) for k, v in pred_tracker.split_dict.items()}, flush=True)
     assert len(pred_tracker.split_dict["train"]) == 8
     assert len(pred_tracker.split_dict["val"]) == 1
     assert len(pred_tracker.split_dict["test"]) == 1
@@ -539,7 +538,6 @@ def test_build_and_train_schnet(exp_file, docked_files, tmp_path):
     # Load and check stuff
     pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
     assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
-    print({k: len(v) for k, v in pred_tracker.split_dict.items()}, flush=True)
     assert len(pred_tracker.split_dict["train"]) == 8
     assert len(pred_tracker.split_dict["val"]) == 1
     assert len(pred_tracker.split_dict["test"]) == 1
@@ -601,7 +599,6 @@ def test_build_and_train_e3nn(exp_file, docked_files, tmp_path):
     # Load and check stuff
     pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
     assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
-    print({k: len(v) for k, v in pred_tracker.split_dict.items()}, flush=True)
     assert len(pred_tracker.split_dict["train"]) == 8
     assert len(pred_tracker.split_dict["val"]) == 1
     assert len(pred_tracker.split_dict["test"]) == 1
@@ -669,7 +666,6 @@ def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
     # Load and check stuff
     pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
     assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
-    print({k: len(v) for k, v in pred_tracker.split_dict.items()}, flush=True)
     assert len(pred_tracker.split_dict["train"]) == 8
     assert len(pred_tracker.split_dict["val"]) == 1
     assert len(pred_tracker.split_dict["test"]) == 1
@@ -731,7 +727,6 @@ def test_build_and_train_schnet_jitter(exp_file, docked_files, tmp_path):
     # Load and check stuff
     pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
     assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
-    print({k: len(v) for k, v in pred_tracker.split_dict.items()}, flush=True)
     assert len(pred_tracker.split_dict["train"]) == 8
     assert len(pred_tracker.split_dict["val"]) == 1
     assert len(pred_tracker.split_dict["test"]) == 1
@@ -795,7 +790,6 @@ def test_build_and_train_e3nn_jitter(exp_file, docked_files, tmp_path):
     # Load and check stuff
     pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
     assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
-    print({k: len(v) for k, v in pred_tracker.split_dict.items()}, flush=True)
     assert len(pred_tracker.split_dict["train"]) == 8
     assert len(pred_tracker.split_dict["val"]) == 1
     assert len(pred_tracker.split_dict["test"]) == 1
