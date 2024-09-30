@@ -111,7 +111,7 @@ jobs:
                        asapdiscovery-modeling/asapdiscovery/modeling/tests \
                        asapdiscovery-simulation/asapdiscovery/simulation/tests \
                        asapdiscovery-genetics/asapdiscovery/genetics/tests
-
+        
         pytest --color=yes asapdiscovery-alchemy/asapdiscovery/alchemy/tests
 
     - name: Upload Code Coverage to Codecov
