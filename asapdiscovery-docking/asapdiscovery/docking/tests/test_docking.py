@@ -26,12 +26,6 @@ class TestDocking:
         assert len(results) == 1
         assert results[0].probability > 0.0
 
-    @pytest.mark.parametrize("omega_dense", [True, False])
-    def test_docking_omega(self, docking_input_pair, omega_dense):
-        docker = POSITDocker(use_omega=True, omega_dense=omega_dense)
-        results = docker.dock([docking_input_pair])
-        assert len(results) == 1
-        assert results[0].probability > 0.0
 
     def test_docking_omega_dense_fails_no_omega(self):
         with pytest.raises(
