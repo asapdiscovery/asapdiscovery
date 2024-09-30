@@ -1,4 +1,5 @@
 import pytest
+from asapdiscovery.data.backend.openeye import load_openeye_pdb
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from pydantic import ValidationError
@@ -14,6 +15,21 @@ def complex_pdb():
 def complex_oedu():
     oedu = fetch_test_file("Mpro-P2660_0A_bound-prepped_receptor.oedu")
     return oedu
+
+
+def test_complex_from_oemol(complex_pdb):
+    complex_mol = load_openeye_pdb(complex_pdb)
+
+    c = Complex.from_oemol(
+        complex_mol,
+        target_kwargs={"target_name": "test"},
+        ligand_kwargs={"compound_name": "test"},
+    )
+
+    assert c.target.target_name == "test"
+    assert c.ligand.compound_name == "test"
+    assert c.target.to_oemol().NumAtoms() == 4716
+    assert c.ligand.to_oemol().NumAtoms() == 53
 
 
 def test_complex_from_pdb(complex_pdb):
