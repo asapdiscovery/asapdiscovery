@@ -13,6 +13,7 @@ from asapdiscovery.cli.cli_args import (
     target,
     use_dask,
 )
+from asapdiscovery.data.backend.openeye import load_openeye_pdb, load_openeye_sdf
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
@@ -20,7 +21,6 @@ from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
-from asapdiscovery.data.backend.openeye import load_openeye_pdb, load_openeye_sdf
 
 
 @click.group()

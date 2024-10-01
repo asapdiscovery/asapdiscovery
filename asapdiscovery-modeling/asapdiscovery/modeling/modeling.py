@@ -7,9 +7,9 @@ from asapdiscovery.data.backend.openeye import (
     oechem,
     oedocking,
     oegrid,
+    oemol_to_smiles,
     oespruce,
     openeye_perceive_residues,
-    oemol_to_smiles,
 )
 from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter
 
