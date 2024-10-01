@@ -162,6 +162,7 @@ def _train_single_model(
         save_weights="final",
         has_uncertainty=has_uncertainty,
         has_range=has_range,
+        write_ds_csv=True,
     )
     t_gat.initialize()
     t_gat.train()
@@ -511,12 +512,15 @@ def mlops():
 @click.option(
     "-n", "--n-epochs", type=int, default=5000, help="Number of epochs to train for"
 )
+@click.option(
+    "-test", "--test", is_flag=True, help="Run in test mode, no S3 push or WandB logging to main project")
 def train_GAT_for_endpoint(
     protocol: str,
     output_dir: str = "output",
     loglevel: str = "INFO",
     ensemble_size: int = 5,
     n_epochs: int = 5000,
+    test: bool = False,
 ):
     """
     Train a GAT model for a specific endpoint
@@ -552,10 +556,15 @@ def train_GAT_for_endpoint(
     except Exception as e:
         raise ValueError(f"Could not load S3 settings: {e}, quitting.")
 
+    if test:
+        logger.info("Test mode, not pushing to S3")
+
     wandb_project = os.getenv("WANDB_PROJECT")
 
     if wandb_project is None:
         raise ValueError("WandB project not set, quitting.")
+    
+    logger.info(f"WandB project: {wandb_project}")
 
     if protocol not in PROTOCOLS.keys():
         raise ValueError(
@@ -642,20 +651,25 @@ def train_GAT_for_endpoint(
     final_manifest_path = final_dir_path / manifest_path.name
     copy(manifest_path, final_manifest_path)
 
-    # now push weights, config and manifest to S3
-    logger.info("Pushing weights, config and manifest to S3")
-    # push the whole final directory to S3
-    # ends up at BUCKET_NAME/protocol/model_tag
-    s3 = S3.from_settings(s3_settings)
-    s3_ensemble_dest = f"{protocol}/{model_tag}"
+    if test:
+        logger.info("Test mode, not pushing to S3")
+        return
+    else:
+        # now push weights, config and manifest to S3
+        logger.info("Pushing weights, config and manifest to S3")
+        # push the whole final directory to S3
+        # ends up at BUCKET_NAME/protocol/model_tag
+        s3 = S3.from_settings(s3_settings)
+        s3_ensemble_dest = f"{protocol}/{model_tag}"
 
-    # push ensemble to "latest"
-    s3_manifest_dest = f"{protocol}/latest/manifest.yaml"
+        # push ensemble to "latest"
+        s3_manifest_dest = f"{protocol}/latest/manifest.yaml"
 
-    logger.info(f"Pushing final directory to S3 at {s3_ensemble_dest}")
-    s3.push_dir(final_dir_path, s3_ensemble_dest)
+        logger.info(f"Pushing final directory to S3 at {s3_ensemble_dest}")
+        s3.push_dir(final_dir_path, s3_ensemble_dest)
 
-    logger.info(f"Pushing manifest to S3 at {s3_manifest_dest}")
-    s3.push_file(manifest_path, s3_manifest_dest)
+        logger.info(f"Pushing manifest to S3 at {s3_manifest_dest}")
+        s3.push_file(manifest_path, s3_manifest_dest)
+
 
     logger.info("Done.")

@@ -118,6 +118,8 @@ class Trainer(BaseModel):
         ),
     )
 
+    write_ds_csv: bool = Field(False, description="Write the dataset splits to CSV files.")
+
     # W&B parameters
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
     wandb_project: str | None = Field(None, description="W&B project name.")
@@ -656,6 +658,17 @@ class Trainer(BaseModel):
             len(self.ds_test),
             flush=True,
         )
+
+        # write the datasets to CSV
+        if self.write_ds_csv:
+            # self.ds_train.to_csv(self.output_dir / "ds_train.csv")
+            # self.ds_val.to_csv(self.output_dir / "ds_val.csv")
+            # self.ds_test.to_csv(self.output_dir / "ds_test.csv")
+
+            for i in self.ds_train:
+                print(i)
+            raise ValueError("done")
+
 
         # Build the Model
         self.model = self.model_config.build().to(self.device)

@@ -802,3 +802,16 @@ class GraphDataset(Dataset):
     def __iter__(self):
         for s in self.structures:
             yield (s["compound"], s)
+
+
+    @staticmethod
+    def to_csv(dataset, filename):
+        import pandas as pd
+        from dgllife.utils import smiles_to_bigraph
+
+        all_data = []
+        for k, v in dataset.structures.items():
+
+
+        df = pd.DataFrame(all_data)
+        df.to_csv(filename, index=False)
