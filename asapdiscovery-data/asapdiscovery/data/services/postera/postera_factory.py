@@ -49,9 +49,17 @@ class PosteraFactory(BaseModel):
                 # now append custom data to the Ligand's tags, if there is any
                 tags = {}
                 for custom_col in custom_data_columns:
+                    if custom_col in Ligand.__fields__.keys():
+                        warnings.warn(
+                            f"Custom column name {custom_col} is already a field in Ligand, skipping.."
+                        )
+                        continue
+                    
                     if mol[custom_col] is None:
                         mol[custom_col] = ""
+                    
                     tags[custom_col] = mol[custom_col]
+
 
                 ligand.tags = tags
                 ligands.append(ligand)
