@@ -30,7 +30,7 @@ def visualization():
 
 @visualization.command()
 @click.option(
-    "--colour-method",
+    "--color-method",
     default="subpockets",
     help="Coloring method",
     type=click.Choice(["subpockets", "fitness"]),
@@ -43,7 +43,7 @@ def visualization():
 @loglevel
 @use_dask
 def pose_html(
-    colour_method: str,
+    color_method: str,
     align: bool,
     target: TargetTags,
     ligands: str,
@@ -89,7 +89,7 @@ def pose_html(
     logger.info(f"Output directory: {output_dir}")
 
     html_visualizer = HTMLVisualizer(
-        color_method=colour_method,
+        color_method=color_method,
         target=target,
         align=align,
         write_to_disk=True,
