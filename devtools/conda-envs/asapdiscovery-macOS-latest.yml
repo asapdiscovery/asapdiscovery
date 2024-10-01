@@ -1,5 +1,6 @@
 name: asapdiscovery
 channels:
+  - conda-forge/label/openmm_rc
   - openeye
   - conda-forge
 dependencies:
@@ -67,7 +68,7 @@ dependencies:
   - wandb
 
   # md
-  - openmm
+  - openmm ==8.2.0beta
   - openmmforcefields
   - mdtraj
   - openff-toolkit
