@@ -3,13 +3,13 @@ import json
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.metadata.resources import (
-    SARS_CoV_2_fitness_data,
     MERS_CoV_Mpro_fitness_data,
+    SARS_CoV_2_fitness_data,
     ZIKV_NS2B_NS3pro_fitness_data,
     DENV_NS2B_NS3pro_fitness_data,
     ZIKV_RdRppro_fitness_data,
-    targets_with_fitness_data,
     active_site_chains,
+    targets_with_fitness_data,
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetTags,
