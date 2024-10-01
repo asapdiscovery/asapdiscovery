@@ -360,3 +360,13 @@ files:
 
   - resource: sample_training_data.csv
     sha256hash: 7b126d8981406b6991347edd8ea47c8d53bbe6df8f3cbd2933dcfa53e233473c
+
+  # testing for cdd-to-schema CLI
+  - resource: test_cdd_to_schema_in.csv
+    sha256hash: 43f0074a78afb4401ff533274288e4f74d2aaa29fb580d7349075ff4108d1914
+
+  - resource: test_cdd_to_schema_out.csv
+    sha256hash: 8931b588606600f9c3a13f493296b313df68540fd194401c896c41b520d9a7ca
+
+  - resource: test_cdd_to_schema_out.json
+    sha256hash: d5db54a7d2a0f4a4d9b252a52a4863263700f341cc1a3d0ac6bda9fa308781a8
