@@ -554,6 +554,7 @@ class DatasetSplitterType(StringEnum):
 
     random = "random"
     temporal = "temporal"
+    manual = "manual"
 
 
 class DatasetSplitterConfig(ConfigBase):
@@ -592,8 +593,17 @@ class DatasetSplitterConfig(ConfigBase):
         None, description="Random seed to use if randomly splitting data."
     )
 
+    # Dict giving splits for manual splitting
+    split_dict: dict | None = Field(
+        None, description="Dict giving splits for manual splitting."
+    )
+
     @root_validator(pre=False)
     def check_frac_sum(cls, values):
+        # Don't need to check if we're doing manual split mode
+        if values["split_type"] is DatasetSplitterType.manual:
+            return values
+
         frac_sum = sum([values["train_frac"], values["val_frac"], values["test_frac"]])
         if frac_sum < 0:
             raise ValueError("Can't have negative split fractions.")
@@ -609,6 +619,21 @@ class DatasetSplitterConfig(ConfigBase):
 
             if frac_sum > 1:
                 raise ValueError("Can't have split fractions adding to > 1.")
+
+        return values
+
+    @root_validator(pre=False)
+    def check_split_dict(cls, values):
+        if values["split_type"] is DatasetSplitterType.manual:
+            if values["split_dict"] is None:
+                raise ValueError(
+                    "Must pass value for split_dict if using manual splitting."
+                )
+
+            if set(values["split_dict"].keys()) != {"train", "val", "test"}:
+                raise ValueError(
+                    "Keys in split_dict must be exactly [train, val, test]."
+                )
 
         return values
 
@@ -635,6 +660,8 @@ class DatasetSplitterConfig(ConfigBase):
                 return self._split_random(ds)
             case DatasetSplitterType.temporal:
                 return self._split_temporal(ds)
+            case DatasetSplitterType.manual:
+                return self._split_manual(ds)
             case other:
                 raise ValueError(f"Unknown DatasetSplitterType {other}.")
 
@@ -822,6 +849,45 @@ class DatasetSplitterConfig(ConfigBase):
             all_subsets = all_subsets[:2] + [all_subsets[3]]
 
         return all_subsets
+
+    def _split_manual(self, ds: DockedDataset | GraphDataset | GroupedDockedDataset):
+        """
+        Manual split, based on ``self.split_dict``.
+
+        Parameters
+        ----------
+        ds : DockedDataset | GraphDataset | GroupedDockedDataset
+            Full ML dataset to split
+
+        Returns
+        -------
+        torch.nn.Subset
+            Train split
+        torch.nn.Subset
+            Val split
+        torch.nn.Subset
+            Test split
+        """
+        all_subset_idxs = {}
+        for i, (compound, _) in enumerate(ds):
+            if compound in self.split_dict["train"]:
+                split = "train"
+            elif compound in self.split_dict["val"]:
+                split = "val"
+            elif compound in self.split_dict["test"]:
+                split = "test"
+            else:
+                continue
+
+            try:
+                all_subset_idxs[split].append(i)
+            except KeyError:
+                all_subset_idxs[split] = [i]
+
+        return [
+            torch.utils.data.Subset(ds, all_subset_idxs[split])
+            for split in ["train", "val", "test"]
+        ]
 
 
 class LossFunctionType(StringEnum):
