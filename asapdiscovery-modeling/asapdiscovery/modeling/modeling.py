@@ -9,6 +9,7 @@ from asapdiscovery.data.backend.openeye import (
     oegrid,
     oespruce,
     openeye_perceive_residues,
+    oemol_to_smiles,
 )
 from asapdiscovery.modeling.schema import MoleculeComponent, MoleculeFilter
 
@@ -519,7 +520,9 @@ def split_openeye_mol(
     lig_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_Ligand
     )
-    # If ligand_chain is specified, only take protein atoms from that chains
+    opts.SetWarnNoLigand()
+
+    # If ligand_chain is specified, only take protein atoms from that chain
     if molecule_filter.ligand_chain:
         lig_chain = oechem.OERoleMolComplexFilterFactory(
             oechem.OEMolComplexChainRoleFactory(molecule_filter.ligand_chain)
@@ -574,6 +577,11 @@ def split_openeye_mol(
                 # Delete all atoms that don't match
                 if oechem.OEAtomGetResidue(a).GetChainID() != keep_lig_chain:
                     lig_mol.DeleteAtom(a)
+
+    if len(oemol_to_smiles(lig_mol)) > 100:
+        warnings.warn(
+            f"Complex splitting resulted in a ligand of more than 100 heavy atoms - check your output"
+        )
 
     return {
         "prot": prot_mol,

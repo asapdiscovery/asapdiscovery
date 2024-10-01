@@ -79,6 +79,17 @@ def make_color_res_fitness(protein, target) -> dict[str, str]:
         "#ff0707",
     ]
 
+    hex_color_codes = [
+        "#ffffff",
+        "#ffffff",
+        "#ff9e83",
+        "#ff8a6c",
+        "#ff7454",
+        "#ff5c3d",
+        "#ff3f25",
+        "#ff0707",
+    ]
+
     color_res_dict = {}
     json_data = parse_fitness_input(target)
     for res_num, chain in set(zip(protein_residues, protein_chainIDs)):

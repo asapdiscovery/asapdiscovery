@@ -20,6 +20,7 @@ from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import HTMLVisualizer
+from asapdiscovery.data.backend.openeye import load_openeye_pdb, load_openeye_sdf
 
 
 @click.group()
@@ -95,16 +96,11 @@ def pose_html(
         write_to_disk=True,
         output_dir=output_dir,
     )
-    ligs = MolFileFactory(filename=ligands).load()
-    cmplx = Complex.from_pdb(
-        protein,
-        target_kwargs={"target_name": protein.stem},
-        ligand_kwargs={"compound_name": protein.stem + "_ligand"},
-    )
 
-    html_visualizer.visualize(
-        inputs=[(cmplx, ligs)], use_dask=use_dask, dask_client=dask_client
+    html = html_visualizer.html_pose_viz(
+        [load_openeye_sdf(ligands)], load_openeye_pdb(pdb_file)
     )
+    html_visualizer.write_html(html, "test.html")
     logger.info("Done")
 
 

@@ -43,9 +43,11 @@ _FITNESS_DATA_FIT_THRESHOLD = {  # sets threshold at which a mutant is considere
     VirusTags("ZIKV").value: -1.0,  # this is OK for both NS2B-NS3pro and RdRppro
     VirusTags(
         "MERS-CoV"
-    ).value: 0.4,  # this is NextStrain, so anything lower than 0 is a counted mutation (we flip counts)
+    ).value: 0.4,  # this is NextStrain, so anything lower than 0.5 is a counted mutation (we flip counts)
     VirusTags("DENV").value: 0.4,  # also NextStrain
 }
+
+_FITNESS_DATA_NEXTSTRAIN = []
 
 
 def target_has_fitness_data(target: TargetTags) -> bool:
@@ -267,15 +269,15 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
             ns2b_section = fitness_scores_df[fitness_scores_df["chain"] == "A"]
             ns2b_section = ns2b_section[ns2b_section["site"].between(49, 87)]
             ns2b_section["site"] = (
-                ns2b_section["site"] + 49
-            )  # shift to match starting index in NS2B3 PDB
+                ns2b_section["site"] + 1  # shift to match starting index in NS2B3 PDB
+            )
 
             ns3_section = fitness_scores_df[fitness_scores_df["chain"] == "B"]
             ns3_section = ns3_section[ns3_section["site"].between(15, 167)]
             ns3_section["site"] = (
-                ns3_section["site"] + 15
+                ns3_section["site"] + 1
             )  # shift to match starting index in NS2B3 PDB
-
+            fitness_scores_df = pd.concat([ns2b_section, ns3_section])
         return fitness_scores_df
 
     # read the fitness data into a dataframe
