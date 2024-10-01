@@ -58,6 +58,13 @@ def test_manual_split_docked_dataset(complex_pdb):
     assert len(ds_val) == 1
     assert len(ds_test) == 1
 
+    compound, _ = next(iter(ds_train))
+    assert compound == ("test1", "test")
+    compound, _ = next(iter(ds_val))
+    assert compound == ("test2", "test")
+    compound, _ = next(iter(ds_test))
+    assert compound == ("test3", "test")
+
 
 def test_manual_split_graph_dataset(ligand_sdf):
     lig1 = Ligand.from_sdf(ligand_sdf, compound_name="test1")
@@ -80,3 +87,10 @@ def test_manual_split_graph_dataset(ligand_sdf):
     assert len(ds_train) == 1
     assert len(ds_val) == 1
     assert len(ds_test) == 1
+
+    compound, _ = next(iter(ds_train))
+    assert compound == ("NA", "test1")
+    compound, _ = next(iter(ds_val))
+    assert compound == ("NA", "test2")
+    compound, _ = next(iter(ds_test))
+    assert compound == ("NA", "test3")
