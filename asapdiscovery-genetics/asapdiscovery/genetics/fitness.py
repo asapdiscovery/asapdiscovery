@@ -6,6 +6,7 @@ from asapdiscovery.data.metadata.resources import (
     SARS_CoV_2_fitness_data,
     MERS_CoV_Mpro_fitness_data,
     ZIKV_NS2B_NS3pro_fitness_data,
+    DENV_NS2B_NS3pro_fitness_data,
     ZIKV_RdRppro_fitness_data,
     targets_with_fitness_data,
     active_site_chains,
@@ -28,6 +29,7 @@ _TARGET_TO_FITNESS_DATA = {  # points to the vendored fitness data.
     TargetTags("SARS-CoV-2-Mac1").value: SARS_CoV_2_fitness_data,
     TargetTags("SARS-CoV-2-N-protein").value: SARS_CoV_2_fitness_data,
     TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_fitness_data,
+    TargetTags("DENV-NS2B-NS3pro").value: DENV_NS2B_NS3pro_fitness_data,
     TargetTags("ZIKV-RdRppro").value: ZIKV_RdRppro_fitness_data,
 }
 
@@ -41,7 +43,8 @@ _FITNESS_DATA_FIT_THRESHOLD = {  # sets threshold at which a mutant is considere
     VirusTags("ZIKV").value: -1.0,  # this is OK for both NS2B-NS3pro and RdRppro
     VirusTags(
         "MERS-CoV"
-    ).value: 0.1,  # this is NextStrain, so anything higher than 0 is a counted mutation
+    ).value: 0.4,  # this is NextStrain, so anything lower than 0 is a counted mutation (we flip counts)
+    VirusTags("DENV").value: 0.4,  # also NextStrain
 }
 
 
@@ -233,24 +236,46 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
             {"residue_index": "site", "frequency": "fitness"},
             axis=1,
         )
-        fitness_scores_df["chain"] = active_site_chains[target]
+
+        # downstream the viz assumes that everything below 0 is unfit - subtract a tiny bit off the frequency
+        # to make this happen for cases where 0 mutations have been found
+
+        # how do this?
+        """
+        anything BELOW threshold
+        """
+        fitness_scores_df["fitness"] = fitness_scores_df["fitness"] - 0.5
+
+        # also need to make wildtypes have fitness==1 so that they get picked up as 'fit'.
+        fitness_scores_df.loc[
+            (fitness_scores_df["wildtype"] == fitness_scores_df["mutant"]), "fitness"
+        ] = 0.5  # bit of pandas magic to replace fitness values of rows where wt==mutant with 1.0
 
         if target == "MERS-CoV-Mpro":
-            # need to subselect from M gene Mpro.
+            fitness_scores_df["chain"] = active_site_chains[target]
+
+            # need to subselect from Mpro gene.
             seq = []
             for (_, wt), __ in fitness_scores_df.groupby(by=["site", "wildtype"]):
                 seq.append(wt)
             print("".join(seq))
             # compare sequence of DF with seqres sequence in metadata
 
-            import sys
+        elif target == "DENV-NS2B-NS3pro":
+            # chain is already denoted - just need to truncate to keep the actual ns2b and ns3 bits.
+            # similar method to zikv ns2b3 below.
+            ns2b_section = fitness_scores_df[fitness_scores_df["chain"] == "A"]
+            ns2b_section = ns2b_section[ns2b_section["site"].between(49, 87)]
+            ns2b_section["site"] = (
+                ns2b_section["site"] + 49
+            )  # shift to match starting index in NS2B3 PDB
 
-            sys.exit()
-            # fitness_scores_bloom = fitness_scores_bloom[
-            #     fitness_scores_bloom["site"].between(209, 372)
-            # ]
-            # fitness_scores_bloom["site"] -= 204  # PDB starts at resindex 5
-            # fitness_scores_bloom["chain"] = "A"
+            ns3_section = fitness_scores_df[fitness_scores_df["chain"] == "B"]
+            ns3_section = ns3_section[ns3_section["site"].between(15, 167)]
+            ns3_section["site"] = (
+                ns3_section["site"] + 15
+            )  # shift to match starting index in NS2B3 PDB
+
         return fitness_scores_df
 
     # read the fitness data into a dataframe

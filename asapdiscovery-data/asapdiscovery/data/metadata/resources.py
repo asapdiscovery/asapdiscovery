@@ -69,6 +69,10 @@ ZIKV_NS2B_NS3pro_fitness_data = pkg_resources.resource_filename(
     __name__, "aa_fitness_zikv_ns2b3.json"
 )
 
+DENV_NS2B_NS3pro_fitness_data = pkg_resources.resource_filename(
+    __name__, "nextstrain_aa_fitness_denv_ns2b3.csv"
+)
+
 ZIKV_RdRppro_fitness_data = pkg_resources.resource_filename(
     __name__, "aa_fitness_zikv_rdrppro.json"
 )
@@ -79,6 +83,7 @@ targets_with_fitness_data = [
     TargetTags("SARS-CoV-2-Mac1"),
     TargetTags("SARS-CoV-2-N-protein"),
     TargetTags("ZIKV-NS2B-NS3pro"),
+    TargetTags("DENV-NS2B-NS3pro"),
     TargetTags("ZIKV-RdRppro"),
 ]
 
