@@ -102,6 +102,8 @@ def pose_html(
         ligand_kwargs={"compound_name": protein.stem + "_ligand"},
     )
 
+    cmplx.to_pdb(output_dir / "protein.pdb")
+
     html_visualizer.visualize(
         inputs=[(cmplx, ligs)], use_dask=use_dask, dask_client=dask_client
     )
