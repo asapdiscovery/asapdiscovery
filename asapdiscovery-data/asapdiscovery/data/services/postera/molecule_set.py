@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import Dict, Optional, Tuple, Union  # noqa: F401
 import warnings
 
@@ -10,6 +11,12 @@ from typing_extensions import TypedDict
 from .manifold_data_validation import ManifoldAllowedTags
 
 logger = logging.getLogger(__name__)
+
+
+def _batch(iterable, n=1):
+    l = len(iterable)  # noqa: E741
+    for ndx in range(0, l, n):  # noqa: E741
+        yield iterable[ndx : min(ndx + n, l)]
 
 
 class MoleculeSetKeys(StringEnum):
@@ -151,6 +158,7 @@ class MoleculeSetAPI(_BaseWebAPI):
                 "molecules": data,
                 "name": molecule_set_name,
             },
+            timeout=self.timeout,
         )
         response_json = response.json()
         logger.debug(
@@ -165,7 +173,7 @@ class MoleculeSetAPI(_BaseWebAPI):
             return response_json[MoleculeSetKeys.id.value]
 
     def _read_page(self, url: str, page: int) -> tuple[pd.DataFrame, str]:
-        response = self._session.get(url, params={"page": page})
+        response = self._session.get(url, params={"page": page}, timeout=self.timeout)
         response.raise_for_status()
         response_json = response.json()
         return response_json["results"], response_json["paginationInfo"]["hasNext"]
@@ -244,6 +252,7 @@ class MoleculeSetAPI(_BaseWebAPI):
         url = f"{self.molecule_set_url}/{molecule_set_id}"
         response = self._session.get(
             url,
+            timeout=self.timeout,
         )
         response_json = response.json()
         logger.debug(
@@ -264,7 +273,7 @@ class MoleculeSetAPI(_BaseWebAPI):
 
         """
         url = f"{self.molecule_set_url}/{molecule_set_id}"
-        response = self._session.delete(url)
+        response = self._session.delete(url, timeout=self.timeout)
         # no response body for delete
         logger.debug(
             f"Postera MoleculeSetAPI.destroy response: {response}, status code: {response.status_code}"
@@ -295,22 +304,23 @@ class MoleculeSetAPI(_BaseWebAPI):
         if return_as == "list":
             return results
         elif return_as == "dataframe":
-            
-            response_data = [ ]
+
+            response_data = []
             for result in results:
-                data =                    {
-                        MoleculeSetKeys.smiles.value: result[MoleculeSetKeys.smiles.value],
-                        MoleculeSetKeys.id.value: result[MoleculeSetKeys.id.value],
-                    }
+                data = {
+                    MoleculeSetKeys.smiles.value: result[MoleculeSetKeys.smiles.value],
+                    MoleculeSetKeys.id.value: result[MoleculeSetKeys.id.value],
+                }
                 # rare case where customData has the same key name as a reserved key like id or smiles
                 for key, value in result["customData"].items():
                     if key in MoleculeSetKeys.get_values():
-                        warnings.warn(f"Custom data key name {key} is the same as a reserved key name, skipping..")
+                        warnings.warn(
+                            f"Custom data key name {key} is the same as a reserved key name, skipping.."
+                        )
                     else:
                         data[key] = value
 
                 response_data.append(data)
-            
 
             return pd.DataFrame(response_data)
 
@@ -420,6 +430,7 @@ class MoleculeSetAPI(_BaseWebAPI):
             json={
                 "newMolecules": data,
             },
+            timeout=self.timeout,
         )
         response_json = response.json()
         logger.debug(
@@ -461,24 +472,31 @@ class MoleculeSetAPI(_BaseWebAPI):
 
         url = f"{self.molecule_set_url}/{molecule_set_id}/update_molecules/"
 
-        response = self._session.patch(
-            url, json={"moleculesToUpdate": data, "overwrite": overwrite}
-        )
-        response_json = response.json()
+        molecules_updated = []
+        for data_batch in _batch(data, n=100):
+            response = self._session.patch(
+                url,
+                json={"moleculesToUpdate": data_batch, "overwrite": overwrite},
+                timeout=self.timeout,
+            )
+            response_json = response.json()
 
-        logger.debug(
-            f"Postera MoleculeSetAPI.update_molecules response: {response_json}, status code: {response.status_code}"
-        )
-        self._check_response_for_perm_error(response_json)
-        response.raise_for_status()
+            logger.debug(
+                f"Postera MoleculeSetAPI.update_molecules response: {response_json}, status code: {response.status_code}"
+            )
+            self._check_response_for_perm_error(response_json)
+            response.raise_for_status()
 
-        try:
-            return response_json["moleculesUpdated"]
+            try:
+                updated = response_json["moleculesUpdated"]
+                molecules_updated.extend(updated)
 
-        except Exception as e:
-            raise ValueError(
-                f"Update failed for molecule set {molecule_set_id}, with response: {response_json}, status code: {response.status_code}"
-            ) from e
+            except Exception as e:
+                raise ValueError(
+                    f"Update failed for molecule set batch {molecule_set_id}, with response: {response_json}, status code: {response.status_code}"
+                ) from e
+
+        return molecules_updated
 
     def update_molecules_from_df_with_manifold_validation(
         self,

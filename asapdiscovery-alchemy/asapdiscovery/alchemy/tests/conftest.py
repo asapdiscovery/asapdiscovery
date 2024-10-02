@@ -180,3 +180,21 @@ def test_ligands_sdfile(test_ligands, tmp_path):
 @pytest.fixture()
 def tyk2_result_network_ddg0s():
     return fetch_test_file("tyk2_result_network_ddg0s.json")
+
+
+@pytest.fixture()
+def p38_graphml():
+    return fetch_test_file("p38.graphml")
+
+
+@pytest.fixture()
+def p38_protein():
+    return fetch_test_file("p38.pdb")
+
+
+@pytest.fixture()
+def p38_ligand_names(p38_graphml):
+    # see https://github.com/openforcefield/protein-ligand-benchmark/blob/main/data/p38/00_data/ligands.yml
+    with open(p38_graphml) as f:
+        ligands = openfe.LigandNetwork.from_graphml(f.read()).nodes
+    return {ligand.name for ligand in ligands}

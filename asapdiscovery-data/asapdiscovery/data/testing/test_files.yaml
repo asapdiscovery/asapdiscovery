@@ -358,5 +358,11 @@ files:
   - resource: tyk2_result_network_ddg0s.json
     sha256hash: f9ba9049f40eaa41e108a4cea5efafc726d08729b636c1df61fa771677f4c093
 
+  - resource: p38.graphml
+    sha256hash: 23488ee26d8f717f08057d33e35a257bf63fb4ac01a05e4b4957a846d3c00394
+
+  - resource: p38.pdb
+    sha256hash: 3f0bf718644e7c29f5200cd3def4240ac25ef5fb1948b2e64deb5015d8a45aa4
+
   - resource: sample_training_data.csv
     sha256hash: 7b126d8981406b6991347edd8ea47c8d53bbe6df8f3cbd2933dcfa53e233473c
