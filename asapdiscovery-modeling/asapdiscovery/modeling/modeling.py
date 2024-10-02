@@ -499,6 +499,14 @@ def split_openeye_mol(
     prot_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_ProtComplex
     )
+    # add in peptides as well, sometimes proteins are misidentified as peptides if bound or short
+    peptide = oechem.OEMolComplexFilterFactory(
+        oechem.OEMolComplexFilterCategory_Peptide)
+    
+    # combine protein and peptide filters
+    prot_only = oechem.OEOrRoleSet(prot_only, peptide)
+
+
     # If protein_chains are specified, only take protein atoms from those chains
     if len(molecule_filter.protein_chains) > 0:
         chain_filters = [
@@ -527,6 +535,8 @@ def split_openeye_mol(
         lig_filter = oechem.OEAndRoleSet(lig_only, lig_chain)
     else:
         lig_filter = lig_only
+    # combine with NOT peptide filter
+    lig_filter = oechem.OEAndRoleSet(lig_filter, oechem.OENotRoleSet(peptide))
     opts.SetLigandFilter(lig_filter)
 
     # If water_chains are specified, set up filter for them
@@ -543,6 +553,8 @@ def split_openeye_mol(
 
         chain_filter = reduce(oechem.OEOrRoleSet, chain_filters)
         wat_filter = oechem.OEAndRoleSet(water_only, chain_filter)
+        # combine with NOT peptide filter
+        wat_filter = oechem.OEAndRoleSet(wat_filter, oechem.OENotRoleSet(peptide))
         opts.SetWaterFilter(wat_filter)
 
     # Use python 'reduce' to combine all the filters into one, otherwise OpenEye will throw an error

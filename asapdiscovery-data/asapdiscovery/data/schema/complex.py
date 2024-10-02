@@ -70,7 +70,6 @@ class Complex(ComplexBase):
     ) -> Complex:
         # First load full complex molecule
         complex_mol = load_openeye_pdb(pdb_file)
-
         # Split molecule into parts using given chains
         mol_filter = MoleculeFilter(
             protein_chains=target_chains, ligand_chain=ligand_chain
