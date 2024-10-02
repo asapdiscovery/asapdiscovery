@@ -1,7 +1,6 @@
 import logging
 import warnings
 from typing import Dict, Optional, Tuple, Union  # noqa: F401
-import warnings
 
 import pandas as pd
 from asapdiscovery.data.services.web_utils import _BaseWebAPI

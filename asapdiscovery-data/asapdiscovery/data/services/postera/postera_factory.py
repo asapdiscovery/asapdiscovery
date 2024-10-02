@@ -60,7 +60,6 @@ class PosteraFactory(BaseModel):
 
                     tags[custom_col] = mol[custom_col]
 
-
                 ligand.tags = tags
                 ligands.append(ligand)
             except Exception as e:  # noqa: E722
