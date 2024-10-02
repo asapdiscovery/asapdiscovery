@@ -16,7 +16,7 @@ from asapdiscovery.data.backend.openeye import (
 from asapdiscovery.data.metadata.resources import FINTSCORE_PARAMETERS
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
-from asapdiscovery.genetics.fitness import parse_fitness_json, target_has_fitness_data
+from asapdiscovery.genetics.fitness import parse_fitness_input, target_has_fitness_data
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +79,19 @@ def make_color_res_fitness(protein, target) -> dict[str, str]:
         "#ff0707",
     ]
 
+    hex_color_codes = [
+        "#ffffff",
+        "#ffffff",
+        "#ff9e83",
+        "#ff8a6c",
+        "#ff7454",
+        "#ff5c3d",
+        "#ff3f25",
+        "#ff0707",
+    ]
+
     color_res_dict = {}
-    json_data = parse_fitness_json(target)
+    json_data = parse_fitness_input(target)
     for res_num, chain in set(zip(protein_residues, protein_chainIDs)):
         try:
             # color residue white->red depending on fitness value.

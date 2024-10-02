@@ -13,6 +13,7 @@ from asapdiscovery.cli.cli_args import (
     target,
     use_dask,
 )
+from asapdiscovery.data.backend.openeye import load_openeye_pdb, load_openeye_sdf
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
@@ -30,7 +31,7 @@ def visualization():
 
 @visualization.command()
 @click.option(
-    "--colour-method",
+    "--color-method",
     default="subpockets",
     help="Coloring method",
     type=click.Choice(["subpockets", "fitness"]),
@@ -43,7 +44,7 @@ def visualization():
 @loglevel
 @use_dask
 def pose_html(
-    colour_method: str,
+    color_method: str,
     align: bool,
     target: TargetTags,
     ligands: str,
@@ -89,22 +90,17 @@ def pose_html(
     logger.info(f"Output directory: {output_dir}")
 
     html_visualizer = HTMLVisualizer(
-        color_method=colour_method,
+        color_method=color_method,
         target=target,
         align=align,
         write_to_disk=True,
         output_dir=output_dir,
     )
-    ligs = MolFileFactory(filename=ligands).load()
-    cmplx = Complex.from_pdb(
-        protein,
-        target_kwargs={"target_name": protein.stem},
-        ligand_kwargs={"compound_name": protein.stem + "_ligand"},
-    )
 
-    html_visualizer.visualize(
-        inputs=[(cmplx, ligs)], use_dask=use_dask, dask_client=dask_client
+    html = html_visualizer.html_pose_viz(
+        [load_openeye_sdf(ligands)], load_openeye_pdb(pdb_file)
     )
+    html_visualizer.write_html(html, "test.html")
     logger.info("Done")
 
 

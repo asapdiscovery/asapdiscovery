@@ -3,9 +3,12 @@ import json
 import numpy as np
 import pandas as pd
 from asapdiscovery.data.metadata.resources import (
+    DENV_NS2B_NS3pro_fitness_data,
+    MERS_CoV_Mpro_fitness_data,
     SARS_CoV_2_fitness_data,
     ZIKV_NS2B_NS3pro_fitness_data,
     ZIKV_RdRppro_fitness_data,
+    active_site_chains,
     targets_with_fitness_data,
 )
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -22,9 +25,11 @@ _TARGET_TO_GENE = {  # contains some entries for finding targets when subselecti
 
 _TARGET_TO_FITNESS_DATA = {  # points to the vendored fitness data.
     TargetTags("SARS-CoV-2-Mpro").value: SARS_CoV_2_fitness_data,
+    TargetTags("MERS-CoV-Mpro").value: MERS_CoV_Mpro_fitness_data,
     TargetTags("SARS-CoV-2-Mac1").value: SARS_CoV_2_fitness_data,
     TargetTags("SARS-CoV-2-N-protein").value: SARS_CoV_2_fitness_data,
     TargetTags("ZIKV-NS2B-NS3pro").value: ZIKV_NS2B_NS3pro_fitness_data,
+    TargetTags("DENV-NS2B-NS3pro").value: DENV_NS2B_NS3pro_fitness_data,
     TargetTags("ZIKV-RdRppro").value: ZIKV_RdRppro_fitness_data,
 }
 
@@ -36,7 +41,13 @@ _FITNESS_DATA_IS_CROSSGENOME = {  # sets whether the fitness data we have for th
 _FITNESS_DATA_FIT_THRESHOLD = {  # sets threshold at which a mutant is considered 'fit' for the specific fitness experiment. Directed by Bloom et al.
     VirusTags("SARS-CoV-2").value: -1.0,
     VirusTags("ZIKV").value: -1.0,  # this is OK for both NS2B-NS3pro and RdRppro
+    VirusTags(
+        "MERS-CoV"
+    ).value: 0.4,  # this is NextStrain, so anything lower than 0.5 is a counted mutation (we flip counts)
+    VirusTags("DENV").value: 0.4,  # also NextStrain
 }
+
+_FITNESS_DATA_NEXTSTRAIN = []
 
 
 def target_has_fitness_data(target: TargetTags) -> bool:
@@ -98,6 +109,12 @@ def apply_bloom_abstraction(fitness_dataframe: pd.DataFrame, threshold: float) -
     fitness_dict = {}
     for (idx, chain), site_df in fitness_dataframe.groupby(by=["site", "chain"]):
         # remove wild type fitness score (this is always 0)
+        if (
+            threshold > 0
+        ):  # bit hacky - for nextstrain fitness data most values are actually 0.
+            # Transform these to be slightly above 0, but still well below the threshold
+            site_df["fitness"] = site_df["fitness"] + threshold / 2
+
         fitness_scores_this_site = site_df[site_df["fitness"] != 0]
 
         # add all values to a dict
@@ -151,9 +168,9 @@ def normalize_fitness(fitness_df_abstract: pd.DataFrame) -> pd.DataFrame:
     return fitness_df_abstract
 
 
-def parse_fitness_json(target: TargetTags) -> pd.DataFrame:
+def parse_fitness_input(target: TargetTags) -> pd.DataFrame:
     """
-    Read a per-aa fitness JSON's specified target into a pandas DF.
+    Read a per-aa fitness file's specified target into a pandas DF.
 
     Parameters
     ----------
@@ -211,6 +228,58 @@ def get_fitness_scores_bloom_by_target(target: TargetTags) -> pd.DataFrame:
     virus = TargetVirusMap[target]
     # find the fitness data that corresponds to the virus
     fitness_data = _TARGET_TO_FITNESS_DATA[target]
+
+    if fitness_data.endswith(".csv"):
+        # easy - this is NextStrain data so we can read straight into pandas
+        fitness_scores_df = pd.read_csv(fitness_data)
+
+        # rename columns - we want the naming specific for the asapdiscovery workflow
+        fitness_scores_df = fitness_scores_df.rename(
+            {"residue_index": "site", "frequency": "fitness"},
+            axis=1,
+        )
+
+        # downstream the viz assumes that everything below 0 is unfit - subtract a tiny bit off the frequency
+        # to make this happen for cases where 0 mutations have been found
+
+        # how do this?
+        """
+        anything BELOW threshold
+        """
+        fitness_scores_df["fitness"] = fitness_scores_df["fitness"] - 0.5
+
+        # also need to make wildtypes have fitness==1 so that they get picked up as 'fit'.
+        fitness_scores_df.loc[
+            (fitness_scores_df["wildtype"] == fitness_scores_df["mutant"]), "fitness"
+        ] = 0.5  # bit of pandas magic to replace fitness values of rows where wt==mutant with 1.0
+
+        if target == "MERS-CoV-Mpro":
+            fitness_scores_df["chain"] = active_site_chains[target]
+
+            # need to subselect from Mpro gene.
+            seq = []
+            for (_, wt), __ in fitness_scores_df.groupby(by=["site", "wildtype"]):
+                seq.append(wt)
+            print("".join(seq))
+            # compare sequence of DF with seqres sequence in metadata
+
+        elif target == "DENV-NS2B-NS3pro":
+            # chain is already denoted - just need to truncate to keep the actual ns2b and ns3 bits.
+            # similar method to zikv ns2b3 below.
+            ns2b_section = fitness_scores_df[fitness_scores_df["chain"] == "A"]
+            ns2b_section = ns2b_section[ns2b_section["site"].between(49, 87)]
+            ns2b_section["site"] = (
+                ns2b_section["site"] + 1  # shift to match starting index in NS2B3 PDB
+            )
+
+            ns3_section = fitness_scores_df[fitness_scores_df["chain"] == "B"]
+            ns3_section = ns3_section[ns3_section["site"].between(15, 167)]
+            ns3_section["site"] = (
+                ns3_section["site"] + 1
+            )  # shift to match starting index in NS2B3 PDB
+            fitness_scores_df = pd.concat([ns2b_section, ns3_section])
+        return fitness_scores_df
+
     # read the fitness data into a dataframe
     with open(fitness_data) as f:
         data = json.load(f)
