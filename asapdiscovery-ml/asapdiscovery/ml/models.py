@@ -1,7 +1,7 @@
 import os
 import warnings
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union  # noqa: F401
 from urllib.parse import urljoin
@@ -458,6 +458,10 @@ class MLModelRegistry(BaseModel):
     models: dict[str, MLModelSpecBase] = Field(
         ..., description="Models in the model registry, keyed by name"
     )
+    source_yaml: Optional[str] = Field(
+        None, description="Source yaml file for model registry"
+    )
+    time_updated: datetime = Field(datetime.utcnow(), description="Time last updated")
 
     def get_models_for_target_and_type(
         self, target: TargetTags, type: ModelType
@@ -847,10 +851,24 @@ class MLModelRegistry(BaseModel):
         model_types = {model.type.value for model in self.models.values()}
         return list(model_types)
 
-    @classmethod
-    def from_yaml(cls, yaml_file: Union[str, Path]) -> "MLModelRegistry":
+    def update_registry(self):
         """
-        Make model registry from yaml spec file
+        Refresh the model registry by checking for new models
+        """
+        if not self.source_yaml:
+            raise ValueError(
+                "No source yaml file provided for model registry, cannot update"
+            )
+        new_models = self.parse_yaml_to_models_dict(self.source_yaml)
+        self.models = new_models
+        self.time_updated = datetime.utcnow()
+
+    @staticmethod
+    def parse_yaml_to_models_dict(
+        yaml_file: Union[str, Path]
+    ) -> dict[str, MLModelSpecBase]:
+        """
+        Parse models registry from yaml spec file
 
         Parameters
         ----------
@@ -858,8 +876,8 @@ class MLModelRegistry(BaseModel):
 
         Returns
         -------
-        MLModelRegistry
-            Model registry
+        dict[str, MLModelSpecBase]
+            Dictionary of model specs
         """
         if not Path(yaml_file).exists():
             raise FileNotFoundError(f"Yaml spec file {yaml_file} does not exist")
@@ -912,7 +930,15 @@ class MLModelRegistry(BaseModel):
             except Exception as e:
                 warnings.warn(f"Failed to load model {model}, skipping. Error: {e}")
 
-        return cls(models=models)
+        return models
+
+    @classmethod
+    def from_yaml(cls, yaml_file: str) -> "MLModelRegistry":
+        """
+        Make model registry from yaml spec file
+        """
+        models = cls.parse_yaml_to_models_dict(yaml_file)
+        return cls(models=models, source_yaml=yaml_file)
 
 
 _asap_ml_debug = True if os.getenv("ASAP_ML_DEBUG") else False
