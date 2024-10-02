@@ -326,11 +326,6 @@ class POSITDocker(DockingBase):
                             posed_mol = result.GetPose()
                             prob = result.GetProbability()
 
-                            # clear SD data for uniformity of results
-                            from asapdiscovery.data.backend.openeye import clear_SD_data
-
-                            clear_SD_data(posed_mol)
-
                             posed_ligand = Ligand.from_oemol(
                                 posed_mol, **set.ligand.dict()
                             )
