@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import Dict, Optional, Tuple, Union  # noqa: F401
 
 import pandas as pd
@@ -302,14 +303,24 @@ class MoleculeSetAPI(_BaseWebAPI):
         if return_as == "list":
             return results
         elif return_as == "dataframe":
-            response_data = [
-                {
+
+            response_data = []
+            for result in results:
+                data = {
                     MoleculeSetKeys.smiles.value: result[MoleculeSetKeys.smiles.value],
                     MoleculeSetKeys.id.value: result[MoleculeSetKeys.id.value],
-                    **result["customData"],
                 }
-                for result in results
-            ]
+                # rare case where customData has the same key name as a reserved key like id or smiles
+                for key, value in result["customData"].items():
+                    if key in MoleculeSetKeys.get_values():
+                        warnings.warn(
+                            f"Custom data key name {key} is the same as a reserved key name, skipping.."
+                        )
+                    else:
+                        data[key] = value
+
+                response_data.append(data)
+
             return pd.DataFrame(response_data)
 
     def get_id_from_name(self, name: str) -> str:
