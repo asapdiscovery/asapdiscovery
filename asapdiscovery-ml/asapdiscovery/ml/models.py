@@ -241,8 +241,10 @@ class EnsembleMLModelSpec(MLModelSpecBase):
                 filename = plotname
             with open(filename, "wb") as f:
                 f.write(response.content)
+        elif return_as == "url":
+            return plot_url
         else:
-            raise ValueError("return_as must be 'memory' or 'file'")
+            raise ValueError("return_as must be 'memory' or 'file' or 'url'")
         return plotname    
 
 
