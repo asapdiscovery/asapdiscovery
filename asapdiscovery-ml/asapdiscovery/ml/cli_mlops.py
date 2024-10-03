@@ -6,6 +6,7 @@ from pathlib import Path
 from shutil import copy, rmtree
 from typing import Optional
 
+import numpy as np
 import click
 import mtenn
 import pandas as pd
@@ -55,22 +56,108 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
     df = pd.read_csv(test_csv)
     inference_cls = GATInference.from_ml_model_spec(model)
     smiles = df["smiles"]
-    pred, err = inference_cls.predict(x["smiles"], return_err=True)
+    pred, err = inference_cls.predict_from_smiles(smiles, return_err=True)
     pred_column = f"pred_{readout_column}"
     err_column = f"pred_{readout_column}err"
     df[pred_column] = pred
     df[err_column] = err
 
     fig, ax = plt.subplots()
-    ax.set_title(f"Test set perf {model.name}")
-    sns.regplot(x=pred_column, data=df,
-            y=readout_column, ax=ax)
+    ax.set_title(f"Test set performance:\n {model.name}", fontsize=6)
+    sns.regplot(x=readout_column, data=df,y=pred_column, ax=ax)
     ax.errorbar(df[readout_column], df[pred_column], yerr=df[err_column], fmt='none', capsize=5, zorder=1, color='C0')
+    stats_dict = do_stats(df[readout_column], df[pred_column])
+    stats_text = stats_to_str(stats_dict)
+    ax.text(0.05, 0.7, stats_text, transform=ax.transAxes, fontsize=8)
     out = output_dir /"test_performance.png"
     plt.savefig(out)
     return out
-    
-    
+
+
+def do_stats(target_vals, preds):
+    from scipy.stats import bootstrap, kendalltau, spearmanr
+
+    # Calculate MAE and bootstrapped confidence interval
+    stats_dict = {}
+    mae = np.abs(target_vals - preds).mean()
+    conf_interval = bootstrap(
+        (target_vals, preds),
+        statistic=lambda target, pred: np.abs(target - pred).mean(),
+        method="basic",
+        confidence_level=0.95,
+        paired=True,
+    ).confidence_interval
+    stats_dict["mae"] = {
+        "value": mae,
+        "95ci_low": conf_interval.low,
+        "95ci_high": conf_interval.high,
+    }
+
+    # Calculate RMSE and bootstrapped confidence interval
+    rmse = np.sqrt(np.power(target_vals - preds, 2).mean())
+    conf_interval = bootstrap(
+        (target_vals, preds),
+        statistic=lambda target, pred: np.sqrt(
+            np.power(target - pred, 2).mean()
+        ),
+        method="basic",
+        confidence_level=0.95,
+        paired=True,
+    ).confidence_interval
+    stats_dict["rmse"] = {
+        "value": rmse,
+        "95ci_low": conf_interval.low,
+        "95ci_high": conf_interval.high,
+    }
+
+    # Calculate Spearman r and bootstrapped confidence interval
+    sp_r = spearmanr(target_vals, preds).statistic
+    conf_interval = bootstrap(
+        (target_vals, preds),
+        statistic=lambda target, pred: spearmanr(target, pred).statistic,
+        method="basic",
+        confidence_level=0.95,
+        paired=True,
+    ).confidence_interval
+    stats_dict["sp_r"] = {
+        "value": sp_r,
+        "95ci_low": conf_interval.low,
+        "95ci_high": conf_interval.high,
+    }
+
+    # Calculate Kendall's tau and bootstrapped confidence interval
+    tau = kendalltau(target_vals, preds).statistic
+    conf_interval = bootstrap(
+        (target_vals, preds),
+        statistic=lambda target, pred: kendalltau(target, pred).statistic,
+        method="basic",
+        confidence_level=0.95,
+        paired=True,
+    ).confidence_interval
+    stats_dict["tau"] = {
+        "value": tau,
+        "95ci_low": conf_interval.low,
+        "95ci_high": conf_interval.high,
+    }
+
+    return stats_dict
+
+def stats_to_str(stats_dict):
+    stats_text = []
+    for stat, stat_label in zip(
+            ["mae", "rmse", "sp_r", "tau"],
+            ["MAE", "RMSE", "Spearman's $\\rho$", "Kendall's $\\tau$"],
+        ):
+            stats_str = (
+                f"{stat_label}: "
+                f"{stats_dict[stat]['value']:0.2f}"
+                f"$_{{{stats_dict[stat]['95ci_low']:0.2f}}}"
+                f"^{{{stats_dict[stat]['95ci_high']:0.2f}}}$"
+            )
+            stats_text.append(stats_str)
+    return "\n".join(stats_text)
+
+
 
 # need Py3.11 + for hashlib.file_digest, use this for now
 def sha256sum(file_path: Path) -> str:
@@ -678,6 +765,9 @@ def train_GAT_for_endpoint(
     final_manifest_path = final_dir_path / manifest_path.name
     copy(manifest_path, final_manifest_path)
 
+    # need for both test and not test
+    s3_manifest_dest = f"{protocol}/latest/manifest.yaml"
+
     if test:
         logger.info("Test mode, not pushing to S3")
     else:
@@ -689,8 +779,6 @@ def train_GAT_for_endpoint(
         s3_ensemble_dest = f"{protocol}/{model_tag}"
 
         # push ensemble to "latest"
-        s3_manifest_dest = f"{protocol}/latest/manifest.yaml"
-
         logger.info(f"Pushing final directory to S3 at {s3_ensemble_dest}")
         s3.push_dir(final_dir_path, s3_ensemble_dest)
 
