@@ -2,15 +2,19 @@ import datetime
 import hashlib
 import logging
 import os
+import shutil
 from pathlib import Path
 from shutil import copy, rmtree
 from typing import Optional
 
-import numpy as np
 import click
+import matplotlib.pyplot as plt
 import mtenn
+import numpy as np
 import pandas as pd
+import seaborn as sns
 import torch
+import wandb
 import yaml
 from asapdiscovery.alchemy.cli.utils import has_warhead
 from asapdiscovery.cli.cli_args import loglevel
@@ -32,17 +36,13 @@ from asapdiscovery.ml.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
-import shutil
-import seaborn as sns
-import matplotlib.pyplot as plt
-from asapdiscovery.ml.pretrained_models import cdd_protocols_yaml
-from asapdiscovery.ml.trainer import Trainer
 from asapdiscovery.ml.inference import GATInference
 from asapdiscovery.ml.models import RemoteEnsembleHelper
+from asapdiscovery.ml.pretrained_models import cdd_protocols_yaml
+from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import GATModelConfig
 from openff.toolkit import Molecule
 from openff.toolkit.utils.exceptions import RadicalsNotSupportedError
-import wandb
 
 # logging
 logger = logging.getLogger(__name__)
@@ -62,46 +62,62 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
     err_column = f"pred_{readout_column}err"
     df[pred_column] = pred
     df[err_column] = err
-    
+
     # if readout is pIC50 there is an xerr pIC50_stderr column available
     xerr_column = None
     if readout_column == "pIC50":
         if "pIC50_stderr" in df.columns:
-            xerr_column = "pIC50_stderr" 
+            xerr_column = "pIC50_stderr"
 
     fig, ax = plt.subplots()
     ax.set_title(f"Test set performance:\n {model.name}", fontsize=6)
     min_val = min(df[readout_column].min(), df[pred_column].min())
     max_val = max(df[readout_column].max(), df[pred_column].max())
     # set the limits to be the same for both axes
-    sns.regplot(x=readout_column, data=df,y=pred_column, ax=ax)
-    ax.set_xlim(min_val -1, max_val + 1)
-    ax.set_ylim(min_val -1, max_val + 1)
+    sns.regplot(x=readout_column, data=df, y=pred_column, ax=ax)
+    ax.set_xlim(min_val - 1, max_val + 1)
+    ax.set_ylim(min_val - 1, max_val + 1)
     # plot y = x line in dashed grey
     ax.plot([min_val, max_val], [min_val, max_val], linestyle="--", color="black")
     # Shade 0.5 and 1 unit regions around the y=x line
     ax.fill_between(
-            [min_val, max_val],
-            [min_val - 0.5, max_val - 0.5],
-            [min_val + 0.5, max_val + 0.5],
-            color="gray",
-            alpha=0.2,
-        )
+        [min_val, max_val],
+        [min_val - 0.5, max_val - 0.5],
+        [min_val + 0.5, max_val + 0.5],
+        color="gray",
+        alpha=0.2,
+    )
     ax.fill_between(
-            [min_val, max_val],
-            [min_val - 1, max_val - 1],
-            [min_val + 1, max_val + 1],
-            color="gray",
-            alpha=0.2,
-        )
+        [min_val, max_val],
+        [min_val - 1, max_val - 1],
+        [min_val + 1, max_val + 1],
+        color="gray",
+        alpha=0.2,
+    )
     # plot error bars
-    ax.errorbar(df[readout_column], df[pred_column], yerr=df[err_column], fmt='none', capsize=5, zorder=1, color='C0')
+    ax.errorbar(
+        df[readout_column],
+        df[pred_column],
+        yerr=df[err_column],
+        fmt="none",
+        capsize=5,
+        zorder=1,
+        color="C0",
+    )
     if xerr_column:
-        ax.errorbar(df[readout_column], df[pred_column], xerr=df[xerr_column], fmt='none', capsize=5, zorder=1, color='C1')
+        ax.errorbar(
+            df[readout_column],
+            df[pred_column],
+            xerr=df[xerr_column],
+            fmt="none",
+            capsize=5,
+            zorder=1,
+            color="C1",
+        )
     stats_dict = do_stats(df[readout_column], df[pred_column])
     stats_text = stats_to_str(stats_dict)
     ax.text(0.05, 0.7, stats_text, transform=ax.transAxes, fontsize=8)
-    out = output_dir /"test_performance.png"
+    out = output_dir / "test_performance.png"
     plt.savefig(out)
     return out
 
@@ -129,9 +145,7 @@ def do_stats(target_vals, preds):
     rmse = np.sqrt(np.power(target_vals - preds, 2).mean())
     conf_interval = bootstrap(
         (target_vals, preds),
-        statistic=lambda target, pred: np.sqrt(
-            np.power(target - pred, 2).mean()
-        ),
+        statistic=lambda target, pred: np.sqrt(np.power(target - pred, 2).mean()),
         method="basic",
         confidence_level=0.95,
         paired=True,
@@ -174,21 +188,21 @@ def do_stats(target_vals, preds):
 
     return stats_dict
 
+
 def stats_to_str(stats_dict):
     stats_text = []
     for stat, stat_label in zip(
-            ["mae", "rmse", "sp_r", "tau"],
-            ["MAE", "RMSE", "Spearman's $\\rho$", "Kendall's $\\tau$"],
-        ):
-            stats_str = (
-                f"{stat_label}: "
-                f"{stats_dict[stat]['value']:0.2f}"
-                f"$_{{{stats_dict[stat]['95ci_low']:0.2f}}}"
-                f"^{{{stats_dict[stat]['95ci_high']:0.2f}}}$"
-            )
-            stats_text.append(stats_str)
+        ["mae", "rmse", "sp_r", "tau"],
+        ["MAE", "RMSE", "Spearman's $\\rho$", "Kendall's $\\tau$"],
+    ):
+        stats_str = (
+            f"{stat_label}: "
+            f"{stats_dict[stat]['value']:0.2f}"
+            f"$_{{{stats_dict[stat]['95ci_low']:0.2f}}}"
+            f"^{{{stats_dict[stat]['95ci_high']:0.2f}}}$"
+        )
+        stats_text.append(stats_str)
     return "\n".join(stats_text)
-
 
 
 # need Py3.11 + for hashlib.file_digest, use this for now
@@ -659,7 +673,11 @@ def mlops():
     "-n", "--n-epochs", type=int, default=5000, help="Number of epochs to train for"
 )
 @click.option(
-    "-test", "--test", is_flag=True, help="Run in test mode, no S3 push or WandB logging to main project")
+    "-test",
+    "--test",
+    is_flag=True,
+    help="Run in test mode, no S3 push or WandB logging to main project",
+)
 def train_GAT_for_endpoint(
     protocol: str,
     output_dir: str = "output",
@@ -709,7 +727,7 @@ def train_GAT_for_endpoint(
 
     if wandb_project is None:
         raise ValueError("WandB project not set, quitting.")
-    
+
     logger.info(f"WandB project: {wandb_project}")
 
     if protocol not in PROTOCOLS.keys():
@@ -775,7 +793,6 @@ def train_GAT_for_endpoint(
         ensemble_directories.append(output_model_dir)
         wandb_run_ids.append(wandb_run_id)
 
-
     logger.info(f"Training complete for {protocol}")
 
     # gather the weights and config files
@@ -822,7 +839,7 @@ def train_GAT_for_endpoint(
 
     logger.info("Done pushing")
     # grab test CSV for plotting
-    ds_test_end_path =  output_dir / "ds_test.csv"
+    ds_test_end_path = output_dir / "ds_test.csv"
     shutil.copy(test_csv_path, ds_test_end_path)
     logger.info(f"Test CSV copied from  {test_csv_path} to {ds_test_end_path}")
     # use actual manifest URL for the next step, not just our push location, if testing will pull down older manifest
@@ -836,7 +853,7 @@ def train_GAT_for_endpoint(
     logger.info(f"Model: {model}")
     plot_path = plot_test_performance(ds_test_end_path, readout, model, output_dir)
     logger.info(f"Test performance plot saved to {plot_path}")
-    
+
     if test:
         logger.info("Test mode, not pushing to S3")
     else:
@@ -853,7 +870,3 @@ def train_GAT_for_endpoint(
         wandb.init(id=run_id, project=wandb_project, resume="must")
         wandb.log({"test_performance_ensemble": wandb.Image(str(plot_path))})
         wandb.finish()
-
-        
-    
-    
