@@ -128,6 +128,7 @@ class Score(BaseModel):
     target_identifiers: Optional[TargetIdentifiers]
     complex_ligand_smiles: Optional[str]
     probability: Optional[float]
+    pose_id: Optional[int]
     units: ScoreUnits
     input: Optional[Any] = None
 
@@ -150,6 +151,7 @@ class Score(BaseModel):
             target_ids=docking_result.input_pair.complex.target.ids,
             complex_ligand_smiles=docking_result.input_pair.complex.ligand.smiles,
             probability=docking_result.probability,
+            pose_id=docking_result.pose_id,
             units=units,
             input=docking_result,
         )
