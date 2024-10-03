@@ -129,6 +129,7 @@ class Trainer(BaseModel):
     extra_config: dict | None = Field(
         None, description="Any extra config options to log to W&B."
     )
+    wandb_run_id: str | None = Field(None, description="W&B run ID.")
 
     # artifact tracking options
     upload_to_s3: bool = Field(False, description="Upload artifacts to S3.")
@@ -516,6 +517,7 @@ class Trainer(BaseModel):
                 raise wandb.errors.UsageError(
                     f"Run in run_id file ({run_id}) doesn't exist"
                 )
+            self.wandb_run_id = run_id
             # Update run config to reflect it's been resumed
             wandb.config.update(config, allow_val_change=True)
         else:
@@ -526,6 +528,7 @@ class Trainer(BaseModel):
                 name=self.wandb_name,
                 group=self.wandb_group,
             ).id
+            self.wandb_run_id = run_id
 
             # Save run_id in case we want to continue later
             if not self.output_dir.exists():

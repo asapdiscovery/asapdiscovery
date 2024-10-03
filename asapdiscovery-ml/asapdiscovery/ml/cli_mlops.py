@@ -42,6 +42,7 @@ from asapdiscovery.ml.models import RemoteEnsembleHelper
 from mtenn.config import GATModelConfig
 from openff.toolkit import Molecule
 from openff.toolkit.utils.exceptions import RadicalsNotSupportedError
+import wandb
 
 # logging
 logger = logging.getLogger(__name__)
@@ -280,7 +281,7 @@ def _train_single_model(
     t_gat.initialize()
     t_gat.train()
     # need to get dir for output as set by W&B inside trainer, as has run_id prefix
-    return t_gat.output_dir
+    return t_gat.output_dir, t_gat.wandb_run_id
 
 
 def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.DataFrame:
@@ -725,12 +726,13 @@ def train_GAT_for_endpoint(
 
     # train each model in the ensemble
     ensemble_directories = []
+    wandb_run_ids = []
     for i in range(ensemble_size):
         ensemble_tag = f"{model_tag}_ensemble_{i}"
         logger.info(f"Training ensemble model {i}")
         ensemble_out_dir = protocol_out_dir / f"ensemble_{i}"
         ensemble_out_dir.mkdir()
-        output_model_dir = _train_single_model(
+        output_model_dir, wandb_run_id = _train_single_model(
             readout,
             ensemble_tag,
             model_tag,
@@ -740,6 +742,8 @@ def train_GAT_for_endpoint(
             n_epochs=n_epochs,
         )
         ensemble_directories.append(output_model_dir)
+        wandb_run_ids.append(wandb_run_id)
+
 
     logger.info(f"Training complete for {protocol}")
 
@@ -810,11 +814,15 @@ def train_GAT_for_endpoint(
         logger.info(f"Pushing test performance plot to S3 at {s3_plot_ens_dest}")
         s3.push_file(plot_path, s3_plot_ens_dest)
 
-        # then push to latest also
-        s3_plot_dest = f"{protocol}/latest/test_performance.png"
-        logger.info(f"Pushing test performance plot to S3 at {s3_plot_dest}")
-        s3.push_file(plot_path, s3_plot_dest)
-        logger.info("Done pushing test performance plot")
+    # log the artifact to WandB run
+    logger.info("Logging test performance plot to WandB")
+    for run_id in wandb_run_ids:
+        if run_id is None:
+            continue
+        wandb.init(id=run_id, project=wandb_project, resume="must")
+        wandb.log({"test_performance_ensemble": wandb.Image(str(plot_path))})
+        wandb.finish()
+
         
     
     
