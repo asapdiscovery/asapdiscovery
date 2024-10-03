@@ -31,8 +31,13 @@ from asapdiscovery.ml.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
+import shutil
+import seaborn as sns
+import matplotlib.pyplot as plt
 from asapdiscovery.ml.pretrained_models import cdd_protocols_yaml
 from asapdiscovery.ml.trainer import Trainer
+from asapdiscovery.ml.inference import GATInference
+from asapdiscovery.ml.models import RemoteEnsembleHelper
 from mtenn.config import GATModelConfig
 from openff.toolkit import Molecule
 from openff.toolkit.utils.exceptions import RadicalsNotSupportedError
@@ -45,6 +50,25 @@ PROTOCOLS = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
 
 SKYNET_SERVE_URL = "https://asap-discovery-ml-skynet.asapdata.org"
 
+
+def plot_test_performance(test_csv, readout_column, model):
+    df = pd.read_csv(test_csv)
+    inference_cls = GATInference.from_ml_model_spec(model)
+    smiles = df["smiles"]
+    pred, err = inference_cls.predict(x["smiles"], return_err=True)
+    pred_column = f"pred_{readout_column}"
+    err_column = f"pred_{readout_column}err"
+    df[pred_column] = pred
+    df[err_column] = err
+
+    fig, ax = plt.subplots()
+    sns.regplot(x="pIC50", data=df,
+            y="pred", ax=ax)
+    ax.errorbar(df["pIC50"], df["pred"], yerr=df["err"], fmt='none', capsize=5, zorder=1, color='C0')
+    df.to_csv("test_set_with_predictions.csv")
+
+    
+    
 
 # need Py3.11 + for hashlib.file_digest, use this for now
 def sha256sum(file_path: Path) -> str:
@@ -489,10 +513,11 @@ def _gather_weights(
         weights_paths[member] = final_weights_path
 
     config_path = ensemble_directories[0] / "model_config.json"
+    test_csv_path = ensemble_directories[0] / "ds_test.csv"
     # copy the config to the final directory
     final_config_path = final_dir / "model_config.json"
     copy(config_path, final_config_path)
-    return final_dir, weights_paths, final_config_path
+    return final_dir, weights_paths, final_config_path, test_csv_path
 
 
 @click.group()
@@ -630,7 +655,7 @@ def train_GAT_for_endpoint(
     logger.info(f"Training complete for {protocol}")
 
     # gather the weights and config files
-    final_dir_path, weights_paths, config_path = _gather_weights(
+    final_dir_path, weights_paths, config_path, test_csv_path = _gather_weights(
         ensemble_directories, model_tag, output_dir, ISO_TODAY
     )
 
@@ -671,5 +696,19 @@ def train_GAT_for_endpoint(
         logger.info(f"Pushing manifest to S3 at {s3_manifest_dest}")
         s3.push_file(manifest_path, s3_manifest_dest)
 
-
-    logger.info("Done.")
+    logger.info("Done pushing")
+    # grab test CSV for plotting
+    ds_test_end_path =  output_dir / "ds_test.csv"
+    shutil.copy(test_csv_path, ds_test_end_path)
+    logger.info(f"Test CSV copied from  {test_csv_path} to {ds_test_end_path}")
+    # use actual manifest URL for the next step, not just our push location, if testing will pull down older manifest
+    manifest_url = f"{SKYNET_SERVE_URL}/{s3_manifest_dest}"
+    logger.info(f"Manifest URL: {manifest_url}")
+    # use the manifest we just made to make a new manifest for the latest ensemble
+    logger.info("Plotting test performance for ensemble over test set")
+    ens_models = RemoteEnsembleHelper(manifest_url=manifest_url).to_ensemble_spec()
+    # dict with one item, grab the model
+    model = list(ens_models.values())[0]
+    logger.info(f"Model: {model}")
+    plot_path = plot_test_performance(test_csv=ds_test_end_path, readout_column=readout, model=model)
+    

@@ -19,6 +19,7 @@ from asapdiscovery.ml.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
+from asapdiscovery.ml.dataset import dataset_to_csv
 from mtenn.config import (
     E3NNModelConfig,
     GATModelConfig,
@@ -661,13 +662,9 @@ class Trainer(BaseModel):
 
         # write the datasets to CSV
         if self.write_ds_csv:
-            # self.ds_train.to_csv(self.output_dir / "ds_train.csv")
-            # self.ds_val.to_csv(self.output_dir / "ds_val.csv")
-            # self.ds_test.to_csv(self.output_dir / "ds_test.csv")
-
-            for i in self.ds_train:
-                print(i)
-            raise ValueError("done")
+            dataset_to_csv(self.ds_train, self.output_dir / "ds_train.csv")
+            dataset_to_csv(self.ds_val, self.output_dir / "ds_val.csv")
+            dataset_to_csv(self.ds_test, self.output_dir / "ds_test.csv")
 
 
         # Build the Model
