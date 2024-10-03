@@ -81,6 +81,12 @@ def create(filename: str):
     help="The file which contains the center ligand, only required by radial type networks.",
 )
 @click.option(
+    "-g",
+    "--graphml",
+    help="Read a graphml representation of the ligand network directly from file",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+)
+@click.option(
     "-cn",
     "--custom-network-file",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
@@ -105,6 +111,7 @@ def plan(
     receptor: Optional[str] = None,
     ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
+    graphml: Optional[str] = None,
     custom_network_file: Optional[str] = None,
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
@@ -123,7 +130,18 @@ def plan(
     from asapdiscovery.data.readers.molfile import MolFileFactory
 
     # check mutually exclusive args
-    if ligands is None and alchemy_dataset is None:
+    if ligands and graphml:
+        raise RuntimeError(
+            "Please provide either a ligand file or a graphml file, not both."
+        )
+
+    if graphml and custom_network_file:
+        raise RuntimeError(
+            "Please provide either a graphml file or a custom network file, not both."
+        )
+
+    # nothing specified
+    if ligands is None and graphml is None and alchemy_dataset is None:
         raise RuntimeError(
             "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
         )
@@ -139,6 +157,10 @@ def plan(
     if alchemy_dataset is not None:
         import tempfile
 
+        if graphml:
+            raise RuntimeError(
+                "Please provide either dataset file or a graphml file, not both."
+            )
         # load the set of posed ligands and the receptor from our dataset
         click.echo(f"Loading Ligands and protein from AlchemyDataSet {alchemy_dataset}")
         alchemy_ds = AlchemyDataSet.from_file(alchemy_dataset)
@@ -153,10 +175,15 @@ def plan(
             receptor = openfe.ProteinComponent.from_pdb_file(fp.name)
 
     else:
-        # load from separate files
-        click.echo(f"Loading Ligands from {ligands}")
-        # parse all required data/ assume sdf currently
-        input_ligands = MolFileFactory(filename=ligands).load()
+        if graphml:
+            # load from graphml further down the line
+            click.echo("Loading Ligands from graphml ...")
+            input_ligands = None
+        else:
+            # load from separate files
+            click.echo(f"Loading Ligands from {ligands}")
+            # parse all required data/ assume sdf currently
+            input_ligands = MolFileFactory(filename=ligands).load()
 
         click.echo(f"Loading protein from {receptor}")
         receptor = openfe.ProteinComponent.from_pdb_file(receptor)
@@ -170,6 +197,15 @@ def plan(
             )
 
         center_ligand = center_ligand[0]
+
+    if graphml is not None:
+        # load the graphml file
+        with open(graphml) as f:
+            graphml = f.read()
+        click.echo("Graphml file loaded: Using explicit ligand network.")
+
+    if not name:
+        raise RuntimeError("Please provide a name for the dataset.")
 
     if custom_network_file is not None:
         from asapdiscovery.alchemy.schema.network import CustomNetworkPlanner
@@ -189,6 +225,7 @@ def plan(
         central_ligand=center_ligand,
         experimental_protocol=experimental_protocol,
         target=target,
+        graphml=graphml,
     )
     click.echo(f"Writing results to {name}")
     # output the data to a folder named after the dataset
