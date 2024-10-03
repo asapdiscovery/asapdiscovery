@@ -62,11 +62,42 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
     err_column = f"pred_{readout_column}err"
     df[pred_column] = pred
     df[err_column] = err
+    
+    # if readout is pIC50 there is an xerr pIC50_stderr column available
+    xerr_column = None
+    if readout_column == "pIC50":
+        if "pIC50_stderr" in df.columns:
+            xerr_column = "pIC50_stderr" 
 
     fig, ax = plt.subplots()
     ax.set_title(f"Test set performance:\n {model.name}", fontsize=6)
+    min_val = min(df[readout_column].min(), df[pred_column].min())
+    max_val = max(df[readout_column].max(), df[pred_column].max())
+    # set the limits to be the same for both axes
     sns.regplot(x=readout_column, data=df,y=pred_column, ax=ax)
+    ax.set_xlim(min_val -1, max_val + 1)
+    ax.set_ylim(min_val -1, max_val + 1)
+    # plot y = x line in dashed grey
+    ax.plot([min_val, max_val], [min_val, max_val], linestyle="--", color="black")
+    # Shade 0.5 and 1 unit regions around the y=x line
+    ax.fill_between(
+            [min_val, max_val],
+            [min_val - 0.5, max_val - 0.5],
+            [min_val + 0.5, max_val + 0.5],
+            color="gray",
+            alpha=0.2,
+        )
+    ax.fill_between(
+            [min_val, max_val],
+            [min_val - 1, max_val - 1],
+            [min_val + 1, max_val + 1],
+            color="gray",
+            alpha=0.2,
+        )
+    # plot error bars
     ax.errorbar(df[readout_column], df[pred_column], yerr=df[err_column], fmt='none', capsize=5, zorder=1, color='C0')
+    if xerr_column:
+        ax.errorbar(df[readout_column], df[pred_column], xerr=df[xerr_column], fmt='none', capsize=5, zorder=1, color='C1')
     stats_dict = do_stats(df[readout_column], df[pred_column])
     stats_text = stats_to_str(stats_dict)
     ax.text(0.05, 0.7, stats_text, transform=ax.transAxes, fontsize=8)
