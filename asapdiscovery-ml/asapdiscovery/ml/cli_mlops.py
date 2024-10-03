@@ -51,7 +51,7 @@ PROTOCOLS = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
 SKYNET_SERVE_URL = "https://asap-discovery-ml-skynet.asapdata.org"
 
 
-def plot_test_performance(test_csv, readout_column, model):
+def plot_test_performance(test_csv, readout_column, model, output_dir):
     df = pd.read_csv(test_csv)
     inference_cls = GATInference.from_ml_model_spec(model)
     smiles = df["smiles"]
@@ -62,11 +62,13 @@ def plot_test_performance(test_csv, readout_column, model):
     df[err_column] = err
 
     fig, ax = plt.subplots()
-    sns.regplot(x="pIC50", data=df,
-            y="pred", ax=ax)
-    ax.errorbar(df["pIC50"], df["pred"], yerr=df["err"], fmt='none', capsize=5, zorder=1, color='C0')
-    df.to_csv("test_set_with_predictions.csv")
-
+    ax.set_title(f"Test set perf {model.name}")
+    sns.regplot(x=pred_column, data=df,
+            y=readout_column, ax=ax)
+    ax.errorbar(df[readout_column], df[pred_column], yerr=df[err_column], fmt='none', capsize=5, zorder=1, color='C0')
+    out = output_dir /"test_performance.png"
+    plt.savefig(out)
+    return out
     
     
 
@@ -678,7 +680,6 @@ def train_GAT_for_endpoint(
 
     if test:
         logger.info("Test mode, not pushing to S3")
-        return
     else:
         # now push weights, config and manifest to S3
         logger.info("Pushing weights, config and manifest to S3")
@@ -710,5 +711,22 @@ def train_GAT_for_endpoint(
     # dict with one item, grab the model
     model = list(ens_models.values())[0]
     logger.info(f"Model: {model}")
-    plot_path = plot_test_performance(test_csv=ds_test_end_path, readout_column=readout, model=model)
+    plot_path = plot_test_performance(ds_test_end_path, readout, model, output_dir)
+    logger.info(f"Test performance plot saved to {plot_path}")
+    
+    if test:
+        logger.info("Test mode, not pushing to S3")
+    else:
+        # push the plot to S3 in the same location as the ensemble
+        s3_plot_ens_dest = f"{protocol}/{model_tag}/test_performance.png"
+        logger.info(f"Pushing test performance plot to S3 at {s3_plot_ens_dest}")
+        s3.push_file(plot_path, s3_plot_ens_dest)
+
+        # then push to latest also
+        s3_plot_dest = f"{protocol}/latest/test_performance.png"
+        logger.info(f"Pushing test performance plot to S3 at {s3_plot_dest}")
+        s3.push_file(plot_path, s3_plot_dest)
+        logger.info("Done pushing test performance plot")
+        
+    
     
