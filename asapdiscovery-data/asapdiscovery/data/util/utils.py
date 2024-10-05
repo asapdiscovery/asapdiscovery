@@ -890,11 +890,16 @@ def parse_fluorescence_data_cdd(
     pIC50_lower_series = []
     pIC50_upper_series = []
     for _, row in mol_df.iterrows():
+        print("new")
         try:
+            print("1")
             IC50 = float(row[f"{assay_name}: IC50 (µM)"])
             pIC50 = -np.log10(IC50 * 1e-6)
             pIC50_range = 0
+            print("IC50",IC50)
+
         except ValueError:
+            print("2")
             IC50 = row[f"{assay_name}: IC50 (µM)"]
             # Could not convert to string because value was semiquantitative
             if IC50 == "(IC50 could not be calculated)":
@@ -914,8 +919,13 @@ def parse_fluorescence_data_cdd(
                 pIC50_range = 0
 
         try:
+            print("3")
             IC50_lower = float(row[f"{assay_name}: IC50 CI (Lower) (µM)"])
             IC50_upper = float(row[f"{assay_name}: IC50 CI (Upper) (µM)"])
+            print("upper / lower")
+            print(IC50_lower)
+            print(IC50_upper)
+            print("done")
             if np.isnan(IC50_lower) or np.isnan(IC50_upper):
                 raise ValueError
             IC50_stderr = (
@@ -928,6 +938,7 @@ def parse_fluorescence_data_cdd(
                 np.abs(pIC50_upper - pIC50_lower) / 4.0
             )  # assume normal distribution
         except ValueError:
+            print("4")
             # Keep pIC50 string
             # Use default pIC50 error
             # print(row)
@@ -944,19 +955,39 @@ def parse_fluorescence_data_cdd(
             and (pIC50_range == 0)
             and isinstance(IC50_stderr, float)
         ):
+            print("5")
             # Have numbers for IC50 and stderr so can do rounding
             try:
+                print("rounding")
+                print("input IC50", IC50)
+                print("input IC50_stderr", IC50_stderr)
+                print("input pIC50", pIC50)
+                print("input pIC50_stderr", pIC50_stderr)
                 import sigfig
-
                 IC50, IC50_stderr = sigfig.round(
                     IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
                 )  # strings
                 pIC50, pIC50_stderr = sigfig.round(
                     pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
                 )  # strings
+                print("IC50", IC50)
+                print("pIC50", pIC50)
+                print("finished rounding")
             except ModuleNotFoundError:
+                print("didnt round")
                 # Don't round
                 pass
+        
+        print("final IC50", IC50)
+        print("final pic50", pIC50)
+
+        # _pic50 = float(pIC50)
+        #     if pIC50 >= 9.9:
+        #         print(row)
+        #         raise Exception(f"pIC50 value of {pIC50} is too high")
+        #     if pIC50 <= 0.1:
+        #         print(row)
+        #         raise Exception(f"pIC50 value of {pIC50} is too low")
 
         IC50_series.append(float(IC50) * 1e-6)
         IC50_stderr_series.append(float(IC50_stderr) * 1e-6)

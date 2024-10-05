@@ -97,7 +97,7 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
     # plot error bars
     ax.errorbar(df[readout_column], df[pred_column], yerr=df[err_column], fmt='none', capsize=5, zorder=1, color='C0')
     if xerr_column:
-        ax.errorbar(df[readout_column], df[pred_column], xerr=df[xerr_column], fmt='none', capsize=5, zorder=1, color='C1')
+        ax.errorbar(df[readout_column], df[pred_column], xerr=df[xerr_column], fmt='none', capsize=5, zorder=1, color='C0')
     stats_dict = do_stats(df[readout_column], df[pred_column])
     stats_text = stats_to_str(stats_dict)
     ax.text(0.05, 0.7, stats_text, transform=ax.transAxes, fontsize=8)
@@ -447,7 +447,7 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
                 retain_achiral=True,
                 retain_racemic=True,
                 retain_enantiopure=True,
-                retain_semiquantitative_data=True,
+                retain_semiquantitative_data=False,
             ),
             assay_name=protocol_name,
         )
@@ -461,7 +461,7 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
             retain_achiral=True,
             retain_racemic=True,
             retain_enantiopure=True,
-            retain_semiquantitative_data=True,
+            retain_semiquantitative_data=False,
             is_ic50=False,  # need to add point to skip IC50 protocol conversion #TODO: refactor this so that base assumption is not IC50
         )
 
