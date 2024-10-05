@@ -1,9 +1,9 @@
+import pandas as pd
 import torch
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from torch.utils.data import Dataset
-import pandas as pd
 
 
 class DockedDataset(Dataset):
@@ -805,7 +805,6 @@ class GraphDataset(Dataset):
             yield (s["compound"], s)
 
 
-
 def dataset_to_dataframe(dataset):
     all_data = []
     for k, v in dataset:
@@ -823,6 +822,7 @@ def dataset_to_dataframe(dataset):
         data_dict["compound_id"] = k[1]
         all_data.append(data_dict)
     return pd.DataFrame(all_data)
+
 
 def dataset_to_csv(dataset, filename):
     dataset_to_dataframe(dataset).to_csv(filename, index=False)

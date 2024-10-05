@@ -94,7 +94,6 @@ class MLModelSpecBase(MLModelBase):
     ensemble: bool = False
 
 
-
 class MLModelSpec(MLModelSpecBase):
     """
     Model spec for a model stored at a remote url
@@ -165,7 +164,6 @@ class MLModelSpec(MLModelSpecBase):
         )
 
 
-
 class EnsembleMLModelSpec(MLModelSpecBase):
     models: list[MLModelSpec] = Field(
         ..., description="List of model specs for ensemble models"
@@ -217,7 +215,9 @@ class EnsembleMLModelSpec(MLModelSpecBase):
             **self.dict(exclude={"models"}),
         )
 
-    def pull_plot(self, plotname: str, filename: Optional[str]=None, return_as="memory"):
+    def pull_plot(
+        self, plotname: str, filename: Optional[str] = None, return_as="memory"
+    ):
         # check all the base urls are the same
         base_url = self.models[0].base_url
         if not all([model.base_url == base_url for model in self.models]):
@@ -230,7 +230,9 @@ class EnsembleMLModelSpec(MLModelSpecBase):
             response = requests.get(plot_url)
             response.raise_for_status()
         except Exception as e:
-            warnings.warn(f"Failed to download plot from {plot_url}, skipping. Error: {e}")
+            warnings.warn(
+                f"Failed to download plot from {plot_url}, skipping. Error: {e}"
+            )
             return None
         # return as memory or file
         if return_as == "memory":
@@ -245,7 +247,7 @@ class EnsembleMLModelSpec(MLModelSpecBase):
             return plot_url
         else:
             raise ValueError("return_as must be 'memory' or 'file' or 'url'")
-        return plotname    
+        return plotname
 
 
 def _url_to_yaml(url: str) -> dict:
