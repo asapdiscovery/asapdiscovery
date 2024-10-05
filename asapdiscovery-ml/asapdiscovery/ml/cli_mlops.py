@@ -381,6 +381,12 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
         cdd_data_this_protocol = parse_fluorescence_data_cdd(
             mol_df=ic50_data, assay_name=protocol_name
         )
+        # drop values where pIC50 rounds to <= 0 or >= 10, caused by massive error bars.
+        # TODO should be fixed upstream in future
+        cdd_data_this_protocol = cdd_data_this_protocol[
+            (cdd_data_this_protocol["pIC50"] > 0)
+            & (cdd_data_this_protocol["pIC50"] < 10)
+        ]
     else:
         # otherwise we pull the readout directly
         logging.debug(
