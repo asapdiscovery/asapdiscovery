@@ -97,5 +97,5 @@ dependencies:
   - perses >=0.10.2
   - kartograf
   - rich
-  - alchemiscale-client
+  - alchemiscale-client >=0.5.1
   - cinnabar >=0.4.1
