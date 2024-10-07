@@ -74,7 +74,8 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
     min_val = min(df[readout_column].min(), df[pred_column].min())
     max_val = max(df[readout_column].max(), df[pred_column].max())
     # set the limits to be the same for both axes
-    sns.regplot(x=readout_column, data=df, y=pred_column, ax=ax)
+    sns.regplot(x=readout_column, data=df, y=pred_column, ax=ax, ci=None)
+    ax.axis("equal")
     ax.set_xlim(min_val - 1, max_val + 1)
     ax.set_ylim(min_val - 1, max_val + 1)
     # plot y = x line in dashed grey
@@ -112,7 +113,7 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
             fmt="none",
             capsize=5,
             zorder=1,
-            color="C1",
+            color="C0",
         )
     stats_dict = do_stats(df[readout_column], df[pred_column])
     stats_text = stats_to_str(stats_dict)
