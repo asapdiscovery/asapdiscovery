@@ -1124,6 +1124,7 @@ def ds_split_args(func):
         test_frac,
         enforce_one,
         ds_rand_seed,
+        ds_split_dict,
         ds_split_config_cache,
     ]:
         func = fn(func)
@@ -1179,6 +1180,18 @@ def ds_rand_seed(func):
         "--ds-rand-seed",
         type=int,
         help="Random seed to use if randomly splitting data.",
+    )(func)
+
+
+def ds_split_dict(func):
+    return click.option(
+        "--ds-split-dict",
+        type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "JSON file containing the split dict to use in the case of manual "
+            'splitting. The dict should map the keys ["train", "val", "test"] '
+            "to lists containing the compounds that belong in each split."
+        ),
     )(func)
 
 

@@ -160,6 +160,7 @@ def build_gat(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
     loss: tuple[str] = (),
     loss_weights: tuple[float] = (),
@@ -254,6 +255,7 @@ def build_gat(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
     loss_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
@@ -382,6 +384,7 @@ def build_schnet(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
     loss: tuple[str] = (),
     loss_weights: tuple[float] = (),
@@ -480,6 +483,7 @@ def build_schnet(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
     loss_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
@@ -609,6 +613,7 @@ def build_e3nn(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
     loss: tuple[str] = (),
     loss_weights: tuple[float] = (),
@@ -708,6 +713,7 @@ def build_e3nn(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
     loss_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
@@ -842,6 +848,7 @@ def build_visnet(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
     loss: tuple[str] = (),
     loss_weights: tuple[float] = (),
@@ -946,6 +953,7 @@ def build_visnet(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
     loss_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
@@ -1071,6 +1079,7 @@ def build_and_train_gat(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
     loss: tuple[str] = (),
     loss_weights: tuple[float] = (),
@@ -1165,6 +1174,7 @@ def build_and_train_gat(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
     loss_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
@@ -1298,6 +1308,7 @@ def build_and_train_schnet(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
     loss: tuple[str] = (),
     loss_weights: tuple[float] = (),
@@ -1396,6 +1407,7 @@ def build_and_train_schnet(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
     loss_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
@@ -1530,6 +1542,7 @@ def build_and_train_e3nn(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
     loss: tuple[str] = (),
     loss_weights: tuple[float] = (),
@@ -1629,6 +1642,7 @@ def build_and_train_e3nn(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
     loss_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
@@ -1766,6 +1780,7 @@ def build_and_train_visnet(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
     loss: tuple[str] = (),
     loss_weights: tuple[float] = (),
@@ -1869,6 +1884,7 @@ def build_and_train_visnet(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
     loss_configs = [
         {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
