@@ -594,8 +594,13 @@ class DatasetSplitterConfig(ConfigBase):
     )
 
     # Dict giving splits for manual splitting
-    split_dict: dict | None = Field(
-        None, description="Dict giving splits for manual splitting."
+    split_dict: dict | Path | None = Field(
+        None,
+        description=(
+            "Dict giving splits for manual splitting. If a Path is passed, "
+            "the Path should be a JSON file and its contents will be loaded directly "
+            "as split_dict."
+        ),
     )
 
     @root_validator(pre=False)
@@ -629,6 +634,14 @@ class DatasetSplitterConfig(ConfigBase):
                 raise ValueError(
                     "Must pass value for split_dict if using manual splitting."
                 )
+
+            if isinstance(values["split_dict"], Path):
+                try:
+                    values["split_dict"] = json.loads(values["split_dict"].read_text())
+                except json.decoder.JSONDecodeError:
+                    raise ValueError(
+                        "Path given by split_dict must be a JSON file storing a dict."
+                    )
 
             if set(values["split_dict"].keys()) != {"train", "val", "test"}:
                 raise ValueError(
