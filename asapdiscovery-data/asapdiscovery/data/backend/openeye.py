@@ -274,6 +274,52 @@ def load_openeye_cif(
         oechem.OEThrow.Fatal(f"Unable to open {cif_fn}")
 
 
+def load_openeye_mol2(mol2_fn: Union[str, Path]) -> oechem.OEMol:
+    """
+    Load an OpenEye MOL2 file and return it as an OpenEye OEMol object.
+    Reads multiple conformers into the OEMol object but if the MOL2 file contains
+    multiple molecules, it will only return the first one.
+
+    Parameters
+    ----------
+    MOL2_fn : Union[str, Path]
+        Path to the MOL2 file to load.
+
+    Returns
+    -------
+    oechem.OEMol
+        An OpenEye OEMol object containing the molecule data from the MOL2 file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    oechem.OEError
+        If the MOL2 file cannot be opened.
+
+    Notes
+    -----
+    This function assumes that the MOL2 file contains a single molecule. If the
+    file contains more than one molecule, only the first molecule will be loaded.
+    """
+
+    if not Path(mol2_fn).exists():
+        raise FileNotFoundError(f"{mol2_fn} does not exist!")
+
+    ifs = oechem.oemolistream()
+    ifs.SetFlavor(
+        oechem.OEFormat_MOL2,
+        oechem.OEIFlavor_MOL2_Default,
+    )
+    ifs.SetConfTest(oechem.OEOmegaConfTest())
+    if ifs.open(str(mol2_fn)):
+        for mol in ifs.GetOEMols():
+            ifs.close()
+            return mol
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {mol2_fn}")
+
+
 def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEMol:
     """
     Load an OpenEye SDF file and return it as an OpenEye OEMol object.

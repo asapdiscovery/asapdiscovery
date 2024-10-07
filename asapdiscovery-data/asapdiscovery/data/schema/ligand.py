@@ -17,6 +17,7 @@ import numpy as np
 from asapdiscovery.data.backend.openeye import (
     clear_SD_data,
     load_openeye_sdf,
+    load_openeye_mol2,
     oechem,
     oemol_to_inchi,
     oemol_to_inchikey,
@@ -51,7 +52,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError): ...  # noqa: E701
+class InvalidLigandError(ValueError):
+    ...  # noqa: E701
 
 
 class ChemicalRelationship(Flag):
@@ -425,6 +427,24 @@ class Ligand(DataModelAbstractBase):
         """
         mol = self.to_oemol()
         return oemol_to_inchikey(mol=mol, fixed_hydrogens=True)
+
+    @classmethod
+    def from_mol2(
+        cls,
+        mol2_file: Union[str, Path],
+        **kwargs,
+    ) -> "Ligand":
+        """
+        Read in a ligand from an MOL2 file extracting all possible SD data into internal fields.
+
+        Parameters
+        ----------
+        mol2_file : Union[str, Path]
+            Path to the MOL2 file
+        """
+
+        oemol = load_openeye_mol2(mol2_file)
+        return cls.from_oemol(oemol, **kwargs)
 
     @classmethod
     def from_sdf(
