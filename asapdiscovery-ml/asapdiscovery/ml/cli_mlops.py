@@ -75,7 +75,7 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
     max_val = max(df[readout_column].max(), df[pred_column].max())
     # set the limits to be the same for both axes
     sns.regplot(x=readout_column, data=df, y=pred_column, ax=ax, ci=None)
-    ax.set_aspect('equal', 'box')
+    ax.set_aspect("equal", "box")
     min_ax = min_val - 1
     max_ax = max_val + 1
 
