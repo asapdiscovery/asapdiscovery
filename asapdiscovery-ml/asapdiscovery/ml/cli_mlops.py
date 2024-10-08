@@ -145,7 +145,7 @@ def plot_test_performance(
     ax.text(
         0.05,
         0.75,
-        f"y = {str(round(slope,3))}x + {str(round(intercept,3))}",
+        f"y = {str(round(slope, 3))}x + {str(round(intercept, 3))}",
         transform=ax.transAxes,
         fontsize=8,
     )
