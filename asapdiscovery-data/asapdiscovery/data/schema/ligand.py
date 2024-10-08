@@ -16,8 +16,8 @@ from typing import (  # noqa: F401
 import numpy as np
 from asapdiscovery.data.backend.openeye import (
     clear_SD_data,
-    load_openeye_sdf,
     load_openeye_mol2,
+    load_openeye_sdf,
     oechem,
     oemol_to_inchi,
     oemol_to_inchikey,
@@ -52,8 +52,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class InvalidLigandError(ValueError):
-    ...  # noqa: E701
+class InvalidLigandError(ValueError): ...  # noqa: E701
 
 
 class ChemicalRelationship(Flag):
