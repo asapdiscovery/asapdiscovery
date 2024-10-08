@@ -78,7 +78,6 @@ def plot_test_performance(df, model_name, readout_column, pred_column, output_di
     slope, intercept, r, p, sterr = scipy.stats.linregress(x=p.get_lines()[0].get_xdata(),
                                                        y=p.get_lines()[0].get_ydata())
 
-    ax.text(0.05, 0.95, 'y = ' + str(round(intercept,3)) + ' + ' + str(round(slope,3)) + 'x')
 
     ax.set_aspect('equal', 'box')
     min_ax = min_val - 1
@@ -126,6 +125,8 @@ def plot_test_performance(df, model_name, readout_column, pred_column, output_di
     stats_dict = do_stats(df[readout_column], df[pred_column])
     stats_text = stats_to_str(stats_dict)
     ax.text(0.05, 0.8, stats_text, transform=ax.transAxes, fontsize=8)
+    ax.text(0.05, 0.75, f"y = {str(round(slope,3))}x + {str(round(intercept,3))}", transform=ax.transAxes, fontsize=8)
+
     out = output_dir / plotname
     fig.tight_layout()
     plt.savefig(out)
@@ -415,7 +416,7 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
         dropped = ic50_data[~ic50_data["Molecule Name"].isin(cdd_data_this_protocol["Molecule Name"])]
         logging.info(f"Dropped {len(dropped)} compounds with pIC50 <= 0 or >= 10")
         for _, row in dropped.iterrows():
-            logging.debug(f"Compound {row['Molecule Name']} with pIC50 {row['pIC50']} dropped.")
+            logging.debug(f"Compound {row['Molecule Name']} dropped.")
 
     else:
         # otherwise we pull the readout directly
@@ -875,7 +876,7 @@ def train_GAT_for_endpoint(
     # dict with one item, grab the model
     model = list(ens_models.values())[0]
     logger.info(f"Model: {model}")
-    plot_path = plot_test_performance(ds_test_end_path, readout, model, output_dir, exp_err_column=readout_err)
+    plot_path = evaluate_test_performance(ds_test_end_path, readout, model, output_dir, exp_err_column=readout_err)
     logger.info(f"Test performance plot saved to {plot_path}")
 
     if test:
