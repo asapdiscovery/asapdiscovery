@@ -15,6 +15,7 @@ from asapdiscovery.ml.cli_args import (
     gat_args,
     graph_ds_args,
     grouped,
+    kvp_list_to_dict,
     loss_args,
     model_config_cache,
     model_rand_seed,
@@ -257,14 +258,8 @@ def build_gat(
         "rand_seed": ds_rand_seed,
         "split_dict": ds_split_dict,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -485,14 +480,8 @@ def build_schnet(
         "rand_seed": ds_rand_seed,
         "split_dict": ds_split_dict,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -715,14 +704,8 @@ def build_e3nn(
         "rand_seed": ds_rand_seed,
         "split_dict": ds_split_dict,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -955,14 +938,8 @@ def build_visnet(
         "rand_seed": ds_rand_seed,
         "split_dict": ds_split_dict,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -1176,14 +1153,8 @@ def build_and_train_gat(
         "rand_seed": ds_rand_seed,
         "split_dict": ds_split_dict,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -1409,14 +1380,8 @@ def build_and_train_schnet(
         "rand_seed": ds_rand_seed,
         "split_dict": ds_split_dict,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -1644,14 +1609,8 @@ def build_and_train_e3nn(
         "rand_seed": ds_rand_seed,
         "split_dict": ds_split_dict,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -1886,14 +1845,8 @@ def build_and_train_visnet(
         "rand_seed": ds_rand_seed,
         "split_dict": ds_split_dict,
     }
-    loss_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in loss_str.split(",")}
-        for loss_str in loss
-    ]
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
