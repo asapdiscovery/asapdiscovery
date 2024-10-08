@@ -54,31 +54,30 @@ PROTOCOLS = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
 SKYNET_SERVE_URL = "https://asap-discovery-ml-skynet.asapdata.org"
 
 
-def plot_test_performance(test_csv, readout_column, model, output_dir):
+
+def evaluate_test_performance(test_csv, readout_column, model, output_dir, exp_err_column=None):
     df = pd.read_csv(test_csv)
     inference_cls = GATInference.from_ml_model_spec(model)
     smiles = df["smiles"]
     pred, err = inference_cls.predict_from_smiles(smiles, return_err=True)
-    pred_column = f"pred_{readout_column}"
-    err_column = f"pred_{readout_column}err"
+    pred_column = f"predicted_{readout_column}"
+    err_column = f"prediction_{readout_column}err"
     df[pred_column] = pred
     df[err_column] = err
+    out_plot = plot_test_performance(df, model.name, readout_column, pred_column, output_dir, err_column, exp_err_column=exp_err_column)
+    return out_plot
 
-    # if readout is pIC50 there is an xerr pIC50_stderr column available
-    xerr_column = None
-    if readout_column == "pIC50":
-        if "pIC50_stderr" in df.columns:
-            xerr_column = "pIC50_stderr"
 
+def plot_test_performance(df, model_name, readout_column, pred_column, output_dir, err_column, exp_err_column=None, plotname="test_performance.png") -> str:
     fig, ax = plt.subplots()
-    ax.set_title(f"Test set performance:\n {model.name}", fontsize=6)
+    ax.set_title(f"Test set performance:\n {model_name}", fontsize=6)
     min_val = min(df[readout_column].min(), df[pred_column].min())
     max_val = max(df[readout_column].max(), df[pred_column].max())
     # set the limits to be the same for both axes
     p = sns.regplot(x=readout_column, data=df, y=pred_column, ax=ax, ci=None)
     slope, intercept, r, p, sterr = scipy.stats.linregress(x=p.get_lines()[0].get_xdata(),
                                                        y=p.get_lines()[0].get_ydata())
-    
+
     ax.text(0.05, 0.95, 'y = ' + str(round(intercept,3)) + ' + ' + str(round(slope,3)) + 'x')
 
     ax.set_aspect('equal', 'box')
@@ -114,11 +113,11 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
         zorder=1,
         color="C0",
     )
-    if xerr_column:
+    if exp_err_column:
         ax.errorbar(
             df[readout_column],
             df[pred_column],
-            xerr=df[xerr_column],
+            xerr=df[exp_err_column],
             fmt="none",
             capsize=5,
             zorder=1,
@@ -127,7 +126,7 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
     stats_dict = do_stats(df[readout_column], df[pred_column])
     stats_text = stats_to_str(stats_dict)
     ax.text(0.05, 0.8, stats_text, transform=ax.transAxes, fontsize=8)
-    out = output_dir / "test_performance.png"
+    out = output_dir / plotname
     fig.tight_layout()
     plt.savefig(out)
     return out
@@ -762,8 +761,10 @@ def train_GAT_for_endpoint(
     if not readout:
         raise ValueError(f"readout type not found for {protocol}")
 
+    readout_err = PROTOCOLS[protocol]["readout_err"]
+
     logger.info(
-        f'Endpoint "{protocol}" has readout: "{readout}", will be used as target property for training'
+        f'Endpoint "{protocol}" has readout: "{readout}" with error metric "{readout_err}", will be used as target property for training'
     )
 
     # download the data for the endpoint
@@ -874,7 +875,7 @@ def train_GAT_for_endpoint(
     # dict with one item, grab the model
     model = list(ens_models.values())[0]
     logger.info(f"Model: {model}")
-    plot_path = plot_test_performance(ds_test_end_path, readout, model, output_dir)
+    plot_path = plot_test_performance(ds_test_end_path, readout, model, output_dir, exp_err_column=readout_err)
     logger.info(f"Test performance plot saved to {plot_path}")
 
     if test:
