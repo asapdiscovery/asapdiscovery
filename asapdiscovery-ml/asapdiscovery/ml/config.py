@@ -648,6 +648,12 @@ class DatasetSplitterConfig(ConfigBase):
                     "Keys in split_dict must be exactly [train, val, test]."
                 )
 
+            # Cast to tuples to match compounds in the datasets
+            values["split_dict"] = {
+                split: list(map(tuple, compound_list))
+                for split, compound_list in values["split_dict"].items()
+            }
+
         return values
 
     def split(self, ds: DockedDataset | GraphDataset | GroupedDockedDataset):
