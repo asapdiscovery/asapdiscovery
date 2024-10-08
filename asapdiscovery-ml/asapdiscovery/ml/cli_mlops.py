@@ -13,6 +13,7 @@ import mtenn
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import scipy
 import torch
 import wandb
 import yaml
@@ -74,7 +75,12 @@ def plot_test_performance(test_csv, readout_column, model, output_dir):
     min_val = min(df[readout_column].min(), df[pred_column].min())
     max_val = max(df[readout_column].max(), df[pred_column].max())
     # set the limits to be the same for both axes
-    sns.regplot(x=readout_column, data=df, y=pred_column, ax=ax, ci=None)
+    p = sns.regplot(x=readout_column, data=df, y=pred_column, ax=ax, ci=None)
+    slope, intercept, r, p, sterr = scipy.stats.linregress(x=p.get_lines()[0].get_xdata(),
+                                                       y=p.get_lines()[0].get_ydata())
+    
+    ax.text(0.05, 0.95, 'y = ' + str(round(intercept,3)) + ' + ' + str(round(slope,3)) + 'x')
+
     ax.set_aspect('equal', 'box')
     min_ax = min_val - 1
     max_ax = max_val + 1
@@ -401,11 +407,17 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
             mol_df=ic50_data, assay_name=protocol_name
         )
         # drop values where pIC50 rounds to <= 0 or >= 10, caused by massive error bars.
-        # TODO should be fixed upstream in future
+        # TODO should be fixed upstream in future #1234
         cdd_data_this_protocol = cdd_data_this_protocol[
             (cdd_data_this_protocol["pIC50"] > 0)
             & (cdd_data_this_protocol["pIC50"] < 10)
         ]
+        # log which compounds were dropped
+        dropped = ic50_data[~ic50_data["Molecule Name"].isin(cdd_data_this_protocol["Molecule Name"])]
+        logging.info(f"Dropped {len(dropped)} compounds with pIC50 <= 0 or >= 10")
+        for _, row in dropped.iterrows():
+            logging.debug(f"Compound {row['Molecule Name']} with pIC50 {row['pIC50']} dropped.")
+
     else:
         # otherwise we pull the readout directly
         logging.debug(
@@ -878,6 +890,9 @@ def train_GAT_for_endpoint(
     for run_id in wandb_run_ids:
         if run_id is None:
             continue
-        wandb.init(id=run_id, project=wandb_project, resume="must")
-        wandb.log({"test_performance_ensemble": wandb.Image(str(plot_path))})
-        wandb.finish()
+        try:
+            wandb.init(id=run_id, project=wandb_project, resume="must")
+            wandb.log({"test_performance_ensemble": wandb.Image(str(plot_path))})
+            wandb.finish()
+        except wandb.errors.error.UsageError as e:
+            logger.error(f"WandB error: {e} for run {run_id}, failed to append plot")

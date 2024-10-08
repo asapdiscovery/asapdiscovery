@@ -217,7 +217,24 @@ class EnsembleMLModelSpec(MLModelSpecBase):
 
     def pull_plot(
         self, plotname: str, filename: Optional[str] = None, return_as="memory"
-    ):
+    )-> str:
+        """
+        Pull plot of model performance from a URL
+
+        Parameters
+        ----------
+        plotname : str
+            Name of plot
+        filename : Optional[str], optional
+            Filename to save plot to, by default None
+        return_as : str, optional
+            How to return the plot, either 'memory', 'file' or 'url', by default 'memory'
+        
+        Returns
+        -------
+        str
+            Plot data, filename or url
+        """
         # check all the base urls are the same
         base_url = self.models[0].base_url
         if not all([model.base_url == base_url for model in self.models]):
@@ -243,11 +260,12 @@ class EnsembleMLModelSpec(MLModelSpecBase):
                 filename = plotname
             with open(filename, "wb") as f:
                 f.write(response.content)
+            return filename
         elif return_as == "url":
             return plot_url
         else:
             raise ValueError("return_as must be 'memory' or 'file' or 'url'")
-        return plotname
+
 
 
 def _url_to_yaml(url: str) -> dict:
