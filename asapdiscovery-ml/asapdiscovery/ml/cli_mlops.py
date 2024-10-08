@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 import mtenn
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import scipy
+import seaborn as sns
 import torch
 import wandb
 import yaml
@@ -54,8 +54,9 @@ PROTOCOLS = yaml.safe_load(open(cdd_protocols_yaml))["protocols"]
 SKYNET_SERVE_URL = "https://asap-discovery-ml-skynet.asapdata.org"
 
 
-
-def evaluate_test_performance(test_csv, readout_column, model, output_dir, exp_err_column=None):
+def evaluate_test_performance(
+    test_csv, readout_column, model, output_dir, exp_err_column=None
+):
     df = pd.read_csv(test_csv)
     inference_cls = GATInference.from_ml_model_spec(model)
     smiles = df["smiles"]
@@ -64,20 +65,38 @@ def evaluate_test_performance(test_csv, readout_column, model, output_dir, exp_e
     err_column = f"prediction_{readout_column}err"
     df[pred_column] = pred
     df[err_column] = err
-    out_plot = plot_test_performance(df, model.name, readout_column, pred_column, output_dir, err_column, exp_err_column=exp_err_column)
+    out_plot = plot_test_performance(
+        df,
+        model.name,
+        readout_column,
+        pred_column,
+        output_dir,
+        err_column,
+        exp_err_column=exp_err_column,
+    )
     return out_plot
 
 
-def plot_test_performance(df, model_name, readout_column, pred_column, output_dir, err_column, exp_err_column=None, plotname="test_performance.png") -> str:
+def plot_test_performance(
+    df,
+    model_name,
+    readout_column,
+    pred_column,
+    output_dir,
+    err_column,
+    exp_err_column=None,
+    plotname="test_performance.png",
+) -> str:
     fig, ax = plt.subplots()
     ax.set_title(f"Test set performance:\n {model_name}", fontsize=6)
     min_val = min(df[readout_column].min(), df[pred_column].min())
     max_val = max(df[readout_column].max(), df[pred_column].max())
     # set the limits to be the same for both axes
     p = sns.regplot(x=readout_column, data=df, y=pred_column, ax=ax, ci=None)
-    slope, intercept, r, p, sterr = scipy.stats.linregress(x=p.get_lines()[0].get_xdata(),
-                                                       y=p.get_lines()[0].get_ydata())
-    ax.set_aspect('equal', 'box')
+    slope, intercept, r, p, sterr = scipy.stats.linregress(
+        x=p.get_lines()[0].get_xdata(), y=p.get_lines()[0].get_ydata()
+    )
+    ax.set_aspect("equal", "box")
     min_ax = min_val - 1
     max_ax = max_val + 1
 
@@ -123,12 +142,19 @@ def plot_test_performance(df, model_name, readout_column, pred_column, output_di
     stats_dict = do_stats(df[readout_column], df[pred_column])
     stats_text = stats_to_str(stats_dict)
     ax.text(0.05, 0.8, stats_text, transform=ax.transAxes, fontsize=8)
-    ax.text(0.05, 0.75, f"y = {str(round(slope,3))}x + {str(round(intercept,3))}", transform=ax.transAxes, fontsize=8)
+    ax.text(
+        0.05,
+        0.75,
+        f"y = {str(round(slope,3))}x + {str(round(intercept,3))}",
+        transform=ax.transAxes,
+        fontsize=8,
+    )
 
     out = output_dir / plotname
     fig.tight_layout()
     plt.savefig(out)
     return out
+
 
 def do_stats(target_vals, preds):
     from scipy.stats import bootstrap, kendalltau, spearmanr
@@ -410,7 +436,9 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
             & (cdd_data_this_protocol["pIC50"] < 10)
         ]
         # log which compounds were dropped
-        dropped = ic50_data[~ic50_data["Molecule Name"].isin(cdd_data_this_protocol["Molecule Name"])]
+        dropped = ic50_data[
+            ~ic50_data["Molecule Name"].isin(cdd_data_this_protocol["Molecule Name"])
+        ]
         logging.info(f"Dropped {len(dropped)} compounds with pIC50 <= 0 or >= 10")
         for _, row in dropped.iterrows():
             logging.debug(f"Compound {row['Molecule Name']} dropped.")
@@ -873,7 +901,9 @@ def train_GAT_for_endpoint(
     # dict with one item, grab the model
     model = list(ens_models.values())[0]
     logger.info(f"Model: {model}")
-    plot_path = evaluate_test_performance(ds_test_end_path, readout, model, output_dir, exp_err_column=readout_err)
+    plot_path = evaluate_test_performance(
+        ds_test_end_path, readout, model, output_dir, exp_err_column=readout_err
+    )
     logger.info(f"Test performance plot saved to {plot_path}")
 
     if test:
