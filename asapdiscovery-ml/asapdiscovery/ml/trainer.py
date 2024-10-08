@@ -118,13 +118,7 @@ class Trainer(BaseModel):
             "Set to -1 to use the entire training set as a batch."
         ),
     )
-    target_props: conlist(item_type=str, min_items=1) = Field(
-        ["pIC50"],
-        description=(
-            "Target property(s) to train against. If only one is "
-            "given, it will be used for all loss functions."
-        ),
-    )
+    target_prop: str = Field("pIC50", description=("Target property to train against."))
     cont: bool = Field(
         False, description="This is a continuation of a previous training run."
     )
@@ -573,19 +567,6 @@ class Trainer(BaseModel):
 
         return v
 
-    @validator("target_props", always=True)
-    def check_target_props_len(cls, v, values):
-        if len(v) == 1:
-            return v * len(values["loss_configs"])
-
-        if len(v) != len(values["loss_configs"]):
-            raise ValueError(
-                "Mismatch lengths of target_props and loss_configs "
-                f"({len(v)}, {len(values['loss_configs'])})"
-            )
-
-        return v
-
     @validator("pred_tracker", always=True)
     def init_pred_tracker(cls, pred_tracker):
         # If a value was passed, it's already been validated so just return that
@@ -893,36 +874,35 @@ class Trainer(BaseModel):
                     xtal_id = "NA"
                     compound_id = compound
 
-                # convert to float to match other types
-                targets = [
-                    (
-                        torch.tensor(pose[target_prop], device=self.device).float()
-                        if target_prop in pose
-                        else None
+                try:
+                    # convert to float to match other types
+                    target = torch.tensor(
+                        pose[self.target_prop], device=self.device
+                    ).float()
+                except KeyError:
+                    print(
+                        f"{self.target_prop} not found in compound {compound}, skipping.",
+                        flush=True,
                     )
-                    for target_prop in self.target_props
-                ]
-                in_ranges = [
-                    (
-                        torch.tensor(
-                            pose[f"{target_prop}_range"], device=self.device
-                        ).float()
-                        if f"{target_prop}_range" in pose
-                        else None
-                    )
-                    for target_prop in self.target_props
-                ]
-                uncertaintys = [
-                    (
-                        torch.tensor(
-                            pose[f"{target_prop}_stderr"],
-                            device=self.device,
-                        ).float()
-                        if f"{target_prop}_range" in pose
-                        else None
-                    )
-                    for target_prop in self.target_props
-                ]
+                    if self.log_file:
+                        self.logger.info(
+                            f"{self.target_prop} not found in compound {compound}, skipping."
+                        )
+                    continue
+                in_range = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_range"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
+                uncertainty = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_stderr"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -951,44 +931,25 @@ class Trainer(BaseModel):
                         loss_func(
                             pred, pose_preds, target, in_range, uncertainty
                         ).reshape((1,))
-                        if target is not None
-                        else torch.tensor([np.nan])
                     )
-                    for loss_func, target, in_range, uncertainty in zip(
-                        self.loss_funcs, targets, in_ranges, uncertaintys
-                    )
+                    for loss_func in self.loss_funcs
                 ]
                 losses = torch.cat(
                     [loss.to(self.device, dtype=torch.float32) for loss in losses]
                 )
 
-                # Temporarily update weights to handle missing targets
-                missing_idx = losses.isnan()
-                use_weights = self.loss_weights.clone().detach().to(self.device)
-                # Set to 0 so it doesn't affect dot product
-                use_weights[missing_idx] = 0
-                losses[missing_idx] = 0
-                # Re-normalize weights
-                use_weights /= use_weights.sum()
-                loss = losses.flatten().dot(use_weights)
+                # Calculate final loss based on loss weights
+                loss = losses.flatten().dot(self.loss_weights)
 
                 # Update pred_tracker
                 for (
                     loss_val,
-                    target_prop,
-                    target,
-                    in_range,
-                    uncertainty,
                     loss_config,
                     loss_wt,
                 ) in zip(
                     losses,
-                    self.target_props,
-                    targets,
-                    in_ranges,
-                    uncertaintys,
                     self.loss_configs,
-                    use_weights,
+                    self.loss_weights,
                 ):
                     if target is None:
                         continue
@@ -999,7 +960,7 @@ class Trainer(BaseModel):
                         split="train",
                         compound_id=compound_id,
                         xtal_id=xtal_id,
-                        target_prop=target_prop,
+                        target_prop=self.target_prop,
                         target_val=target,
                         in_range=in_range,
                         uncertainty=uncertainty,
@@ -1068,36 +1029,35 @@ class Trainer(BaseModel):
                     xtal_id = "NA"
                     compound_id = compound
 
-                # convert to float to match other types
-                targets = [
-                    (
-                        torch.tensor(pose[target_prop], device=self.device).float()
-                        if target_prop in pose
-                        else None
+                try:
+                    # convert to float to match other types
+                    target = torch.tensor(
+                        pose[self.target_prop], device=self.device
+                    ).float()
+                except KeyError:
+                    print(
+                        f"{self.target_prop} not found in compound {compound}, skipping.",
+                        flush=True,
                     )
-                    for target_prop in self.target_props
-                ]
-                in_ranges = [
-                    (
-                        torch.tensor(
-                            pose[f"{target_prop}_range"], device=self.device
-                        ).float()
-                        if f"{target_prop}_range" in pose
-                        else None
-                    )
-                    for target_prop in self.target_props
-                ]
-                uncertaintys = [
-                    (
-                        torch.tensor(
-                            pose[f"{target_prop}_stderr"],
-                            device=self.device,
-                        ).float()
-                        if f"{target_prop}_range" in pose
-                        else None
-                    )
-                    for target_prop in self.target_props
-                ]
+                    if self.log_file:
+                        self.logger.info(
+                            f"{self.target_prop} not found in compound {compound}, skipping."
+                        )
+                    continue
+                in_range = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_range"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
+                uncertainty = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_stderr"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -1112,44 +1072,25 @@ class Trainer(BaseModel):
                         loss_func(
                             pred, pose_preds, target, in_range, uncertainty
                         ).reshape((1,))
-                        if target is not None
-                        else torch.tensor([np.nan])
                     )
-                    for loss_func, target, in_range, uncertainty in zip(
-                        self.loss_funcs, targets, in_ranges, uncertaintys
-                    )
+                    for loss_func in self.loss_funcs
                 ]
                 losses = torch.cat(
                     [loss.to(self.device, dtype=torch.float32) for loss in losses]
                 )
 
-                # Temporarily update weights to handle missing targets
-                missing_idx = losses.isnan()
-                use_weights = self.eval_loss_weights.clone().detach().to(self.device)
-                # Set to 0 so it doesn't affect dot product
-                use_weights[missing_idx] = 0
-                losses[missing_idx] = 0
-                # Re-normalize weights
-                use_weights /= use_weights.sum()
-                loss = losses.flatten().dot(use_weights)
+                # Calculate final loss based on loss weights
+                loss = losses.flatten().dot(self.eval_loss_weights)
 
                 # Update pred_tracker
                 for (
                     loss_val,
-                    target_prop,
-                    target,
-                    in_range,
-                    uncertainty,
                     loss_config,
                     loss_wt,
                 ) in zip(
                     losses,
-                    self.target_props,
-                    targets,
-                    in_ranges,
-                    uncertaintys,
                     self.loss_configs,
-                    use_weights,
+                    self.eval_loss_weights,
                 ):
                     if target is None:
                         continue
@@ -1160,7 +1101,7 @@ class Trainer(BaseModel):
                         split="val",
                         compound_id=compound_id,
                         xtal_id=xtal_id,
-                        target_prop=target_prop,
+                        target_prop=self.target_prop,
                         target_val=target,
                         in_range=in_range,
                         uncertainty=uncertainty,
@@ -1179,36 +1120,35 @@ class Trainer(BaseModel):
                     xtal_id = "NA"
                     compound_id = compound
 
-                # convert to float to match other types
-                targets = [
-                    (
-                        torch.tensor(pose[target_prop], device=self.device).float()
-                        if target_prop in pose
-                        else None
+                try:
+                    # convert to float to match other types
+                    target = torch.tensor(
+                        pose[self.target_prop], device=self.device
+                    ).float()
+                except KeyError:
+                    print(
+                        f"{self.target_prop} not found in compound {compound}, skipping.",
+                        flush=True,
                     )
-                    for target_prop in self.target_props
-                ]
-                in_ranges = [
-                    (
-                        torch.tensor(
-                            pose[f"{target_prop}_range"], device=self.device
-                        ).float()
-                        if f"{target_prop}_range" in pose
-                        else None
-                    )
-                    for target_prop in self.target_props
-                ]
-                uncertaintys = [
-                    (
-                        torch.tensor(
-                            pose[f"{target_prop}_stderr"],
-                            device=self.device,
-                        ).float()
-                        if f"{target_prop}_range" in pose
-                        else None
-                    )
-                    for target_prop in self.target_props
-                ]
+                    if self.log_file:
+                        self.logger.info(
+                            f"{self.target_prop} not found in compound {compound}, skipping."
+                        )
+                    continue
+                in_range = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_range"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
+                uncertainty = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_stderr"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -1223,44 +1163,25 @@ class Trainer(BaseModel):
                         loss_func(
                             pred, pose_preds, target, in_range, uncertainty
                         ).reshape((1,))
-                        if target is not None
-                        else torch.tensor([np.nan])
                     )
-                    for loss_func, target, in_range, uncertainty in zip(
-                        self.loss_funcs, targets, in_ranges, uncertaintys
-                    )
+                    for loss_func in self.loss_funcs
                 ]
                 losses = torch.cat(
                     [loss.to(self.device, dtype=torch.float32) for loss in losses]
                 )
 
-                # Temporarily update weights to handle missing targets
-                missing_idx = losses.isnan()
-                use_weights = self.eval_loss_weights.clone().detach().to(self.device)
-                # Set to 0 so it doesn't affect dot product
-                use_weights[missing_idx] = 0
-                losses[missing_idx] = 0
-                # Re-normalize weights
-                use_weights /= use_weights.sum()
-                loss = losses.flatten().dot(use_weights)
+                # Calculate final loss based on loss weights
+                loss = losses.flatten().dot(self.eval_loss_weights)
 
                 # Update pred_tracker
                 for (
                     loss_val,
-                    target_prop,
-                    target,
-                    in_range,
-                    uncertainty,
                     loss_config,
                     loss_wt,
                 ) in zip(
                     losses,
-                    self.target_props,
-                    targets,
-                    in_ranges,
-                    uncertaintys,
                     self.loss_configs,
-                    use_weights,
+                    self.eval_loss_weights,
                 ):
                     if target is None:
                         continue
@@ -1271,7 +1192,7 @@ class Trainer(BaseModel):
                         split="test",
                         compound_id=compound_id,
                         xtal_id=xtal_id,
-                        target_prop=target_prop,
+                        target_prop=self.target_prop,
                         target_val=target,
                         in_range=in_range,
                         uncertainty=uncertainty,
@@ -1455,12 +1376,11 @@ class Trainer(BaseModel):
         ds_tables = []
 
         table_cols = ["crystal", "compound_id"]
-        for target_prop in self.target_props:
-            table_cols += [
-                target_prop,
-                f"{target_prop}_range",
-                f"{target_prop}_stderr",
-            ]
+        table_cols += [
+            self.target_prop,
+            f"{self.target_prop}_range",
+            f"{self.target_prop}_stderr",
+        ]
         table_cols += ["date_created"]
         for ds in [self.ds_train, self.ds_val, self.ds_test]:
             table = wandb.Table(columns=table_cols)
