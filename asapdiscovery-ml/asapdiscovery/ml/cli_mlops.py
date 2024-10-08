@@ -726,6 +726,12 @@ def mlops():
     is_flag=True,
     help="Run in test mode, no S3 push or WandB logging to main project",
 )
+@click.option(
+    "-staging",
+    "--staging",
+    is_flag=True,
+    help="Push to staging directory in S3 rather than latest",
+)
 def train_GAT_for_endpoint(
     protocol: str,
     output_dir: str = "output",
@@ -733,6 +739,7 @@ def train_GAT_for_endpoint(
     ensemble_size: int = 5,
     n_epochs: int = 5000,
     test: bool = False,
+    staging: bool = False,
 ):
     """
     Train a GAT model for a specific endpoint
@@ -770,6 +777,9 @@ def train_GAT_for_endpoint(
 
     if test:
         logger.info("Test mode, not pushing to S3")
+
+    if staging:
+        logger.info("Staging mode, pushing to staging directory in S3 rather than production")
 
     wandb_project = os.getenv("WANDB_PROJECT")
 
@@ -868,7 +878,11 @@ def train_GAT_for_endpoint(
     copy(manifest_path, final_manifest_path)
 
     # need for both test and not test
-    s3_manifest_dest = f"{protocol}/latest/manifest.yaml"
+    if staging:
+        s3_manifest_dest = f"{protocol}/staging/manifest.yaml"
+    else:
+        s3_manifest_dest = f"{protocol}/latest/manifest.yaml"
+
 
     if test:
         logger.info("Test mode, not pushing to S3")
@@ -878,7 +892,11 @@ def train_GAT_for_endpoint(
         # push the whole final directory to S3
         # ends up at BUCKET_NAME/protocol/model_tag
         s3 = S3.from_settings(s3_settings)
-        s3_ensemble_dest = f"{protocol}/{model_tag}"
+
+        if staging:
+            s3_ensemble_dest = f"{protocol}/staging/{model_tag}"
+        else:
+            s3_ensemble_dest = f"{protocol}/{model_tag}"
 
         # push ensemble to "latest"
         logger.info(f"Pushing final directory to S3 at {s3_ensemble_dest}")
@@ -910,7 +928,11 @@ def train_GAT_for_endpoint(
         logger.info("Test mode, not pushing to S3")
     else:
         # push the plot to S3 in the same location as the ensemble
-        s3_plot_ens_dest = f"{protocol}/{model_tag}/test_performance.png"
+        if staging:
+            s3_plot_ens_dest = f"{protocol}/staging/{model_tag}/test_performance.png"
+        else:
+            s3_plot_ens_dest = f"{protocol}/{model_tag}/test_performance.png"
+
         logger.info(f"Pushing test performance plot to S3 at {s3_plot_ens_dest}")
         s3.push_file(plot_path, s3_plot_ens_dest)
 

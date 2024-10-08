@@ -9,8 +9,8 @@ protocols:
 
   # pIC50 protocols
   MERS-CoV-MPro_fluorescence-dose-response_weizmann:
-    readout: pIC50
-    readout_err: pIC50_stderr
+    readout: Minh_Protease_MERS_Mpro_pIC50 (calc)
+    readout_err: null
     target: MERS-CoV-Mpro
     endpoint: pIC50
 
