@@ -51,7 +51,7 @@ class MSELoss(TorchMSELoss):
             # Call uncertainty_loss
             return self.loss_function(pred, target, uncertainty)
 
-    def step_loss(self, pred, target, in_range):
+    def step_loss(self, pred, target, in_range=None):
         """
         Step loss calculation. For `in_range` < 0, loss is returned as 0 if
         `pred` < `target`, otherwise MSE is calculated as normal. For
@@ -65,7 +65,7 @@ class MSELoss(TorchMSELoss):
             Model prediction
         target : torch.Tensor
             Prediction target
-        in_range : torch.Tensor
+        in_range : torch.Tensor, optional
             `target`'s presence in the dynamic range of the assay. Give a value
             of < 0 for `target` below lower bound, > 0 for `target` above upper
             bound, and 0 or None for inside range
@@ -88,7 +88,11 @@ class MSELoss(TorchMSELoss):
             [
                 1.0 if ((r == 0) or (r is None)) else ((r < 0) == (t < i))
                 for i, t, r in zip(
-                    np.ravel(pred.detach()), np.ravel(target), np.ravel(in_range)
+                    np.ravel(pred.detach().cpu()),
+                    np.ravel(target.detach().cpu()),
+                    np.ravel(
+                        in_range.detach().cpu() if in_range is not None else in_range
+                    ),
                 )
             ]
         )
