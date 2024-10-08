@@ -77,8 +77,6 @@ def plot_test_performance(df, model_name, readout_column, pred_column, output_di
     p = sns.regplot(x=readout_column, data=df, y=pred_column, ax=ax, ci=None)
     slope, intercept, r, p, sterr = scipy.stats.linregress(x=p.get_lines()[0].get_xdata(),
                                                        y=p.get_lines()[0].get_ydata())
-
-
     ax.set_aspect('equal', 'box')
     min_ax = min_val - 1
     max_ax = max_val + 1
@@ -131,7 +129,6 @@ def plot_test_performance(df, model_name, readout_column, pred_column, output_di
     fig.tight_layout()
     plt.savefig(out)
     return out
-
 
 def do_stats(target_vals, preds):
     from scipy.stats import bootstrap, kendalltau, spearmanr

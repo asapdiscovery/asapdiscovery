@@ -814,7 +814,7 @@ def dataset_to_dataframe(dataset):
             try:
                 value = str(value)
                 data_dict[key] = value
-            except: # noqa: E722
+            except:  # noqa: E722
                 pass
 
         # add compound tuple to dict
