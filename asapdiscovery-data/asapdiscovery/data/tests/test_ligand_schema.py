@@ -130,7 +130,7 @@ def test_ligand_from_sdf_title_used(moonshot_sdf):
     assert lig.compound_name == "Mpro-P0008_0A_ERI-UCB-ce40166b-17"
 
 
-def test_multi_pose_ligand_sdf_roundtrip(multipose_ligand, tmp_path):
+def test_multiconformer_ligand_sdf_roundtrip(multipose_ligand, tmp_path):
     lig = Ligand.from_sdf(multipose_ligand)
     assert lig.num_poses == 50
 
@@ -142,7 +142,7 @@ def test_multi_pose_ligand_sdf_roundtrip(multipose_ligand, tmp_path):
     assert lig2 == lig
 
 
-def test_multi_pose_ligand_json_roundtrip(multipose_ligand, tmp_path):
+def test_multiconformer_ligand_json_roundtrip(multipose_ligand, tmp_path):
     lig = Ligand.from_sdf(multipose_ligand)
     assert lig.num_poses == 50
 
@@ -152,6 +152,19 @@ def test_multi_pose_ligand_json_roundtrip(multipose_ligand, tmp_path):
 
     assert lig2.num_poses == 50
     assert lig2 == lig
+
+
+def test_single_conformers_roundtrip(multipose_ligand, tmp_path):
+    lig = Ligand.from_sdf(multipose_ligand)
+    ligs = lig.to_single_conformers()
+    assert len(ligs) == 50
+
+    newlig = Ligand.from_single_conformers(ligs)
+
+    assert newlig == lig
+    assert newlig.tags == lig.tags
+    assert newlig.conf_tags == lig.conf_tags
+    assert newlig.data == lig.data
 
 
 def test_multiconf_ligand_basics(multipose_ligand):
@@ -490,6 +503,16 @@ def test_get_set_sd_data(moonshot_sdf):
     assert all(data_pulled[key] == data_roundtrip[key] for key in data_roundtrip.keys())
 
 
+def test_set_SD_data_empty(moonshot_sdf):
+    # shouldn't change the data
+    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
+    l2 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah2")
+    data = {}
+    l2.set_SD_data(data)
+    assert l1.tags == l2.tags
+    assert l1.conf_tags == l2.conf_tags
+
+
 def test_print_sd_data(moonshot_sdf):
     l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
     data = {"test_key": "test_value", "test_key2": "test_value2", "test_key3": "3"}
@@ -613,3 +636,32 @@ def test_partial_charge_conversion(tmpdir):
         # make sure openfe picks up the user charges from sdf
         with pytest.warns(UserWarning, match=charge_warn):
             _ = SmallMoleculeComponent.from_sdf_file("test.sdf")
+
+
+def test_openfe_roundtrip_charges():
+    """
+    Make sure we can round trip molecules to and from openfe which also have partial charges
+    """
+    molecule = Ligand.from_smiles("C", compound_name="test")
+    # set some fake charges
+    molecule.tags["atom.dprop.PartialCharge"] = (
+        "-0.10868 0.02717 0.02717 0.02717 0.02717"
+    )
+    molecule.charge_provenance = {
+        "protocol": {"type": "OpenFF", "charge_method": "am1bcc"},
+        "provenance": {"openff": 1},
+    }
+
+    charge_warn = "Partial charges have been provided, these will preferentially be used instead of generating new partial charges"
+
+    # test converting to openfe
+    with pytest.warns(UserWarning, match=charge_warn):
+        # make sure the charge warning is triggered
+        fe_mol = molecule.to_openfe()
+        # now convert back
+        molecule_from_fe = Ligand.from_openfe(fe_mol)
+        assert molecule.charge_provenance == molecule_from_fe.charge_provenance
+        assert (
+            molecule.tags["atom.dprop.PartialCharge"]
+            == molecule_from_fe.tags["atom.dprop.PartialCharge"]
+        )

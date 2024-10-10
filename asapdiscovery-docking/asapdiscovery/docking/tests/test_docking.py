@@ -82,6 +82,37 @@ class TestDocking:
         assert results[0].input_pair.complex.target.target_name == "Mpro-x0354"
         assert results[0].probability > 0.0
 
+    def test_multipose_docking_with_cache_and_writing(
+        self, docking_input_pair, tmp_path, caplog
+    ):
+        import logging
+
+        caplog.set_level(logging.DEBUG)
+        docker = POSITDocker(use_omega=False, num_poses=10)
+        results = docker.dock(
+            [docking_input_pair], output_dir=tmp_path / "docking_results"
+        )
+
+        # although we requested 10 poses, we only get 8
+        assert len(results) == 8
+        assert results[0].probability > 0.0
+
+        results2 = docker.dock(
+            [docking_input_pair], output_dir=tmp_path / "docking_results"
+        )
+        assert len(results2) == 8
+        results = sorted(results, key=lambda x: x.pose_id)
+        results2 = sorted(results2, key=lambda x: x.pose_id)
+        assert results2 == results
+        assert "already exists, reading from disk" in caplog.text
+
+        for result in results:
+            result.write_docking_files(tmp_path / "docking_results")
+
+        assert len(list(tmp_path.glob("docking_results/*/*.pdb"))) == 8
+        assert len(list(tmp_path.glob("docking_results/*/*.json"))) == 8
+        assert len(list(tmp_path.glob("docking_results/*/*.sdf"))) == 8
+
     def test_results_to_df(self, results_simple):
         df = results_simple[0].to_df()
         assert DockingResultCols.SMILES in df.columns

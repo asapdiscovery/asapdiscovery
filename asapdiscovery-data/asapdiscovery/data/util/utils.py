@@ -44,6 +44,11 @@ def construct_regex_function(pat, fail_val=None, ret_groups=False):
     """
     Construct a function that searches for the given regex pattern, either returning
     fail_val or raising an error if no match is found.
+    The output of the returned function will depend on the value passed for
+    ``ret_groups``. If ``True``, then both the overall match and the tuple of captured
+    groups will be returned. If ``False``, only one value will be returned. If there is
+    a capture group in ``pat``, we assume that's what should be matched and will return
+    the first captured group. Otherwise, the full match will be returned.
 
     Parameters
     ----------
@@ -69,6 +74,9 @@ def construct_regex_function(pat, fail_val=None, ret_groups=False):
         if m:
             if ret_groups:
                 return m.group(), m.groups()
+            elif len(m.groups()) > 0:
+                # Take capture group to be what we're looking for
+                return m.groups()[0]
             else:
                 return m.group()
         elif fail_val is not None:
@@ -948,6 +956,8 @@ def parse_fluorescence_data_cdd(
             try:
                 import sigfig
 
+                # BUG: rounding here with large error bars can cause the values to be clipped
+                # to 0 or 10, we should just drop these. See #1234
                 IC50, IC50_stderr = sigfig.round(
                     IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
                 )  # strings

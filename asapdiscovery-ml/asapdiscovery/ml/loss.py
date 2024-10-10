@@ -1,4 +1,6 @@
+import numpy as np
 import torch
+from torch.nn import CrossEntropyLoss as TorchCrossEntropyLoss
 from torch.nn import GaussianNLLLoss as TorchGaussianNLLLoss
 from torch.nn import MSELoss as TorchMSELoss
 
@@ -32,7 +34,7 @@ class MSELoss(TorchMSELoss):
 
         self.loss_type = loss_type
 
-    def forward(self, input, target, in_range, uncertainty):
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
         """
         Dispatch method for calculating loss. All arguments should be passed
         regardless of actual loss function to keep an identical signature for
@@ -41,29 +43,29 @@ class MSELoss(TorchMSELoss):
 
         if self.loss_type is None:
             # Just need to calculate mean to get MSE
-            return self.loss_function(input, target).mean()
+            return self.loss_function(pred, target).mean()
         elif self.loss_type == "step":
             # Call step_loss
-            return self.loss_function(input, target, in_range)
+            return self.loss_function(pred, target, in_range)
         elif self.loss_type == "uncertainty":
             # Call uncertainty_loss
-            return self.loss_function(input, target, uncertainty)
+            return self.loss_function(pred, target, uncertainty)
 
-    def step_loss(self, input, target, in_range):
+    def step_loss(self, pred, target, in_range=None):
         """
         Step loss calculation. For `in_range` < 0, loss is returned as 0 if
-        `input` < `target`, otherwise MSE is calculated as normal. For
-        `in_range` > 0, loss is returned as 0 if `input` > `target`, otherwise
+        `pred` < `target`, otherwise MSE is calculated as normal. For
+        `in_range` > 0, loss is returned as 0 if `pred` > `target`, otherwise
         MSE is calculated as normal. For `in_range` == 0, MSE is calculated as
         normal.
 
         Parameters
         ----------
-        input : torch.Tensor
+        pred : torch.Tensor
             Model prediction
         target : torch.Tensor
             Prediction target
-        in_range : torch.Tensor
+        in_range : torch.Tensor, optional
             `target`'s presence in the dynamic range of the assay. Give a value
             of < 0 for `target` below lower bound, > 0 for `target` above upper
             bound, and 0 or None for inside range
@@ -74,21 +76,27 @@ class MSELoss(TorchMSELoss):
             Calculated loss
         """
         # Calculate loss
-        loss = super().forward(input, target)
+        loss = super().forward(pred, target)
 
         # Calculate mask:
-        #  1.0 - If input or data is semiquant and prediction is inside the
+        #  1.0 - If pred or data is semiquant and prediction is inside the
         #    assay range
         #  0.0 - If data is semiquant and prediction is outside the assay range
         # r < 0 -> measurement is below thresh, want to count if pred > target
         # r > 0 -> measurement is above thresh, want to count if pred < target
         mask = torch.tensor(
             [
-                1.0 if r == 0 else ((r < 0) == (t < i))
-                for i, t, r in zip(input, target, in_range)
+                1.0 if ((r == 0) or (r is None)) else ((r < 0) == (t < i))
+                for i, t, r in zip(
+                    np.ravel(pred.detach().cpu()),
+                    np.ravel(target.detach().cpu()),
+                    np.ravel(
+                        in_range.detach().cpu() if in_range is not None else in_range
+                    ),
+                )
             ]
         )
-        mask = mask.to(input.device)
+        mask = mask.to(pred.device)
 
         # Need to add the max in the denominator in case there are no values that we
         #  want to calculate loss for
@@ -116,14 +124,16 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
         self.include_semiquant = include_semiquant
         self.fill_value = fill_value
 
-    def forward(self, input, target, in_range, uncertainty):
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
         """
         Loss calculation
 
         Parameters
         ----------
-        input : torch.Tensor
+        pred : torch.Tensor
             Model prediction
+        pose_preds : torch.Tensor
+            Predictions for each pose
         target : torch.Tensor
             Prediction target
         in_range : torch.Tensor
@@ -144,7 +154,7 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
             uncertainty_clone[idx] = self.fill_value
 
         # Calculate loss (need to square uncertainty to convert to variance)
-        loss = super().forward(input, target, uncertainty_clone**2)
+        loss = super().forward(pred, target, uncertainty_clone**2)
 
         # Mask out losses for all semiquant measurements
         if not self.include_semiquant:
@@ -154,3 +164,100 @@ class GaussianNLLLoss(TorchGaussianNLLLoss):
             loss *= mask
 
         return loss.sum()
+
+
+class RangeLoss(torch.nn.Module):
+    def __init__(self, lower_lim, upper_lim):
+        """
+        Class for calculating a loss to penalize predictions outside of the given range.
+        Current implementation uses a squared difference penalty.
+
+        Parameters
+        ----------
+        lower_lim : float
+            Bottom limit of acceptable range
+        upper_lim : float
+            Upper limit of acceptable range
+        """
+        super().__init__()
+
+        self.lower_lim = lower_lim
+        self.upper_lim = upper_lim
+
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
+        """
+        No loss for predictions within self range, otherwise calculate squared distance
+        to closest bound.
+
+        Parameters
+        ----------
+        Parameters
+        ----------
+        pred : torch.Tensor
+            Model prediction
+        target : torch.Tensor
+            Prediction target
+        in_range : torch.Tensor
+            `target`'s presence in the dynamic range of the assay. Give a value
+            of < 0 for `target` below lower bound, > 0 for `target` above upper
+            bound, and 0 or None for inside range
+        uncertainty : torch.Tensor
+            Uncertainty in `target` measurements
+
+        Returns
+        -------
+        torch.Tensor
+            Calculated loss
+        """
+        if pred < self.lower_lim:
+            return torch.pow(pred - self.lower_lim, 2)
+        elif pred > self.upper_lim:
+            return torch.pow(pred - self.upper_lim, 2)
+        else:
+            return pred * 0
+
+
+class PoseCrossEntropyLoss(TorchCrossEntropyLoss):
+    def __init__(self):
+        """
+        Class for calculating a cross entropy loss for per-pose delta G predictions
+        in kT units compared to labels for pose closest to experimental structure.
+        """
+        super().__init__()
+
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
+        """
+        Calculate cross-entropy loss for per-pose delta G predictions. These predictions
+        are assumed to be in implicit kT units, as that is the standard in mtenn.
+
+        Parameters
+        ----------
+        pred : torch.Tensor
+            Model prediction
+        pose_preds : torch.Tensor
+            Predictions for each pose
+        target : torch.Tensor
+            Prediction target
+        in_range : torch.Tensor
+            `target`'s presence in the dynamic range of the assay. Give a value
+            of < 0 for `target` below lower bound, > 0 for `target` above upper
+            bound, and 0 or None for inside range
+        uncertainty : torch.Tensor
+            Uncertainty in `target` measurements
+
+        Returns
+        -------
+        torch.Tensor
+            Calculated loss
+        """
+        if not isinstance(pose_preds, torch.Tensor):
+            pose_free_energies = torch.cat(pose_preds).flatten()
+        else:
+            pose_free_energies = pose_preds.flatten()
+
+        return super().forward(
+            -pose_free_energies,
+            target.flatten().to(
+                device=pose_free_energies.device, dtype=pose_free_energies.dtype
+            ),
+        )

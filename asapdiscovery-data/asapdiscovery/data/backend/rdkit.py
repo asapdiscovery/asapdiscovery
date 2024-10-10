@@ -147,6 +147,29 @@ def sdf_str_to_rdkit_mol(sdf: str) -> Chem.Mol:
     return ref
 
 
+def rdkit_mol_to_sdf_str(mol: Chem.Mol) -> str:
+    """
+    Convert an RDKit molecule to a SDF string
+
+    Parameters
+    ----------
+    mol : Chem.Mol
+        RDKit molecule
+
+    Returns
+    -------
+    str
+        SDF string
+    """
+    from io import StringIO
+
+    sdfio = StringIO()
+    w = Chem.SDWriter(sdfio)
+    w.write(mol)
+    w.flush()
+    return sdfio.getvalue()
+
+
 def rdkit_smiles_roundtrip(smi: str) -> str:
     """
     Roundtrip a SMILES string through RDKit to canonicalize it
