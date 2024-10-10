@@ -7,7 +7,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas
-from pydantic.v1 importValidationError 
+from pydantic import ValidationError 
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 from asapdiscovery.data.schema.legacy import EnantiomerPair, EnantiomerPairList

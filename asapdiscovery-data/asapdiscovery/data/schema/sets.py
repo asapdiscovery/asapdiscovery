@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
-from pydantic.v1 importBaseModel, Field
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 

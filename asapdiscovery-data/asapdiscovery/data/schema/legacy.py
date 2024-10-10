@@ -1,5 +1,5 @@
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
-from pydantic.v1 importBaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class CrystalCompoundData(BaseModel):

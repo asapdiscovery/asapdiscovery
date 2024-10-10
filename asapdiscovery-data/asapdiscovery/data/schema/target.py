@@ -20,7 +20,7 @@ from asapdiscovery.modeling.modeling import (  # TODO: move to backend
     split_openeye_mol,
 )
 from asapdiscovery.modeling.schema import MoleculeFilter  # TODO: move to backend
-from pydantic.v1 importField, root_validator
+from pydantic import Field, root_validator
 
 from .schema_base import (
     DataModelAbstractBase,

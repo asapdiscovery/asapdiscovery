@@ -13,7 +13,7 @@ from asapdiscovery.data.operators.state_expanders.state_expander import (
     StateExpanderBase,
 )
 from asapdiscovery.data.schema.ligand import Ligand
-from pydantic.v1 importField
+from pydantic import Field
 
 
 class ProtomerExpander(StateExpanderBase):

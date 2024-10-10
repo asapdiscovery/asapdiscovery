@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from pydantic.v1 importBaseSettings, Field, validator
+from pydantic import BaseSettings, Field, validator
 
 logger = logging.getLogger(__name__)
 

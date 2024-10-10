@@ -18,7 +18,7 @@ from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
     RDKitConstrainedPoseGenerator,
 )
-from pydantic.v1 importField
+from pydantic import Field
 from rich import pretty
 from rich.padding import Padding
 

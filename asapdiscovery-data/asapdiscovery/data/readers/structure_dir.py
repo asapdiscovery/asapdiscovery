@@ -8,7 +8,7 @@ from asapdiscovery.data.util.dask_utils import (
     FailureMode,
     actualise_dask_delayed_iterable,
 )
-from pydantic.v1 importBaseModel, Field, validator
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 

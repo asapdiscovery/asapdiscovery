@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic.v1 importBaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class MoleculeComponent(str, Enum):

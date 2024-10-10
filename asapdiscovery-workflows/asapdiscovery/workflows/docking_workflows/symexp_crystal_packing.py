@@ -34,7 +34,7 @@ from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic.v1 importField
+from pydantic import Field
 
 
 class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs):

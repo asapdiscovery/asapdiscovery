@@ -3,7 +3,7 @@ import abc
 import pandas as pd
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
 from asapdiscovery.docking.docking import DockingResult
-from pydantic.v1 importBaseModel
+from pydantic import BaseModel
 
 
 class VisualizerBase(abc.ABC, BaseModel):

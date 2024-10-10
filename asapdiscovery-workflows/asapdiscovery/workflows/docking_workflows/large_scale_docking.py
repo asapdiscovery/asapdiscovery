@@ -43,7 +43,7 @@ from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic.v1 importField, PositiveInt
+from pydantic import Field, PositiveInt
 
 
 class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):

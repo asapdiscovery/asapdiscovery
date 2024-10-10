@@ -28,7 +28,7 @@ from mtenn.config import (
     SchNetModelConfig,
     ViSNetModelConfig,
 )
-from pydantic.v1 import(
+from pydantic import (
     BaseModel,
     Extra,
     Field,

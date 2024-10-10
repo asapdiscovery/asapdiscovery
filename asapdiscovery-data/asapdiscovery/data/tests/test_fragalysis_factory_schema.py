@@ -5,7 +5,7 @@ import pytest
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from pydantic.v1 importValidationError
+from pydantic import ValidationError
 
 
 @pytest.fixture(scope="session")

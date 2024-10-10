@@ -2,7 +2,7 @@ import numpy as np
 import pandas
 import torch
 from asapdiscovery.ml.config import LossFunctionConfig
-from pydantic.v1 importBaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, validator
 from scipy.stats import bootstrap, kendalltau, spearmanr
 
 

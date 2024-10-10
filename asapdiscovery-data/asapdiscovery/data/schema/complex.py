@@ -16,7 +16,7 @@ from asapdiscovery.data.schema.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema.target import PreppedTarget, Target
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
-from pydantic.v1 importField
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 

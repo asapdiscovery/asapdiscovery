@@ -50,7 +50,7 @@ from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic.v1 importField, PositiveInt
+from pydantic import Field, PositiveInt
 
 
 class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
