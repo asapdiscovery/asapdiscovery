@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import click
-from pydantic.v1 import ValidationError
 import torch
 from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (
@@ -41,6 +40,7 @@ from asapdiscovery.ml.config import (
 from asapdiscovery.ml.sweep import Sweeper
 from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
+from pydantic.v1 import ValidationError
 
 
 @click.group()
