@@ -3,7 +3,7 @@ from typing import Any, ClassVar
 
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 

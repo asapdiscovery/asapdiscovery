@@ -28,7 +28,7 @@ from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_mod
 from asapdiscovery.ml.models import MLModelSpecBase
 from mtenn.config import ModelType
 from multimethod import multimethod
-from pydantic import BaseModel, Field, validator
+from pydantic.v1 import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 

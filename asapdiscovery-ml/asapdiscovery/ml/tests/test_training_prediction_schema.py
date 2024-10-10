@@ -1,6 +1,6 @@
 import json
 
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 import pytest
 from asapdiscovery.ml.config import LossFunctionConfig
 from asapdiscovery.ml.schema import TrainingPrediction, TrainingPredictionTracker
