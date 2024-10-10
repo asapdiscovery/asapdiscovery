@@ -57,6 +57,27 @@ SKYNET_SERVE_URL = "https://asap-discovery-ml-skynet.asapdata.org"
 def evaluate_test_performance(
     test_csv, readout_column, model, output_dir, exp_err_column=None
 ):
+    """
+    Evaluate the performance of a trained model on a test set
+
+    Parameters
+    ----------
+    test_csv : str
+        Path to the test set CSV
+    readout_column : str
+        Column in the CSV containing the readout
+    model : GATModelSpec
+        Trained model
+    output_dir : str
+        Output directory for the plot
+    exp_err_column : str
+        Column in the CSV containing the experimental error
+
+    Returns
+    -------
+    str
+        Path to the plot
+    """
     df = pd.read_csv(test_csv)
     inference_cls = GATInference.from_ml_model_spec(model)
     smiles = df["smiles"]
@@ -87,6 +108,33 @@ def plot_test_performance(
     exp_err_column=None,
     plotname="test_performance.png",
 ) -> str:
+    """
+    Plot the performance of a trained model on a test set
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing the test set
+    model_name : str
+        Name of the model
+    readout_column : str
+        Column in the DataFrame containing the readout
+    pred_column : str
+        Column in the DataFrame containing the predicted readout
+    output_dir : str
+        Output directory for the plot
+    err_column : str
+        Column in the DataFrame containing the error
+    exp_err_column : str
+        Column in the DataFrame containing the experimental error
+    plotname : str
+        Name of the plot
+    
+    Returns
+    -------
+    str
+        Path to the plot
+    """
     fig, ax = plt.subplots()
     ax.set_title(f"Test set performance:\n {model_name}", fontsize=6)
     min_val = min(df[readout_column].min(), df[pred_column].min())
