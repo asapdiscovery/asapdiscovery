@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import click
-import pydantic
+from pydantic import ValidationError
 import torch
 from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (
@@ -1144,7 +1144,7 @@ def _build_sweeper(
 
     try:
         sweeper = Sweeper(**overall_kwargs)
-    except pydantic.ValidationError as exc:
+    except ValidationError as exc:
         # Only want to handle missing values, so if anything else went wrong just raise
         #  the pydantic error
         if any([err["type"] != "value_error.missing" for err in exc.errors()]):
