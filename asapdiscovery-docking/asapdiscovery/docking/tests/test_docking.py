@@ -111,7 +111,9 @@ class TestDocking:
             result.write_docking_files(tmp_path / "docking_results")
 
         assert len(list(tmp_path.glob("docking_results/*/*.pdb"))) == num_poses_expected
-        assert len(list(tmp_path.glob("docking_results/*/*.json"))) == num_poses_expected
+        assert (
+            len(list(tmp_path.glob("docking_results/*/*.json"))) == num_poses_expected
+        )
         assert len(list(tmp_path.glob("docking_results/*/*.sdf"))) == num_poses_expected
 
     def test_results_to_df(self, results_simple):
