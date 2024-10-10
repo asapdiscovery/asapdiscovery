@@ -313,7 +313,13 @@ def _train_single_model(
         burnin=2000,
     )
     loss_config = LossFunctionConfig(loss_type="mse_step")
-    ds_splitter_config = DatasetSplitterConfig(split_type="temporal")
+
+    if target_prop == "Minh_Protease_MERS_Mpro_pIC50 (calc)":
+        # the MERS Mpro pIC50 data is a special case, as it was all uploaded at once
+        # meaning we can't split it temporally, so we use random split
+        ds_splitter_config = DatasetSplitterConfig(split_type="random")
+    else:
+        ds_splitter_config = DatasetSplitterConfig(split_type="temporal")
 
     logging.debug(f"Optimizer config: {optimizer_config}")
     logging.debug(f"GAT model config: {gat_model_config}")
