@@ -223,7 +223,7 @@ class _FreeEnergyBase(_SchemaBase):
         description="The settings for thermodynamic parameters.",
     )
     solvation_settings: OpenMMSolvationSettings = Field(
-        OpenMMSolvationSettings(),
+        OpenMMSolvationSettings(box_shape="dodecahedron"),
         description="Settings controlling how the systems should be solvated using OpenMM.",
     )
     alchemical_settings: AlchemicalSettings = Field(

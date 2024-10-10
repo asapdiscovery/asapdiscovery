@@ -130,7 +130,7 @@ def test_ligand_from_sdf_title_used(moonshot_sdf):
     assert lig.compound_name == "Mpro-P0008_0A_ERI-UCB-ce40166b-17"
 
 
-def test_multi_pose_ligand_sdf_roundtrip(multipose_ligand, tmp_path):
+def test_multiconformer_ligand_sdf_roundtrip(multipose_ligand, tmp_path):
     lig = Ligand.from_sdf(multipose_ligand)
     assert lig.num_poses == 50
 
@@ -142,7 +142,7 @@ def test_multi_pose_ligand_sdf_roundtrip(multipose_ligand, tmp_path):
     assert lig2 == lig
 
 
-def test_multi_pose_ligand_json_roundtrip(multipose_ligand, tmp_path):
+def test_multiconformer_ligand_json_roundtrip(multipose_ligand, tmp_path):
     lig = Ligand.from_sdf(multipose_ligand)
     assert lig.num_poses == 50
 
@@ -152,6 +152,19 @@ def test_multi_pose_ligand_json_roundtrip(multipose_ligand, tmp_path):
 
     assert lig2.num_poses == 50
     assert lig2 == lig
+
+
+def test_single_conformers_roundtrip(multipose_ligand, tmp_path):
+    lig = Ligand.from_sdf(multipose_ligand)
+    ligs = lig.to_single_conformers()
+    assert len(ligs) == 50
+
+    newlig = Ligand.from_single_conformers(ligs)
+
+    assert newlig == lig
+    assert newlig.tags == lig.tags
+    assert newlig.conf_tags == lig.conf_tags
+    assert newlig.data == lig.data
 
 
 def test_multiconf_ligand_basics(multipose_ligand):
@@ -488,6 +501,16 @@ def test_get_set_sd_data(moonshot_sdf):
     l1.set_SD_data(data)
     data_pulled = l1.get_single_conf_SD_data()
     assert all(data_pulled[key] == data_roundtrip[key] for key in data_roundtrip.keys())
+
+
+def test_set_SD_data_empty(moonshot_sdf):
+    # shouldn't change the data
+    l1 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah")
+    l2 = Ligand.from_sdf(moonshot_sdf, compound_name="blahblah2")
+    data = {}
+    l2.set_SD_data(data)
+    assert l1.tags == l2.tags
+    assert l1.conf_tags == l2.conf_tags
 
 
 def test_print_sd_data(moonshot_sdf):

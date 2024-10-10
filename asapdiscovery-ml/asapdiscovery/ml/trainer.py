@@ -19,6 +19,7 @@ from asapdiscovery.ml.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
+from asapdiscovery.ml.dataset import dataset_to_csv
 from asapdiscovery.ml.schema import TrainingPredictionTracker
 from mtenn.config import (
     E3NNModelConfig,
@@ -158,6 +159,10 @@ class Trainer(BaseModel):
         ),
     )
 
+    write_ds_csv: bool = Field(
+        False, description="Write the dataset splits to CSV files."
+    )
+
     # W&B parameters
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
     wandb_project: str | None = Field(None, description="W&B project name.")
@@ -166,6 +171,7 @@ class Trainer(BaseModel):
     extra_config: dict | None = Field(
         None, description="Any extra config options to log to W&B."
     )
+    wandb_run_id: str | None = Field(None, description="W&B run ID.")
 
     # artifact tracking options
     upload_to_s3: bool = Field(False, description="Upload artifacts to S3.")
@@ -658,6 +664,7 @@ class Trainer(BaseModel):
                 raise wandb.errors.UsageError(
                     f"Run in run_id file ({run_id}) doesn't exist"
                 )
+            self.wandb_run_id = run_id
             # Update run config to reflect it's been resumed
             wandb.config.update(config, allow_val_change=True)
         else:
@@ -668,6 +675,7 @@ class Trainer(BaseModel):
                 name=self.wandb_name,
                 group=self.wandb_group,
             ).id
+            self.wandb_run_id = run_id
 
             # Save run_id in case we want to continue later
             if not self.output_dir.exists():
@@ -812,6 +820,12 @@ class Trainer(BaseModel):
             len(self.ds_test),
             flush=True,
         )
+
+        # write the datasets to CSV
+        if self.write_ds_csv:
+            dataset_to_csv(self.ds_train, self.output_dir / "ds_train.csv")
+            dataset_to_csv(self.ds_val, self.output_dir / "ds_val.csv")
+            dataset_to_csv(self.ds_test, self.output_dir / "ds_test.csv")
 
         # Build the Model
         self.model = self.model_config.build().to(self.device)

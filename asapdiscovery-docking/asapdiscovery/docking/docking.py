@@ -185,6 +185,10 @@ class DockingResult(BaseModel):
     probability: Optional[PositiveFloat] = Field(
         description="Probability"
     )  # not easy to get the probability from rescoring
+    pose_id: Optional[int] = Field(description="Nth returned pose from docking")
+    num_poses: Optional[int] = Field(
+        description="Total number of poses returned from docking"
+    )
     provenance: dict[str, str] = Field(description="Provenance")
 
     def to_json_file(self, file: str | Path):
@@ -195,6 +199,12 @@ class DockingResult(BaseModel):
     def from_json_file(cls, file: str | Path) -> "DockingResult":
         with open(file) as f:
             return cls.parse_raw(f.read())
+
+    @abc.abstractmethod
+    def _get_single_pose_results(self) -> list["DockingResult"]: ...
+
+    def get_single_pose_results(self) -> list["DockingResult"]:
+        return self._get_single_pose_results()
 
     def get_output(self) -> dict:
         """
@@ -287,17 +297,18 @@ class DockingResult(BaseModel):
         output_dir : Union[str, Path]
             Output directory
         """
-        self._write_docking_files(self, output_dir)
+        return self._write_docking_files(self, output_dir)
 
     @staticmethod
     def _write_docking_files(result: "DockingResult", output_dir: Union[str, Path]):
         output_dir = Path(output_dir)
         output_pref = result.unique_name
-        compound_dir = output_dir / output_pref
+        compound_dir = output_dir / f"{output_pref}"
         compound_dir.mkdir(parents=True, exist_ok=True)
-        output_sdf_file = compound_dir / "docked.sdf"
-        output_pdb_file = compound_dir / "docked_complex.pdb"
-        output_json_file = compound_dir / "docking_result.json"
+
+        output_sdf_file = compound_dir / f"docked_{result.pose_id}.sdf"
+        output_pdb_file = compound_dir / f"docked_complex_{result.pose_id}.pdb"
+        output_json_file = compound_dir / f"docking_result_{result.pose_id}.json"
         result.posed_ligand.to_sdf(output_sdf_file)
         combined_oemol = result.to_posed_oemol()
         save_openeye_pdb(combined_oemol, output_pdb_file)
