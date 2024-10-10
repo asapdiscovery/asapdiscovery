@@ -151,7 +151,7 @@ def _train_single_model(
         es_config=es_config,
         ds_config=gat_ds_config,
         ds_splitter_config=ds_splitter_config,
-        loss_config=loss_config,
+        loss_configs=[loss_config],
         n_epochs=n_epochs,
         device="cuda" if torch.cuda.is_available() else "cpu",  # let PyTorch decide
         output_dir=output_dir,
