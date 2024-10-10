@@ -5,6 +5,7 @@ import pytest
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.ml.cli import ml as cli
 from asapdiscovery.ml.config import DatasetConfig
+from asapdiscovery.ml.schema import TrainingPredictionTracker
 from asapdiscovery.ml.trainer import Trainer
 from click.testing import CliRunner
 
@@ -207,8 +208,8 @@ def test_build_trainer_graph(exp_file, tmp_path):
             tmp_path / "ds_cache.pkl",
             "--ds-config-cache",
             tmp_path / "ds_config_cache.json",
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -266,8 +267,8 @@ def test_build_trainer_schnet(exp_file, docked_files, tmp_path):
             tmp_path / "ds_cache.pkl",
             "--ds-config-cache",
             tmp_path / "ds_config_cache.json",
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -329,8 +330,8 @@ def test_build_trainer_e3nn(exp_file, docked_files, tmp_path):
             tmp_path / "ds_config_cache.json",
             "--irreps-hidden",
             "0:5",
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -392,8 +393,8 @@ def test_build_trainer_visnet(exp_file, docked_files, tmp_path):
             tmp_path / "ds_cache.pkl",
             "--ds-config-cache",
             tmp_path / "ds_config_cache.json",
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -449,8 +450,8 @@ def test_build_and_train_graph(exp_file, tmp_path):
             tmp_path / "ds_cache.pkl",
             "--ds-config-cache",
             tmp_path / "ds_config_cache.json",
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -464,24 +465,23 @@ def test_build_and_train_graph(exp_file, tmp_path):
     # Make sure the right files exist
     trainer_config_cache = tmp_path / "trainer.json"
     output_dir = tmp_path / "model_out"
-    loss_dict_file = output_dir / "loss_dict.json"
+    tpt_path = output_dir / "pred_tracker.json"
     assert trainer_config_cache.exists()
     assert output_dir.exists()
     assert (output_dir / "init.th").exists()
     for i in range(1):
         assert (output_dir / f"{i}.th").exists()
     assert (output_dir / "final.th").exists()
-    assert loss_dict_file.exists()
+    assert tpt_path.exists()
     assert (tmp_path / "ds_cache.pkl").exists()
     assert (tmp_path / "ds_config_cache.json").exists()
 
     # Load and check stuff
-    loss_dict = json.loads(loss_dict_file.read_text())
-    assert {"train", "test", "val"} == set(loss_dict.keys())
-    print({k: len(v) for k, v in loss_dict.items()}, flush=True)
-    assert len(loss_dict["train"]) == 8
-    assert len(loss_dict["val"]) == 1
-    assert len(loss_dict["test"]) == 1
+    pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
+    assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
+    assert len(pred_tracker.split_dict["train"]) == 8
+    assert len(pred_tracker.split_dict["val"]) == 1
+    assert len(pred_tracker.split_dict["test"]) == 1
 
 
 def test_build_and_train_schnet(exp_file, docked_files, tmp_path):
@@ -507,8 +507,8 @@ def test_build_and_train_schnet(exp_file, docked_files, tmp_path):
             tmp_path / "ds_cache.pkl",
             "--ds-config-cache",
             tmp_path / "ds_config_cache.json",
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -524,24 +524,23 @@ def test_build_and_train_schnet(exp_file, docked_files, tmp_path):
     # Make sure the right files exist
     trainer_config_cache = tmp_path / "trainer.json"
     output_dir = tmp_path / "model_out"
-    loss_dict_file = output_dir / "loss_dict.json"
+    tpt_path = output_dir / "pred_tracker.json"
     assert trainer_config_cache.exists()
     assert output_dir.exists()
     assert (output_dir / "init.th").exists()
     for i in range(1):
         assert (output_dir / f"{i}.th").exists()
     assert (output_dir / "final.th").exists()
-    assert loss_dict_file.exists()
+    assert tpt_path.exists()
     assert (tmp_path / "ds_cache.pkl").exists()
     assert (tmp_path / "ds_config_cache.json").exists()
 
     # Load and check stuff
-    loss_dict = json.loads(loss_dict_file.read_text())
-    assert {"train", "test", "val"} == set(loss_dict.keys())
-    print({k: len(v) for k, v in loss_dict.items()}, flush=True)
-    assert len(loss_dict["train"]) == 8
-    assert len(loss_dict["val"]) == 1
-    assert len(loss_dict["test"]) == 1
+    pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
+    assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
+    assert len(pred_tracker.split_dict["train"]) == 8
+    assert len(pred_tracker.split_dict["val"]) == 1
+    assert len(pred_tracker.split_dict["test"]) == 1
 
 
 def test_build_and_train_e3nn(exp_file, docked_files, tmp_path):
@@ -569,8 +568,8 @@ def test_build_and_train_e3nn(exp_file, docked_files, tmp_path):
             tmp_path / "ds_config_cache.json",
             "--irreps-hidden",
             "0:5",
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -586,24 +585,23 @@ def test_build_and_train_e3nn(exp_file, docked_files, tmp_path):
     # Make sure the right files exist
     trainer_config_cache = tmp_path / "trainer.json"
     output_dir = tmp_path / "model_out"
-    loss_dict_file = output_dir / "loss_dict.json"
+    tpt_path = output_dir / "pred_tracker.json"
     assert trainer_config_cache.exists()
     assert output_dir.exists()
     assert (output_dir / "init.th").exists()
     for i in range(1):
         assert (output_dir / f"{i}.th").exists()
     assert (output_dir / "final.th").exists()
-    assert loss_dict_file.exists()
+    assert tpt_path.exists()
     assert (tmp_path / "ds_cache.pkl").exists()
     assert (tmp_path / "ds_config_cache.json").exists()
 
     # Load and check stuff
-    loss_dict = json.loads(loss_dict_file.read_text())
-    assert {"train", "test", "val"} == set(loss_dict.keys())
-    print({k: len(v) for k, v in loss_dict.items()}, flush=True)
-    assert len(loss_dict["train"]) == 8
-    assert len(loss_dict["val"]) == 1
-    assert len(loss_dict["test"]) == 1
+    pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
+    assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
+    assert len(pred_tracker.split_dict["train"]) == 8
+    assert len(pred_tracker.split_dict["val"]) == 1
+    assert len(pred_tracker.split_dict["test"]) == 1
 
 
 def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
@@ -637,8 +635,8 @@ def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
             "1",
             "--vertex",
             False,
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -654,24 +652,23 @@ def test_build_and_train_visnet(exp_file, docked_files, tmp_path):
     # Make sure the right files exist
     trainer_config_cache = tmp_path / "trainer.json"
     output_dir = tmp_path / "model_out"
-    loss_dict_file = output_dir / "loss_dict.json"
+    tpt_path = output_dir / "pred_tracker.json"
     assert trainer_config_cache.exists()
     assert output_dir.exists()
     assert (output_dir / "init.th").exists()
     for i in range(1):
         assert (output_dir / f"{i}.th").exists()
     assert (output_dir / "final.th").exists()
-    assert loss_dict_file.exists()
+    assert tpt_path.exists()
     assert (tmp_path / "ds_cache.pkl").exists()
     assert (tmp_path / "ds_config_cache.json").exists()
 
     # Load and check stuff
-    loss_dict = json.loads(loss_dict_file.read_text())
-    assert {"train", "test", "val"} == set(loss_dict.keys())
-    print({k: len(v) for k, v in loss_dict.items()}, flush=True)
-    assert len(loss_dict["train"]) == 8
-    assert len(loss_dict["val"]) == 1
-    assert len(loss_dict["test"]) == 1
+    pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
+    assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
+    assert len(pred_tracker.split_dict["train"]) == 8
+    assert len(pred_tracker.split_dict["val"]) == 1
+    assert len(pred_tracker.split_dict["test"]) == 1
 
 
 def test_build_and_train_schnet_jitter(exp_file, docked_files, tmp_path):
@@ -699,8 +696,8 @@ def test_build_and_train_schnet_jitter(exp_file, docked_files, tmp_path):
             tmp_path / "ds_config_cache.json",
             "--data-aug",
             "aug_type:jitter_fixed",
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -716,24 +713,23 @@ def test_build_and_train_schnet_jitter(exp_file, docked_files, tmp_path):
     # Make sure the right files exist
     trainer_config_cache = tmp_path / "trainer.json"
     output_dir = tmp_path / "model_out"
-    loss_dict_file = output_dir / "loss_dict.json"
+    tpt_path = output_dir / "pred_tracker.json"
     assert trainer_config_cache.exists()
     assert output_dir.exists()
     assert (output_dir / "init.th").exists()
     for i in range(1):
         assert (output_dir / f"{i}.th").exists()
     assert (output_dir / "final.th").exists()
-    assert loss_dict_file.exists()
+    assert tpt_path.exists()
     assert (tmp_path / "ds_cache.pkl").exists()
     assert (tmp_path / "ds_config_cache.json").exists()
 
     # Load and check stuff
-    loss_dict = json.loads(loss_dict_file.read_text())
-    assert {"train", "test", "val"} == set(loss_dict.keys())
-    print({k: len(v) for k, v in loss_dict.items()}, flush=True)
-    assert len(loss_dict["train"]) == 8
-    assert len(loss_dict["val"]) == 1
-    assert len(loss_dict["test"]) == 1
+    pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
+    assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
+    assert len(pred_tracker.split_dict["train"]) == 8
+    assert len(pred_tracker.split_dict["val"]) == 1
+    assert len(pred_tracker.split_dict["test"]) == 1
 
 
 def test_build_and_train_e3nn_jitter(exp_file, docked_files, tmp_path):
@@ -763,8 +759,8 @@ def test_build_and_train_e3nn_jitter(exp_file, docked_files, tmp_path):
             "aug_type:jitter_fixed",
             "--irreps-hidden",
             "0:5",
-            "--loss-type",
-            "mse_step",
+            "--loss",
+            "loss_type:mse_step",
             "--device",
             "cpu",
             "--n-epochs",
@@ -780,21 +776,20 @@ def test_build_and_train_e3nn_jitter(exp_file, docked_files, tmp_path):
     # Make sure the right files exist
     trainer_config_cache = tmp_path / "trainer.json"
     output_dir = tmp_path / "model_out"
-    loss_dict_file = output_dir / "loss_dict.json"
+    tpt_path = output_dir / "pred_tracker.json"
     assert trainer_config_cache.exists()
     assert output_dir.exists()
     assert (output_dir / "init.th").exists()
     for i in range(1):
         assert (output_dir / f"{i}.th").exists()
     assert (output_dir / "final.th").exists()
-    assert loss_dict_file.exists()
+    assert tpt_path.exists()
     assert (tmp_path / "ds_cache.pkl").exists()
     assert (tmp_path / "ds_config_cache.json").exists()
 
     # Load and check stuff
-    loss_dict = json.loads(loss_dict_file.read_text())
-    assert {"train", "test", "val"} == set(loss_dict.keys())
-    print({k: len(v) for k, v in loss_dict.items()}, flush=True)
-    assert len(loss_dict["train"]) == 8
-    assert len(loss_dict["val"]) == 1
-    assert len(loss_dict["test"]) == 1
+    pred_tracker = TrainingPredictionTracker(**json.loads(tpt_path.read_text()))
+    assert {"train", "test", "val"} == set(pred_tracker.split_dict.keys())
+    assert len(pred_tracker.split_dict["train"]) == 8
+    assert len(pred_tracker.split_dict["val"]) == 1
+    assert len(pred_tracker.split_dict["test"]) == 1

@@ -1,10 +1,10 @@
 import functools
+import itertools
 import logging
 from collections.abc import Iterable
 from typing import Optional, Union
 
 import dask
-import numpy as np
 import psutil
 from asapdiscovery.data.util.execution_utils import (
     get_platform,
@@ -198,8 +198,8 @@ def dask_vmap(kwargsnames, remove_falsy=True, has_failure_mode=False):
                 if remove_falsy:
                     results = [r for r in results if r]
 
-                results = np.ravel(np.asarray(results)).tolist()
-
+                # flatten possibly ragged list of lists
+                results = list(itertools.chain(*results))
                 return results
 
             else:
