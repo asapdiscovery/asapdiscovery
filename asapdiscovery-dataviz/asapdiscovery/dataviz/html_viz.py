@@ -45,7 +45,7 @@ from asapdiscovery.genetics.fitness import (
 )
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 from multimethod import multimethod
-from pydantic import Field, root_validator
+from pydantic.v1 importField, root_validator
 
 logger = logging.getLogger(__name__)
 

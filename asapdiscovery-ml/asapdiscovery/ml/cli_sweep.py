@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import click
-from pydantic import ValidationError
+from pydantic.v1 importValidationError
 import torch
 from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (

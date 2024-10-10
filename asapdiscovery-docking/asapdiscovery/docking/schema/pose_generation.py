@@ -12,7 +12,7 @@ from asapdiscovery.data.backend.openeye import (
 )
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+from pydantic.v1 importBaseModel, Field, PositiveFloat, PositiveInt
 from rdkit import Chem
 
 

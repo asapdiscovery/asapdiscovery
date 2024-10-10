@@ -25,7 +25,7 @@ from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     DockingWorkflowInputsBase,
 )
-from pydantic import Field, PositiveInt
+from pydantic.v1 importField, PositiveInt
 
 
 class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):

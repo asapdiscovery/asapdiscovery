@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic.v1 importBaseModel, Field
 
 
 class ExperimentalCompoundData(BaseModel):
