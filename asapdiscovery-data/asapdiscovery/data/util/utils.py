@@ -956,6 +956,8 @@ def parse_fluorescence_data_cdd(
             try:
                 import sigfig
 
+                # BUG: rounding here with large error bars can cause the values to be clipped
+                # to 0 or 10, we should just drop these. See #1234
                 IC50, IC50_stderr = sigfig.round(
                     IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
                 )  # strings
