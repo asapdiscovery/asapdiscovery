@@ -129,7 +129,7 @@ def plot_test_performance(
         Column in the DataFrame containing the experimental error
     plotname : str
         Name of the plot
-    
+
     Returns
     -------
     str
