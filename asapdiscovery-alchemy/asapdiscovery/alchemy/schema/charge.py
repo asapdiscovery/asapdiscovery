@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from asapdiscovery.alchemy.schema.base import _SchemaBase
 from asapdiscovery.data.schema.ligand import Ligand
-from pydantic import Field
+from pydantic.v1 import Field
 
 
 class _BaseChargeMethod(_SchemaBase, abc.ABC):

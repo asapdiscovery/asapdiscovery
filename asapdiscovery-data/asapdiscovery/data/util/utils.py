@@ -7,10 +7,10 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas
-import pydantic
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 from asapdiscovery.data.schema.legacy import EnantiomerPair, EnantiomerPairList
+from pydantic.v1 import ValidationError
 
 # Not sure if this is the right place for these
 # Regex patterns for extracting Mpro dataset ID and Moonshot CDD style compound ID
@@ -319,7 +319,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                     experimental_data=experimental_data,
                 )
             )
-        except pydantic.error_wrappers.ValidationError as e:
+        except ValidationError as e:
             print(
                 "Error converting this row to ExperimentalCompoundData object:",
                 c,
@@ -445,7 +445,7 @@ def cdd_to_schema_v2(
                     experimental_data=experimental_data,
                 )
             )
-        except pydantic.error_wrappers.ValidationError as e:
+        except ValidationError as e:
             print(
                 "Error converting this row to ExperimentalCompoundData object:",
                 c,

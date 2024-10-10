@@ -20,7 +20,7 @@ from openfe.protocols.openmm_utils.omm_settings import (
 )
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
-from pydantic import BaseSettings, Field
+from pydantic.v1 import BaseSettings, Field
 
 from ._util import check_ligand_series_uniqueness_and_names
 from .base import _SchemaBase, _SchemaBaseFrozen

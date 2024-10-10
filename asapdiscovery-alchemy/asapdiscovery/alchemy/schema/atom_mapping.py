@@ -1,7 +1,7 @@
 import abc
 from typing import Literal
 
-from pydantic import Field, PositiveFloat, PositiveInt
+from pydantic.v1 import Field, PositiveFloat, PositiveInt
 
 from .base import _SchemaBase
 
