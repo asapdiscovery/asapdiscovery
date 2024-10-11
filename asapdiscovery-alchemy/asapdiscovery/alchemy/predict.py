@@ -1004,6 +1004,7 @@ def clean_result_network(network, console=None):
     from collections import defaultdict
 
     import numpy as np
+    import math
     from asapdiscovery.alchemy.schema.fec import (
         AlchemiscaleResults,
         FreeEnergyCalculationNetwork,
@@ -1046,18 +1047,26 @@ def clean_result_network(network, console=None):
             tf_res = results[0]
 
         deduped_results.append(tf_res)
-
     num_dupes_removed = len(cleaned_results) - len(deduped_results)
+
+    # remove predictions that have a NaN - this is extremely rare
+    denand_results = []
+    for result in deduped_results:
+        if not math.isnan(results[0].uncertainty.magnitude) and not math.isnan(
+            result.uncertainty.magnitude
+        ):
+            denand_results.append(result)
+
     if console:
         message = Padding(
-            f"Cleaned incoming result network. Removed {num_0_0_removed} edges with DG==0.0 kcal/mol and removed {num_dupes_removed} edges to balance between complex/solvent replicates.",
+            f"Cleaned incoming result network:\n- Removed {num_0_0_removed} edge(s) with DG==0.0 kcal/mol\n- Removed {num_dupes_removed} edge(s) to balance between complex/solvent replicates.\n- Removed {len(deduped_results)-len(denand_results)} edge(s) that contained a NaN measurement",
             (1, 0, 1, 0),
         )
         console.print(message)
     data = network_schema.dict(exclude={"results"})
     # unpack the deduped results into dicts
     results = AlchemiscaleResults(
-        results=deduped_results, network_key=network_schema.results.network_key
+        results=denand_results, network_key=network_schema.results.network_key
     ).dict()
     data["results"] = results
 

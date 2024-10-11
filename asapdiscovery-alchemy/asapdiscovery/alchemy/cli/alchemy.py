@@ -848,6 +848,7 @@ def predict(
     results to the relevant energy range.
     """
     import rich
+    import numpy as np
     from asapdiscovery.alchemy.cli.utils import (
         cinnabar_femap_get_largest_subnetwork,
         cinnabar_femap_is_connected,
@@ -897,7 +898,13 @@ def predict(
     is_connected = cinnabar_femap_is_connected(fe_map)
 
     if is_connected:
-        fe_map.generate_absolute_values()
+        try:
+            fe_map.generate_absolute_values()
+        except np.linalg.LinAlgError:
+            raise ValueError(
+                "MLE failed during absolute value generation. Does your result network contain "
+                "NaNs? You can manually remove these or run `predict -c` to remove them automatically."
+            )
     elif not is_connected and force_largest:
         fe_map = cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console)
         fe_map.generate_absolute_values()
