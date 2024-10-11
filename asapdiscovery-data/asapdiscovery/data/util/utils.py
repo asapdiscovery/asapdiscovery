@@ -831,6 +831,7 @@ def parse_fluorescence_data_cdd(
     assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
     dG_T=298.0,
     cp_values=None,
+    pic50_stderr_filt=10.0,
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
@@ -874,6 +875,9 @@ def parse_fluorescence_data_cdd(
         Cheng-Prussoff equation. These values are assumed to be in the same
         concentration units. If no values are passed for this, pIC50 values
         will be used as an approximation of the Ki
+    pic50_stderr_filt : float, default=10.0
+        Max allowable standard error in pIC50 units. Overly large errors lead to rounded
+        values that don't make sense, so set anything that will cause issues to NaN
 
     Returns
     -------
@@ -952,21 +956,28 @@ def parse_fluorescence_data_cdd(
             and (pIC50_range == 0)
             and isinstance(IC50_stderr, float)
         ):
-            # Have numbers for IC50 and stderr so can do rounding
-            try:
-                import sigfig
+            # Check error for filtering
+            if pIC50_stderr > pic50_stderr_filt:
+                IC50 = "nan"
+                pIC50 = "nan"
+                # @HMO do we want to leave the stderr values as they are for posterity
+                #  or set them to NaN as well?
+            else:
+                # Have numbers for IC50 and stderr so can do rounding
+                try:
+                    import sigfig
 
-                # BUG: rounding here with large error bars can cause the values to be clipped
-                # to 0 or 10, we should just drop these. See #1234
-                IC50, IC50_stderr = sigfig.round(
-                    IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
-                )  # strings
-                pIC50, pIC50_stderr = sigfig.round(
-                    pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
-                )  # strings
-            except ModuleNotFoundError:
-                # Don't round
-                pass
+                    # BUG: rounding here with large error bars can cause the values to be clipped
+                    # to 0 or 10, we should just drop these. See #1234
+                    IC50, IC50_stderr = sigfig.round(
+                        IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
+                    )  # strings
+                    pIC50, pIC50_stderr = sigfig.round(
+                        pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
+                    )  # strings
+                except ModuleNotFoundError:
+                    # Don't round
+                    pass
 
         IC50_series.append(float(IC50) * 1e-6)
         IC50_stderr_series.append(float(IC50_stderr) * 1e-6)
