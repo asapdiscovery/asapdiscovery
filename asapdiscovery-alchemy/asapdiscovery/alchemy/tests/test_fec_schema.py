@@ -23,7 +23,7 @@ from asapdiscovery.alchemy.schema.network import (
     RadialPlanner,
 )
 from asapdiscovery.alchemy.utils import extract_custom_ligand_network
-from asapdiscovery.data.schema.identifiers import BespokeParameters, BespokeParameter
+from asapdiscovery.data.schema.identifiers import BespokeParameter, BespokeParameters
 from openff.toolkit import ForceField
 from openff.units import unit as OFFUnit
 
@@ -283,6 +283,7 @@ def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
             == 0.5 * OFFUnit.nanoseconds
         )
 
+
 def test_fec_with_bespoke_parameters(tyk2_fec_network):
     """
     Make sure we can generate an OpenFE network with bespoke torsions parameters added
@@ -296,12 +297,7 @@ def test_fec_with_bespoke_parameters(tyk2_fec_network):
         BespokeParameter(
             interaction="ProperTorsions",
             smirks="[#17]-[#6a:1]@[#6a:2]-[#6:3]=[#8:4]",
-            values={
-                "k1": 10,
-                "k2": 1,
-                "k3": 2,
-                "k4": 3
-            }
+            values={"k1": 10, "k2": 1, "k3": 2, "k4": 3},
         )
     )
     # add this parameter to each of the ligands
@@ -311,12 +307,13 @@ def test_fec_with_bespoke_parameters(tyk2_fec_network):
     alchem_network = tyk2_fec_network.to_alchemical_network()
     # check each edge has the bespoke parameters added to the force field
     for transformation in alchem_network.edges:
-        off = ForceField(transformation.protocol.settings.forcefield_settings.small_molecule_forcefield)
+        off = ForceField(
+            transformation.protocol.settings.forcefield_settings.small_molecule_forcefield
+        )
         bespoke_param = bespoke_parameters.parameters[0]
         handler = off.get_parameter_handler(bespoke_param.interaction)
         off_param = handler[bespoke_param.smirks]
         assert off_param.k1.m == 10.0
-
 
 
 def test_results_to_cinnabar_missing_phase(tyk2_fec_network):
