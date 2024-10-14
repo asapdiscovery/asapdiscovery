@@ -19,6 +19,8 @@ from asapdiscovery.ml.config import (
     LossFunctionConfig,
     OptimizerConfig,
 )
+from asapdiscovery.ml.dataset import dataset_to_csv
+from asapdiscovery.ml.schema import TrainingPredictionTracker
 from mtenn.config import (
     E3NNModelConfig,
     GATModelConfig,
@@ -27,7 +29,15 @@ from mtenn.config import (
     SchNetModelConfig,
     ViSNetModelConfig,
 )
-from pydantic import BaseModel, Extra, Field, ValidationError, root_validator, validator
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    ValidationError,
+    conlist,
+    root_validator,
+    validator,
+)
 
 
 class Trainer(BaseModel):
@@ -55,9 +65,26 @@ class Trainer(BaseModel):
             "test splits."
         ),
     )
-    loss_config: LossFunctionConfig = Field(
+    loss_configs: conlist(item_type=LossFunctionConfig, min_items=1) = Field(
         ...,
         description="Config describing the loss function for training.",
+    )
+    loss_weights: torch.Tensor = Field(
+        [],
+        description=(
+            "Weight for each loss function. Values will be normalized to add up to 1. "
+            "If no values are passed, each loss function will be weighted equally. If "
+            "any values are passed, there must be one for each loss function."
+        ),
+    )
+    eval_loss_weights: torch.Tensor = Field(
+        [],
+        description=(
+            "Weight for each loss function when calculating val and test losses. "
+            "Values will be normalized to add up to 1. If no values are passed, the "
+            "weights from loss_weights will be used. If any values are passed, there "
+            "must be one for each loss function."
+        ),
     )
     data_aug_configs: list[DataAugConfig] = Field(
         [],
@@ -74,7 +101,9 @@ class Trainer(BaseModel):
     )
     start_epoch: int = Field(
         0,
-        description="Which epoch to start training at (used for continuing training runs).",
+        description=(
+            "Which epoch to start training at (used for continuing training runs)."
+        ),
     )
     n_epochs: int = Field(
         300,
@@ -90,11 +119,17 @@ class Trainer(BaseModel):
             "Set to -1 to use the entire training set as a batch."
         ),
     )
-    target_prop: str = Field("pIC50", description="Target property to train against.")
+    target_prop: str = Field("pIC50", description=("Target property to train against."))
     cont: bool = Field(
         False, description="This is a continuation of a previous training run."
     )
-    loss_dict: dict = Field({}, description="Dict keeping track of training loss.")
+    pred_tracker: TrainingPredictionTracker = Field(
+        None,
+        description=(
+            "TrainingPredictionTracker to keep track of predictions and losses over "
+            "training."
+        ),
+    )
     device: torch.device = Field("cpu", description="Device to train on.")
 
     # I/O options
@@ -118,13 +153,19 @@ class Trainer(BaseModel):
         ),
     )
 
+    write_ds_csv: bool = Field(
+        False, description="Write the dataset splits to CSV files."
+    )
+
     # W&B parameters
     use_wandb: bool = Field(False, description="Use W&B to log model training.")
     wandb_project: str | None = Field(None, description="W&B project name.")
     wandb_name: str | None = Field(None, description="W&B project name.")
+    wandb_group: str | None = Field(None, description="W&B group name.")
     extra_config: dict | None = Field(
         None, description="Any extra config options to log to W&B."
     )
+    wandb_run_id: str | None = Field(None, description="W&B run ID.")
 
     # artifact tracking options
     upload_to_s3: bool = Field(False, description="Upload artifacts to S3.")
@@ -151,14 +192,17 @@ class Trainer(BaseModel):
             "ds_train": {"exclude": True},
             "ds_val": {"exclude": True},
             "ds_test": {"exclude": True},
-            "loss_func": {"exclude": True},
+            "loss_funcs": {"exclude": True},
         }
 
         # Allow things to be added to the object after initialization/validation
         extra = Extra.allow
 
         # Custom encoder to cast device to str before trying to serialize
-        json_encoders = {torch.device: lambda d: str(d)}
+        json_encoders = {
+            torch.device: lambda d: str(d),
+            torch.Tensor: lambda t: t.tolist(),
+        }
 
     # Validator to make sure that if output_dir exists, it is a directory
     @validator("output_dir")
@@ -175,7 +219,6 @@ class Trainer(BaseModel):
         "model_config",
         "es_config",
         "ds_splitter_config",
-        "loss_config",
         pre=True,
     )
     def load_cache_files(cls, config_kwargs, field):
@@ -227,13 +270,20 @@ class Trainer(BaseModel):
             **config_kwargs,
         )
 
-    @validator("data_aug_configs", pre=True)
+    @validator("data_aug_configs", "loss_configs", pre=True)
     def load_cache_files_lists(cls, kwargs_list, field):
         """
         This validator performs the same functionality as the above function, but for
         Fields that contain a list of some type.
         """
         config_cls = field.type_
+
+        if isinstance(kwargs_list, dict):
+            # This will occur in the even of a Sweep, in which case the values will be
+            #  a dict mapping index in the list to a value
+            # Just need to extract the values in the correct order (cast indices to int
+            #  just in case)
+            kwargs_list = [kwargs_list[i] for i in sorted(kwargs_list, key=int)]
 
         configs = []
         for config_kwargs in kwargs_list:
@@ -246,6 +296,15 @@ class Trainer(BaseModel):
             # Just skip any Nones
             if config_kwargs is None:
                 continue
+
+            if isinstance(config_kwargs, str):
+                if len(config_kwargs) == 0:
+                    continue
+
+                # Parse into dict
+                config_kwargs = dict(
+                    [kvp.split(":") for kvp in config_kwargs.split(",")]
+                )
 
             # Get config cache file and overwrite option (if given). Defaults to no cache
             #  file and not overwriting
@@ -444,6 +503,85 @@ class Trainer(BaseModel):
 
         return extra_config
 
+    @validator("loss_weights", pre=True, always=True)
+    def check_loss_weights(cls, v, values):
+        """
+        Make sure that we have the right number of loss function weights, and cast to
+        normalized tensor.
+        """
+        if (len(v) > 0) and (len(v) != len(values["loss_configs"])):
+            raise ValueError(
+                f"Mismatch between number of loss function weights ({len(v)}) and "
+                f"number of loss functions ({len(values['loss_configs'])})."
+            )
+
+        # Fill with 1s if no values passed
+        if len(v) == 0:
+            v = [1] * len(values["loss_configs"])
+        elif isinstance(v, dict):
+            # This will occur in the even of a Sweep, in which case the values will be
+            #  a dict mapping index in the list to a value
+            # Just need to extract the values in the correct order (cast indices to int
+            #  just in case)
+            v = [v[i] for i in sorted(v, key=int)]
+
+        # Cast to tensor (don't send to device in case we're building the Trainer on a
+        #  CPU-only node)
+        v = torch.tensor(v, dtype=torch.float32)
+
+        # Check for negative numbers
+        if (v < 0).any():
+            raise ValueError("Values for loss_weights can't be negative.")
+
+        # Normalize to 1
+        v /= v.sum()
+
+        return v
+
+    @validator("eval_loss_weights", pre=True, always=True)
+    def check_eval_loss_weights(cls, v, values):
+        """
+        Make sure that we have the right number of loss function weights, and cast to
+        normalized tensor.
+        """
+        if (len(v) > 0) and (len(v) != len(values["loss_configs"])):
+            raise ValueError(
+                f"Mismatch between number of loss function weights ({len(v)}) and "
+                f"number of loss functions ({len(values['loss_configs'])})."
+            )
+
+        # Fill with 1s if no values passed
+        if len(v) == 0:
+            return values["loss_weights"]
+        elif isinstance(v, dict):
+            # This will occur in the even of a Sweep, in which case the values will be
+            #  a dict mapping index in the list to a value
+            # Just need to extract the values in the correct order (cast indices to int
+            #  just in case)
+            v = [v[i] for i in sorted(v, key=int)]
+
+        # Cast to tensor (don't send to device in case we're building the Trainer on a
+        #  CPU-only node)
+        v = torch.tensor(v, dtype=torch.float32)
+
+        # Check for negative numbers
+        if (v < 0).any():
+            raise ValueError("Values for loss_weights can't be negative.")
+
+        # Normalize to 1
+        v /= v.sum()
+
+        return v
+
+    @validator("pred_tracker", always=True)
+    def init_pred_tracker(cls, pred_tracker):
+        # If a value was passed, it's already been validated so just return that
+        if isinstance(pred_tracker, TrainingPredictionTracker):
+            return pred_tracker
+        else:
+            # Otherwise need to init an empty one
+            return TrainingPredictionTracker()
+
     @validator("save_weights")
     def check_save_weights(cls, v):
         """
@@ -507,6 +645,7 @@ class Trainer(BaseModel):
                 raise wandb.errors.UsageError(
                     f"Run in run_id file ({run_id}) doesn't exist"
                 )
+            self.wandb_run_id = run_id
             # Update run config to reflect it's been resumed
             wandb.config.update(config, allow_val_change=True)
         else:
@@ -515,7 +654,9 @@ class Trainer(BaseModel):
                 project=self.wandb_project,
                 config=config,
                 name=self.wandb_name,
+                group=self.wandb_group,
             ).id
+            self.wandb_run_id = run_id
 
             # Save run_id in case we want to continue later
             if not self.output_dir.exists():
@@ -567,21 +708,24 @@ class Trainer(BaseModel):
             self.output_dir = self.output_dir / run_id
             self.output_dir.mkdir(exist_ok=True)
 
-        # Load info for continuing from loss_dict
+        # Load info for continuing from pred_tracker
         if self.cont:
-            print("Continuing run, checking for loss_dict.json", flush=True)
-            # Try and load loss_dict
-            loss_dict_fn = self.output_dir / "loss_dict.json"
-            if loss_dict_fn.exists():
-                print("Found loss_dict.json", flush=True)
-                self.loss_dict = json.loads(loss_dict_fn.read_text())
-                self.start_epoch = len(
-                    next(iter(self.loss_dict["train"].values()))["losses"]
+            print("Continuing run, checking for pred_tracker.json", flush=True)
+            # Try and load pred_tracker
+            pred_tracker_fn = self.output_dir / "pred_tracker.json"
+            if pred_tracker_fn.exists():
+                print("Found pred_tracker.json", flush=True)
+                self.pred_tracker = TrainingPredictionTracker(
+                    **json.loads(pred_tracker_fn.read_text())
                 )
+                try:
+                    self.start_epoch = len(next(iter(self.pred_tracker))[1].predictions)
+                except StopIteration:
+                    self.start_epoch = 0
             else:
-                print("No loss_dict file found.")
+                print("No pred_tracker file found.")
                 if self.log_file:
-                    self.logger.info("No loss_dict file found.")
+                    self.logger.info("No pred_tracker file found.")
 
                 all_weights_epochs = [
                     int(p.stem)
@@ -593,31 +737,38 @@ class Trainer(BaseModel):
 
                 self.start_epoch = max(all_weights_epochs) + 1
 
-            # Get splits directly from loss_dict, if available (otherwise will fall
+            # Get splits directly from pred_tracker, if available (otherwise will fall
             #  back to splits from self.ds_splitter_config)
-            if len(self.loss_dict) > 0:
+            if len(self.pred_tracker) > 0:
                 subset_idxs = {"train": [], "val": [], "test": []}
+
+                # First build a dict mapping compound_id: idx in ds
+                compound_idx_dict = {}
                 for i, (compound, _) in enumerate(self.ds):
                     if self.model_config.grouped:
                         compound_id = compound
                     else:
                         compound_id = compound[1]
-
-                    for sp in ["train", "val", "test"]:
-                        if compound_id in self.loss_dict[sp]:
-                            print(f"putting {compound_id} in {sp}", flush=True)
-                            subset_idxs[sp].append(i)
-                            break
-                    else:
-                        print(
-                            f"Compound {compound_id} not found in loss_dict, not "
-                            "including it."
+                    if compound_id in compound_idx_dict:
+                        raise ValueError(
+                            f"Found multiple entries in ds for compound {compound_id}"
                         )
-                        if self.log_file:
-                            self.logger.info(
-                                f"Compound {compound_id} not found in loss_dict, not "
-                                "including it."
-                            )
+                    compound_idx_dict[compound_id] = i
+
+                for _, tp in self.pred_tracker:
+                    if tp.compound_id not in compound_idx_dict:
+                        raise ValueError(
+                            f"Found compound {tp.compound_id} in pred_tracker "
+                            "but not in ds"
+                        )
+
+                subset_idxs = {
+                    sp: [
+                        compound_idx_dict[compound_id]
+                        for compound_id in compound_id_list
+                    ]
+                    for sp, compound_id_list in self.pred_tracker.get_compound_ids().items()
+                }
 
                 self.ds_train = torch.utils.data.Subset(self.ds, subset_idxs["train"])
                 self.ds_val = torch.utils.data.Subset(self.ds, subset_idxs["val"])
@@ -635,6 +786,7 @@ class Trainer(BaseModel):
                         )
                     }
                 )
+                print(f"Using weights file {weights_path.name}", flush=True)
             except FileNotFoundError:
                 raise FileNotFoundError(
                     f"Found {self.start_epoch} epochs of training, but didn't find "
@@ -649,6 +801,12 @@ class Trainer(BaseModel):
             len(self.ds_test),
             flush=True,
         )
+
+        # write the datasets to CSV
+        if self.write_ds_csv:
+            dataset_to_csv(self.ds_train, self.output_dir / "ds_train.csv")
+            dataset_to_csv(self.ds_val, self.output_dir / "ds_val.csv")
+            dataset_to_csv(self.ds_test, self.output_dir / "ds_test.csv")
 
         # Build the Model
         self.model = self.model_config.build().to(self.device)
@@ -672,14 +830,18 @@ class Trainer(BaseModel):
         self.data_augs = [aug.build() for aug in self.data_aug_configs]
 
         # Build loss function
-        self.loss_func = self.loss_config.build()
+        self.loss_funcs = [loss.build() for loss in self.loss_configs]
+
+        # Send loss_weights to appropriate device
+        self.loss_weights = self.loss_weights.to(self.device)
+        self.eval_loss_weights = self.eval_loss_weights.to(self.device)
 
         # Set internal tracker to True so we know we can start training
         self._is_initialized = True
 
     def train(self):
         """
-        Train the model, updating the model and loss_dict in-place.
+        Train the model, updating the model and pred_tracker in-place.
         """
         if not self._is_initialized:
             if self.auto_init:
@@ -698,13 +860,13 @@ class Trainer(BaseModel):
                 self.logger.info(f"Epoch {epoch_idx}/{self.n_epochs}")
             if epoch_idx % 10 == 0 and epoch_idx > 0:
                 train_loss = np.mean(
-                    [v["losses"][-1] for v in self.loss_dict["train"].values()]
+                    [v.loss_vals[-1] for v in self.pred_tracker.split_dict["train"]]
                 )
                 val_loss = np.mean(
-                    [v["losses"][-1] for v in self.loss_dict["val"].values()]
+                    [v.loss_vals[-1] for v in self.pred_tracker.split_dict["val"]]
                 )
                 test_loss = np.mean(
-                    [v["losses"][-1] for v in self.loss_dict["test"].values()]
+                    [v.loss_vals[-1] for v in self.pred_tracker.split_dict["test"]]
                 )
                 print(f"Training loss: {train_loss:0.5f}")
                 print(f"Validation loss: {val_loss:0.5f}")
@@ -721,21 +883,40 @@ class Trainer(BaseModel):
             start_time = time()
             for compound, pose in self.ds_train:
                 if type(compound) is tuple:
-                    compound_id = compound[1]
+                    xtal_id, compound_id = compound
                 else:
+                    xtal_id = "NA"
                     compound_id = compound
 
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[pose[self.target_prop]]], device=self.device
-                ).float()
-                in_range = torch.tensor(
-                    [[pose[f"{self.target_prop}_range"]]], device=self.device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[pose[f"{self.target_prop}_stderr"]]],
-                    device=self.device,
-                ).float()
+                try:
+                    # convert to float to match other types
+                    target = torch.tensor(
+                        pose[self.target_prop], device=self.device
+                    ).float()
+                except KeyError:
+                    print(
+                        f"{self.target_prop} not found in compound {compound}, skipping.",
+                        flush=True,
+                    )
+                    if self.log_file:
+                        self.logger.info(
+                            f"{self.target_prop} not found in compound {compound}, skipping."
+                        )
+                    continue
+                in_range = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_range"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
+                uncertainty = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_stderr"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -758,24 +939,55 @@ class Trainer(BaseModel):
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
-                pred = pred.reshape(target.shape)
-                pose_preds = [p.item() for p in pose_preds]
-                loss = self.loss_func(pred, target, in_range, uncertainty)
+
+                losses = [
+                    (
+                        loss_func(
+                            pred, pose_preds, target, in_range, uncertainty
+                        ).reshape((1,))
+                    )
+                    for loss_func in self.loss_funcs
+                ]
+                losses = torch.cat(
+                    [loss.to(self.device, dtype=torch.float32) for loss in losses]
+                )
+
+                # Calculate final loss based on loss weights
+                loss = losses.flatten().dot(self.loss_weights)
+
+                # Update pred_tracker
+                for (
+                    loss_val,
+                    loss_config,
+                    loss_wt,
+                ) in zip(
+                    losses,
+                    self.loss_configs,
+                    self.loss_weights,
+                ):
+                    if target is None:
+                        continue
+                    self.pred_tracker.update_values(
+                        prediction=pred.item(),
+                        pose_predictions=[p.item() for p in pose_preds],
+                        loss_val=loss_val.item(),
+                        split="train",
+                        compound_id=compound_id,
+                        xtal_id=xtal_id,
+                        target_prop=self.target_prop,
+                        target_val=target,
+                        in_range=in_range,
+                        uncertainty=uncertainty,
+                        loss_config=loss_config,
+                        loss_weight=loss_wt,
+                    )
+
+                # If all target props were missing, there's no backprop to do
+                if not loss.requires_grad:
+                    continue
 
                 # Can just call loss.backward, grads will accumulate additively
                 loss.backward()
-
-                # Update loss_dict
-                self._update_loss_dict(
-                    "train",
-                    compound_id,
-                    target.item(),
-                    in_range.item(),
-                    uncertainty.item(),
-                    pred.item(),
-                    loss.item(),
-                    pose_preds=pose_preds,
-                )
 
                 # Keep track of loss for each sample
                 tmp_loss.append(loss.item())
@@ -826,21 +1038,40 @@ class Trainer(BaseModel):
             tmp_loss = []
             for compound, pose in self.ds_val:
                 if type(compound) is tuple:
-                    compound_id = compound[1]
+                    xtal_id, compound_id = compound
                 else:
+                    xtal_id = "NA"
                     compound_id = compound
 
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[pose[self.target_prop]]], device=self.device
-                ).float()
-                in_range = torch.tensor(
-                    [[pose[f"{self.target_prop}_range"]]], device=self.device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[pose[f"{self.target_prop}_stderr"]]],
-                    device=self.device,
-                ).float()
+                try:
+                    # convert to float to match other types
+                    target = torch.tensor(
+                        pose[self.target_prop], device=self.device
+                    ).float()
+                except KeyError:
+                    print(
+                        f"{self.target_prop} not found in compound {compound}, skipping.",
+                        flush=True,
+                    )
+                    if self.log_file:
+                        self.logger.info(
+                            f"{self.target_prop} not found in compound {compound}, skipping."
+                        )
+                    continue
+                in_range = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_range"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
+                uncertainty = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_stderr"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -850,21 +1081,47 @@ class Trainer(BaseModel):
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
-                pred = pred.reshape(target.shape)
-                pose_preds = [p.item() for p in pose_preds]
-                loss = self.loss_func(pred, target, in_range, uncertainty)
-
-                # Update loss_dict
-                self._update_loss_dict(
-                    "val",
-                    compound_id,
-                    target.item(),
-                    in_range.item(),
-                    uncertainty.item(),
-                    pred.item(),
-                    loss.item(),
-                    pose_preds=pose_preds,
+                losses = [
+                    (
+                        loss_func(
+                            pred, pose_preds, target, in_range, uncertainty
+                        ).reshape((1,))
+                    )
+                    for loss_func in self.loss_funcs
+                ]
+                losses = torch.cat(
+                    [loss.to(self.device, dtype=torch.float32) for loss in losses]
                 )
+
+                # Calculate final loss based on loss weights
+                loss = losses.flatten().dot(self.eval_loss_weights)
+
+                # Update pred_tracker
+                for (
+                    loss_val,
+                    loss_config,
+                    loss_wt,
+                ) in zip(
+                    losses,
+                    self.loss_configs,
+                    self.eval_loss_weights,
+                ):
+                    if target is None:
+                        continue
+                    self.pred_tracker.update_values(
+                        prediction=pred.item(),
+                        pose_predictions=[p.item() for p in pose_preds],
+                        loss_val=loss_val.item(),
+                        split="val",
+                        compound_id=compound_id,
+                        xtal_id=xtal_id,
+                        target_prop=self.target_prop,
+                        target_val=target,
+                        in_range=in_range,
+                        uncertainty=uncertainty,
+                        loss_config=loss_config,
+                        loss_weight=loss_wt,
+                    )
 
                 tmp_loss.append(loss.item())
             epoch_val_loss = np.mean(tmp_loss)
@@ -872,21 +1129,40 @@ class Trainer(BaseModel):
             tmp_loss = []
             for compound, pose in self.ds_test:
                 if type(compound) is tuple:
-                    compound_id = compound[1]
+                    xtal_id, compound_id = compound
                 else:
+                    xtal_id = "NA"
                     compound_id = compound
 
-                # convert to float to match other types
-                target = torch.tensor(
-                    [[pose[self.target_prop]]], device=self.device
-                ).float()
-                in_range = torch.tensor(
-                    [[pose[f"{self.target_prop}_range"]]], device=self.device
-                ).float()
-                uncertainty = torch.tensor(
-                    [[pose[f"{self.target_prop}_stderr"]]],
-                    device=self.device,
-                ).float()
+                try:
+                    # convert to float to match other types
+                    target = torch.tensor(
+                        pose[self.target_prop], device=self.device
+                    ).float()
+                except KeyError:
+                    print(
+                        f"{self.target_prop} not found in compound {compound}, skipping.",
+                        flush=True,
+                    )
+                    if self.log_file:
+                        self.logger.info(
+                            f"{self.target_prop} not found in compound {compound}, skipping."
+                        )
+                    continue
+                in_range = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_range"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
+                uncertainty = (
+                    torch.tensor(
+                        pose[f"{self.target_prop}_stderr"], device=self.device
+                    ).float()
+                    if f"{self.target_prop}_range" in pose
+                    else None
+                )
 
                 # Get input poses for GroupedModel
                 if self.model_config.grouped:
@@ -896,21 +1172,47 @@ class Trainer(BaseModel):
 
                 # Make prediction and calculate loss
                 pred, pose_preds = self.model(model_inp)
-                pred = pred.reshape(target.shape)
-                pose_preds = [p.item() for p in pose_preds]
-                loss = self.loss_func(pred, target, in_range, uncertainty)
-
-                # Update loss_dict
-                self._update_loss_dict(
-                    "test",
-                    compound_id,
-                    target.item(),
-                    in_range.item(),
-                    uncertainty.item(),
-                    pred.item(),
-                    loss.item(),
-                    pose_preds=pose_preds,
+                losses = [
+                    (
+                        loss_func(
+                            pred, pose_preds, target, in_range, uncertainty
+                        ).reshape((1,))
+                    )
+                    for loss_func in self.loss_funcs
+                ]
+                losses = torch.cat(
+                    [loss.to(self.device, dtype=torch.float32) for loss in losses]
                 )
+
+                # Calculate final loss based on loss weights
+                loss = losses.flatten().dot(self.eval_loss_weights)
+
+                # Update pred_tracker
+                for (
+                    loss_val,
+                    loss_config,
+                    loss_wt,
+                ) in zip(
+                    losses,
+                    self.loss_configs,
+                    self.eval_loss_weights,
+                ):
+                    if target is None:
+                        continue
+                    self.pred_tracker.update_values(
+                        prediction=pred.item(),
+                        pose_predictions=[p.item() for p in pose_preds],
+                        loss_val=loss_val.item(),
+                        split="test",
+                        compound_id=compound_id,
+                        xtal_id=xtal_id,
+                        target_prop=self.target_prop,
+                        target_val=target,
+                        in_range=in_range,
+                        uncertainty=uncertainty,
+                        loss_config=loss_config,
+                        loss_weight=loss_wt,
+                    )
 
                 tmp_loss.append(loss.item())
             epoch_test_loss = np.mean(tmp_loss)
@@ -937,7 +1239,7 @@ class Trainer(BaseModel):
                 torch.save(
                     self.optimizer.state_dict(), self.output_dir / "optimizer.th"
                 )
-            (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
+            (self.output_dir / "pred_tracker.json").write_text(self.pred_tracker.json())
 
             # Stop if loss has gone to infinity or is NaN
             if (
@@ -1014,24 +1316,18 @@ class Trainer(BaseModel):
             use_epoch = None
 
         if use_epoch is not None:
-            (self.output_dir / "loss_dict_full.json").write_text(
-                json.dumps(self.loss_dict)
+            (self.output_dir / "pred_tracker_full.json").write_text(
+                self.pred_tracker.json()
             )
-            # Trim the loss_dict
-            self.loss_dict = {
-                sp: {
-                    compound_id: {
-                        k: v[: use_epoch + 1] if isinstance(v, list) else v
-                        for k, v in compound_d.items()
-                    }
-                    for compound_id, compound_d in sp_d.items()
-                }
-                for sp, sp_d in self.loss_dict.items()
-            }
+            # Trim the pred_tracker
+            for _, tp in self.pred_tracker:
+                tp.predictions = tp.predictions[: use_epoch + 1]
+                tp.pose_predictions = tp.pose_predictions[: use_epoch + 1]
+                tp.loss_vals = tp.loss_vals[: use_epoch + 1]
 
         final_model_path = self.output_dir / "final.th"
         torch.save(self.model.state_dict(), final_model_path)
-        (self.output_dir / "loss_dict.json").write_text(json.dumps(self.loss_dict))
+        (self.output_dir / "pred_tracker.json").write_text(self.pred_tracker.json())
 
         # write to json
         model_config_path = self.output_dir / "model_config.json"
@@ -1090,72 +1386,18 @@ class Trainer(BaseModel):
         if self.use_wandb:
             wandb.finish()
 
-    def _update_loss_dict(
-        self,
-        split,
-        compound_id,
-        target,
-        in_range,
-        uncertainty,
-        pred,
-        loss,
-        pose_preds=None,
-    ):
-        """
-        Update (in-place) loss_dict info from training/evaluation on a molecule.
-
-        Parameters
-        ----------
-        split : str
-            Which split ["train", "val", "test"]
-        compound_id : str
-            Compound ID
-        target : float
-            Target value for this compound
-        in_range : int
-            Whether target is below (-1), within (0), or above (1) the assay range
-        uncertainty : float
-            Experimental measurement uncertainty
-        pred : float
-           Model prediction
-        loss : float
-            Prediction loss
-        pose_preds : float, optional
-            Single-pose model prediction for each pose in input (for multi-pose models)
-        """
-        if split not in self.loss_dict:
-            self.loss_dict[split] = {}
-
-        if compound_id in self.loss_dict[split]:
-            self.loss_dict[split][compound_id]["preds"].append(pred)
-            if pose_preds is not None:
-                self.loss_dict[split][compound_id]["pose_preds"].append(pose_preds)
-            self.loss_dict[split][compound_id]["losses"].append(loss)
-        else:
-            self.loss_dict[split][compound_id] = {
-                "target": target,
-                "in_range": in_range,
-                "uncertainty": uncertainty,
-                "preds": [pred],
-                "losses": [loss],
-            }
-            if pose_preds is not None:
-                self.loss_dict[split][compound_id]["pose_preds"] = [pose_preds]
-
     def _make_wandb_ds_tables(self):
         ds_tables = []
 
+        table_cols = ["crystal", "compound_id"]
+        table_cols += [
+            self.target_prop,
+            f"{self.target_prop}_range",
+            f"{self.target_prop}_stderr",
+        ]
+        table_cols += ["date_created"]
         for ds in [self.ds_train, self.ds_val, self.ds_test]:
-            table = wandb.Table(
-                columns=[
-                    "crystal",
-                    "compound_id",
-                    self.target_prop,
-                    f"{self.target_prop}_range",
-                    f"{self.target_prop}_stderr",
-                    "date_created",
-                ]
-            )
+            table = wandb.Table(columns=table_cols)
             # Build table and add each molecule
             for compound, d in ds:
                 try:
@@ -1166,32 +1408,13 @@ class Trainer(BaseModel):
                     xtal_id = ""
                     compound_id = compound
 
-                try:
-                    target_value = d[self.target_prop]
-                except KeyError:
-                    target_value = np.nan
-                try:
-                    target_value_range = d[f"{self.target_prop}_range"]
-                except KeyError:
-                    target_value_range = np.nan
-                try:
-                    target_value_stderr = d[f"{self.target_prop}_stderr"]
-                except KeyError:
-                    target_value_stderr = np.nan
-                except AttributeError:
-                    target_value = d[self.target_prop]
-                try:
-                    date_created = d["date_created"]
-                except KeyError:
-                    date_created = None
-                table.add_data(
-                    xtal_id,
-                    compound_id,
-                    target_value,
-                    target_value_range,
-                    target_value_stderr,
-                    date_created,
-                )
+                row_data = [xtal_id, compound_id]
+                row_data += [d.get(col, np.nan) for col in table_cols[2:-1]]
+                row_data += [d.get("date_created", None)]
+                row_data = [
+                    str(d) if isinstance(d, np.ndarray) else d for d in row_data
+                ]
+                table.add_data(*row_data)
 
             ds_tables.append(table)
 

@@ -9,13 +9,15 @@ from shutil import rmtree
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     rename_output_columns_for_manifold,
 )
-from asapdiscovery.data.util.dask_utils import make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
-from asapdiscovery.docking.docking import DockingInputMultiStructure
+from asapdiscovery.docking.docking import (
+    DockingInputMultiStructure,
+    write_results_to_multi_sdf,
+)
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSIT_RELAX_MODE, POSITDocker
 from asapdiscovery.docking.scorer import ChemGauss4Scorer, MetaScorer
@@ -40,7 +42,7 @@ class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):
     )
 
     # Copied from POSITDocker
-    relax: POSIT_RELAX_MODE = Field(
+    relax_mode: POSIT_RELAX_MODE = Field(
         POSIT_RELAX_MODE.NONE,
         description="When to check for relaxation either, 'clash', 'all', 'none'",
     )
@@ -188,7 +190,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
     # dock pairs
     logger.info("Running docking on selected pairs")
     docker = POSITDocker(
-        relax=inputs.relax,
+        relax_mode=inputs.relax_mode,
         posit_method=inputs.posit_method,
         use_omega=inputs.use_omega,
         omega_dense=inputs.omega_dense,
@@ -204,8 +206,8 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
+        return_for_disk_backend=True,
     )
-
     n_results = len(results)
     logger.info(f"Docked {n_results} pairs successfully")
     if n_results == 0:
@@ -221,16 +223,22 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
 
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
+    logger.info("Running scoring")
     scores_df = scorer.score(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
-        return_df=True,
         failure_mode=inputs.failure_mode,
+        return_df=True,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
 
     del results

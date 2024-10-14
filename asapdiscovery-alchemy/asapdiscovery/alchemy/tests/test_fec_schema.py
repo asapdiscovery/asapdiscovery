@@ -15,12 +15,14 @@ from asapdiscovery.alchemy.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.alchemy.schema.network import (
+    CustomNetworkPlanner,
     MaximalPlanner,
     MinimalRedundantPlanner,
     MinimalSpanningPlanner,
     NetworkPlanner,
     RadialPlanner,
 )
+from asapdiscovery.alchemy.utils import extract_custom_ligand_network
 from openff.units import unit as OFFUnit
 
 
@@ -28,7 +30,13 @@ from openff.units import unit as OFFUnit
     "mapper, argument, value",
     [
         pytest.param(LomapAtomMapper, "max3d", 30, id="Lomap"),
-        pytest.param(PersesAtomMapper, "coordinate_tolerance", 0.15, id="Perses"),
+        pytest.param(
+            PersesAtomMapper,
+            "coordinate_tolerance",
+            0.15,
+            id="Perses",
+            marks=pytest.mark.xfail(reason="upstream OpenFE #929"),
+        ),
         pytest.param(
             KartografAtomMapper, "map_exact_ring_matches_only", True, id="Kartograph"
         ),
@@ -94,6 +102,16 @@ def test_network_planner_get_network(network_planner, openfe_func):
         assert openfe_func in planning_func.func.__name__
     else:
         assert openfe_func in planning_func.__name__
+
+
+def test_plan_from_names(tyk2_ligands, tyk2_small_custom_network):
+    """Make sure we can plan a network using the names of the ligands."""
+    edges = extract_custom_ligand_network(tyk2_small_custom_network)
+    planner = NetworkPlanner(network_planning_method=CustomNetworkPlanner(edges=edges))
+    network = planner.generate_network(ligands=tyk2_ligands).to_ligand_network()
+    # make sure the edges are as we expect
+    for edge in network.edges:
+        assert (edge.componentA.name, edge.componentB.name) in edges
 
 
 @pytest.mark.parametrize(

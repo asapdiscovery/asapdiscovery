@@ -1,0 +1,60 @@
+# trainable protocols from CDD, with protocol name and readout
+
+# pIC50 is a special case where multiple readouts from the same protocol are combined.
+# otherwise the readout is the name of the readout in CDD.
+# endpoint is the name of the biological endpoint we are predicting.
+# targets are also specified as the CDD target name is much more flexible than we allow in the target ontology in our API.\
+
+protocols:
+
+  # pIC50 protocols
+  MERS-CoV-MPro_fluorescence-dose-response_weizmann:
+    readout: pIC50
+    readout_err: pIC50_stderr
+    target: MERS-CoV-Mpro
+    endpoint: pIC50
+
+  SARS-CoV-2-MPro_fluorescence-dose-response_weizmann:
+    readout: pIC50
+    readout_err: pIC50_stderr
+    target: SARS-CoV-2-Mpro
+    endpoint: pIC50
+
+  EVA-71-3C_fluorescence-dose-response_weizmann:
+    readout: pIC50
+    readout_err: pIC50_stderr
+    target: EV-A71-3Cpro
+    endpoint: pIC50
+
+  EVD-68-3C_fluorescence-dose-response_weizmann:
+    readout: pIC50
+    readout_err: pIC50_stderr
+    target: EV-D68-3Cpro
+    endpoint: pIC50
+
+  # DENV-1-NS2B-NS3_fluorescence-dose-response_weizmann:  not enough data
+
+  DENV-2-NS2B-NS3_fluorescence-dose-response_weizmann:
+    readout: pIC50
+    readout_err: pIC50_stderr
+    target: DENV-NS2B-NS3pro
+    endpoint: pIC50
+
+  # DENV-3-NS2B-NS3_fluorescence-dose-response_weizmann: not enough data
+  # DENV-4-NS2B-NS3_fluorescence-dose-response_weizmann: not enough data
+  # WNV-NS2B-NS3_fluorescence-dose-response_weizmann: not enabled as a target yet repo side
+  #   readout: pIC50
+  #   target: WNV-NS2B-NS3pro
+
+  ZIKV-NS2B-NS3_fluorescence-dose-response_weizmann:
+    readout: pIC50
+    readout_err: pIC50_stderr
+    target: ZIKV-NS2B-NS3pro
+    endpoint: pIC50
+
+  # non-target specific protocols
+  in-vitro_LogD_bienta:
+    readout: LogD (Num)
+    readout_err: null
+    target: null
+    endpoint: LogD

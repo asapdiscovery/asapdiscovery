@@ -2,7 +2,7 @@ ci:
   autoupdate_schedule: "quarterly"
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.5.0
+  rev: v5.0.0
   hooks:
   - id: check-yaml
   - id: debug-statements
@@ -12,7 +12,7 @@ repos:
   - id: check-executables-have-shebangs
   - id: check-json
 - repo: https://github.com/psf/black
-  rev: 24.3.0
+  rev: 24.10.0
   hooks:
   - id: black
     files: ^asapdiscovery
@@ -22,13 +22,13 @@ repos:
   - id: isort
     files: ^asapdiscovery
 - repo: https://github.com/PyCQA/flake8
-  rev: 7.0.0
+  rev: 7.1.1
   hooks:
   - id: flake8
     files: ^asapdiscovery
     additional_dependencies: [Flake8-pyproject]
 - repo: https://github.com/asottile/pyupgrade
-  rev: 'v3.15.2'
+  rev: 'v3.17.0'
   hooks:
   - id: pyupgrade
     args:

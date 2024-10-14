@@ -762,65 +762,80 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
         A panel column containing an interactive plot and table of the free energy predictions.
 
     Notes:
-        Only plots molecules with experimental values
+        Only plots molecules with experimental values, if no molecules have exp values only the table is created.
     """
-    # create a plotting dataframe which drops rows with nans
-    plotting_df = dataframe.dropna(axis=0, inplace=False)
-    plotting_df.reset_index(inplace=True)
+
+    number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
+
     # add drawn molecule as a column
     mols = [draw_mol(smiles) for smiles in dataframe["SMILES"]]
     dataframe["Molecule"] = mols
 
-    # add pIC50 columns beside DG
-    add_pic50_columns(plotting_df)
+    # create a plotting dataframe which drops rows with nans
+    plotting_df = dataframe.dropna(axis=0, inplace=False)
+    plotting_df.reset_index(inplace=True)
+    # only make the plot if we have exp data and more than one point
+    if len(plotting_df) > 2 and "DG (kcal/mol) (EXPT)" in plotting_df.columns:
 
-    # create the DG plot
-    fig = plotmol_absolute(
-        calculated=plotting_df["pIC50 (FECS)"],
-        experimental=plotting_df["pIC50 (EXPT)"],
-        smiles=plotting_df["SMILES"],
-        titles=plotting_df["label"],
-        calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
-        experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
-    )
-    # calculate the bootstrapped stats using cinnabar
-    stats_data = []
-    for statistic in ["RMSE", "MUE", "R2", "rho"]:
-        s = stats.bootstrap_statistic(
-            plotting_df["pIC50 (EXPT)"],
-            plotting_df["pIC50 (FECS)"],
-            plotting_df["uncertainty (pIC50) (EXPT)"],
-            plotting_df["uncertainty (pIC50) (FECS)"],
-            statistic=statistic,
-            include_true_uncertainty=False,
-            include_pred_uncertainty=False,
+        # add pIC50 columns beside DG
+        add_pic50_columns(plotting_df)
+
+        # create the DG plot
+        fig = plotmol_absolute(
+            calculated=plotting_df["pIC50 (FECS)"],
+            experimental=plotting_df["pIC50 (EXPT)"],
+            smiles=plotting_df["SMILES"],
+            titles=plotting_df["label"],
+            calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
+            experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
         )
-        stats_data.append(
-            {
-                "Statistic": statistic,
-                "value": s["mle"],
-                "lower bound": s["low"],
-                "upper bound": s["high"],
-            }
-        )
-    stats_df = pd.DataFrame(stats_data)
-    # create a format for numerical data in the tables
-    number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
-    stats_format = {col: number_format for col in stats_df.columns}
-    stats_format["Statistic"] = "html"
+        # calculate the bootstrapped stats using cinnabar
+        stats_data = []
+        for statistic in ["RMSE", "MUE", "R2", "rho"]:
+            s = stats.bootstrap_statistic(
+                plotting_df["pIC50 (EXPT)"],
+                plotting_df["pIC50 (FECS)"],
+                plotting_df["uncertainty (pIC50) (EXPT)"],
+                plotting_df["uncertainty (pIC50) (FECS)"],
+                statistic=statistic,
+                include_true_uncertainty=False,
+                include_pred_uncertainty=False,
+            )
+            stats_data.append(
+                {
+                    "Statistic": statistic,
+                    "value": s["mle"],
+                    "lower bound": s["low"],
+                    "upper bound": s["high"],
+                }
+            )
+        stats_df = pd.DataFrame(stats_data)
+        # create a format for numerical data in the tables
+        stats_format = {col: number_format for col in stats_df.columns}
+        stats_format["Statistic"] = "html"
+    else:
+        stats_df, fig = None, None
+
     # construct the report
-    layout = panel.Column(
-        panel.Row(
+    layout = panel.Column(sizing_mode="stretch_width", scroll=True)
+    if stats_df is not None and fig is not None:
+        row_layout = panel.Row(
             panel.pane.Bokeh(fig),
-            panel.widgets.Tabulator(
-                stats_df,
-                show_index=False,
-                selectable=False,
-                disabled=True,
-                formatters=stats_format,
-                configuration={"columnDefaults": {"headerSort": False}},
+            (
+                panel.widgets.Tabulator(
+                    stats_df,
+                    show_index=False,
+                    selectable=False,
+                    disabled=True,
+                    formatters=stats_format,
+                    configuration={"columnDefaults": {"headerSort": False}},
+                )
             ),
-        ),
+        )
+        layout.append(row_layout)
+
+    # add the table
+    layout.append(
         panel.widgets.Tabulator(
             # use full data frame including nans for table
             dataframe,
@@ -836,9 +851,7 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
                 "prediction error (pIC50)": number_format,
             },
             configuration={"rowHeight": 300},
-        ),
-        sizing_mode="stretch_width",
-        scroll=True,
+        )
     )
     return layout
 
@@ -852,7 +865,8 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
         dataframe: The dataframe of relative predictions to construct the report for.
 
     Returns:
-        A panel column containing an interactive plot and table of the free energy predictions.
+        A panel column containing an interactive plot and table of the free energy predictions if we have 2 or more exp
+        data points else only a table is created.
     """
 
     mols, combined_smiles, titles = [], [], []
@@ -871,51 +885,62 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     # add pIC50 columns beside DG
     add_pic50_columns(plotting_df)
 
-    # create the DDG plot
-    fig = plotmol_relative(
-        calculated=plotting_df["DpIC50 (FECS)"],
-        experimental=plotting_df["DpIC50 (EXPT)"],
-        smiles=plotting_df["smiles"],
-        titles=plotting_df["labels"],
-        calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
-        experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
-    )
-    # calculate the bootstrapped stats using cinnabar
-    stats_data = []
-    for statistic in ["RMSE", "MUE", "R2", "rho"]:
-        s = stats.bootstrap_statistic(
-            plotting_df["DpIC50 (EXPT)"],
-            plotting_df["DpIC50 (FECS)"],
-            plotting_df["uncertainty (pIC50) (EXPT)"],
-            plotting_df["uncertainty (pIC50) (FECS)"],
-            statistic=statistic,
-            include_true_uncertainty=False,
-            include_pred_uncertainty=False,
-        )
-        stats_data.append(
-            {
-                "Statistic": statistic,
-                "value": s["mle"],
-                "lower bound": s["low"],
-                "upper bound": s["high"],
-            }
-        )
-    stats_df = pd.DataFrame(stats_data)
-    # create a format for numerical data in the tables
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
-    stats_format = {col: number_format for col in stats_df.columns}
-    stats_format["Statistic"] = "html"
+    # only plot the graph if we have exp data and more than a single point
+    make_plots_stats = (
+        len(plotting_df) > 2 and "DDG (kcal/mol) (EXPT)" in plotting_df.columns
+    )
+
+    if make_plots_stats:
+        # create the DDG plot
+        fig = plotmol_relative(
+            calculated=plotting_df["DpIC50 (FECS)"],
+            experimental=plotting_df["DpIC50 (EXPT)"],
+            smiles=plotting_df["smiles"],
+            titles=plotting_df["labels"],
+            calculated_uncertainty=plotting_df["uncertainty (pIC50) (FECS)"],
+            experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
+        )
+        # calculate the bootstrapped stats using cinnabar
+        stats_data = []
+        for statistic in ["RMSE", "MUE", "R2", "rho"]:
+            s = stats.bootstrap_statistic(
+                plotting_df["DpIC50 (EXPT)"],
+                plotting_df["DpIC50 (FECS)"],
+                plotting_df["uncertainty (pIC50) (EXPT)"],
+                plotting_df["uncertainty (pIC50) (FECS)"],
+                statistic=statistic,
+                include_true_uncertainty=False,
+                include_pred_uncertainty=False,
+            )
+            stats_data.append(
+                {
+                    "Statistic": statistic,
+                    "value": s["mle"],
+                    "lower bound": s["low"],
+                    "upper bound": s["high"],
+                }
+            )
+        stats_df = pd.DataFrame(stats_data)
+        # create a format for numerical data in the tables
+        stats_format = {col: number_format for col in stats_df.columns}
+        stats_format["Statistic"] = "html"
+
     # construct the report
     layout = panel.Column(
         panel.Row(
-            panel.pane.Bokeh(fig),
-            panel.widgets.Tabulator(
-                stats_df,
-                show_index=False,
-                selectable=False,
-                disabled=True,
-                formatters=stats_format,
-                configuration={"columnDefaults": {"headerSort": False}},
+            panel.pane.Bokeh(fig) if make_plots_stats else None,
+            (
+                panel.widgets.Tabulator(
+                    stats_df,
+                    show_index=False,
+                    selectable=False,
+                    disabled=True,
+                    formatters=stats_format,
+                    configuration={"columnDefaults": {"headerSort": False}},
+                )
+                if make_plots_stats
+                else None
             ),
         ),
         panel.widgets.Tabulator(
@@ -964,3 +989,78 @@ def download_cdd_data(protocol_name: str) -> pd.DataFrame:
     )
 
     return formatted_data
+
+
+def clean_result_network(network, console=None):
+    """
+    Cleans an incoming result network JSON file from some issues that might occur. Current procedures:
+    - removes edges that have DG==0.0, this happens when there is inconsistent stereo annotation in input ligands
+    such that after stereo enumeration there are duplicate ligands.
+    - cleans imbalanced complex/solvent legs, e.g. when some have failed or when stereo expansion was done unintentionally.
+    Averages duplicate legs to come to a single value.
+
+    returns the loaded FreeEnergyCalculationNetwork.
+    """
+    from collections import defaultdict
+
+    import numpy as np
+    from asapdiscovery.alchemy.schema.fec import (
+        AlchemiscaleResults,
+        FreeEnergyCalculationNetwork,
+        TransformationResult,
+    )
+    from rich.padding import Padding
+
+    # load in to schema  and extract the results
+    network_schema = FreeEnergyCalculationNetwork.from_file(network)
+    input_results = network_schema.results.results
+
+    # 1. remove edges where DG is 0.0
+    cleaned_results = [
+        result for result in input_results if not result.estimate.magnitude == 0.0
+    ]
+
+    num_0_0_removed = len(input_results) - len(cleaned_results)
+
+    # 2. balance between complex/solvent replicates, such that n=N=1
+
+    deduped_results_dict = defaultdict(list)
+    for result in cleaned_results:
+        transform = f"{result.ligand_a}~{result.ligand_b}_{result.phase}"
+        deduped_results_dict[transform].append(result)
+
+    deduped_results = []
+    for _, results in deduped_results_dict.items():
+        if len(results) > 1:
+            # take the arithmetic mean of DG and dDG and add the replaced first result,
+            # all provenance data is constant between these repeats anyway
+            mean_DG = np.mean([result.estimate.magnitude for result in results])
+            mean_dDG = np.mean([result.uncertainty.magnitude for result in results])
+            result_data = results[0].dict(exclude={"estimate", "uncertainty"})
+
+            tf_res = TransformationResult(
+                estimate=mean_DG, uncertainty=mean_dDG, **result_data
+            )
+
+        else:
+            tf_res = results[0]
+
+        deduped_results.append(tf_res)
+
+    num_dupes_removed = len(cleaned_results) - len(deduped_results)
+    if console:
+        message = Padding(
+            f"Cleaned incoming result network. Removed {num_0_0_removed} edges with DG==0.0 kcal/mol and removed {num_dupes_removed} edges to balance between complex/solvent replicates.",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+    data = network_schema.dict(exclude={"results"})
+    # unpack the deduped results into dicts
+    results = AlchemiscaleResults(
+        results=deduped_results, network_key=network_schema.results.network_key
+    ).dict()
+    data["results"] = results
+
+    fec = FreeEnergyCalculationNetwork.parse_obj(data)
+    # fec.results = deduped_results
+    return fec

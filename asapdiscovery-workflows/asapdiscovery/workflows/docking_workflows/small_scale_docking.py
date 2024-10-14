@@ -1,14 +1,12 @@
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional
 
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
+from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelector
 from asapdiscovery.data.readers.meta_ligand_factory import MetaLigandFactory
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_artifacts import (
@@ -27,11 +25,16 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
+from asapdiscovery.data.util.dask_utils import (
+    BackendType,
+    DaskType,
+    make_dask_client_meta,
+)
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 from asapdiscovery.dataviz.html_viz import ColorMethod, HTMLVisualizer
+from asapdiscovery.docking.docking import write_results_to_multi_sdf
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer import (
@@ -47,7 +50,7 @@ from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic import Field, PositiveInt, validator
+from pydantic import Field, PositiveInt
 
 
 class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
@@ -64,8 +67,8 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         Whether to allow retries for docking failures
     n_select : PositiveInt
         Number of targets to dock each ligand against.
-    ml_scorers : ModelType, optional
-        The name of the ml scorers to use.
+    ml_score: bool, optional
+        Whether to use ML scoring in the docking pipeline
     md : bool, optional
         Whether to run MD on the docked poses
     md_steps : PositiveInt, optional
@@ -98,9 +101,10 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
         3, description="Number of targets to dock each ligand against."
     )
 
-    ml_scorers: Optional[list[str]] = Field(
-        None, description="The name of the ml scorers to use"
+    ml_score: bool = Field(
+        True, description="Whether to use ML scoring in the docking pipeline"
     )
+
     allow_dask_cuda: bool = Field(
         True,
         description="Whether to allow regenerating dask cuda cluster when in local mode",
@@ -114,20 +118,6 @@ class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):
     md_openmm_platform: OpenMMPlatform = Field(
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
-
-    @classmethod
-    @validator("ml_scorers")
-    def ml_scorers_must_be_valid(cls, v):
-        """
-        Validate that the ml scorers are valid
-        """
-        if v is not None:
-            for ml_scorer in v:
-                if ml_scorer not in ASAPMLModelRegistry.get_implemented_model_types():
-                    raise ValueError(
-                        f"ML scorer {ml_scorer} not valid, must be one of {ASAPMLModelRegistry.get_implemented_model_types()}"
-                    )
-        return v
 
 
 def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
@@ -262,11 +252,16 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
     # using dask here is too memory intensive as each worker needs a copy of all the complexes in memory
     # which are quite large themselves, is only effective for large numbers of ligands and small numbers of complexes
     logger.info("Selecting pairs for docking based on MCS")
-    selector = MCSSelector()
+    selector = RascalMCESSelector(
+        similarity_threshold=0.4
+    )  # better attempt to find the MCS than the default 0.7
     pairs = selector.select(
         query_ligands,
         prepped_complexes,
         n_select=inputs.n_select,
+        use_dask=inputs.use_dask,
+        dask_client=dask_client,
+        failure_mode=inputs.failure_mode,
     )
 
     n_pairs = len(pairs)
@@ -283,6 +278,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
+        return_for_disk_backend=True,
     )
 
     n_results = len(results)
@@ -299,19 +295,25 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         scorers.append(FINTScorer(target=inputs.target))
 
     # load ml scorers
-    if inputs.ml_scorers:
-        for ml_scorer in inputs.ml_scorers:
-            logger.info(f"Loading ml scorer: {ml_scorer}")
-            scorers.append(
-                MLModelScorer.from_latest_by_target_and_type(inputs.target, ml_scorer)
+    if inputs.ml_score:
+        # check which endpoints are availabe for the target
+        models = ASAPMLModelRegistry.reccomend_models_for_target(inputs.target)
+        for model in models:
+            logger.info(
+                f"Adding ML scorer for target {inputs.target} with model {model.name}"
             )
+
+        ml_scorers = MLModelScorer.load_model_specs(models=models)
+        scorers.extend(ml_scorers)
 
     if inputs.write_final_sdf:
         logger.info("Writing final docked poses to SDF file")
-        write_ligands_to_multi_sdf(
-            output_dir / "docking_results.sdf", [r.posed_ligand for r in results]
+        write_results_to_multi_sdf(
+            output_dir / "docking_results.sdf",
+            results,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
-
     # score results with multiple scoring functions
     logger.info("Scoring docking results")
     scorer = MetaScorer(scorers=scorers)
@@ -321,7 +323,9 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
         return_df=True,
-        include_input=True,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
+        return_for_disk_backend=True,
     )
 
     scores_df.to_csv(data_intermediates / "docking_scores_raw.csv", index=False)
@@ -354,12 +358,16 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
         output_dir=html_ouptut_dir,
         ref_chain=inputs.ref_chain,
         active_site_chain=inputs.ref_chain,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
     pose_visualizatons = html_visualizer.visualize(
         results,
         use_dask=inputs.use_dask,
         dask_client=dask_client,
         failure_mode=inputs.failure_mode,
+        backend=BackendType.DISK,
+        reconstruct_cls=docker.result_cls,
     )
     # rename visualisations target id column to POSIT structure tag so we can join
     pose_visualizatons.rename(
@@ -395,6 +403,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             use_dask=inputs.use_dask,
             dask_client=dask_client,
             failure_mode=inputs.failure_mode,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
         # duplicate target id column so we can join
@@ -493,6 +503,8 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
             use_dask=inputs.use_dask,
             dask_client=dask_client,
             failure_mode=inputs.failure_mode,
+            backend=BackendType.DISK,
+            reconstruct_cls=docker.result_cls,
         )
 
         if len(simulation_results) == 0:

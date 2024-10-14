@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -36,7 +37,7 @@ class ExperimentalCompoundData(BaseModel):
 
     date_created: date = Field(None, description="Date the molecule was created.")
 
-    experimental_data: dict[str, float] = Field(
+    experimental_data: dict[str, float | Any] = Field(
         dict(),
         description='Experimental data fields, including "pIC50" and uncertainty (either "pIC50_stderr" or  "pIC50_{lower|upper}"',
     )

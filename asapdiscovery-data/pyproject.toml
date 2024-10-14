@@ -26,7 +26,6 @@ dependencies = []
 
 [project.scripts]
 cdd-to-schema = "asapdiscovery.data.scripts.cdd_to_schema:main"
-download-fragalysis-data = "asapdiscovery.data.scripts.download_fragalysis_data:main"
 download-cdd-data = "asapdiscovery.data.scripts.download_cdd_data:main"
 download-pdbs = "asapdiscovery.data.scripts.download_pdbs:main"
 split-fragment-screen = "asapdiscovery.data.scripts.split_fragment_screen:main"

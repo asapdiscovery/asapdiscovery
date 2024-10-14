@@ -222,6 +222,31 @@ def make_design_unit(
     return success, du
 
 
+def make_du_from_new_lig(
+    protein: oechem.OEGraphMol,
+    lig: oechem.OEGraphMol,
+    opts: oespruce.OEMakeDesignUnitOptions = None,
+):
+    """
+    Make a design unit from a protein and ligand. Does not resolve clashes,
+    and should really only be used to guide docking.
+
+    Parameters
+    ----------
+    protein : oechem.OEGraphMol
+        Protein molecule
+    lig : oechem.OEGraphMol
+        Ligand molecule
+    opts : oechem.OEMakeDesignUnitOptions, optional
+        Options for making the design unit, by default the options from `get_oe_prep_opts` will be used.
+    """
+    if not opts:
+        opts = get_oe_prep_opts()
+    du = oechem.OEDesignUnit()
+    success = oespruce.OEMakeDesignUnit(du, protein, lig, opts)
+    return success, du
+
+
 def superpose_molecule(ref_mol, mobile_mol, ref_chain="A", mobile_chain="A"):
     """
     Superpose `mobile_mol` onto `ref_mol`.
@@ -474,6 +499,14 @@ def split_openeye_mol(
     prot_only = oechem.OEMolComplexFilterFactory(
         oechem.OEMolComplexFilterCategory_ProtComplex
     )
+    # add in peptides as well, sometimes proteins are misidentified as peptides if bound or short
+    peptide = oechem.OEMolComplexFilterFactory(
+        oechem.OEMolComplexFilterCategory_Peptide
+    )
+
+    # combine protein and peptide filters
+    prot_only = oechem.OEOrRoleSet(prot_only, peptide)
+
     # If protein_chains are specified, only take protein atoms from those chains
     if len(molecule_filter.protein_chains) > 0:
         chain_filters = [
@@ -502,6 +535,8 @@ def split_openeye_mol(
         lig_filter = oechem.OEAndRoleSet(lig_only, lig_chain)
     else:
         lig_filter = lig_only
+    # combine with NOT peptide filter
+    lig_filter = oechem.OEAndRoleSet(lig_filter, oechem.OENotRoleSet(peptide))
     opts.SetLigandFilter(lig_filter)
 
     # If water_chains are specified, set up filter for them
@@ -518,6 +553,8 @@ def split_openeye_mol(
 
         chain_filter = reduce(oechem.OEOrRoleSet, chain_filters)
         wat_filter = oechem.OEAndRoleSet(water_only, chain_filter)
+        # combine with NOT peptide filter
+        wat_filter = oechem.OEAndRoleSet(wat_filter, oechem.OENotRoleSet(peptide))
         opts.SetWaterFilter(wat_filter)
 
     # Use python 'reduce' to combine all the filters into one, otherwise OpenEye will throw an error

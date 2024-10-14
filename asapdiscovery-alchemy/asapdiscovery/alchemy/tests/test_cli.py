@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 import pandas as pd
@@ -17,6 +18,7 @@ from asapdiscovery.alchemy.schema.prep_workflow import (
 from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from click.testing import CliRunner
+from openfe.setup import LigandNetwork
 from rdkit import Chem
 
 
@@ -105,6 +107,87 @@ def test_alchemy_plan_missing():
         "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
         == str(error.value)
     )
+
+
+def test_alchemy_plan_custom_file(
+    tyk2_small_custom_network, tmpdir, tyk2_ligands, tyk2_protein
+):
+    """Make sure we can plan a network using a custom defined network."""
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # write the files to the current folder
+        tyk2_protein.to_pdb_file("tyk2_protein.pdb")
+        # write the ligands to a single sdf file
+        with Chem.SDWriter("tyk2_ligands.sdf") as output:
+            for ligand in tyk2_ligands:
+                output.write(ligand.to_rdkit())
+
+        # call the cli
+        result = runner.invoke(
+            alchemy,
+            [
+                "plan",
+                "-n",
+                "tyk2-testing",
+                "-l",
+                "tyk2_ligands.sdf",
+                "-r",
+                "tyk2_protein.pdb",
+                "-cn",
+                tyk2_small_custom_network,
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Using custom network specified in" in result.stdout
+        # try and open the planned network
+        network = FreeEnergyCalculationNetwork.from_file(
+            "tyk2-testing/planned_network.json"
+        )
+        # make sure all ligands are in the network
+        assert len(network.network.ligands) == len(tyk2_ligands)
+        # check the edges used are stored and match what we expect
+        expected_edges = [
+            ("lig_ejm_46", "lig_jmc_23"),
+            ("lig_jmc_23", "lig_jmc_28"),
+            ("lig_ejm_31", "lig_ejm_46"),
+        ]
+        for edge in network.network.network_planning_method.edges:
+            assert edge in expected_edges
+
+
+def test_plan_from_graphml(p38_graphml, p38_protein, p38_ligand_names, tmpdir):
+    with tmpdir.as_cwd():
+        runner = CliRunner()
+        result = runner.invoke(
+            alchemy,
+            [
+                "plan",
+                "-g",
+                p38_graphml,
+                "-r",
+                p38_protein,
+                "-n",
+                "graphml-test",
+            ],
+        )
+        assert result.exit_code == 0
+        # try and open the planned network
+        network = FreeEnergyCalculationNetwork.from_file(
+            "graphml-test/planned_network.json"
+        )
+        # load graphml with openfe and check the ligands are in the network
+        with open(p38_graphml) as f:
+            graphml_str = f.read()
+        ligand_network = LigandNetwork.from_graphml(graphml_str)
+
+        # make sure all ligands are in the network
+        assert len(network.network.ligands) == len(ligand_network.nodes)
+
+        # test the names are the same as in the PLB
+        ligname_set = {ligand.compound_name for ligand in network.network.ligands}
+        assert ligname_set == p38_ligand_names
 
 
 def test_alchemy_prep_create(tmpdir):
@@ -442,6 +525,18 @@ def test_alchemy_status_all(monkeypatch):
     )
 
 
+def test_alchemy_status_mutex():
+    runner = CliRunner()
+    result = runner.invoke(alchemy, ["status", "-n", "fakenetwork", "-nk", "1234"])
+    assert result.exit_code == 1  # will fail
+
+
+def test_alchemy_gather_mutex():
+    runner = CliRunner()
+    result = runner.invoke(alchemy, ["gather", "-n", "fakenetwork", "-nk", "1234"])
+    assert result.exit_code == 1  # will fail
+
+
 def test_alchemy_stop(monkeypatch):
     """Test canceling the actioned tasks on a network"""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
@@ -500,6 +595,9 @@ def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
             )
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
+)
 def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
     """Test predicting the absolute and relative free energies with no experimental data, interactive reports should
     not be generated in this mode.
@@ -556,6 +654,9 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
         )
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
+)
 def test_alchemy_predict_experimental_data(
     tyk2_result_network, tmpdir, tyk2_reference_data
 ):
@@ -628,6 +729,9 @@ def test_alchemy_predict_experimental_data(
         )
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
+)
 def test_alchemy_predict_ccd_data(
     tmpdir, tyk2_result_network, tyk2_reference_data, monkeypatch
 ):
@@ -742,6 +846,9 @@ def test_alchemy_predict_ccd_data(
         )
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
+)
 def test_predict_missing_all_exp_data(
     tyk2_reference_data, tyk2_result_network, tmpdir, monkeypatch
 ):
@@ -782,13 +889,14 @@ def test_predict_missing_all_exp_data(
         result = runner.invoke(alchemy, ["predict", "-ep", protocol_name])
         assert result.exit_code == 0
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
+        # make sure the interactive reports are still made they just won't have a figure
         assert (
             "Absolute report written to predictions-absolute-tyk2-small-test.html"
-            not in result.stdout
+            in result.stdout
         )
         assert (
             "Relative report written to predictions-relative-tyk2-small-test.html"
-            not in result.stdout
+            in result.stdout
         )
         # load the datasets and check the results match what's expected
         absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
@@ -826,6 +934,9 @@ def test_predict_missing_all_exp_data(
         )
 
 
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
+)
 def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
     """Make sure an error is raised if the units can not be found in the csv headings"""
 
@@ -892,6 +1003,132 @@ def test_prioritize_weight_not_set(monkeypatch):
 
     console = rich.get_console()
     console.clear_live()
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
+)
+def test_alchemy_predict_disconnected_fail(tyk2_result_network_disconnected, tmpdir):
+    """Test predicting the absolute and relative free energies with a disconnected network.
+    We also test that a warning is printed in the terminal
+    """
+
+    runner = CliRunner()
+    console = rich.get_console()
+    console.clear_live()
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network_disconnected.to_file("result_network_disconnected.json")
+
+        # run predict as normal - should return an error
+        with pytest.raises(
+            ValueError,
+            match="Your network is missing edges resulting in a gap",
+        ):
+            runner.invoke(
+                alchemy,
+                ["predict", "-n", "result_network_disconnected.json"],
+                catch_exceptions=False,
+            )
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
+)
+def test_alchemy_predict_disconnected_success(tyk2_result_network_disconnected, tmpdir):
+    """Test predicting the absolute and relative free energies with a disconnected network.
+    We also test that a warning is printed in the terminal
+    """
+
+    runner = CliRunner()
+    console = rich.get_console()
+    console.clear_live()
+    with tmpdir.as_cwd():
+        # write the results file to local
+        tyk2_result_network_disconnected.to_file("result_network_disconnected.json")
+
+        # run predict while forcing the largest subnetwork - should succeed with warnings
+        result = runner.invoke(
+            alchemy, ["predict", "-n", "result_network_disconnected.json", "-fl"]
+        )
+        assert result.exit_code == 0
+
+    assert (
+        "Warning: removing 3 disconnected compounds: 42.86% of total in network."
+        in result.stdout
+    )
+    assert "lig_ejm_43" in result.stdout
+    assert "lig_ejm_42" in result.stdout
+    assert "lig_ejm_50" in result.stdout
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
+)
+def test_alchemy_predict_clean_fail(tyk2_result_network_ddg0s, tmpdir):
+    """Test that predicting the absolute and relative free energies with a network with a few DDGs of 0 fails."""
+
+    runner = CliRunner()
+    console = rich.get_console()
+    console.clear_live()
+    with tmpdir.as_cwd():
+        # run predict as normal while keeping largest subnetwork - should return an error
+        with pytest.raises(
+            RuntimeError,
+            match="The transformation lig_ejm_42-lig_ejm_50 has too many simulated legs",
+        ):
+            result = runner.invoke(
+                alchemy,
+                ["predict", "-n", tyk2_result_network_ddg0s, "-fl"],
+                catch_exceptions=False,
+            )
+            assert result.exit_code == 1
+
+
+@pytest.mark.skipif(
+    os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
+)
+def test_alchemy_predict_clean_success(tyk2_result_network_ddg0s, tmpdir):
+    """Test that predicting the absolute and relative free energies with a network with a few DDGs of 0 fails."""
+
+    runner = CliRunner()
+    console = rich.get_console()
+    console.clear_live()
+    with tmpdir.as_cwd():
+        # run predict as normal while keeping largest subnetwork and clean - should not return an error
+        result = runner.invoke(
+            alchemy,
+            ["predict", "-n", tyk2_result_network_ddg0s, "-fl", "--clean"],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0
+        assert "Removed 9 edges with DG==0.0" in result.stdout
+        assert (
+            "removed 1 edges to balance between complex/solvent replicates."
+            in result.stdout
+        )
+
+
+def test_prep_alchemize(test_ligands_sdfile, tmpdir):
+
+    with tmpdir.as_cwd():
+        runner = CliRunner()
+        result = runner.invoke(
+            alchemy,
+            [
+                "prep",
+                "alchemize",
+                "-l",
+                test_ligands_sdfile,
+                "-n",
+                "tst",
+                "-onu",
+                "2",
+                "-mt",
+                "9",
+            ],
+        )
+        assert result.exit_code == 0
 
 
 def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):

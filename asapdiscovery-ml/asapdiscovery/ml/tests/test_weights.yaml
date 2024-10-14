@@ -1,7 +1,7 @@
 # This file is used to specify the path to the weights file for each model.
 
 model1:
-  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/test/
+  base_url: https://asap-discovery-ml-weights.asapdata.org/test/
   type: GAT
   weights:
     resource: model.pth
@@ -11,10 +11,12 @@ model1:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  endpoint: pIC50
+
 
 
 model2:
-  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/test/
+  base_url: https://asap-discovery-ml-weights.asapdata.org/test/
   type: GAT
   weights:
     resource: model_copy.pth
@@ -26,9 +28,10 @@ model2:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  endpoint: pIC50
 
 gatmodel_test:
-  base_url: https://asap-discovery-ml-weights.s3.amazonaws.com/test/
+  base_url: https://asap-discovery-ml-weights.asapdata.org/test/
   type: GAT
   weights:
     resource: gat_example_dgl1.1.pth
@@ -40,3 +43,4 @@ gatmodel_test:
   targets:
     - SARS-CoV-2-Mpro
     - MERS-CoV-Mpro
+  endpoint: pIC50

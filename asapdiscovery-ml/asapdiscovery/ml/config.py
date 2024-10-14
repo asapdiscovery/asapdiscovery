@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import pickle as pkl
 from collections.abc import Iterator
+from copy import deepcopy
 from glob import glob
 from pathlib import Path
 from typing import Any
@@ -489,7 +490,7 @@ class DatasetConfig(ConfigBase):
             print("loading from cache", flush=True)
             ds = pkl.loads(self.cache_file.read_bytes())
             if self.for_e3nn:
-                ds = DatasetConfig.fix_e3nn_labels(ds)
+                ds = DatasetConfig.fix_e3nn_labels(ds, grouped=self.grouped)
             return ds
 
         # Build directly from Complexes/Ligands
@@ -512,7 +513,7 @@ class DatasetConfig(ConfigBase):
                         self.input_data, exp_dict=self.exp_data
                     )
                 if self.for_e3nn:
-                    ds = DatasetConfig.fix_e3nn_labels(ds)
+                    ds = DatasetConfig.fix_e3nn_labels(ds, grouped=self.grouped)
             case other:
                 raise ValueError(f"Unknwon dataset type {other}.")
 
@@ -522,17 +523,28 @@ class DatasetConfig(ConfigBase):
         return ds
 
     @staticmethod
-    def fix_e3nn_labels(ds):
-        for _, pose in ds:
-            # Check if this pose has already been adjusted
-            if pose["z"].is_floating_point():
-                # Assume it'll only be floats if we've already run this function
-                continue
+    def fix_e3nn_labels(ds, grouped=False):
+        new_ds = deepcopy(ds)
+        for _, data in new_ds:
+            if grouped:
+                for pose in data["poses"]:
+                    # Check if this pose has already been adjusted
+                    if pose["z"].is_floating_point():
+                        # Assume it'll only be floats if we've already run this function
+                        continue
 
-            pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
-            pose["z"] = pose["lig"].reshape((-1, 1)).float()
+                    pose["x"] = torch.nn.functional.one_hot(pose["z"] - 1, 100).float()
+                    pose["z"] = pose["lig"].reshape((-1, 1)).float()
+            else:
+                # Check if this data has already been adjusted
+                if data["z"].is_floating_point():
+                    # Assume it'll only be floats if we've already run this function
+                    continue
 
-        return ds
+                data["x"] = torch.nn.functional.one_hot(data["z"] - 1, 100).float()
+                data["z"] = data["lig"].reshape((-1, 1)).float()
+
+        return new_ds
 
 
 class DatasetSplitterType(StringEnum):
@@ -542,6 +554,7 @@ class DatasetSplitterType(StringEnum):
 
     random = "random"
     temporal = "temporal"
+    manual = "manual"
 
 
 class DatasetSplitterConfig(ConfigBase):
@@ -580,8 +593,22 @@ class DatasetSplitterConfig(ConfigBase):
         None, description="Random seed to use if randomly splitting data."
     )
 
+    # Dict giving splits for manual splitting
+    split_dict: dict | Path | None = Field(
+        None,
+        description=(
+            "Dict giving splits for manual splitting. If a Path is passed, "
+            "the Path should be a JSON file and its contents will be loaded directly "
+            "as split_dict."
+        ),
+    )
+
     @root_validator(pre=False)
     def check_frac_sum(cls, values):
+        # Don't need to check if we're doing manual split mode
+        if values["split_type"] is DatasetSplitterType.manual:
+            return values
+
         frac_sum = sum([values["train_frac"], values["val_frac"], values["test_frac"]])
         if frac_sum < 0:
             raise ValueError("Can't have negative split fractions.")
@@ -597,6 +624,35 @@ class DatasetSplitterConfig(ConfigBase):
 
             if frac_sum > 1:
                 raise ValueError("Can't have split fractions adding to > 1.")
+
+        return values
+
+    @root_validator(pre=False)
+    def check_split_dict(cls, values):
+        if values["split_type"] is DatasetSplitterType.manual:
+            if values["split_dict"] is None:
+                raise ValueError(
+                    "Must pass value for split_dict if using manual splitting."
+                )
+
+            if isinstance(values["split_dict"], Path):
+                try:
+                    values["split_dict"] = json.loads(values["split_dict"].read_text())
+                except json.decoder.JSONDecodeError:
+                    raise ValueError(
+                        "Path given by split_dict must be a JSON file storing a dict."
+                    )
+
+            if set(values["split_dict"].keys()) != {"train", "val", "test"}:
+                raise ValueError(
+                    "Keys in split_dict must be exactly [train, val, test]."
+                )
+
+            # Cast to tuples to match compounds in the datasets
+            values["split_dict"] = {
+                split: list(map(tuple, compound_list))
+                for split, compound_list in values["split_dict"].items()
+            }
 
         return values
 
@@ -623,6 +679,8 @@ class DatasetSplitterConfig(ConfigBase):
                 return self._split_random(ds)
             case DatasetSplitterType.temporal:
                 return self._split_temporal(ds)
+            case DatasetSplitterType.manual:
+                return self._split_manual(ds)
             case other:
                 raise ValueError(f"Unknown DatasetSplitterType {other}.")
 
@@ -791,6 +849,11 @@ class DatasetSplitterConfig(ConfigBase):
                 dates_dict[date_created].append(i)
             except KeyError:
                 dates_dict[date_created] = [i]
+
+        # check if dates_dict is empty
+        if all(d == None for d in dates_dict.keys()) or not dates_dict:  # noqa: E711
+            raise ValueError("No dates found in dataset.")
+
         all_dates = np.asarray(list(dates_dict.keys()))
 
         # Sort the dates
@@ -806,6 +869,45 @@ class DatasetSplitterConfig(ConfigBase):
 
         return all_subsets
 
+    def _split_manual(self, ds: DockedDataset | GraphDataset | GroupedDockedDataset):
+        """
+        Manual split, based on ``self.split_dict``.
+
+        Parameters
+        ----------
+        ds : DockedDataset | GraphDataset | GroupedDockedDataset
+            Full ML dataset to split
+
+        Returns
+        -------
+        torch.nn.Subset
+            Train split
+        torch.nn.Subset
+            Val split
+        torch.nn.Subset
+            Test split
+        """
+        all_subset_idxs = {}
+        for i, (compound, _) in enumerate(ds):
+            if compound in self.split_dict["train"]:
+                split = "train"
+            elif compound in self.split_dict["val"]:
+                split = "val"
+            elif compound in self.split_dict["test"]:
+                split = "test"
+            else:
+                continue
+
+            try:
+                all_subset_idxs[split].append(i)
+            except KeyError:
+                all_subset_idxs[split] = [i]
+
+        return [
+            torch.utils.data.Subset(ds, all_subset_idxs[split])
+            for split in ["train", "val", "test"]
+        ]
+
 
 class LossFunctionType(StringEnum):
     """
@@ -820,6 +922,10 @@ class LossFunctionType(StringEnum):
     gaussian = "gaussian"
     # Gaussian NLL loss (including semiquant values)
     gaussian_sq = "gaussian_sq"
+    # Squared difference penalty for pred outside range
+    range_penalty = "range"
+    # Pose cross entropy loss
+    cross_entropy = "cross_entropy"
 
 
 class LossFunctionConfig(ConfigBase):
@@ -844,8 +950,38 @@ class LossFunctionConfig(ConfigBase):
         ),
     )
 
+    # Range values for RangeLoss
+    range_lower_lim: float = Field(
+        None, description="Lower range of acceptable prediction values."
+    )
+    range_upper_lim: float = Field(
+        None, description="Upper range of acceptable prediction values."
+    )
+
+    @root_validator(pre=False)
+    def check_range_lims(cls, values):
+        if values["loss_type"] is not LossFunctionType.range_penalty:
+            return values
+
+        if (values["range_lower_lim"] is None) or (values["range_upper_lim"] is None):
+            raise ValueError(
+                "Values must be passed for range_lower_lim and range_upper_lim."
+            )
+
+        if values["range_lower_lim"] >= values["range_upper_lim"]:
+            raise ValueError(
+                "Value given for range_lower_lim >= value given for range_upper_lim."
+            )
+
+        return values
+
     def build(self):
-        from asapdiscovery.ml.loss import GaussianNLLLoss, MSELoss
+        from asapdiscovery.ml.loss import (
+            GaussianNLLLoss,
+            MSELoss,
+            PoseCrossEntropyLoss,
+            RangeLoss,
+        )
 
         match self.loss_type:
             case LossFunctionType.mse:
@@ -856,6 +992,12 @@ class LossFunctionConfig(ConfigBase):
                 return GaussianNLLLoss(keep_sq=False)
             case LossFunctionType.gaussian_sq:
                 return GaussianNLLLoss(keep_sq=True, semiquant_fill=self.semiquant_fill)
+            case LossFunctionType.range_penalty:
+                return RangeLoss(
+                    lower_lim=self.range_lower_lim, upper_lim=self.range_upper_lim
+                )
+            case LossFunctionType.cross_entropy:
+                return PoseCrossEntropyLoss()
             case other:
                 raise ValueError(f"Unknown LossFunctionType {other}.")
 

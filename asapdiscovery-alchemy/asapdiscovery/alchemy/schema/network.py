@@ -3,8 +3,10 @@ from typing import Callable, Literal, Optional, Union
 
 import openfe
 from asapdiscovery.data.schema.ligand import Ligand
+from openfe.setup import LigandNetwork
 from pydantic import Field
 
+from ._util import check_ligand_series_uniqueness_and_names
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
 from .base import _SchemaBase
 
@@ -74,6 +76,25 @@ class MinimalRedundantPlanner(_NetworkPlannerMethod):
         )
 
 
+class CustomNetworkPlanner(_NetworkPlannerMethod):
+    """Plan a user-set custom network"""
+
+    type: Literal["CustomNetworkPlanner"] = "CustomNetworkPlanner"
+
+    edges: list[tuple[str, str]] = Field(
+        ...,
+        description="A list of tuples with ligand names which define the transformation edges.",
+    )
+
+    def get_planning_function(self) -> Callable:
+        def _plan_from_names(ligands, mappers, *args, **kwargs):
+            # format the data to fit the planing method
+            data = {"ligands": ligands, "mapper": mappers[0], "names": self.edges}
+            return openfe.ligand_network_planning.generate_network_from_names(**data)
+
+        return _plan_from_names
+
+
 class _NetworkPlannerSettings(_SchemaBase):
     """
     The Network planner settings which configure how the FEC networks should be constructed.
@@ -92,7 +113,11 @@ class _NetworkPlannerSettings(_SchemaBase):
         description="The method which should be used to score the proposed atom mappings by the atom mapping engine.",
     )
     network_planning_method: Union[
-        RadialPlanner, MaximalPlanner, MinimalSpanningPlanner, MinimalRedundantPlanner
+        RadialPlanner,
+        MaximalPlanner,
+        MinimalSpanningPlanner,
+        MinimalRedundantPlanner,
+        CustomNetworkPlanner,
     ] = Field(
         MinimalRedundantPlanner(),
         description="The way in which the ligand network should be connected. Note radial requires a central ligand node.",
@@ -145,6 +170,37 @@ class PlannedNetwork(_NetworkPlannerSettings):
         if self.central_ligand is not None:
             ligands.insert(0, self.central_ligand.to_openfe())
         return ligands
+
+    @classmethod
+    def from_graphml(cls, graphml: str) -> "PlannedNetwork":
+        """
+        Build a PlannedNetwork from a graphml string.
+
+        Args:
+            graphml: The graphml string representation of the network.
+
+        Returns:
+            A PlannedNetwork object with the ligands and central ligand if present.
+        """
+        ligand_network = LigandNetwork.from_graphml(graphml)
+        if not ligand_network.is_connected():
+            raise ValueError(
+                "The provided graphml does not represent a connected network."
+            )
+        # extract ligands from the network
+        small_molecule_components = ligand_network.nodes
+
+        ligands = [Ligand.from_openfe(mol) for mol in small_molecule_components]
+
+        check_ligand_series_uniqueness_and_names(ligands)
+
+        provenance = {"source": "pre-generated", "graphml": graphml}
+        return cls(
+            ligands=ligands,
+            central_ligand=None,
+            graphml=graphml,
+            provenance=provenance,
+        )
 
 
 class NetworkPlanner(_NetworkPlannerSettings):

@@ -1,5 +1,4 @@
 import warnings
-from collections import Counter
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import gufe
@@ -8,18 +7,22 @@ from alchemiscale import ScopedKey
 from gufe import settings
 from gufe.tokenization import GufeKey
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
-    AlchemicalSamplerSettings,
     AlchemicalSettings,
+    LambdaSettings,
+    MultiStateOutputSettings,
+    OpenFFPartialChargeSettings,
+)
+from openfe.protocols.openmm_utils.omm_settings import (
     IntegratorSettings,
+    MultiStateSimulationSettings,
     OpenMMEngineSettings,
-    SimulationSettings,
-    SolvationSettings,
-    SystemSettings,
+    OpenMMSolvationSettings,
 )
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import Field
 
+from ._util import check_ligand_series_uniqueness_and_names
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
 
@@ -193,7 +196,7 @@ class _FreeEnergyBase(_SchemaBase):
     )
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
         settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.1.0.offxml"
+            small_molecule_forcefield="openff-2.2.0.offxml"
         ),
         description="The force field settings used to parameterize the systems.",
     )
@@ -203,22 +206,13 @@ class _FreeEnergyBase(_SchemaBase):
         ),
         description="The settings for thermodynamic parameters.",
     )
-    system_settings: SystemSettings = Field(
-        SystemSettings(), description="The nonbonded system settings."
-    )
-    solvation_settings: SolvationSettings = Field(
-        SolvationSettings(),
-        description="Settings controlling how the systems should be solvated.",
+    solvation_settings: OpenMMSolvationSettings = Field(
+        OpenMMSolvationSettings(box_shape="dodecahedron"),
+        description="Settings controlling how the systems should be solvated using OpenMM.",
     )
     alchemical_settings: AlchemicalSettings = Field(
-        AlchemicalSettings(), description="The alchemical protocol settings."
-    )
-    # note alchemical_sampler_settings.n_repeats specifies the number of times each transformation will be run
-    alchemical_sampler_settings: AlchemicalSamplerSettings = Field(
-        AlchemicalSamplerSettings(
-            n_repeats=1
-        ),  # Run one calculation in serial and parallise accross alchemiscale workers see n_repeats on the _FreeEnergyBase object
-        description="Settings for the Equilibrium Alchemical sampler, currently supporting either MultistateSampler, SAMSSampler or ReplicaExchangeSampler.",
+        AlchemicalSettings(softcore_LJ="gapsys"),
+        description="The alchemical protocol settings.",
     )
     engine_settings: OpenMMEngineSettings = Field(
         OpenMMEngineSettings(), description="Openmm platform settings."
@@ -227,8 +221,8 @@ class _FreeEnergyBase(_SchemaBase):
         IntegratorSettings(),
         description="Settings for the LangevinSplittingDynamicsMove integrator.",
     )
-    simulation_settings: SimulationSettings = Field(
-        SimulationSettings(
+    simulation_settings: MultiStateSimulationSettings = Field(
+        MultiStateSimulationSettings(
             equilibration_length=1.0 * OFFUnit.nanoseconds,
             production_length=5.0 * OFFUnit.nanoseconds,
         ),
@@ -238,33 +232,43 @@ class _FreeEnergyBase(_SchemaBase):
         "RelativeHybridTopologyProtocol",
         description="The name of the OpenFE alchemical protocol to use.",
     )
-    n_repeats: int = Field(
-        2,
+    protocol_repeats: int = Field(
+        1,
         description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
+    )
+    lambda_settings: LambdaSettings = Field(
+        LambdaSettings(), description="Lambda schedule settings."
+    )
+
+    partial_charge_settings: OpenFFPartialChargeSettings = Field(
+        OpenFFPartialChargeSettings(),
+        description="The method which should be used to generate the partial charges if not provided with the ligand.",
+    )
+    output_settings: MultiStateOutputSettings = Field(
+        MultiStateOutputSettings(),
+        description="Settings for MultiState simulation output settings like writing to disk.",
     )
 
     def to_openfe_protocol(self):
-        """Build the corresponding OpenFE protocol from the settings defined in this schema."""
-        # TODO we need some way to link the settings to the protocol for when we have other options
-        if self.protocol == "RelativeHybridTopologyProtocol":
-            protocol_class = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol
-            settings_class = (
-                openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings
-            )
-
-        protocol_settings = settings_class(
+        protocol_settings = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings(
             # workaround type hint being base FF engine class
             forcefield_settings=self.forcefield_settings,
             thermo_settings=self.thermo_settings,
-            system_settings=self.system_settings,
+            # system_settings=self.system_settings,
             solvation_settings=self.solvation_settings,
             alchemical_settings=self.alchemical_settings,
-            alchemical_sampler_settings=self.alchemical_sampler_settings,
+            # alchemical_sampler_settings=self.alchemical_sampler_settings,
             engine_settings=self.engine_settings,
             integrator_settings=self.integrator_settings,
             simulation_settings=self.simulation_settings,
+            lambda_settings=self.lambda_settings,
+            protocol_repeats=self.protocol_repeats,
+            partial_charge_settings=self.partial_charge_settings,
+            output_settings=self.output_settings,
         )
-        return protocol_class(settings=protocol_settings)
+        return openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol(
+            settings=protocol_settings
+        )
 
 
 class FreeEnergyCalculationNetwork(_FreeEnergyBase):
@@ -303,6 +307,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         """Overwrite the class config to freeze the results model"""
 
         allow_mutation = False
+        orm_mode = True
 
     def to_openfe_receptor(self) -> openfe.ProteinComponent:
         return openfe.ProteinComponent.from_json(self.receptor)
@@ -449,8 +454,9 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         self,
         dataset_name: str,
         receptor: openfe.ProteinComponent,
-        ligands: list["Ligand"],
+        ligands: Optional[list["Ligand"]] = None,
         central_ligand: Optional["Ligand"] = None,
+        graphml: Optional[str] = None,
         experimental_protocol: Optional[str] = None,
         target: Optional[str] = None,
     ) -> FreeEnergyCalculationNetwork:
@@ -471,27 +477,21 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
          Returns:
              The planned FEC network which can be executed locally or submitted to alchemiscale.
         """
-        # check that all ligands are unique in the series
-        if len(set(ligands)) != len(ligands):
-            count = Counter(ligands)
-            duplicated = [
-                key.compound_name for key, value in count.items() if value > 1
-            ]
-            raise ValueError(
-                f"ligand series contains {len(duplicated)} duplicate ligands: {duplicated}"
+        # generate the network
+        if ligands:
+            check_ligand_series_uniqueness_and_names(ligands)
+            # start by trying to plan the network
+            planned_network = self.network_planner.generate_network(
+                ligands=ligands,
+                central_ligand=central_ligand,
             )
+        # pre-generated network
+        elif graphml:
+            # equivalent name checks in constructor
+            planned_network = PlannedNetwork.from_graphml(graphml)
 
-        # if any ligands lack a name, then raise an exception; important for
-        # ligands to have names for human-readable result gathering downstream
-        if missing := len([ligand for ligand in ligands if not ligand.compound_name]):
-            raise ValueError(
-                f"{missing} of {len(ligands)} ligands do not have names; names are required for ligands for downstream results handling"
-            )
-
-        # start by trying to plan the network
-        planned_network = self.network_planner.generate_network(
-            ligands=ligands, central_ligand=central_ligand
-        )
+        else:
+            raise ValueError("Either ligands or a graphml file must be provided.")
 
         planned_fec_network = FreeEnergyCalculationNetwork(
             dataset_name=dataset_name,

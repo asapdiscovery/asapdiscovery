@@ -8,6 +8,7 @@ from openeye import (  # noqa: F401
     oedepict,
     oedocking,
     oeff,
+    oegraphsim,
     oegrid,
     oeomega,
     oequacpac,
@@ -271,6 +272,52 @@ def load_openeye_cif(
 
     else:
         oechem.OEThrow.Fatal(f"Unable to open {cif_fn}")
+
+
+def load_openeye_mol2(mol2_fn: Union[str, Path]) -> oechem.OEMol:
+    """
+    Load an OpenEye MOL2 file and return it as an OpenEye OEMol object.
+    Reads multiple conformers into the OEMol object but if the MOL2 file contains
+    multiple molecules, it will only return the first one.
+
+    Parameters
+    ----------
+    MOL2_fn : Union[str, Path]
+        Path to the MOL2 file to load.
+
+    Returns
+    -------
+    oechem.OEMol
+        An OpenEye OEMol object containing the molecule data from the MOL2 file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file does not exist.
+    oechem.OEError
+        If the MOL2 file cannot be opened.
+
+    Notes
+    -----
+    This function assumes that the MOL2 file contains a single molecule. If the
+    file contains more than one molecule, only the first molecule will be loaded.
+    """
+
+    if not Path(mol2_fn).exists():
+        raise FileNotFoundError(f"{mol2_fn} does not exist!")
+
+    ifs = oechem.oemolistream()
+    ifs.SetFlavor(
+        oechem.OEFormat_MOL2,
+        oechem.OEIFlavor_MOL2_Default,
+    )
+    ifs.SetConfTest(oechem.OEOmegaConfTest())
+    if ifs.open(str(mol2_fn)):
+        for mol in ifs.GetOEMols():
+            ifs.close()
+            return mol
+    else:
+        oechem.OEThrow.Fatal(f"Unable to open {mol2_fn}")
 
 
 def load_openeye_sdf(sdf_fn: Union[str, Path]) -> oechem.OEMol:
@@ -664,7 +711,6 @@ def sdf_string_to_oemol(sdf_str: str) -> oechem.OEMol:
     rmol = oechem.OEMol()
     ims.SetConfTest(oechem.OEOmegaConfTest())
     if ims.openstring(sdf_str):
-
         for mol in ims.GetOEMols():
             rmol = mol.CreateCopy()
             break  # only return the first molecule
@@ -913,7 +959,6 @@ def get_SD_data(mol: oechem.OEMolBase) -> dict[str, list]:
     # we'll add to all the conformers and return that dict of lists.
 
     if isinstance(mol, oechem.OEMol):
-
         # Get the data from the molecule
         molecule_tags = _get_SD_data(mol)
 
@@ -964,7 +1009,7 @@ def print_SD_data(mol: oechem.OEMol) -> None:
         print(dp.GetTag(), ":", dp.GetValue())
 
 
-def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
+def clear_SD_data(mol: oechem.OEMolBase) -> oechem.OEMol:
     """
     Clear all SD data on an OpenEye OEMol
 
@@ -978,8 +1023,11 @@ def clear_SD_data(mol: oechem.OEMol) -> oechem.OEMol:
     oechem.OEMol
         OpenEye OEMol with SD data cleared
     """
-    for conf in mol.GetConfs():
-        oechem.OEClearSDData(conf)
+    oechem.OEClearSDData(mol)
+
+    if isinstance(mol, oechem.OEMCMolBase):
+        for conf in mol.GetConfs():
+            oechem.OEClearSDData(conf)
     return mol
 
 
