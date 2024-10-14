@@ -1199,6 +1199,7 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
     from openff.toolkit import ForceField
     from openff.units import unit
 
+    tyk2_network = tyk2_fec_network.copy(deep=True)
     refit_values = {
         ProperTorsionSMIRKS(
             # define a fake smirks which is not in the base ff to ensure it is added correctly
@@ -1235,10 +1236,10 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
     with tmpdir.as_cwd():
 
         # inject some fake keys into the ligands
-        for ligand in tyk2_fec_network.network.ligands:
+        for ligand in tyk2_network.network.ligands:
             ligand.tags["bespokefit_id"] = "testing"
 
-        tyk2_fec_network.to_file("planned_network.json")
+        tyk2_network.to_file("planned_network.json")
 
         result = runner.invoke(
             alchemy,
@@ -1256,7 +1257,7 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
             assert ligand.bespoke_parameters is not None
             assert (
                 ligand.bespoke_parameters.base_force_field
-                == tyk2_fec_network.forcefield_settings.small_molecule_forcefield
+                == tyk2_network.forcefield_settings.small_molecule_forcefield
             )
             parameter = ligand.bespoke_parameters.parameters[0]
             assert parameter.smirks == "[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]"
@@ -1294,6 +1295,7 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     from openff.bespokefit.schema.smirnoff import ProperTorsionSMIRKS
     from openff.units import unit
 
+    tyk2_network = tyk2_fec_network.copy(deep=True)
     refit_values = {
         ProperTorsionSMIRKS(
             # define a fake smirks which is not in the base ff to ensure it is added correctly
@@ -1329,8 +1331,8 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     runner = CliRunner()
     with tmpdir.as_cwd():
         # inject fake key to one ligand
-        tyk2_fec_network.network.ligands[0].tags["bespokefit_id"] = "testing"
-        tyk2_fec_network.to_file("planned_network.json")
+        tyk2_network.network.ligands[0].tags["bespokefit_id"] = "testing"
+        tyk2_network.to_file("planned_network.json")
 
         with pytest.raises(
             RuntimeError,
@@ -1358,6 +1360,7 @@ def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
         BespokeFitClient,
     )
 
+    tyk2_network = tyk2_fec_network.copy(deep=True)
     runner = CliRunner()
 
     monkeypatch.setattr(BespokeExecutorOutput, "status", "success")
@@ -1379,10 +1382,10 @@ def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
 
     with tmpdir.as_cwd():
         # inject some fake keys into the ligands
-        for ligand in tyk2_fec_network.network.ligands:
+        for ligand in tyk2_network.network.ligands:
             ligand.tags["bespokefit_id"] = "testing"
 
-        tyk2_fec_network.to_file("planned_network.json")
+        tyk2_network.to_file("planned_network.json")
 
         result = runner.invoke(alchemy, ["bespoke", "status"])
 
