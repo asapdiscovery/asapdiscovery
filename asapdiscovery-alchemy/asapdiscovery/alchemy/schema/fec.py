@@ -334,6 +334,8 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
             ff_string = self._inject_bespoke_parameters(edge=mapping)
             # make a copy of the protocol and add the bespoke force field
             edge_protocol = copy.deepcopy(protocol)
+            # make the settings editable
+            edge_protocol._settings = edge_protocol._settings.unfrozen_copy()
             edge_protocol._settings.forcefield_settings.small_molecule_forcefield = (
                 ff_string
             )

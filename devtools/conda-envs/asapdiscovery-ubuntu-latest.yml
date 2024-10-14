@@ -24,7 +24,7 @@ dependencies:
   - mdanalysis
   - openff-toolkit
   - openff-fragmenter <0.2.2
-  - openff-bespokefit
+  - openff-bespokefit >=0.4.0
   - openff-forcefields >=2024.04.0
   - openeye-toolkits # may need  <2023.2.3 for lilac GLIBC
   - openmmforcefields >= 0.13.0
@@ -101,6 +101,3 @@ dependencies:
   - rich
   - alchemiscale-client >=0.5.1
   - cinnabar >=0.4.1
-
-  - pip:
-    - git+https://github.com/openforcefield/openff-bespokefit/@client
