@@ -50,6 +50,11 @@ def download_fragalysis(
     download(output, api_call, extract=extract, base_url=BASE_URL_LEGACY)
 
 
+@data.command()
+def download_cdd():
+    pass
+
+
 @data.command(name="cdd-to-schema")
 @click.option(
     "-i",
