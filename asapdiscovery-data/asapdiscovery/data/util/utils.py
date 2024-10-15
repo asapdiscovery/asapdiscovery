@@ -958,10 +958,15 @@ def parse_fluorescence_data_cdd(
         ):
             # Check error for filtering
             if pIC50_stderr > pic50_stderr_filt:
-                IC50 = "nan"
-                pIC50 = "nan"
-                # @HMO do we want to leave the stderr values as they are for posterity
-                #  or set them to NaN as well?
+                # Set everything to NaN
+                IC50 = np.nan
+                pIC50 = np.nan
+                IC50_stderr = np.nan
+                IC50_lower = np.nan
+                IC50_upper = np.nan
+                pIC50_stderr = np.nan
+                pIC50_lower = np.nan
+                pIC50_upper = np.nan
             else:
                 # Have numbers for IC50 and stderr so can do rounding
                 try:
