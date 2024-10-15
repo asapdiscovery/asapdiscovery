@@ -901,6 +901,7 @@ def parse_fluorescence_data_cdd(
     pIC50_range_series = []
     pIC50_lower_series = []
     pIC50_upper_series = []
+    pic50_filt_compounds = []
     for _, row in mol_df.iterrows():
         try:
             IC50 = float(row[f"{assay_name}: IC50 (µM)"])
@@ -967,6 +968,9 @@ def parse_fluorescence_data_cdd(
                 pIC50_stderr = np.nan
                 pIC50_lower = np.nan
                 pIC50_upper = np.nan
+
+                # Store the compound to log later
+                pic50_filt_compounds.append(row["name"])
             else:
                 # Have numbers for IC50 and stderr so can do rounding
                 try:
@@ -994,6 +998,15 @@ def parse_fluorescence_data_cdd(
         pIC50_range_series.append(pIC50_range)
         pIC50_lower_series.append(pIC50_lower)
         pIC50_upper_series.append(pIC50_upper)
+
+    # Let the user know we found some invalid values
+    if len(pic50_filt_compounds) > 0:
+        logging.debug(
+            (
+                "These compounds had standard errors outside the set range and were "
+                f"filtered to NaNs: {pic50_filt_compounds}"
+            ),
+        )
 
     mol_df["IC50 (M)"] = IC50_series
     mol_df["IC50_stderr (M)"] = IC50_stderr_series
