@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from asapdiscovery.data.services.cdd.cdd_download import download_molecules
 from asapdiscovery.data.services.fragalysis.fragalysis_download import (  # noqa: E402
     API_CALL_BASE_LEGACY,
     BASE_URL_LEGACY,
     FragalysisTargets,
     download,
 )
-from asapdiscovery.data.services.cdd.cdd_download import download_molecules
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.util.utils import cdd_to_schema, cdd_to_schema_pair
 
