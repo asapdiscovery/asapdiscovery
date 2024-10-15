@@ -833,6 +833,14 @@ def stop(network_key: str):
     help="Make predictions using only the largest subnetwork present in the results. "
     "Useful in cases where the network is disconnected by e.g. simulation failures.",
 )
+@click.option(
+    "-wtop",
+    "--write-top-n-poses",
+    help="The number of top-scoring poses to write to a multi-SDF in the local directoy.",
+    type=click.INT,
+    default=0,
+    show_default=True,
+)
 def predict(
     network: str,
     reference_units: str,
@@ -842,6 +850,7 @@ def predict(
     postera_molset_name: Optional[str] = None,
     clean: Optional[bool] = False,
     force_largest: Optional[bool] = False,
+    write_top_n_poses: Optional[int] = 0,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
@@ -945,8 +954,8 @@ def predict(
     console.print(message)
 
     # if requested, write an SDF of the top n compounds' docked poses
-    top_n = 10
-    get_top_n_poses(absolute_df, ligands, top_n, console)
+    if write_top_n_poses > 0:
+        _ = get_top_n_poses(absolute_df, ligands, write_top_n_poses, console)
 
     # check if we have a biological target
     bio_target = target or result_network.target
