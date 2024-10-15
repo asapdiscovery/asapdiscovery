@@ -850,7 +850,7 @@ def predict(
     postera_molset_name: Optional[str] = None,
     clean: Optional[bool] = False,
     force_largest: Optional[bool] = False,
-    write_top_n_poses: Optional[int] = 0,
+    write_top_n_poses: Optional[int] = 50,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the

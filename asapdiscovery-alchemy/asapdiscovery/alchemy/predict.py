@@ -1095,6 +1095,8 @@ def get_top_n_poses(
 
     # write out each compound of the top n to the multi-SDF
     top_n_ligands = []
+    if top_n > len(absolute_df):  # cap the slice to the max number of predictions
+        top_n = len(absolute_df)
     for compound_name in absolute_df.sort_values(by="DG (kcal/mol) (FECS)")["label"][
         :top_n
     ]:
