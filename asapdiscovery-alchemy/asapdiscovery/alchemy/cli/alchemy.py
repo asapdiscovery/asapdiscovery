@@ -856,8 +856,8 @@ def predict(
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
-    import rich
     import numpy as np
+    import rich
     from asapdiscovery.alchemy.cli.utils import (
         cinnabar_femap_get_largest_subnetwork,
         cinnabar_femap_is_connected,
