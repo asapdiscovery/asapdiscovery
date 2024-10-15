@@ -1,6 +1,6 @@
 import base64
 import warnings
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 import bokeh.models.widgets.tables
 import bokeh.palettes
@@ -15,6 +15,8 @@ from cinnabar import stats
 from openff.units import unit
 from rdkit import Chem
 from rdkit.Chem import Draw
+
+from asapdiscovery.data.schema.ligand import Ligand
 
 # run to enable plotting with bokeh
 panel.extension()
@@ -1071,11 +1073,17 @@ def clean_result_network(network, console=None):
     data["results"] = results
 
     fec = FreeEnergyCalculationNetwork.parse_obj(data)
-    # fec.results = deduped_results
+
     return fec
 
 
-def get_top_n_poses(absolute_df, ligands, top_n, console, write_file=True):
+def get_top_n_poses(
+    absolute_df, ligands, top_n, console=False, write_file=True
+) -> List[Ligand]:
+    """
+    Takes the `top_n` number of ligands from the FE predictions and creates a list of `Ligand` objects.
+    If specified, will write a multi-SDF file of those ligands into the local directory while logging this.
+    """
 
     from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
     from rich.padding import Padding
