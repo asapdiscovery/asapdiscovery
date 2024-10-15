@@ -1,4 +1,6 @@
 import copy
+import logging
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -9,6 +11,7 @@ from asapdiscovery.data.services.fragalysis.fragalysis_download import (  # noqa
     FragalysisTargets,
     download,
 )
+from asapdiscovery.data.services.cdd.cdd_download import download_molecules
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.util.utils import cdd_to_schema, cdd_to_schema_pair
 
@@ -157,7 +160,59 @@ def download_cdd(
     temp: float = 298.0,
     cheng_prusoff: str = "0.375,9.5",
 ):
-    pass
+    # Check retain-all shortcut
+    if retain_all:
+        retain_achiral = True
+        retain_racemic = True
+        retain_enantiopure = True
+        retain_semiquant = True
+
+    # Parse Cheng-Prusoff args
+    cheng_prusoff = list(map(float, cheng_prusoff.split(",")))
+    if (len(cheng_prusoff) != 2) or (cheng_prusoff == [0, 0]):
+        print(
+            "No Cheng-Prusoff parameters passed, using pIC50=pKi approximation.",
+            flush=True,
+        )
+        cheng_prusoff = None
+
+    # Set up logging
+    logging.basicConfig(level=logging.DEBUG)
+
+    # Set up CDD token
+    if "CDDTOKEN" in os.environ:
+        header = {"X-CDD-token": os.environ["CDDTOKEN"]}
+    elif token and token.exists():
+        header = {"X-CDD-token": "".join(token.open().readlines()).strip()}
+    else:
+        raise ValueError(
+            "Must pass a file for --token if the CDDTOKEN environment "
+            "variable is not set."
+        )
+
+    # Get vault number from environment if not given
+    if not vault:
+        try:
+            vault = os.environ["MOONSHOT_CDD_VAULT_NUMBER"]
+        except KeyError:
+            raise ValueError("No value specified for vault.")
+
+    _ = download_molecules(
+        header,
+        vault=vault,
+        search=search,
+        fn_out=output,
+        fn_cache=cache,
+        id_fieldname=id_fieldname,
+        smiles_fieldname=smiles_fieldname,
+        retain_achiral=retain_achiral,
+        retain_racemic=retain_racemic,
+        retain_enantiopure=retain_enantiopure,
+        retain_semiquantitative_data=retain_semiquant,
+        assay_name=assay_name,
+        dG_T=temp,
+        cp_values=cheng_prusoff,
+    )
 
 
 @data.command(name="cdd-to-schema")
