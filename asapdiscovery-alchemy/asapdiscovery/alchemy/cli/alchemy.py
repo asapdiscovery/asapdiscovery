@@ -860,6 +860,7 @@ def predict(
         create_absolute_report,
         create_relative_report,
         get_data_from_femap,
+        get_top_n_poses,
     )
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from rich import pretty
@@ -942,6 +943,10 @@ def predict(
         (1, 0, 1, 0),
     )
     console.print(message)
+
+    # if requested, write an SDF of the top n compounds' docked poses
+    top_n = 10
+    get_top_n_poses(absolute_df, ligands, top_n, console)
 
     # check if we have a biological target
     bio_target = target or result_network.target

@@ -1073,3 +1073,30 @@ def clean_result_network(network, console=None):
     fec = FreeEnergyCalculationNetwork.parse_obj(data)
     # fec.results = deduped_results
     return fec
+
+
+def get_top_n_poses(absolute_df, ligands, top_n, console, write_file=True):
+
+    from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
+    from rich.padding import Padding
+
+    docked_hits_path = f"top_{top_n}_posed_ligands.sdf"
+
+    # get a dict of ligands so we can more easily grab them by name
+    ligands_dict = {ligand.compound_name: ligand for ligand in ligands}
+
+    # write out each compound of the top n to the multi-SDF
+    top_n_ligands = []
+    for compound_name in absolute_df.sort_values(by="DG (kcal/mol) (FECS)")["label"][
+        :top_n
+    ]:
+        top_n_ligands.append(ligands_dict[compound_name])
+    if write_file:
+        write_ligands_to_multi_sdf(docked_hits_path, top_n_ligands, overwrite=True)
+        if console:
+            message = Padding(
+                f"Top {top_n} compound poses written to [repr.filename]{docked_hits_path}[/repr.filename]",
+                (1, 0, 1, 0),
+            )
+            console.print(message)
+    return top_n_ligands
