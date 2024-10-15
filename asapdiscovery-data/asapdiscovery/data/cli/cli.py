@@ -51,7 +51,112 @@ def download_fragalysis(
 
 
 @data.command()
-def download_cdd():
+@click.option(
+    "-o",
+    "--output",
+    required=True,
+    type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+    help="Output CSV file.",
+)
+@click.option(
+    "-tok",
+    "--token",
+    help=(
+        "File containing CDD token. Not used if the CDDTOKEN "
+        "environment variable is set."
+    ),
+)
+@click.option(
+    "--cache",
+    type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+    help="Cache CSV file.",
+)
+@click.option(
+    "-v",
+    "--vault",
+    help="Which CDD vault to download from (defaults to Moonshot vault).",
+)
+@click.option(
+    "-s",
+    "--search",
+    default="sars_fluorescence_noncovalent_w_dates",
+    help=(
+        "Either a search id or entry in MOONSHOT_SEARCH_DICT "
+        "(see asapdiscovery.data.cdd for more details). Defaults to search "
+        "with all noncovalent molecules in the SARS-CoV-2 dose response assay."
+    ),
+)
+@click.option(
+    "-smi",
+    "--smiles-fieldname",
+    default="suspected_SMILES",
+    help="Which column in the downloaded CSV file to use as SMILES.",
+)
+@click.option(
+    "-id",
+    "--id-fieldname",
+    default="Canonical PostEra ID",
+    help="Which column in the downloaded CSV file to use as the molecule id.",
+)
+@click.option("--retain-achiral", is_flag=True, help="Keep achiral molecules.")
+@click.option("--retain-racemic", is_flag=True, help="Keep racemic molecules.")
+@click.option(
+    "--retain-enantiopure", is_flag=True, help="Keep chirally resolved molecules."
+)
+@click.option(
+    "--retain-semiquant",
+    is_flag=True,
+    help="Keep molecules whose IC50 values are out of range.",
+)
+@click.option(
+    "--retain-all",
+    is_flag=True,
+    help=(
+        "Automatically sets retain_achiral, retain_racemic, retain_enantiopure, "
+        "and retain_semiquant."
+    ),
+)
+@click.option(
+    "-an",
+    "--assay-name",
+    default="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
+    help="Assay name to parse as IC50.",
+)
+@click.option(
+    "-T",
+    "--temp",
+    type=float,
+    default=298.0,
+    help="Temperature in K to use for delta G conversion.",
+)
+@click.option(
+    "-cp",
+    "--cheng-prusoff",
+    default="0.375,9.5",
+    help=(
+        "Comma separated values for [S] and Km to use in the Cheng-Prusoff equation "
+        "(assumed to be in the same units). Default values are those used in the "
+        "SARS-CoV-2 fluorescence experiments from the COVID Moonshot project (in uM "
+        "here). Pass 0 for both values to disable and use the pIC50 approximation."
+    ),
+)
+def download_cdd(
+    output: Path,
+    token: str | None = None,
+    cache: Path | None = None,
+    vault: str | None = None,
+    search: str = "sars_fluorescence_noncovalent_w_dates",
+    smiles_fieldname: str = "suspected_SMILES",
+    id_fieldname: str = "Canonical PostEra ID",
+    retain_achiral: bool = False,
+    retain_racemic: bool = False,
+    retain_enantiopure: bool = False,
+    retain_semiquant: bool = False,
+    retain_all: bool = False,
+    assay_name: str = "ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
+    temp: float = 298.0,
+    cheng_prusoff: str = "0.375,9.5",
+):
     pass
 
 
