@@ -175,6 +175,12 @@ def download_cdd(
             flush=True,
         )
         cheng_prusoff = None
+    else:
+        print(
+            f"Using Cheng-Prusoff values of [S]={cheng_prusoff[0]} and",
+            f"Km={cheng_prusoff[1]}",
+            flush=True,
+        )
 
     # Set up logging
     logging.basicConfig(level=logging.DEBUG)
