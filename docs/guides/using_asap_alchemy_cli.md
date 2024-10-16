@@ -146,21 +146,21 @@ openfe view-ligand-network ligand_network.graphml
 
 ## ASAP-Alchemy Bespoke
 
-Before submitting our alchemical free energy network for simulation we can optionally generate molecule specific dihedral 
-force field parameters using an interface to [OpenFF-BespokeFit](https://github.com/openforcefield/openff-bespokefit). 
- BespokeFit is an automated solution for creating bespoke force field parameters for small molecules which are compatible 
-with OpenFF general force fields such as Parsley and Sage at scale. 
+Before submitting our alchemical free energy network for simulation we can optionally generate molecule specific dihedral
+force field parameters using an interface to [OpenFF-BespokeFit](https://github.com/openforcefield/openff-bespokefit).
+ BespokeFit is an automated solution for creating bespoke force field parameters for small molecules which are compatible
+with OpenFF general force fields such as Parsley and Sage at scale.
 
 ```{eval-rst}
 .. note::
     Make sure to have your ``BEFLOW_GATEWAY_ADDRESS`` and ``BEFLOW_GATEWAY_PORT`` exported as environment variables
 ```
 
-Here we assume you already have a running [BespokeFit executor](https://docs.openforcefield.org/projects/bespokefit/en/latest/getting-started/quick-start.html#production-fits) instance running which you can query via the 
+Here we assume you already have a running [BespokeFit executor](https://docs.openforcefield.org/projects/bespokefit/en/latest/getting-started/quick-start.html#production-fits) instance running which you can query via the
 [BespokeFit CLI](https://docs.openforcefield.org/projects/bespokefit/en/latest/getting-started/bespoke-cli.html#openff-bespoke-executor).
 
 ### ASAP-Alchemy Bespoke Submit
-We can now submit the ligands in our planned network for bespoke parameterization using one of our pre-defined 
+We can now submit the ligands in our planned network for bespoke parameterization using one of our pre-defined
 bespoke workflows such as the `aimnet2` workflow which offers a good balance between speed and accuracy:
 
 ```shell
@@ -168,7 +168,7 @@ asap-alchemy bespoke submit --network "planned_network.json"    \
                             --protocol "aimnet2"
 ```
 
-This command submits each of the ligands to the BespokeFit executor and stores their bespoke task `ID` back into the 
+This command submits each of the ligands to the BespokeFit executor and stores their bespoke task `ID` back into the
 provided network file, these `IDs` are then used later to retrieve results and check the status of the parameterization.
 
 For users who want more fine-grained control over the BespokeFit fitting workflow they can provide a JSON file of the
@@ -182,20 +182,20 @@ asap-alchemy bespoke submit --network "planned_network.json"               \
 ### ASAP-Alchemy Bespoke Status
 To track the progress of the BespokeFit jobs you can use the following command:
 ```shell
-asap-alchemy bespoke status 
+asap-alchemy bespoke status
 ```
 
 ### ASAP-Alchemy Bespoke Gather
 Once all the BespokeFit jobs have finished you can gather the results using:
 
 ```shell
-asap-alchemy bespoke gather 
+asap-alchemy bespoke gather
 ```
 
 This will save the bespoke parameters for each ligand into the `planned_network.json` file which can be used with the
 rest of the workflow and the bespoke parameters will be used automatically.
 
-If we some incomplete jobs in this network or some consistent failures this command will fail, you can however 
+If we some incomplete jobs in this network or some consistent failures this command will fail, you can however
 bypass this check using:
 
 ```shell
