@@ -58,3 +58,27 @@ protocols:
     readout_err: null
     target: null
     endpoint: LogD
+
+  in-vitro_KSOL-PBS_bienta:
+    readout: mean_solubility (Num)
+    readout_err: null
+    target: null
+    endpoint: KSOL-PBS
+
+  in-vitro_HLM_bienta:
+    readout: CLint (Num)
+    readout_err: null
+    target: null
+    endpoint: HLM
+
+  in-vitro_MLM_bienta:
+    readout: CLint (Num)
+    readout_err: null
+    target: null
+    endpoint: MLM
+
+  in-vitro_MDR1-MDCKII-Papp_bienta:
+    readout: mean_Papp_A_to_B (Num)
+    readout_err: null
+    target: null
+    endpoint: MDR1-MDCKII-Papp
