@@ -408,7 +408,8 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
                 )
 
-                # make the OpenFE protocol for this edge; double the simulation time if requested
+                ## make the OpenFE protocol for this edge
+                # double the simulation time if requested
                 protocol_copy = self.copy(deep=True)
                 if (
                     self.adaptive_settings.adaptive_sampling
@@ -418,6 +419,17 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     protocol_copy.simulation_settings.production_length *= (
                         self.adaptive_settings.adaptive_sampling_multiplier
                     )
+                # adjust solvent padding per phase if requested
+                if self.adaptive_settings.adaptive_solvent_padding:
+                    if leg == "solvent":
+                        protocol_copy.solvation_settings.solvent_padding = (
+                            self.adaptive_settings.solvent_padding_solvated
+                        )
+                    else:
+                        protocol_copy.solvation_settings.solvent_padding = (
+                            self.adaptive_settings.solvent_padding_complex
+                        )
+                print(protocol_copy.solvation_settings.solvent_padding)
                 protocol_openfe = protocol_copy.to_openfe_protocol()
 
                 # set up the transformation
