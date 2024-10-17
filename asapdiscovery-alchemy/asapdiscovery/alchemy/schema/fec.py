@@ -246,6 +246,7 @@ class _FreeEnergyBase(_SchemaBase):
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
         settings.OpenMMSystemGeneratorFFSettings(
             small_molecule_forcefield="openff-2.2.0",
+            nonbonded_cutoff=0.9 * OFFUnit.nanometer,
         ),
         description="The force field settings used to parameterize the systems.",
     )
@@ -274,6 +275,7 @@ class _FreeEnergyBase(_SchemaBase):
         MultiStateSimulationSettings(
             equilibration_length=1.0 * OFFUnit.nanoseconds,
             production_length=5.0 * OFFUnit.nanoseconds,
+            time_per_iteration=2.5 * OFFUnit.picoseconds,
         ),
         description="Settings for simulation control, including lengths and writing to disk.",
     )
@@ -390,12 +392,6 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                 f"Atom mapping scorer {self.network.scorer} not recognized; use one of `default_lomap`, `default_perses`."
             )
 
-        """
-        - adjust other settings from OpenFE direction
-
-        - submit p38 network with these settings
-        - submit p38 network from main
-        """
         # build the network
         for mapping in ligand_network.edges:
             for leg in ["solvent", "complex"]:
@@ -423,7 +419,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                         self.adaptive_settings.adaptive_sampling_multiplier
                     )
                 protocol_openfe = protocol_copy.to_openfe_protocol()
-                print(protocol_copy.simulation_settings.production_length)
+
                 # set up the transformation
                 transformation = openfe.Transformation(
                     stateA=system_a,
