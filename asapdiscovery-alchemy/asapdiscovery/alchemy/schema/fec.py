@@ -341,7 +341,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         solvent = self.solvent_settings.to_solvent_component()
         receptor = self.to_openfe_receptor()
         protocol = self.to_openfe_protocol()
-
+        print(protocol)
         # build the network
         for mapping in ligand_network.edges:
             for leg in ["solvent", "complex"]:
