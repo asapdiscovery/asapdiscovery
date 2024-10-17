@@ -80,6 +80,38 @@ class SolventSettings(_SchemaBase):
         return gufe.SolventComponent(**self.dict(exclude={"type"}))
 
 
+class AdaptiveSettings(_SchemaBase):
+    """
+    A settings class to encode settings for adaptive settings.
+    """
+
+    type: Literal["AdaptiveSettings"] = "AdaptiveSettings"
+    adaptive_sampling: bool = Field(
+        True,
+        description="If True, will enable increase in production length of simulations given a `adaptive_sampling_multiplier` and `adaptive_sampling_threshold`.",
+    )
+    adaptive_sampling_multiplier: float = Field(
+        2.0,
+        description="The number of times more production simulation length (sampling time) that will be assigned to edges whose mapping scoring falls below the `adaptive_sampling_threshold`.",
+    )
+    adaptive_sampling_threshold: float = Field(
+        0.5,
+        description="The threshold that separates edges that are expected to perform well (higher; regular production simulation time) and poorly (lower; regular production simulation time * `adaptive_sampling_multiplier`). Recommended settings are 0.5 (LOMAP scorer) or 0.85 (PERSES scorer).",
+    )
+    adaptive_solvent_padding: bool = Field(
+        True,
+        description="Whether or not to use adaptive solvent padding; typically the complex phase can handle smaller padding size.",
+    )
+    solvent_padding_complex: FloatQuantity["nanometer"] = Field(
+        1.0 * OFFUnit.nanometer,
+        description="The solvent padding (in nm) to use for the complex phase of each edge.",
+    )
+    solvent_padding_solvated: FloatQuantity["nanometer"] = Field(
+        1.2 * OFFUnit.nanometer,
+        description="The solvent padding (in nm) to use for the solvated phase of each edge.",
+    )
+
+
 # TODO make base class with abstract methods to collect results.
 class TransformationResult(_SchemaBaseFrozen):
     """
@@ -248,6 +280,10 @@ class _FreeEnergyBase(_SchemaBase):
         ),
         description="Settings for simulation control, including lengths and writing to disk.",
     )
+    adaptive_settings: AdaptiveSettings = Field(
+        AdaptiveSettings(),
+        description="Run adaptive settings depending on e.g. expected edge reliability or system phase.",
+    )
     protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
         "RelativeHybridTopologyProtocol",
         description="The name of the OpenFE alchemical protocol to use.",
@@ -356,10 +392,15 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
             raise ValueError(
                 f"Atom mapping scorer {self.network.scorer} not recognized; use one of `default_lomap`, `default_perses`."
             )
-        adaptive_sampling = True  ##### TMP FOR DEV
+
+        """
+        - adjust other settings from OpenFE direction
+
+        - submit p38 network with these settings
+        - submit p38 network from main
+        """
         # build the network
         for mapping in ligand_network.edges:
-            print()
             for leg in ["solvent", "complex"]:
                 sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
                 sys_b_dict = {"ligand": mapping.componentB, "solvent": solvent}
@@ -375,12 +416,17 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                 )
 
                 # make the OpenFE protocol for this edge; double the simulation time if requested
-                protocol_copy = self.copy()
-                if adaptive_sampling and scorer(mapping) < scorer_threshold:
-                    protocol_copy.simulation_settings.production_length *= 2
+                protocol_copy = self.copy(deep=True)
+                if (
+                    self.adaptive_settings.adaptive_sampling
+                    and scorer(mapping)
+                    < self.adaptive_settings.adaptive_sampling_threshold
+                ):
+                    protocol_copy.simulation_settings.production_length *= (
+                        self.adaptive_settings.adaptive_sampling_multiplier
+                    )
                 protocol_openfe = protocol_copy.to_openfe_protocol()
                 print(protocol_copy.simulation_settings.production_length)
-
                 # set up the transformation
                 transformation = openfe.Transformation(
                     stateA=system_a,
