@@ -79,7 +79,7 @@ class SolventSettings(_SchemaBase):
 
 class AdaptiveSettings(_SchemaBase):
     """
-    A settings class to encode settings for adaptive settings.
+    A settings class to encode settings for adaptive settings. These were recommended by OpenFE.
     """
 
     type: Literal["AdaptiveSettings"] = "AdaptiveSettings"
@@ -383,10 +383,8 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         # get the atom mapping scorer in case we need to double simulation time for potentially challenging edges
         if self.network.scorer == "default_lomap":
             scorer = lomap_scorers.default_lomap_score
-            scorer_threshold = 0.5  # this is industry standard
         elif self.network.scorer == "default_perses":
             scorer = perses_scorers.default_perses_scorer
-            scorer_threshold = 0.91  # recommended by OpenFE devs
         else:
             raise ValueError(
                 f"Atom mapping scorer {self.network.scorer} not recognized; use one of `default_lomap`, `default_perses`."
