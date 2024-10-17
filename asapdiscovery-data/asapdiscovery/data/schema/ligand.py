@@ -31,6 +31,7 @@ from asapdiscovery.data.backend.openeye import (
 from asapdiscovery.data.backend.rdkit import rdkit_mol_to_sdf_str
 from asapdiscovery.data.operators.state_expanders.expansion_tag import StateExpansionTag
 from asapdiscovery.data.schema.identifiers import (
+    BespokeParameters,
     ChargeProvenance,
     LigandIdentifiers,
     LigandProvenance,
@@ -122,6 +123,11 @@ class Ligand(DataModelAbstractBase):
 
     charge_provenance: Optional[ChargeProvenance] = Field(
         None, description="The provenance information of the local charging method."
+    )
+
+    bespoke_parameters: Optional[BespokeParameters] = Field(
+        None,
+        description="The bespoke parameters for this ligand organised by interaction type.",
     )
 
     tags: dict[str, str] = Field(
