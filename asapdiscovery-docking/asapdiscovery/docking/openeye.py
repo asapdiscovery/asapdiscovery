@@ -146,7 +146,7 @@ class POSITDocker(DockingBase):
         description="Minimum posit probability threshold if allow_low_posit_prob is False",
     )
     allow_final_clash: bool = Field(
-        True, description="Allow clashing poses in last stage of docking"
+        False, description="Allow clashing poses in last stage of docking"
     )
     allow_retries: bool = Field(
         True,
