@@ -319,7 +319,7 @@ class POSITDocker(DockingBase):
                                 opts, pose_res, dus, lig_oemol, self.num_poses
                             )
 
-                    # try again with FRED 
+                    # try again with FRED
                     if retcode != oedocking.OEDockingReturnCode_Success:
 
                         opts_fred = oedocking.OEPositOptions()
