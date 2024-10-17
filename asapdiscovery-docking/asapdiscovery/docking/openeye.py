@@ -140,13 +140,13 @@ class POSITDocker(DockingBase):
         False, description="Use dense conformer generation with omega"
     )
     num_poses: PositiveInt = Field(1, description="Number of poses to generate")
-    allow_low_posit_prob: bool = Field(False, description="Allow low posit probability")
+    allow_low_posit_prob: bool = Field(True, description="Allow low posit probability")
     low_posit_prob_thresh: float = Field(
-        0.1,
+        0.0,
         description="Minimum posit probability threshold if allow_low_posit_prob is False",
     )
     allow_final_clash: bool = Field(
-        False, description="Allow clashing poses in last stage of docking"
+        True, description="Allow clashing poses in last stage of docking"
     )
     allow_retries: bool = Field(
         True,
@@ -318,6 +318,18 @@ class POSITDocker(DockingBase):
                             pose_res, retcode = self.run_oe_posit_docking(
                                 opts, pose_res, dus, lig_oemol, self.num_poses
                             )
+
+                    # try again with FRED 
+                    if retcode != oedocking.OEDockingReturnCode_Success:
+
+                        opts_fred = oedocking.OEPositOptions()
+                        opts_fred.SetIgnoreNitrogenStereo(True)
+                        opts_fred.SetPositMethods(POSIT_METHOD.FRED)
+                        opts_fred.SetPoseRelaxMode(self.relax_mode.value)
+                        pose_res, retcode = self.run_oe_posit_docking(
+                            opts_fred, pose_res, dus, lig_oemol, self.num_poses
+                        )
+
                     if retcode == oedocking.OEDockingReturnCode_Success:
                         input_pairs = []
                         posed_ligands = []
