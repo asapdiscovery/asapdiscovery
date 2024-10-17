@@ -442,9 +442,6 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                 )
                 transformations.append(transformation)
 
-        import sys
-
-        sys.exit()
         return openfe.AlchemicalNetwork(edges=transformations, name=self.dataset_name)
 
 
