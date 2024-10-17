@@ -18,6 +18,10 @@ from openfe.protocols.openmm_utils.omm_settings import (
     OpenMMEngineSettings,
     OpenMMSolvationSettings,
 )
+from openfe.setup.atom_mapping import (
+    lomap_scorers,
+    perses_scorers,
+)
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
@@ -340,14 +344,25 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         ligand_network = self.network.to_ligand_network()
         solvent = self.solvent_settings.to_solvent_component()
         receptor = self.to_openfe_receptor()
-        protocol = self.to_openfe_protocol()
-        print(protocol)
+
+        # get the atom mapping scorer in case we need to double simulation time for potentially challenging edges
+        if self.network.scorer == "default_lomap":
+            scorer = lomap_scorers.default_lomap_score
+            scorer_threshold = 0.5  # this is industry standard
+        elif self.network.scorer == "default_perses":
+            scorer = perses_scorers.default_perses_scorer
+            scorer_threshold = 0.91  # recommended by OpenFE devs
+        else:
+            raise ValueError(
+                f"Atom mapping scorer {self.network.scorer} not recognized; use one of `default_lomap`, `default_perses`."
+            )
+        adaptive_sampling = True  ##### TMP FOR DEV
         # build the network
         for mapping in ligand_network.edges:
+            print()
             for leg in ["solvent", "complex"]:
                 sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
                 sys_b_dict = {"ligand": mapping.componentB, "solvent": solvent}
-
                 if leg == "complex":
                     sys_a_dict["protein"] = receptor
                     sys_b_dict["protein"] = receptor
@@ -359,15 +374,26 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
                 )
 
+                # make the OpenFE protocol for this edge; double the simulation time if requested
+                protocol_copy = self.copy()
+                if adaptive_sampling and scorer(mapping) < scorer_threshold:
+                    protocol_copy.simulation_settings.production_length *= 2
+                protocol_openfe = protocol_copy.to_openfe_protocol()
+                print(protocol_copy.simulation_settings.production_length)
+
+                # set up the transformation
                 transformation = openfe.Transformation(
                     stateA=system_a,
                     stateB=system_b,
                     mapping={"ligand": mapping},
-                    protocol=protocol,  # use protocol created above
+                    protocol=protocol_openfe,  # use protocol created above
                     name=f"{system_a.name}_{system_b.name}",
                 )
                 transformations.append(transformation)
 
+        import sys
+
+        sys.exit()
         return openfe.AlchemicalNetwork(edges=transformations, name=self.dataset_name)
 
 
