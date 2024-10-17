@@ -18,10 +18,7 @@ from openfe.protocols.openmm_utils.omm_settings import (
     OpenMMEngineSettings,
     OpenMMSolvationSettings,
 )
-from openfe.setup.atom_mapping import (
-    lomap_scorers,
-    perses_scorers,
-)
+from openfe.setup.atom_mapping import lomap_scorers, perses_scorers
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import BaseSettings, Field
