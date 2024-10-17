@@ -427,7 +427,6 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                         protocol_copy.solvation_settings.solvent_padding = (
                             self.adaptive_settings.solvent_padding_complex
                         )
-                print(protocol_copy.solvation_settings.solvent_padding)
                 protocol_openfe = protocol_copy.to_openfe_protocol()
 
                 # set up the transformation
