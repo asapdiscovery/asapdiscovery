@@ -345,7 +345,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             console.line()
 
         # now run the pose generation stage
-        pose_status = console.status(
+        console.print(
             f"Generating constrained poses using {self.pose_generator.type} for {len(ligands)} ligands."
         )
         # check for stereo in the reference ligand
@@ -355,7 +355,6 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             )
             console.line()
 
-        pose_status.start()
         pose_result = self.pose_generator.generate_poses(
             prepared_complex=reference_complex,
             ligands=ligands,
@@ -367,7 +366,6 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         # save any failed ligands
         if pose_result.failed_ligands:
             failed_ligands[self.pose_generator.type] = pose_result.failed_ligands
-        pose_status.stop()
         console.print(
             f"[[green]✓[/green]] Pose generation successful for {len(pose_result.posed_ligands)}/{len(ligands)}."
         )
@@ -412,18 +410,18 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             )
             sort_status.stop()
 
-            pose_status = console.status(
+            console.print(
                 f"Generating constrained poses using {self.pose_generator.type} for {self.n_references} reference"
                 "  ligands."
             )
-            pose_status.start()
+
             # use the wrapper to keep generating poses until we have the correct number
             posed_refs = self.pose_experimental_molecules(
                 reference_complex=reference_complex,
                 experimental_ligands=sorted_exp_ligands,
                 processors=processors,
             )
-            pose_status.stop()
+
             console.print(
                 f"[[green]✓[/green]] Pose generation successful for {len(posed_refs)}/{self.n_references} experimental "
                 "ligands:"

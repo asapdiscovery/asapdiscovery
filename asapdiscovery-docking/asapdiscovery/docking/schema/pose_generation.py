@@ -421,6 +421,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         which atoms should be constrained if not supplied the MCS will be found by openeye.
         """
         from concurrent.futures import ProcessPoolExecutor, as_completed
+        from tqdm import tqdm
 
         # Make oechem be quiet
         oechem.OEThrow.SetLevel(oechem.OEErrorLevel_Quiet)
@@ -433,6 +434,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         failed_ligands = []
 
         if processors > 1:
+            progressbar = tqdm(total=len(ligands))
             with ProcessPoolExecutor(max_workers=processors) as pool:
                 work_list = [
                     pool.submit(
@@ -453,7 +455,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     else:
                         result_ligands.append(target_ligand)
         else:
-            for mol in ligands:
+            for mol in tqdm(ligands, total=len(ligands)):
                 posed_ligand = self._generate_pose(
                     target_ligand=mol.to_oemol(),
                     core_smarts=core_smarts,
@@ -464,6 +466,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     failed_ligands.append(posed_ligand)
                 else:
                     result_ligands.append(posed_ligand)
+                progressbar.update(1)
 
         # prue down the conformers
         oedu_receptor = prepared_complex.target.to_oedu()
@@ -704,7 +707,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             Two lists the first of the successfully posed ligands and ligands which failed.
         """
         from concurrent.futures import ProcessPoolExecutor, as_completed
-
+        from tqdm import tqdm
         from openff.toolkit import Molecule
 
         # make sure we are not using hs placed by prep as a reference coordinate for the generated conformers
@@ -718,6 +721,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         failed_ligands = []
 
         if processors > 1:
+            progressbar = tqdm(total=len(ligands))
             with ProcessPoolExecutor(max_workers=processors) as pool:
                 work_list = [
                     pool.submit(
@@ -747,8 +751,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                         result_ligands.append(openeye_mol)
                     else:
                         failed_ligands.append(openeye_mol)
+                    progressbar.update(1)
         else:
-            for mol in ligands:
+            for mol in tqdm(ligands, total=len(ligands)):
                 posed_ligand = self._generate_pose(
                     target_ligand=Chem.AddHs(mol.to_rdkit()),
                     core_ligand=core_ligand,
