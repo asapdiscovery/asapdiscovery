@@ -740,21 +740,25 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     for mol in ligands
                 ]
                 for work in as_completed(work_list):
-                    target_ligand = work.result()
-                    off_mol = Molecule.from_rdkit(
-                        target_ligand, allow_undefined_stereo=True
-                    )
-                    # we need to transfer the properties which would be lost
-                    openeye_mol = off_mol.to_openeye()
+                    try:
+                        target_ligand = work.result()
+                        off_mol = Molecule.from_rdkit(
+                            target_ligand, allow_undefined_stereo=True
+                        )
+                        # we need to transfer the properties which would be lost
+                        openeye_mol = off_mol.to_openeye()
 
-                    # make sure properties at the top level get added to the conformers
-                    sd_tags = get_SD_data(openeye_mol)
-                    set_SD_data(openeye_mol, sd_tags)
+                        # make sure properties at the top level get added to the conformers
+                        sd_tags = get_SD_data(openeye_mol)
+                        set_SD_data(openeye_mol, sd_tags)
 
-                    if target_ligand.GetNumConformers() > 0:
-                        # save the mol with all conformers
-                        result_ligands.append(openeye_mol)
-                    else:
+                        if target_ligand.GetNumConformers() > 0:
+                            # save the mol with all conformers
+                            result_ligands.append(openeye_mol)
+                        else:
+                            failed_ligands.append(openeye_mol)
+                    except RuntimeError:
+                        print("failed :(")
                         failed_ligands.append(openeye_mol)
                     progressbar.update(1)
         else:
