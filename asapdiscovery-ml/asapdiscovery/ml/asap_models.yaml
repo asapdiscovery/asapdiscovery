@@ -124,3 +124,20 @@ asapdiscovery-GAT-pIC50-ZIKV-NS2B-NS3_fluorescence-dose-response_weizmann-latest
 asapdiscovery-GAT-LogD-bienta-latest:
   remote_ensemble: true
   manifest_url: https://asap-discovery-ml-skynet.asapdata.org/in-vitro_LogD_bienta/latest/manifest.yaml
+
+
+asapdiscovery-GAT-KSOL-PBS-bienta-latest:
+  remote_ensemble: true
+  manifest_url: https://asap-discovery-ml-skynet.asapdata.org/in-vitro_KSOL-PBS_bienta/latest/manifest.yaml
+
+asapdiscovery-GAT-in-vitro_HLM_bienta-latest:
+  remote_ensemble: true
+  manifest_url: https://asap-discovery-ml-skynet.asapdata.org/in-vitro_HLM_bienta/latest/manifest.yaml
+
+asapdiscovery-GAT-in-vitro_MLM_bienta-latest:
+  remote_ensemble: true
+  manifest_url: https://asap-discovery-ml-skynet.asapdata.org/in-vitro_MLM_bienta/latest/manifest.yaml
+
+asapdiscovery-GAT-in-vitro_MDR1-MDCKII-Papp_bienta-latest:
+  remote_ensemble: true
+  manifest_url: https://asap-discovery-ml-skynet.asapdata.org/in-vitro_MDR1-MDCKII-Papp_bienta/latest/manifest.yaml
