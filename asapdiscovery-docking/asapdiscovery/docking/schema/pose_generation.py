@@ -14,6 +14,11 @@ from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 from rdkit import Chem
+from rdkit import RDLogger
+
+RDLogger.DisableLog(
+    "rdApp.*"
+)  # disables some cpp-level warnings that can break multithreading
 
 
 class PosedLigands(BaseModel):
@@ -753,25 +758,32 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                         failed_ligands.append(openeye_mol)
                     progressbar.update(1)
         else:
-            for mol in tqdm(ligands, total=len(ligands)):
-                posed_ligand = self._generate_pose(
-                    target_ligand=Chem.AddHs(mol.to_rdkit()),
-                    core_ligand=core_ligand,
-                    core_smarts=core_smarts,
-                )
-                off_mol = Molecule.from_rdkit(posed_ligand, allow_undefined_stereo=True)
-                # we need to transfer the properties which would be lost
-                openeye_mol = off_mol.to_openeye()
+            for i, mol in enumerate(tqdm(ligands, total=len(ligands))):
+                try:
+                    posed_ligand = self._generate_pose(
+                        target_ligand=Chem.AddHs(mol.to_rdkit()),
+                        core_ligand=core_ligand,
+                        core_smarts=core_smarts,
+                    )
 
-                # make sure properties at the top level get added to the conformers
-                sd_tags = get_SD_data(openeye_mol)
-                set_SD_data(openeye_mol, sd_tags)
+                    print(i, Chem.MolToSmiles(posed_ligand))
+                    off_mol = Molecule.from_rdkit(
+                        posed_ligand, allow_undefined_stereo=True
+                    )
+                    # we need to transfer the properties which would be lost
+                    openeye_mol = off_mol.to_openeye()
 
-                if posed_ligand.GetNumConformers() > 0:
-                    # save the mol with all conformers
-                    result_ligands.append(openeye_mol)
-                else:
-                    failed_ligands.append(openeye_mol)
+                    # make sure properties at the top level get added to the conformers
+                    sd_tags = get_SD_data(openeye_mol)
+                    set_SD_data(openeye_mol, sd_tags)
+
+                    if posed_ligand.GetNumConformers() > 0:
+                        # save the mol with all conformers
+                        result_ligands.append(openeye_mol)
+                    else:
+                        failed_ligands.append(openeye_mol)
+                except RuntimeError:
+                    pass
 
         # prue down the conformers
         oedu_receptor = prepared_complex.target.to_oedu()
