@@ -426,6 +426,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         which atoms should be constrained if not supplied the MCS will be found by openeye.
         """
         from concurrent.futures import ProcessPoolExecutor, as_completed
+
         from tqdm import tqdm
 
         # Make oechem be quiet
@@ -712,8 +713,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             Two lists the first of the successfully posed ligands and ligands which failed.
         """
         from concurrent.futures import ProcessPoolExecutor, as_completed
-        from tqdm import tqdm
+
         from openff.toolkit import Molecule
+        from tqdm import tqdm
 
         # make sure we are not using hs placed by prep as a reference coordinate for the generated conformers
         core_ligand = Chem.RemoveHs(prepared_complex.ligand.to_rdkit())
