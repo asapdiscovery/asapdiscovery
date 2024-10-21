@@ -271,7 +271,7 @@ def small_scale_docking_workflow(inputs: SmallScaleDockingInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries)
+    docker = POSITDocker(use_omega=inputs.use_omega, allow_retries=inputs.allow_retries, last_ditch_fred=True)
     results = docker.dock(
         pairs,
         output_dir=output_dir / "docking_results",

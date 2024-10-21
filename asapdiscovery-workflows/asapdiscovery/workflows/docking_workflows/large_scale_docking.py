@@ -249,7 +249,7 @@ def large_scale_docking_workflow(inputs: LargeScaleDockingInputs):
     # dock pairs, possibly reading and writing from a local cache of completed work
     logger.info("Running docking on selected pairs")
     docker = POSITDocker(
-        use_omega=inputs.use_omega, allow_retries=inputs.allow_posit_retries
+        use_omega=inputs.use_omega, allow_retries=inputs.allow_posit_retries, last_ditch_fred=True
     )
     results = docker.dock(
         pairs,

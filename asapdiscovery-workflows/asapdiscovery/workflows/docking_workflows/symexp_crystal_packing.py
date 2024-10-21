@@ -200,7 +200,7 @@ def symexp_crystal_packing_workflow(inputs: SymExpCrystalPackingInputs):
 
     # dock pairs
     logger.info("Running docking on selected pairs")
-    docker = POSITDocker(use_omega=True, allow_retries=True)
+    docker = POSITDocker(use_omega=True, allow_retries=True, last_ditch_fred=True)
     results = docker.dock(
         pairs,
         output_dir=output_dir / "docking_results",

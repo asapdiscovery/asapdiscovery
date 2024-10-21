@@ -153,7 +153,7 @@ class POSITDocker(DockingBase):
         description="Allow retries with different options if docking fails initially",
     )
     last_ditch_fred: bool = Field(
-        True, description="Use pure FRED docking as a last ditch effort"
+        False, description="Use pure FRED docking as a last ditch effort"
     )
 
     @root_validator
