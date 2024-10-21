@@ -152,7 +152,9 @@ class POSITDocker(DockingBase):
         True,
         description="Allow retries with different options if docking fails initially",
     )
-    last_ditch_fred: bool = Field(True, description="Use pure FRED docking as a last ditch effort")
+    last_ditch_fred: bool = Field(
+        True, description="Use pure FRED docking as a last ditch effort"
+    )
 
     @root_validator
     @classmethod
@@ -320,8 +322,11 @@ class POSITDocker(DockingBase):
                                 opts, pose_res, dus, lig_oemol, self.num_poses
                             )
 
-                    # try again with FRED 
-                    if retcode != oedocking.OEDockingReturnCode_Success and self.last_ditch_fred:
+                    # try again with FRED
+                    if (
+                        retcode != oedocking.OEDockingReturnCode_Success
+                        and self.last_ditch_fred
+                    ):
                         opts_fred = oedocking.OEPositOptions()
                         opts_fred.SetIgnoreNitrogenStereo(True)
                         opts_fred.SetPositMethods(POSIT_METHOD.FRED)
