@@ -109,7 +109,15 @@ class AdaptiveSettings(_SchemaBase):
     )
 
     def get_adapted_sampling_protocol(self, scorer_method, mapping, protocol):
-        """ """
+        """
+        It's advisable to increase simulation time on edges that are expected to be less reliable. There
+        Aren't many good estimators for this, but the network planner edge scoring is a decent approximation.
+
+        If the edge scoring (computed using `scorer_method`) is below the `adaptive_sampling_threshold` the
+        simulation time is multiplied by `adaptive_sampling_multiplier`.
+
+        Returns the adjusted FE protocol.
+        """
         if scorer_method == "default_lomap":
             scorer = lomap_scorers.default_lomap_score
         elif scorer_method == "default_perses":
@@ -125,7 +133,14 @@ class AdaptiveSettings(_SchemaBase):
         return protocol
 
     def get_adapted_solvent_protocol(self, leg, protocol):
-        """ """
+        """
+        Certain water box shapes (such as dodecahedron) are able to handle slightly smaller padding size
+        in the complex phase compared to the solvated phase. Given the leg (either "solvent" or "complex")
+        this method applies the specified padding per phase (`solvent_padding_solvated` or
+        `solvent_padding_complex`, resp.).
+
+        Returns the adjusted FE protocol.
+        """
         if leg == "solvent":
             protocol.solvation_settings.solvent_padding = self.solvent_padding_solvated
         else:
@@ -437,9 +452,6 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                         leg, protocol_copy
                     )
 
-                print(protocol_copy.solvation_settings.solvent_padding)
-                print(protocol_copy.simulation_settings.production_length)
-
                 protocol_openfe = protocol_copy.to_openfe_protocol()
 
                 # set up the transformation
@@ -451,9 +463,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     name=f"{system_a.name}_{system_b.name}",
                 )
                 transformations.append(transformation)
-        import sys
 
-        sys.exit()
         return openfe.AlchemicalNetwork(edges=transformations, name=self.dataset_name)
 
 
