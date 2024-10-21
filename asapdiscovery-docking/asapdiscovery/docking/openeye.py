@@ -322,7 +322,6 @@ class POSITDocker(DockingBase):
 
                     # try again with FRED 
                     if retcode != oedocking.OEDockingReturnCode_Success and self.last_ditch_fred:
-
                         opts_fred = oedocking.OEPositOptions()
                         opts_fred.SetIgnoreNitrogenStereo(True)
                         opts_fred.SetPositMethods(POSIT_METHOD.FRED)
