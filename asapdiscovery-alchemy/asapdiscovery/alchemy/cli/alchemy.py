@@ -836,10 +836,10 @@ def stop(network_key: str):
 @click.option(
     "-wtop",
     "--write-top-n-poses",
-    help="The number of top-scoring poses to write to a multi-SDF in the local directory.",
+    help="The number of top-scoring poses to write to a multi-SDF in the local directory. By default writes the top 1000 (or all if the ligand series is smaller).",
     type=click.INT,
-    default=0,
-    show_default=True,
+    default=1000,
+    show_default=False,
 )
 def predict(
     network: str,
@@ -850,7 +850,7 @@ def predict(
     postera_molset_name: Optional[str] = None,
     clean: Optional[bool] = False,
     force_largest: Optional[bool] = False,
-    write_top_n_poses: Optional[int] = 50,
+    write_top_n_poses: Optional[int] = 1000,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
@@ -955,7 +955,9 @@ def predict(
 
     # if requested, write an SDF of the top n compounds' docked poses
     if write_top_n_poses > 0:
-        _ = get_top_n_poses(absolute_df, ligands, write_top_n_poses, console, write_file=True)
+        _ = get_top_n_poses(
+            absolute_df, ligands, write_top_n_poses, console, write_file=True
+        )
 
     # check if we have a biological target
     bio_target = target or result_network.target
