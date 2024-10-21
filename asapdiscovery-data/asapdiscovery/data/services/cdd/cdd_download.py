@@ -181,7 +181,13 @@ def download_molecules(
     ]
     filter_kwargs = {k: kwargs[k] for k in filter_kwargs if k in kwargs}
     filtered_df = filter_molecules_dataframe(mol_df, **filter_kwargs)
-    parse_kwargs = ["keep_best_per_mol", "assay_name", "dG_T", "cp_values"]
+    parse_kwargs = [
+        "keep_best_per_mol",
+        "assay_name",
+        "dG_T",
+        "cp_values",
+        "pic50_stderr_filt",
+    ]
     parse_kwargs = {k: kwargs[k] for k in parse_kwargs if k in kwargs}
     parsed_df = parse_fluorescence_data_cdd(filtered_df, **parse_kwargs)
 
