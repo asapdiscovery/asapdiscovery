@@ -955,7 +955,9 @@ def predict(
 
     # if requested, write an SDF of the top n compounds' docked poses
     if write_top_n_poses > 0:
-        _ = get_top_n_poses(absolute_df, ligands, write_top_n_poses, console, write_file=True)
+        _ = get_top_n_poses(
+            absolute_df, ligands, write_top_n_poses, console, write_file=True
+        )
 
     # check if we have a biological target
     bio_target = target or result_network.target
