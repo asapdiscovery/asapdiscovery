@@ -264,7 +264,7 @@ def test_fec_adaptive_sampling(tyk2_ligands, tyk2_protein):
     reference_adaptive_sampling_times = [5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
 
     # create an alchemicalnetwork with these settings and test that the adaptive
-    # settings were applied
+    # settings were NOT applied
     alchemical_network = factory.create_fec_dataset(
         dataset_name="TYK2-test-dataset-duplicated",
         receptor=tyk2_protein,
@@ -276,6 +276,54 @@ def test_fec_adaptive_sampling(tyk2_ligands, tyk2_protein):
             edge.protocol.settings.simulation_settings.production_length.magnitude
         )
     assert reference_adaptive_sampling_times == sampling_lengths
+
+
+def test_fec_adaptive_solvent_padding(tyk2_ligands, tyk2_protein):
+    """Make sure we can adjust simulation settings in the factory adaptively"""
+    tyk2_ligands_mini = tyk2_ligands[:3]
+
+    ## define some adaptive settings for solvent padding
+    factory = FreeEnergyCalculationFactory()
+    factory.adaptive_settings.adaptive_solvent_padding = True
+    factory.adaptive_settings.solvent_padding_complex = 2 * OFFUnit.nanometer
+    factory.adaptive_settings.solvent_padding_solvated = 3 * OFFUnit.nanometer
+
+    reference_adaptive_padding_sizes = [2.0, 3.0, 2.0, 3.0, 3.0, 2.0]
+
+    # create an alchemicalnetwork with these settings and test that the adaptive
+    # settings were applied
+    alchemical_network = factory.create_fec_dataset(
+        dataset_name="TYK2-test-dataset-duplicated",
+        receptor=tyk2_protein,
+        ligands=tyk2_ligands_mini,
+    ).to_alchemical_network()
+    padding_sizes = []
+    for edge in alchemical_network.edges:
+        padding_sizes.append(
+            edge.protocol.settings.solvation_settings.solvent_padding.magnitude
+        )
+    # test while sorting because edge/phase order is scrambled randomly
+    assert sorted(reference_adaptive_padding_sizes) == sorted(padding_sizes)
+
+    ## Repeat but now without adaptive solvent padding sizes. This will pass
+    # for any solvent padding size as long as it's the same across all edges/phases
+    factory = FreeEnergyCalculationFactory()
+    factory.adaptive_settings.adaptive_solvent_padding = False
+
+    # create an alchemicalnetwork with these settings and test that the adaptive
+    # settings were NOT applied
+    alchemical_network = factory.create_fec_dataset(
+        dataset_name="TYK2-test-dataset-duplicated",
+        receptor=tyk2_protein,
+        ligands=tyk2_ligands_mini,
+    ).to_alchemical_network()
+    padding_sizes = []
+    for edge in alchemical_network.edges:
+        padding_sizes.append(
+            edge.protocol.settings.solvation_settings.solvent_padding.magnitude
+        )
+    # test that only one padding size is defined across all edges/phases
+    assert len(set(padding_sizes)) == 1
 
 
 def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
