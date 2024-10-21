@@ -227,6 +227,57 @@ def test_fec_to_openfe_protocol():
     )
 
 
+def test_fec_adaptive_sampling(tyk2_ligands, tyk2_protein):
+    """Make sure we can adjust simulation settings in the factory adaptively"""
+    tyk2_ligands_mini = tyk2_ligands[:3]
+
+    ## define some adaptive settings for sampling time and the final sampling
+    # times this should result in. This assumes default_lomap_scorer as network planner
+    factory = FreeEnergyCalculationFactory()
+    factory.adaptive_settings.adaptive_sampling = True
+    factory.adaptive_settings.adaptive_sampling_multiplier = 2
+    factory.adaptive_settings.adaptive_sampling_threshold = 0.9
+    factory.adaptive_settings.adaptive_sampling_threshold = 0.9
+    reference_adaptive_sampling_times = [5.0, 10.0, 5.0, 5.0, 10.0, 5.0]
+
+    # create an alchemicalnetwork with these settings and test that the adaptive
+    # settings were applied
+    alchemical_network = factory.create_fec_dataset(
+        dataset_name="TYK2-test-dataset-duplicated",
+        receptor=tyk2_protein,
+        ligands=tyk2_ligands_mini,
+    ).to_alchemical_network()
+    sampling_lengths = []
+    for edge in alchemical_network.edges:
+        sampling_lengths.append(
+            edge.protocol.settings.simulation_settings.production_length.magnitude
+        )
+    # test while sorting because edge order is scrambled randomly
+    assert sorted(reference_adaptive_sampling_times) == sorted(sampling_lengths)
+
+    ## now repeat but with disabling adaptive settings. This should make the sampling time
+    # the same for all edges.
+    # define some adaptive settings for sampling time and the final sampling
+    # times this should result in. This assumes default_lomap_scorer as network planner
+    factory = FreeEnergyCalculationFactory()
+    factory.adaptive_settings.adaptive_sampling = False
+    reference_adaptive_sampling_times = [5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
+
+    # create an alchemicalnetwork with these settings and test that the adaptive
+    # settings were applied
+    alchemical_network = factory.create_fec_dataset(
+        dataset_name="TYK2-test-dataset-duplicated",
+        receptor=tyk2_protein,
+        ligands=tyk2_ligands_mini,
+    ).to_alchemical_network()
+    sampling_lengths = []
+    for edge in alchemical_network.edges:
+        sampling_lengths.append(
+            edge.protocol.settings.simulation_settings.production_length.magnitude
+        )
+    assert reference_adaptive_sampling_times == sampling_lengths
+
+
 def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
     # duplicate a ligand
     ligands = tyk2_ligands[-1:] + tyk2_ligands
