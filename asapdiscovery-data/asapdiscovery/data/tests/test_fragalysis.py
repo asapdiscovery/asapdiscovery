@@ -35,7 +35,7 @@ def fragalysis_api_call(target):
     return api_call
 
 
-# @pytest.mark.skip(reason="Fragalysis call is giving HTTP 500 error.")
+@pytest.mark.skip(reason="Fragalysis call is giving HTTP 500 error.")
 class TestFragalysisDownload:
     """Class to test the download of data from Fragalysis."""
 
@@ -63,6 +63,17 @@ class TestFragalysisDownload:
             download(zip_file, api_call, extract=False, base_url=BASE_URL_LEGACY)
 
 
+
+@pytest.mark.skip(reason="Fragalysis call is giving HTTP 500 error.")
+def test_fragalysis_cli(tmpdir):
+    with tmpdir.as_cwd():
+        runner = CliRunner()
+        args = ["download-fragalysis", "-t", "Mpro", "-o", "output.zip", "-x"]
+        result = runner.invoke(cli, args)
+        assert click_success(result)
+
+
+
 @pytest.fixture
 def metadata_csv():
     return fetch_test_file("metadata.csv")
@@ -81,11 +92,3 @@ def test_parse_fragalysis(metadata_csv, local_fragalysis):
     xtals = parse_fragalysis(metadata_csv, local_fragalysis)
     assert len(xtals) == 1
     assert type(xtals[0]) is CrystalCompoundData
-
-
-def test_fragalysis_cli(tmpdir):
-    with tmpdir.as_cwd():
-        runner = CliRunner()
-        args = ["download-fragalysis", "-t", "Mpro", "-o", "output.zip", "-x"]
-        result = runner.invoke(cli, args)
-        assert click_success(result)
