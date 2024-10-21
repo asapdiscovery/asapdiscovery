@@ -63,7 +63,6 @@ class TestFragalysisDownload:
             download(zip_file, api_call, extract=False, base_url=BASE_URL_LEGACY)
 
 
-
 @pytest.mark.skip(reason="Fragalysis call is giving HTTP 500 error.")
 def test_fragalysis_cli(tmpdir):
     with tmpdir.as_cwd():
@@ -71,7 +70,6 @@ def test_fragalysis_cli(tmpdir):
         args = ["download-fragalysis", "-t", "Mpro", "-o", "output.zip", "-x"]
         result = runner.invoke(cli, args)
         assert click_success(result)
-
 
 
 @pytest.fixture
