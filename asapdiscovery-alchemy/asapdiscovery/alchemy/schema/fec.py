@@ -108,6 +108,30 @@ class AdaptiveSettings(_SchemaBase):
         description="The solvent padding (in nm) to use for the solvated phase of each edge.",
     )
 
+    def get_adapted_sampling_protocol(self, scorer_method, mapping, protocol):
+        """ """
+        if scorer_method == "default_lomap":
+            scorer = lomap_scorers.default_lomap_score
+        elif scorer_method == "default_perses":
+            scorer = perses_scorers.default_perses_scorer
+        else:
+            raise ValueError(
+                f"Atom mapping scorer {scorer_method} not recognized; use one of `default_lomap`, `default_perses`."
+            )
+        if scorer(mapping) < self.adaptive_sampling_threshold:
+            protocol.simulation_settings.production_length *= (
+                self.adaptive_sampling_multiplier
+            )
+        return protocol
+
+    def get_adapted_solvent_protocol(self, leg, protocol):
+        """ """
+        if leg == "solvent":
+            protocol.solvation_settings.solvent_padding = self.solvent_padding_solvated
+        else:
+            protocol.solvation_settings.solvent_padding = self.solvent_padding_complex
+        return protocol
+
 
 # TODO make base class with abstract methods to collect results.
 class TransformationResult(_SchemaBaseFrozen):
@@ -380,16 +404,6 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         solvent = self.solvent_settings.to_solvent_component()
         receptor = self.to_openfe_receptor()
 
-        # get the atom mapping scorer in case we need to double simulation time for potentially challenging edges
-        if self.network.scorer == "default_lomap":
-            scorer = lomap_scorers.default_lomap_score
-        elif self.network.scorer == "default_perses":
-            scorer = perses_scorers.default_perses_scorer
-        else:
-            raise ValueError(
-                f"Atom mapping scorer {self.network.scorer} not recognized; use one of `default_lomap`, `default_perses`."
-            )
-
         # build the network
         for mapping in ligand_network.edges:
             for leg in ["solvent", "complex"]:
@@ -407,26 +421,25 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                 )
 
                 ## make the OpenFE protocol for this edge
-                # double the simulation time if requested
                 protocol_copy = self.copy(deep=True)
-                if (
-                    self.adaptive_settings.adaptive_sampling
-                    and scorer(mapping)
-                    < self.adaptive_settings.adaptive_sampling_threshold
-                ):
-                    protocol_copy.simulation_settings.production_length *= (
-                        self.adaptive_settings.adaptive_sampling_multiplier
+
+                # double the simulation time if requested
+                if self.adaptive_settings.adaptive_sampling:
+                    protocol_copy = (
+                        self.adaptive_settings.get_adapted_sampling_protocol(
+                            self.network.scorer, mapping, protocol_copy
+                        )
                     )
+
                 # adjust solvent padding per phase if requested
                 if self.adaptive_settings.adaptive_solvent_padding:
-                    if leg == "solvent":
-                        protocol_copy.solvation_settings.solvent_padding = (
-                            self.adaptive_settings.solvent_padding_solvated
-                        )
-                    else:
-                        protocol_copy.solvation_settings.solvent_padding = (
-                            self.adaptive_settings.solvent_padding_complex
-                        )
+                    protocol_copy = self.adaptive_settings.get_adapted_solvent_protocol(
+                        leg, protocol_copy
+                    )
+
+                print(protocol_copy.solvation_settings.solvent_padding)
+                print(protocol_copy.simulation_settings.production_length)
+
                 protocol_openfe = protocol_copy.to_openfe_protocol()
 
                 # set up the transformation
@@ -438,7 +451,9 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     name=f"{system_a.name}_{system_b.name}",
                 )
                 transformations.append(transformation)
+        import sys
 
+        sys.exit()
         return openfe.AlchemicalNetwork(edges=transformations, name=self.dataset_name)
 
 
