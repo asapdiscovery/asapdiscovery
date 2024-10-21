@@ -836,7 +836,7 @@ def stop(network_key: str):
 @click.option(
     "-wtop",
     "--write-top-n-poses",
-    help="The number of top-scoring poses to write to a multi-SDF in the local directoy.",
+    help="The number of top-scoring poses to write to a multi-SDF in the local directory.",
     type=click.INT,
     default=0,
     show_default=True,
