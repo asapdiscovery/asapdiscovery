@@ -100,7 +100,7 @@ class AdaptiveSettings(_SchemaBase):
         If the edge scoring (computed using `scorer_method`) is below the `adaptive_sampling_threshold` the
         simulation time is multiplied by `adaptive_sampling_multiplier`.
 
-        Returns the adjusted FE protocol.
+        Returns the adjusted OpenFE Protocol.
         """
         if scorer_method == "default_lomap":
             scorer = lomap_scorers.default_lomap_score
@@ -111,7 +111,7 @@ class AdaptiveSettings(_SchemaBase):
                 f"Atom mapping scorer {scorer_method} not recognized; use one of `default_lomap`, `default_perses`."
             )
         if scorer(mapping) < self.adaptive_sampling_threshold:
-            protocol.simulation_settings.production_length *= (
+            protocol._settings.simulation_settings.production_length *= (
                 self.adaptive_sampling_multiplier
             )
         return protocol
@@ -123,13 +123,33 @@ class AdaptiveSettings(_SchemaBase):
         this method applies the specified padding per phase (`solvent_padding_solvated` or
         `solvent_padding_complex`, resp.).
 
-        Returns the adjusted FE protocol.
+        Returns the adjusted OpenFE Protocol.
         """
         if leg == "solvent":
-            protocol.solvation_settings.solvent_padding = self.solvent_padding_solvated
+            protocol._settings.solvation_settings.solvent_padding = (
+                self.solvent_padding_solvated
+            )
         else:
-            protocol.solvation_settings.solvent_padding = self.solvent_padding_complex
+            protocol._settings.solvation_settings.solvent_padding = (
+                self.solvent_padding_complex
+            )
         return protocol
+
+    def apply_settings(self, edge_protocol, network_scorer, mapping, leg):
+        """
+        Applies a set of adaptive settings to an OpenFE Protocol if requested.
+        """
+        # double the simulation time if requested
+        if self.adaptive_sampling:
+            edge_protocol = self.get_adapted_sampling_protocol(
+                network_scorer, mapping, edge_protocol
+            )
+
+        # adjust solvent padding per phase if requested
+        if self.adaptive_solvent_padding:
+            edge_protocol = self.get_adapted_solvent_protocol(leg, edge_protocol)
+
+        return edge_protocol
 
 
 # TODO make base class with abstract methods to collect results.
@@ -268,7 +288,7 @@ class _FreeEnergyBase(_SchemaBase):
     )
     forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
         settings.OpenMMSystemGeneratorFFSettings(
-        small_molecule_forcefield="openff-2.2.0.offxml"
+            small_molecule_forcefield="openff-2.2.0.offxml"
         ),
         description="The force field settings used to parameterize the systems.",
     )
@@ -403,6 +423,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         ligand_network = self.network.to_ligand_network()
         solvent = self.solvent_settings.to_solvent_component()
         receptor = self.to_openfe_receptor()
+        protocol = self.to_openfe_protocol()
 
         # build the network
         for mapping in ligand_network.edges:
@@ -430,24 +451,14 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
                 )
 
-                ## make the OpenFE protocol for this edge
-                protocol_copy = self.copy(deep=True)
-
-                # double the simulation time if requested
-                if self.adaptive_settings.adaptive_sampling:
-                    protocol_copy = (
-                        self.adaptive_settings.get_adapted_sampling_protocol(
-                            self.network.scorer, mapping, protocol_copy
-                        )
-                    )
-
-                # adjust solvent padding per phase if requested
-                if self.adaptive_settings.adaptive_solvent_padding:
-                    protocol_copy = self.adaptive_settings.get_adapted_solvent_protocol(
-                        leg, protocol_copy
-                    )
-
-                protocol_openfe = protocol_copy.to_openfe_protocol()
+                # run this edge's protocol through adaptive settings - will not be changed
+                # if adaptive settings are not enabled
+                edge_protocol = self.adaptive_settings.apply_settings(
+                    edge_protocol,  # the protocol to be adjusted; contains flags on whether to actually adjust
+                    self.network.scorer,  # the network edge scorer - for adaptive sampling
+                    mapping,  # the atom mapping for this edge - for adaptive sampling
+                    leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
+                )
 
                 # set up the transformation
                 transformation = openfe.Transformation(
