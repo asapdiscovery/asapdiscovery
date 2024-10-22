@@ -15,6 +15,7 @@ dependencies:
   - nbsphinx
   - nbsphinx-link
   - pandoc
+  - docutils >=0.18.1,<0.21 # see #1260
 
   # Testing
   - pytest
