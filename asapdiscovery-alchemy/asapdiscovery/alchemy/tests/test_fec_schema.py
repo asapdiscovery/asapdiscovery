@@ -9,11 +9,11 @@ from asapdiscovery.alchemy.schema.atom_mapping import (
     PersesAtomMapper,
 )
 from asapdiscovery.alchemy.schema.fec import (
+    AdaptiveSettings,
     AlchemiscaleResults,
     FreeEnergyCalculationFactory,
     SolventSettings,
     TransformationResult,
-    AdaptiveSettings,
 )
 from asapdiscovery.alchemy.schema.network import (
     CustomNetworkPlanner,
