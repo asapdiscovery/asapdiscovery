@@ -260,6 +260,11 @@ def test_fec_adaptive_sampling(tyk2_ligands, tyk2_protein):
     # test while sorting because edge order is scrambled randomly
     assert sorted(reference_adaptive_sampling_times) == sorted(sampling_lengths)
 
+
+def test_fec_adaptive_sampling_disabled(tyk2_ligands, tyk2_protein):
+    """Make sure we can disable adaptive simulation settings in the factory"""
+    tyk2_ligands_mini = tyk2_ligands[:3]
+
     ## now repeat but with disabling adaptive settings. This should make the sampling time
     # the same for all edges.
     adaptive_settings = AdaptiveSettings(
@@ -287,11 +292,12 @@ def test_fec_adaptive_solvent_padding(tyk2_ligands, tyk2_protein):
     tyk2_ligands_mini = tyk2_ligands[:3]
 
     ## define some adaptive settings for solvent padding
-    factory = FreeEnergyCalculationFactory()
-    factory.adaptive_settings.adaptive_solvent_padding = True
-    factory.adaptive_settings.solvent_padding_complex = 2 * OFFUnit.nanometer
-    factory.adaptive_settings.solvent_padding_solvated = 3 * OFFUnit.nanometer
-
+    adaptive_settings = AdaptiveSettings(
+        adaptive_solvent_padding=True,
+        solvent_padding_complex=2 * OFFUnit.nanometer,
+        solvent_padding_solvated=3 * OFFUnit.nanometer,
+    )
+    factory = FreeEnergyCalculationFactory(adaptive_settings=adaptive_settings)
     reference_adaptive_padding_sizes = [2.0, 3.0, 2.0, 3.0, 3.0, 2.0]
 
     # create an alchemicalnetwork with these settings and test that the adaptive
@@ -309,10 +315,15 @@ def test_fec_adaptive_solvent_padding(tyk2_ligands, tyk2_protein):
     # test while sorting because edge/phase order is scrambled randomly
     assert sorted(reference_adaptive_padding_sizes) == sorted(padding_sizes)
 
+
+def test_fec_adaptive_solvent_padding_disabled(tyk2_ligands, tyk2_protein):
+    """Make sure we can adjust simulation settings in the factory adaptively"""
+    tyk2_ligands_mini = tyk2_ligands[:3]
+
     ## Repeat but now without adaptive solvent padding sizes. This will pass
     # for any solvent padding size as long as it's the same across all edges/phases
-    factory = FreeEnergyCalculationFactory()
-    factory.adaptive_settings.adaptive_solvent_padding = False
+    adaptive_settings = AdaptiveSettings(adaptive_solvent_padding=False)
+    factory = FreeEnergyCalculationFactory(adaptive_settings=adaptive_settings)
 
     # create an alchemicalnetwork with these settings and test that the adaptive
     # settings were NOT applied

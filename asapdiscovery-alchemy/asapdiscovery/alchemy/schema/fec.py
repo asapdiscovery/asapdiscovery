@@ -144,6 +144,10 @@ class AdaptiveSettings(_SchemaBase):
         """
         Applies a set of adaptive settings to an OpenFE Protocol if requested.
         """
+        import copy
+
+        # create a copy of the edge_protocol to make it editable - we're returning the copy
+        edge_protocol = copy.deepcopy(edge_protocol)
         # double the simulation time if requested
         if self.adaptive_sampling:
             base_sampling_length = (
@@ -459,11 +463,10 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
                 )
 
-                # run this edge's protocol through adaptive settings - will not make changes
-                # if adaptive settings are not enabled
+                # run this edge's protocol through adaptive settings
                 if self.adaptive_settings:
                     edge_protocol = self.adaptive_settings.apply_settings(
-                        edge_protocol,  # the protocol to be adjusted; contains flags on whether to actually adjust
+                        edge_protocol,  # the protocol to be adjusted
                         self.network.scorer,  # the network edge scorer - for adaptive sampling
                         mapping,  # the atom mapping for this edge - for adaptive sampling
                         leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
