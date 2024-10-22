@@ -348,7 +348,7 @@ class _FreeEnergyBase(_SchemaBase):
         description="Settings for simulation control, including lengths and writing to disk.",
     )
     adaptive_settings: Optional[AdaptiveSettings] = Field(
-        None,
+        AdaptiveSettings(),
         description="Run adaptive settings depending on e.g. expected edge reliability or system phase.",
     )
     protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
