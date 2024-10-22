@@ -848,6 +848,14 @@ def stop(network_key: str):
     help="Make predictions using only the largest subnetwork present in the results. "
     "Useful in cases where the network is disconnected by e.g. simulation failures.",
 )
+@click.option(
+    "-wtop",
+    "--write-top-n-poses",
+    help="The number of top-scoring poses to write to a multi-SDF in the local directory. By default writes the top 1000 (or all if the ligand series is smaller).",
+    type=click.INT,
+    default=1000,
+    show_default=False,
+)
 def predict(
     network: str,
     reference_units: str,
@@ -857,11 +865,13 @@ def predict(
     postera_molset_name: Optional[str] = None,
     clean: Optional[bool] = False,
     force_largest: Optional[bool] = False,
+    write_top_n_poses: Optional[int] = 1000,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
+    import numpy as np
     import rich
     from asapdiscovery.alchemy.cli.utils import (
         cinnabar_femap_get_largest_subnetwork,
@@ -874,6 +884,7 @@ def predict(
         create_absolute_report,
         create_relative_report,
         get_data_from_femap,
+        get_top_n_poses,
     )
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from rich import pretty
@@ -912,7 +923,13 @@ def predict(
     is_connected = cinnabar_femap_is_connected(fe_map)
 
     if is_connected:
-        fe_map.generate_absolute_values()
+        try:
+            fe_map.generate_absolute_values()
+        except np.linalg.LinAlgError:
+            raise ValueError(
+                "MLE failed during absolute value generation. Does your result network contain "
+                "NaNs? You can manually remove these or run `predict -c` to remove them automatically."
+            )
     elif not is_connected and force_largest:
         fe_map = cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console)
         fe_map.generate_absolute_values()
@@ -950,6 +967,12 @@ def predict(
         (1, 0, 1, 0),
     )
     console.print(message)
+
+    # if requested, write an SDF of the top n compounds' docked poses
+    if write_top_n_poses > 0:
+        _ = get_top_n_poses(
+            absolute_df, ligands, write_top_n_poses, console, write_file=True
+        )
 
     # check if we have a biological target
     bio_target = target or result_network.target

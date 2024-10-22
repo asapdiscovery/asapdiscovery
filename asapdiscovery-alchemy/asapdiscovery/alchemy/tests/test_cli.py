@@ -1102,11 +1102,8 @@ def test_alchemy_predict_clean_success(tyk2_result_network_ddg0s, tmpdir):
             catch_exceptions=False,
         )
         assert result.exit_code == 0
-        assert "Removed 9 edges with DG==0.0" in result.stdout
-        assert (
-            "removed 1 edges to balance between complex/solvent replicates."
-            in result.stdout
-        )
+        assert "Removed 9 edge(s)" in result.stdout
+        assert "Removed 1 edge(s) to balance" in result.stdout
 
 
 def test_prep_alchemize(test_ligands_sdfile, tmpdir):
