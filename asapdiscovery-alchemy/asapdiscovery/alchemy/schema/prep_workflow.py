@@ -440,10 +440,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
 
         # Generate charges locally if requested
         if self.charge_method is not None:
-            charge_status = console.status(
-                f"Generating charges locally using {self.charge_method}"
-            )
-            charge_status.start()
+            console.print(f"Generating charges locally using {self.charge_method}")
 
             posed_ligands = self.charge_method.generate_charges(
                 ligands=posed_ligands, processors=processors
@@ -454,7 +451,6 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                 "[[green]✓[/green]] Charges successfully generated.",
                 (1, 0, 1, 0),
             )
-            charge_status.stop()
             console.print(message)
 
         # gather the results
