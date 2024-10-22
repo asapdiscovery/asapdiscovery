@@ -93,8 +93,12 @@ class AdaptiveSettings(_SchemaBase):
     )
 
     def get_adapted_sampling_protocol(
-        self, scorer_method, mapping, protocol, base_sampling_length
-    ):
+        self,
+        scorer_method: str,
+        mapping: "LigandAtomMapping",
+        protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+        base_sampling_length: FloatQuantity["nanometer"],
+    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
         """
         It's advisable to increase simulation time on edges that are expected to be less reliable. There
         Aren't many good estimators for this, but the network planner edge scoring is a decent approximation.
@@ -119,7 +123,11 @@ class AdaptiveSettings(_SchemaBase):
             )
         return protocol
 
-    def get_adapted_solvent_protocol(self, leg, protocol):
+    def get_adapted_solvent_protocol(
+        self,
+        leg: str,
+        protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
         """
         Certain water box shapes (such as dodecahedron) are able to handle slightly smaller padding size
         in the complex phase compared to the solvated phase. Given the leg (either "solvent" or "complex")
@@ -145,7 +153,7 @@ class AdaptiveSettings(_SchemaBase):
         mapping: "LigandAtomMapping",
         leg: str,
         base_protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
-    ):
+    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
         """
         Applies a set of adaptive settings to an OpenFE Protocol if requested.
         """
@@ -335,7 +343,7 @@ class _FreeEnergyBase(_SchemaBase):
         MultiStateSimulationSettings(
             equilibration_length=1.0 * OFFUnit.nanoseconds,
             production_length=5.0 * OFFUnit.nanoseconds,
-            time_per_iteration=2.5 * OFFUnit.picoseconds,
+            time_per_iteration=1 * OFFUnit.picoseconds,
         ),
         description="Settings for simulation control, including lengths and writing to disk.",
     )
