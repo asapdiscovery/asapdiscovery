@@ -1,6 +1,6 @@
 import base64
 import warnings
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 
 import bokeh.models.widgets.tables
 import bokeh.palettes
