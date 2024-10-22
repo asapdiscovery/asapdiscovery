@@ -1053,7 +1053,7 @@ def clean_result_network(network, console=None):
     # remove predictions that have a NaN - this is extremely rare
     denand_results = []
     for result in deduped_results:
-        if not math.isnan(results[0].uncertainty.magnitude) and not math.isnan(
+        if not math.isnan(result.uncertainty.magnitude) and not math.isnan(
             result.uncertainty.magnitude
         ):
             denand_results.append(result)
