@@ -1050,10 +1050,10 @@ def clean_result_network(network, console=None):
         deduped_results.append(tf_res)
     num_dupes_removed = len(cleaned_results) - len(deduped_results)
 
-    # remove predictions that have a NaN - this is extremely rare
+    # remove predictions that have a NaN as either prediction or unc - this is extremely rare
     denand_results = []
     for result in deduped_results:
-        if not math.isnan(result.uncertainty.magnitude) and not math.isnan(
+        if not math.isnan(result.estimate.magnitude) and not math.isnan(
             result.uncertainty.magnitude
         ):
             denand_results.append(result)
