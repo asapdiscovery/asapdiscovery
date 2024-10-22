@@ -459,6 +459,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                         failed_ligands.append(target_ligand)
                     else:
                         result_ligands.append(target_ligand)
+                    progressbar.update(1)
         else:
             for mol in tqdm(ligands, total=len(ligands)):
                 posed_ligand = self._generate_pose(
@@ -471,7 +472,6 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     failed_ligands.append(posed_ligand)
                 else:
                     result_ligands.append(posed_ligand)
-                progressbar.update(1)
 
         # prue down the conformers
         oedu_receptor = prepared_complex.target.to_oedu()
