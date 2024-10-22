@@ -1087,8 +1087,6 @@ def get_top_n_poses(
     from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
     from rich.padding import Padding
 
-    docked_hits_path = f"top_{top_n}_posed_ligands.sdf"
-
     # get a dict of ligands so we can more easily grab them by name
     ligands_dict = {ligand.compound_name: ligand for ligand in ligands}
 
@@ -1096,6 +1094,8 @@ def get_top_n_poses(
     top_n_ligands = []
     if top_n > len(absolute_df):  # cap the slice to the max number of predictions
         top_n = len(absolute_df)
+
+    docked_hits_path = f"top_{top_n}_posed_ligands.sdf"
     for compound_name in absolute_df.sort_values(by="DG (kcal/mol) (FECS)")["label"][
         :top_n
     ]:
