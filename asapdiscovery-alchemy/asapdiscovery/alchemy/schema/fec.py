@@ -97,7 +97,7 @@ class AdaptiveSettings(_SchemaBase):
         scorer_method: str,
         mapping: "LigandAtomMapping",
         protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
-        base_sampling_length: FloatQuantity["nanometer"],
+        base_sampling_length: FloatQuantity["nanometer"],  # noqa: F821
     ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
         """
         It's advisable to increase simulation time on edges that are expected to be less reliable. There
