@@ -329,8 +329,8 @@ class _FreeEnergyBase(_SchemaBase):
         ),
         description="Settings for simulation control, including lengths and writing to disk.",
     )
-    adaptive_settings: AdaptiveSettings = Field(
-        AdaptiveSettings(),
+    adaptive_settings: Optional[AdaptiveSettings] = Field(
+        None,
         description="Run adaptive settings depending on e.g. expected edge reliability or system phase.",
     )
     protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
@@ -461,13 +461,14 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
 
                 # run this edge's protocol through adaptive settings - will not make changes
                 # if adaptive settings are not enabled
-                edge_protocol = self.adaptive_settings.apply_settings(
-                    edge_protocol,  # the protocol to be adjusted; contains flags on whether to actually adjust
-                    self.network.scorer,  # the network edge scorer - for adaptive sampling
-                    mapping,  # the atom mapping for this edge - for adaptive sampling
-                    leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
-                    protocol,  # base protocol to compare with for internal checking
-                )
+                if self.adaptive_settings:
+                    edge_protocol = self.adaptive_settings.apply_settings(
+                        edge_protocol,  # the protocol to be adjusted; contains flags on whether to actually adjust
+                        self.network.scorer,  # the network edge scorer - for adaptive sampling
+                        mapping,  # the atom mapping for this edge - for adaptive sampling
+                        leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
+                        protocol,  # base protocol to compare with for internal checking
+                    )
 
                 # set up the transformation
                 transformation = openfe.Transformation(

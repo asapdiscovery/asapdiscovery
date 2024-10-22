@@ -13,6 +13,7 @@ from asapdiscovery.alchemy.schema.fec import (
     FreeEnergyCalculationFactory,
     SolventSettings,
     TransformationResult,
+    AdaptiveSettings,
 )
 from asapdiscovery.alchemy.schema.network import (
     CustomNetworkPlanner,
@@ -235,11 +236,13 @@ def test_fec_adaptive_sampling(tyk2_ligands, tyk2_protein):
 
     ## define some adaptive settings for sampling time and the final sampling
     # times this should result in. This assumes default_lomap_scorer as network planner
-    factory = FreeEnergyCalculationFactory()
-    factory.adaptive_settings.adaptive_sampling = True
-    factory.adaptive_settings.adaptive_sampling_multiplier = 2
-    factory.adaptive_settings.adaptive_sampling_threshold = 0.9
-    factory.adaptive_settings.adaptive_sampling_threshold = 0.9
+    adaptive_settings = AdaptiveSettings(
+        adaptive_sampling=True,
+        adaptive_sampling_multiplier=2,
+        adaptive_sampling_threshold=0.9,
+    )
+    factory = FreeEnergyCalculationFactory(adaptive_settings=adaptive_settings)
+
     reference_adaptive_sampling_times = [5.0, 10.0, 5.0, 5.0, 10.0, 5.0]
 
     # create an alchemicalnetwork with these settings and test that the adaptive
@@ -259,18 +262,20 @@ def test_fec_adaptive_sampling(tyk2_ligands, tyk2_protein):
 
     ## now repeat but with disabling adaptive settings. This should make the sampling time
     # the same for all edges.
-    factory_2 = FreeEnergyCalculationFactory()
-    factory_2.adaptive_settings.adaptive_sampling = False
+    adaptive_settings = AdaptiveSettings(
+        adaptive_sampling=False,
+    )
+    factory = FreeEnergyCalculationFactory(adaptive_settings=adaptive_settings)
     reference_adaptive_sampling_times = [5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
 
     # Test that the adaptive settings were NOT applied
-    alchemical_network_2 = factory_2.create_fec_dataset(
+    alchemical_network = factory.create_fec_dataset(
         dataset_name="TYK2-test-dataset-duplicated",
         receptor=tyk2_protein,
         ligands=tyk2_ligands_mini,
     ).to_alchemical_network()
     sampling_lengths = []
-    for edge in alchemical_network_2.edges:
+    for edge in alchemical_network.edges:
         sampling_lengths.append(
             edge.protocol.settings.simulation_settings.production_length.magnitude
         )
