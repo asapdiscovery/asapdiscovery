@@ -92,13 +92,16 @@ class AdaptiveSettings(_SchemaBase):
         description="The solvent padding (in nm) to use for the solvated phase of each edge.",
     )
 
-    def get_adapted_sampling_protocol(self, scorer_method, mapping, protocol):
+    def get_adapted_sampling_protocol(
+        self, scorer_method, mapping, protocol, base_sampling_length
+    ):
         """
         It's advisable to increase simulation time on edges that are expected to be less reliable. There
         Aren't many good estimators for this, but the network planner edge scoring is a decent approximation.
 
         If the edge scoring (computed using `scorer_method`) is below the `adaptive_sampling_threshold` the
-        simulation time is multiplied by `adaptive_sampling_multiplier`.
+        simulation time is multiplied by `adaptive_sampling_multiplier`. Just to be sure, we use the base
+        protocol's sampling time and not the provided edge protocol sampling time as a base value.
 
         Returns the adjusted OpenFE Protocol.
         """
@@ -111,8 +114,8 @@ class AdaptiveSettings(_SchemaBase):
                 f"Atom mapping scorer {scorer_method} not recognized; use one of `default_lomap`, `default_perses`."
             )
         if scorer(mapping) < self.adaptive_sampling_threshold:
-            protocol._settings.simulation_settings.production_length *= (
-                self.adaptive_sampling_multiplier
+            protocol._settings.simulation_settings.production_length = (
+                base_sampling_length * self.adaptive_sampling_multiplier
             )
         return protocol
 
@@ -135,14 +138,19 @@ class AdaptiveSettings(_SchemaBase):
             )
         return protocol
 
-    def apply_settings(self, edge_protocol, network_scorer, mapping, leg):
+    def apply_settings(
+        self, edge_protocol, network_scorer, mapping, leg, base_protocol
+    ):
         """
         Applies a set of adaptive settings to an OpenFE Protocol if requested.
         """
         # double the simulation time if requested
         if self.adaptive_sampling:
+            base_sampling_length = (
+                base_protocol.settings.simulation_settings.production_length
+            )
             edge_protocol = self.get_adapted_sampling_protocol(
-                network_scorer, mapping, edge_protocol
+                network_scorer, mapping, edge_protocol, base_sampling_length
             )
 
         # adjust solvent padding per phase if requested
@@ -451,13 +459,14 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
                 )
 
-                # run this edge's protocol through adaptive settings - will not be changed
+                # run this edge's protocol through adaptive settings - will not make changes
                 # if adaptive settings are not enabled
                 edge_protocol = self.adaptive_settings.apply_settings(
                     edge_protocol,  # the protocol to be adjusted; contains flags on whether to actually adjust
                     self.network.scorer,  # the network edge scorer - for adaptive sampling
                     mapping,  # the atom mapping for this edge - for adaptive sampling
                     leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
+                    protocol,  # base protocol to compare with for internal checking
                 )
 
                 # set up the transformation

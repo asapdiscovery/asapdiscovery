@@ -259,21 +259,18 @@ def test_fec_adaptive_sampling(tyk2_ligands, tyk2_protein):
 
     ## now repeat but with disabling adaptive settings. This should make the sampling time
     # the same for all edges.
-    # define some adaptive settings for sampling time and the final sampling
-    # times this should result in. This assumes default_lomap_scorer as network planner
-    factory = FreeEnergyCalculationFactory()
-    factory.adaptive_settings.adaptive_sampling = False
+    factory_2 = FreeEnergyCalculationFactory()
+    factory_2.adaptive_settings.adaptive_sampling = False
     reference_adaptive_sampling_times = [5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
 
-    # create an alchemicalnetwork with these settings and test that the adaptive
-    # settings were NOT applied
-    alchemical_network = factory.create_fec_dataset(
+    # Test that the adaptive settings were NOT applied
+    alchemical_network_2 = factory_2.create_fec_dataset(
         dataset_name="TYK2-test-dataset-duplicated",
         receptor=tyk2_protein,
         ligands=tyk2_ligands_mini,
     ).to_alchemical_network()
     sampling_lengths = []
-    for edge in alchemical_network.edges:
+    for edge in alchemical_network_2.edges:
         sampling_lengths.append(
             edge.protocol.settings.simulation_settings.production_length.magnitude
         )
