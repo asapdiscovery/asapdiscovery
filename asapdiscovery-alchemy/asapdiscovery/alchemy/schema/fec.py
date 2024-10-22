@@ -139,7 +139,12 @@ class AdaptiveSettings(_SchemaBase):
         return protocol
 
     def apply_settings(
-        self, edge_protocol, network_scorer, mapping, leg, base_protocol
+        self,
+        edge_protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+        network_scorer: str,
+        mapping: "LigandAtomMapping",
+        leg: str,
+        base_protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
     ):
         """
         Applies a set of adaptive settings to an OpenFE Protocol if requested.
@@ -148,6 +153,7 @@ class AdaptiveSettings(_SchemaBase):
 
         # create a copy of the edge_protocol to make it editable - we're returning the copy
         edge_protocol = copy.deepcopy(edge_protocol)
+
         # double the simulation time if requested
         if self.adaptive_sampling:
             base_sampling_length = (
