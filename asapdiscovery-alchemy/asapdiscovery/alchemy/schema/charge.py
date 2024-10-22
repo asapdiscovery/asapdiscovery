@@ -4,6 +4,7 @@ from typing import Any, Literal
 from asapdiscovery.alchemy.schema.base import _SchemaBase
 from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import Field
+from tqdm import tqdm
 
 
 class _BaseChargeMethod(_SchemaBase, abc.ABC):
@@ -88,6 +89,7 @@ class OpenFFCharges(_BaseChargeMethod):
         charged_ligands = []
 
         if processors > 1:
+            progressbar = tqdm(total=len(ligands))
             with ProcessPoolExecutor(max_workers=processors) as pool:
                 work_list = [
                     pool.submit(self._charge_molecule, ligand) for ligand in ligands
@@ -95,9 +97,10 @@ class OpenFFCharges(_BaseChargeMethod):
                 for work in as_completed(work_list):
                     result_ligand = work.result()
                     charged_ligands.append(result_ligand)
+                    progressbar.update(1)
 
         else:
-            for ligand in ligands:
+            for ligand in tqdm(ligands, total=len(ligands)):
                 charged_ligands.append(self._charge_molecule(ligand=ligand))
 
         for ligand in charged_ligands:
