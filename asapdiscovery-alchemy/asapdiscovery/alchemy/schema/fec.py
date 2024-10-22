@@ -83,11 +83,11 @@ class AdaptiveSettings(_SchemaBase):
         True,
         description="Whether or not to use adaptive solvent padding; typically the complex phase can handle smaller padding size.",
     )
-    solvent_padding_complex: FloatQuantity["nanometer"] = Field(
+    solvent_padding_complex: FloatQuantity["nanometer"] = Field(  # noqa: F821
         1.0 * OFFUnit.nanometer,
         description="The solvent padding (in nm) to use for the complex phase of each edge.",
     )
-    solvent_padding_solvated: FloatQuantity["nanometer"] = Field(
+    solvent_padding_solvated: FloatQuantity["nanometer"] = Field(  # noqa: F821
         1.2 * OFFUnit.nanometer,
         description="The solvent padding (in nm) to use for the solvated phase of each edge.",
     )
@@ -477,7 +477,9 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
                 )
 
-                # run this edge's protocol through adaptive settings
+                # run this edge's protocol through adaptive settings. If this list of things to pass
+                # grows any larger we should only pass the `FreeEnergyCalculationNetwork` and instead
+                # infer these parameters somewhere in self.adaptive_settings.
                 if self.adaptive_settings:
                     edge_protocol = self.adaptive_settings.apply_settings(
                         edge_protocol,  # the protocol to be adjusted
