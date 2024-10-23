@@ -335,6 +335,7 @@ def submit(
     submitted_network = client.create_network(
         planned_network=planned_network, scope=network_scope
     )
+
     # write the network with its key to file before we try and add compute incase we hit an issue
     print_message(
         console=console, message="Network made; saving network key to network file"
