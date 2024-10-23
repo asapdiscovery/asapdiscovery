@@ -760,7 +760,12 @@ def prioritize(network_key: str, weight: float):
     help="The network key of the network to be stopped. This can be found by running e.g. `asap-alchemy status -a`.",
     required=True,
 )
-def stop(network_key: str):
+@click.option(
+    "--hard",
+    is_flag=True,
+    help="If used, all waiting and running tasks will be deleted instead of un-actioned. Warning: these tasks will not be retrievable/re-runnable.",
+)
+def stop(network_key: str, hard: bool = False):
     """Stop (i.e. set to 'error') a network's running and waiting tasks."""
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header
@@ -773,9 +778,13 @@ def stop(network_key: str):
     print_header(console)
 
     client = AlchemiscaleHelper.from_settings()
+    if hard:
+        console.print(
+            f"Warning: deleting all running/waiting tasks on network {network_key}. These will not be retrievable/re-runnable!"
+        )
     cancel_status = console.status(f"Canceling actioned tasks on network {network_key}")
     cancel_status.start()
-    canceled_tasks = client.cancel_actioned_tasks(network_key=network_key)
+    canceled_tasks = client.cancel_actioned_tasks(network_key=network_key, hard=hard)
     # check how many were canceled as some maybe None if not found
     total_tasks = len([task for task in canceled_tasks if task is not None])
     cancel_status.stop()
