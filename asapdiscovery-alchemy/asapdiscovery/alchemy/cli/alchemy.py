@@ -783,12 +783,12 @@ def stop(network_key: str, hard: bool = False):
             f"Warning: deleting all running/waiting tasks on network {network_key}. These will not be retrievable/re-runnable!"
         )
 inp = input("continue? (y/n)")
-if inp == "y": 
+if inp == "y":
 ...
 elif inp == "n":
     print("aborting")
     return
-else: 
+else:
     raise ValueError("option not recognised")
     cancel_status = console.status(f"Canceling actioned tasks on network {network_key}")
     cancel_status.start()
