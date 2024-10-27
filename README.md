@@ -52,7 +52,14 @@ There are a range of workflows and tooling to use split into several namespace s
 
 ## Installation
 
-**Note**: currently all `asapdiscovery` packages support Python 3.10 only.
+**Note**: currently all `asapdiscovery` packages support Python <=3.11 only.
+
+
+### Installing from conda-forge
+
+You can install the package from the wonderful `conda-forge` with `mamba install -c conda-forge asapdiscovery`.  
+
+### Developer install 
 
 `asapdiscovery` is a namespace package, composed of individual Python packages with their own dependencies.
 Each of these packages follows the `asapdiscovery-*` convention for the package name, e.g. `asapdiscovery-data`.
