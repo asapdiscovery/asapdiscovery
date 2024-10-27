@@ -411,7 +411,9 @@ def _train_single_model(
     return t_gat.output_dir, t_gat.wandb_run_id
 
 
-def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.DataFrame:
+def _gather_and_clean_data(
+    protocol_name: str, output_dir: Path = None, pic50_stderr_filt=10.0
+) -> pd.DataFrame:
     """
     Gather and clean data for a specific endpoint from CDD. Handles special cases for pIC50 data
     or scalar endpoints, for which the readout is directly used. The data is cleaned to remove radicals and covalent warheads.
@@ -422,6 +424,8 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
         Name of the protocol to gather data for
     output_dir : Path
         Output directory to save the raw data to
+    pic50_stderr_filt : float, default=10.0
+        Max allowable standard error in pIC50 units
 
     Returns
     -------
@@ -475,7 +479,9 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
         ic50_data = cdd_api.get_ic50_data(protocol_name=protocol_name)
         # format the data to add the pIC50 and error
         cdd_data_this_protocol = parse_fluorescence_data_cdd(
-            mol_df=ic50_data, assay_name=protocol_name
+            mol_df=ic50_data,
+            assay_name=protocol_name,
+            pic50_stderr_filt=pic50_stderr_filt,
         )
         # drop values where pIC50 rounds to <= 0 or >= 10, caused by massive error bars.
         # TODO should be fixed upstream in future #1234
@@ -560,6 +566,7 @@ def _gather_and_clean_data(protocol_name: str, output_dir: Path = None) -> pd.Da
                 retain_semiquantitative_data=True,
             ),
             assay_name=protocol_name,
+            pic50_stderr_filt=pic50_stderr_filt,
         )
     else:
         logger.info("Protocol is a scalar endpoint, parsing data accordingly")
@@ -774,6 +781,12 @@ def mlops():
     is_flag=True,
     help="Run in test mode, no S3 push or WandB logging to main project",
 )
+@click.option(
+    "--pic50-stderr-filt",
+    type=float,
+    default=10.0,
+    help="Max allowable standard error in pIC50 units.",
+)
 def train_GAT_for_endpoint(
     protocol: str,
     output_dir: str = "output",
@@ -781,6 +794,7 @@ def train_GAT_for_endpoint(
     ensemble_size: int = 5,
     n_epochs: int = 5000,
     test: bool = False,
+    pic50_stderr_filt: float = 10.0,
 ):
     """
     Train a GAT model for a specific endpoint
@@ -842,7 +856,9 @@ def train_GAT_for_endpoint(
     )
 
     # download the data for the endpoint
-    this_protocol_training_set = _gather_and_clean_data(protocol, output_dir)
+    this_protocol_training_set = _gather_and_clean_data(
+        protocol, output_dir, pic50_stderr_filt=pic50_stderr_filt
+    )
 
     # save the data
     out_csv = output_dir / f"{protocol}_training_set_{ISO_TODAY}.csv"

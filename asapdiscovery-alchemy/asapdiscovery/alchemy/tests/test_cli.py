@@ -1102,11 +1102,8 @@ def test_alchemy_predict_clean_success(tyk2_result_network_ddg0s, tmpdir):
             catch_exceptions=False,
         )
         assert result.exit_code == 0
-        assert "Removed 9 edges with DG==0.0" in result.stdout
-        assert (
-            "removed 1 edges to balance between complex/solvent replicates."
-            in result.stdout
-        )
+        assert "Removed 9 edge(s)" in result.stdout
+        assert "Removed 1 edge(s) to balance" in result.stdout
 
 
 def test_prep_alchemize(test_ligands_sdfile, tmpdir):
@@ -1129,3 +1126,265 @@ def test_prep_alchemize(test_ligands_sdfile, tmpdir):
             ],
         )
         assert result.exit_code == 0
+
+
+def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):
+    """
+    Test submitting calculations to the bespokefit server and make sure that the ids are saved into the network
+    """
+    from openff.bespokefit.executor.client import BespokeFitClient
+
+    def submit_optimization(self, input_schema) -> str:
+        # make sure the program is set to mace as requested
+        assert (
+            input_schema.stages[0].targets[0].calculation_specification.program
+            == "mace"
+        )
+        return "testing_id"
+
+    def list_optimizations(self):
+        return None
+
+    runner = CliRunner()
+    # patch the bespokefit client and env
+    monkeypatch.setenv("BEFLOW_GATEWAY_ADDRESS", "testing")
+    monkeypatch.setattr(BespokeFitClient, "submit_optimization", submit_optimization)
+    monkeypatch.setattr(BespokeFitClient, "list_optimizations", list_optimizations)
+
+    with tmpdir.as_cwd():
+
+        tyk2_fec_network.to_file("planned_network.json")
+
+        result = runner.invoke(alchemy, ["bespoke", "submit", "-p", "mace"])
+
+        assert result.exit_code == 0
+        # load the network and check the bespokefit_id was saved
+        network = FreeEnergyCalculationNetwork.from_file("planned_network.json")
+        for ligand in network.network.ligands:
+            assert ligand.tags["bespokefit_id"] == "testing_id"
+
+
+def test_bespoke_gather_missing(tyk2_fec_network, tmpdir):
+    """Make sure we inform when no bespoke optimisations are found."""
+
+    runner = CliRunner()
+    with tmpdir.as_cwd():
+
+        tyk2_fec_network.to_file("planned_network.json")
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "bespoke",
+                "gather",
+            ],
+        )
+
+    assert result.exit_code == 0
+    assert "No bespoke optimizations found." in result.stdout
+
+
+def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
+    """Test gathering the parameters for molecules from a bespokefit server"""
+    from openff.bespokefit.executor.client import (
+        BespokeExecutorOutput,
+        BespokeExecutorStageOutput,
+        BespokeFitClient,
+        BespokeOptimizationResults,
+    )
+    from openff.bespokefit.schema.smirnoff import ProperTorsionSMIRKS
+    from openff.toolkit import ForceField
+    from openff.units import unit
+
+    tyk2_network = tyk2_fec_network.copy(deep=True)
+    refit_values = {
+        ProperTorsionSMIRKS(
+            # define a fake smirks which is not in the base ff to ensure it is added correctly
+            smirks="[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]",
+            attributes={"k1", "k2", "k3", "k4"},
+        ): {
+            "k1": 1.0 * unit.kilocalorie_per_mole,
+            "k2": 2.0 * unit.kilocalorie_per_mole,
+            "k3": 3.0 * unit.kilocalorie_per_mole,
+            "k4": 4.0 * unit.kilocalorie_per_mole,
+        }
+    }
+    monkeypatch.setattr(
+        BespokeOptimizationResults, "refit_parameter_values", refit_values
+    )
+
+    def get_optimization(self, optimization_id):
+        """Return some mock bespokefit data"""
+        return BespokeExecutorOutput(
+            smiles="CC",
+            stages=[
+                BespokeExecutorStageOutput(
+                    type="fragmenter", status="success", error=None
+                )
+            ],
+            results=BespokeOptimizationResults(),
+        )
+
+    # patch the client
+    monkeypatch.setenv("BEFLOW_GATEWAY_ADDRESS", "testing")
+    monkeypatch.setattr(BespokeFitClient, "get_optimization", get_optimization)
+
+    runner = CliRunner()
+    with tmpdir.as_cwd():
+
+        # inject some fake keys into the ligands
+        for ligand in tyk2_network.network.ligands:
+            ligand.tags["bespokefit_id"] = "testing"
+
+        tyk2_network.to_file("planned_network.json")
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "bespoke",
+                "gather",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        # load up the network and check the parameters
+        fec_network = FreeEnergyCalculationNetwork.from_file("planned_network.json")
+        for ligand in fec_network.network.ligands:
+            assert ligand.bespoke_parameters is not None
+            assert (
+                ligand.bespoke_parameters.base_force_field
+                == tyk2_network.forcefield_settings.small_molecule_forcefield
+            )
+            parameter = ligand.bespoke_parameters.parameters[0]
+            assert parameter.smirks == "[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]"
+            assert parameter.interaction == "ProperTorsions"
+            assert parameter.values["k1"] == 1.0
+            assert parameter.values["k2"] == 2.0
+
+        # now make sure we can create the openfe network
+        ofe_network = fec_network.to_alchemical_network()
+        # check the force field in the first edge has been updated
+        transform = list(ofe_network.edges)[0]
+        ff = ForceField(
+            transform.protocol.settings.forcefield_settings.small_molecule_forcefield
+        )
+        handler = ff.get_parameter_handler("ProperTorsions")
+        # grab our new parameter
+        parameter = handler["[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]"]
+        # make sure the id was set
+        assert "bespokefit_" in parameter.id
+        # check the values
+        assert parameter.k4.m == 4.0
+        assert parameter.periodicity1 == 1
+        assert parameter.phase2.m == 180
+
+
+def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
+    """Make sure an error is raised if only some results can be gathered"""
+
+    from openff.bespokefit.executor.client import (
+        BespokeExecutorOutput,
+        BespokeExecutorStageOutput,
+        BespokeFitClient,
+        BespokeOptimizationResults,
+    )
+    from openff.bespokefit.schema.smirnoff import ProperTorsionSMIRKS
+    from openff.units import unit
+
+    tyk2_network = tyk2_fec_network.copy(deep=True)
+    refit_values = {
+        ProperTorsionSMIRKS(
+            # define a fake smirks which is not in the base ff to ensure it is added correctly
+            smirks="[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]",
+            attributes={"k1", "k2", "k3", "k4"},
+        ): {
+            "k1": 1.0 * unit.kilocalorie_per_mole,
+            "k2": 2.0 * unit.kilocalorie_per_mole,
+            "k3": 3.0 * unit.kilocalorie_per_mole,
+            "k4": 4.0 * unit.kilocalorie_per_mole,
+        }
+    }
+    monkeypatch.setattr(
+        BespokeOptimizationResults, "refit_parameter_values", refit_values
+    )
+
+    def get_optimization(self, optimization_id):
+        """Return some mock bespokefit data"""
+        return BespokeExecutorOutput(
+            smiles="CC",
+            stages=[
+                BespokeExecutorStageOutput(
+                    type="fragmenter", status="success", error=None
+                )
+            ],
+            results=BespokeOptimizationResults(),
+        )
+
+    # patch the client
+    monkeypatch.setenv("BEFLOW_GATEWAY_ADDRESS", "testing")
+    monkeypatch.setattr(BespokeFitClient, "get_optimization", get_optimization)
+
+    runner = CliRunner()
+    with tmpdir.as_cwd():
+        # inject fake key to one ligand
+        tyk2_network.network.ligands[0].tags["bespokefit_id"] = "testing"
+        tyk2_network.to_file("planned_network.json")
+
+        with pytest.raises(
+            RuntimeError,
+            match="Not all BespokeFit optimisations have finished, to collect the current parameters use the flag "
+            "`--allow-missing`",
+        ):
+            _ = runner.invoke(
+                alchemy,
+                [
+                    "bespoke",
+                    "gather",
+                ],
+                catch_exceptions=False,
+            )
+    # reset the console after an error
+    console = rich.get_console()
+    console.clear_live()
+
+
+def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
+    """Test getting the status of some ligands in bespokefit"""
+    from openff.bespokefit.executor.client import (
+        BespokeExecutorOutput,
+        BespokeExecutorStageOutput,
+        BespokeFitClient,
+    )
+
+    tyk2_network = tyk2_fec_network.copy(deep=True)
+    runner = CliRunner()
+
+    monkeypatch.setattr(BespokeExecutorOutput, "status", "success")
+
+    def get_optimization(self, optimization_id):
+        "Return some mock data with a fake status"
+        return BespokeExecutorOutput(
+            smiles="CC",
+            stages=[
+                BespokeExecutorStageOutput(
+                    type="fragmenter", status="success", error=None
+                )
+            ],
+        )
+
+    # patch the client
+    monkeypatch.setenv("BEFLOW_GATEWAY_ADDRESS", "testing")
+    monkeypatch.setattr(BespokeFitClient, "get_optimization", get_optimization)
+
+    with tmpdir.as_cwd():
+        # inject some fake keys into the ligands
+        for ligand in tyk2_network.network.ligands:
+            ligand.tags["bespokefit_id"] = "testing"
+
+        tyk2_network.to_file("planned_network.json")
+
+        result = runner.invoke(alchemy, ["bespoke", "status"])
+
+        assert result.exit_code == 0
+        assert "│ success │ 10    │" in result.stdout

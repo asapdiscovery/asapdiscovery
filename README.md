@@ -24,25 +24,25 @@ Install the `asapdiscovery` subpackages and begin to explore! Our [docs can be f
 
 There are a range of workflows and tooling to use split into several namespace subpackages by theme.
 
-`asapdiscovery-alchemy`: Free energy calculations using [OpenFE](https://openfree.energy/) and [Alchemiscale](https://docs.alchemiscale.org/en/latest/)
+`asapdiscovery-alchemy`: Free energy calculations using [OpenFE](https://openfree.energy/) and [Alchemiscale](https://docs.alchemiscale.org/en/latest/). See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/running_alchemical_free_energy_calculations.html) and CLI [guide](https://asapdiscovery.readthedocs.io/en/latest/guides/using_asap_alchemy_cli.html)
 
 `asapdiscovery-cli`: Command line tools uniting the whole repo.
 
-`asapdiscovery-data`: Core data models and integrations with services such as [Postera.ai](https://postera.ai/)
+`asapdiscovery-data`: Core data models and integrations with services such as [Postera.ai](https://postera.ai/). See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/interfacing_with_databases_and_systems.html)
 
-`asapdiscovery-dataviz`: Data and structure visualization using `3DMol` and `PyMOL`
+`asapdiscovery-dataviz`: Data and structure visualization using `3DMol` and `PyMOL`. See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/visualizing_asap_targets.html)
 
 `asapdiscovery-docking`: Docking and compound screening with the `OpenEye` toolkit
 
-`asapdiscovery-genetics`: Working with sequence and fitness information
+`asapdiscovery-genetics`: Working with sequence and fitness information. See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/exploring_related_sequences_and_structures.html)
 
-`asapdiscovery-ml`: Structure based ML models for predicting compound activity
+`asapdiscovery-ml`: Structure based ML models for predicting compound activity. See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/training_ml_models_on_asap_data.html) and CLI [guide](https://asapdiscovery.readthedocs.io/en/latest/guides/using_ml_cli.html)
 
 `asapdiscovery-modelling`: Structure prep and standardisation
 
-`asapdiscovery-simulation`: MD simulations and analysis using OpenMM
+`asapdiscovery-simulation`: MD simulations and analysis using OpenMM. See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/running_md_simulations.html)
 
-`asapdiscovery-workflows`: Workflows that combine components to enable project support
+`asapdiscovery-workflows`: Workflows that combine components to enable project support. See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/docking_and_scoring.html) and CLI [guide](https://asapdiscovery.readthedocs.io/en/latest/guides/using_docking_cli.html)
 
 
 ### Disclaimer
@@ -52,7 +52,14 @@ There are a range of workflows and tooling to use split into several namespace s
 
 ## Installation
 
-**Note**: currently all `asapdiscovery` packages support Python 3.10 only.
+**Note**: currently all `asapdiscovery` packages support Python <=3.11 only.
+
+
+### Installing from conda-forge
+
+You can install the package from the wonderful `conda-forge` with `mamba install -c conda-forge asapdiscovery`.  
+
+### Developer install 
 
 `asapdiscovery` is a namespace package, composed of individual Python packages with their own dependencies.
 Each of these packages follows the `asapdiscovery-*` convention for the package name, e.g. `asapdiscovery-data`.
