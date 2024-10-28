@@ -588,15 +588,20 @@ class MLModelScorer(ScorerBase):
             )
             return None
         else:
-            return cls(
-                targets=inference_instance.targets,
-                model_name=inference_instance.model_name,
-                inference_cls=inference_instance,
-                endpoint=inference_instance.model_spec.endpoint,
-                score_type=endpoint_and_model_type_to_score_type(
-                    inference_instance.model_spec.endpoint, cls.model_type
-                ),
-            )
+            try:
+                instance =  cls(
+                    targets=inference_instance.targets,
+                    model_name=inference_instance.model_name,
+                    inference_cls=inference_instance,
+                    endpoint=inference_instance.model_spec.endpoint,
+                    score_type=endpoint_and_model_type_to_score_type(
+                        inference_instance.model_spec.endpoint, cls.model_type
+                    ),
+                )
+                return instance
+            except Exception as e:
+                logger.error(f"error instantiating MLModelScorer: {e}")
+                return None
 
     @staticmethod
     def from_latest_by_target_and_type(target: TargetTags, type: ModelType):
@@ -621,15 +626,25 @@ class MLModelScorer(ScorerBase):
             raise Exception("trying to instantiate some kind a baseclass")
         inference_cls = get_inference_cls_from_model_type(cls.model_type)
         inference_instance = inference_cls.from_model_name(model_name)
-        return cls(
-            targets=inference_instance.targets,
-            model_name=inference_instance.model_name,
-            inference_cls=inference_instance,
-            endpoint=inference_instance.model_spec.endpoint,
-            score_type=endpoint_and_model_type_to_score_type(
-                inference_instance.model_spec.endpoint, cls.model_type
-            ),
-        )
+        if inference_instance is None:
+            logger.warn(
+                f"no ML model of type {cls.model_type} found for model_name: {model_name}, skipping"
+            )
+            return None
+        else:
+            try:
+                instance = cls(
+                targets=inference_instance.targets,
+                model_name=inference_instance.model_name,
+                inference_cls=inference_instance,
+                endpoint=inference_instance.model_spec.endpoint,
+                score_type=endpoint_and_model_type_to_score_type(
+                    inference_instance.model_spec.endpoint, cls.model_type
+                ))
+                return instance
+            except Exception as e:
+                logger.error(f"error instantiating MLModelScorer: {e}")
+                return None
 
     @staticmethod
     def load_model_specs(
