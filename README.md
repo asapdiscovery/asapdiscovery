@@ -57,7 +57,7 @@ There are a range of workflows and tooling to use split into several namespace s
 
 ### Installing from conda-forge
 
-You can install the package from the wonderful `conda-forge` with `mamba install -c conda-forge asapdiscovery`.  
+You can install the package from the wonderful `conda-forge` with `mamba install -c conda-forge asapdiscovery`.
 
 ### Developer install 
 
