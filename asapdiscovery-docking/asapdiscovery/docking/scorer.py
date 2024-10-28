@@ -589,7 +589,7 @@ class MLModelScorer(ScorerBase):
             return None
         else:
             try:
-                instance =  cls(
+                instance = cls(
                     targets=inference_instance.targets,
                     model_name=inference_instance.model_name,
                     inference_cls=inference_instance,
@@ -634,13 +634,14 @@ class MLModelScorer(ScorerBase):
         else:
             try:
                 instance = cls(
-                targets=inference_instance.targets,
-                model_name=inference_instance.model_name,
-                inference_cls=inference_instance,
-                endpoint=inference_instance.model_spec.endpoint,
-                score_type=endpoint_and_model_type_to_score_type(
-                    inference_instance.model_spec.endpoint, cls.model_type
-                ))
+                    targets=inference_instance.targets,
+                    model_name=inference_instance.model_name,
+                    inference_cls=inference_instance,
+                    endpoint=inference_instance.model_spec.endpoint,
+                    score_type=endpoint_and_model_type_to_score_type(
+                        inference_instance.model_spec.endpoint, cls.model_type
+                    ),
+                )
                 return instance
             except Exception as e:
                 logger.error(f"error instantiating MLModelScorer: {e}")
