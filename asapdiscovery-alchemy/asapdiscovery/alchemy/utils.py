@@ -333,7 +333,7 @@ class AlchemiscaleHelper:
         return error_data
 
     def cancel_actioned_tasks(
-        self, network_key: ScopedKey, hard: bool
+        self, network_key: ScopedKey, hard: bool = False
     ) -> list[ScopedKey]:
         """
         Cancel all currently actioned tasks on a network to stop all future compute.
