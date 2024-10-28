@@ -662,7 +662,8 @@ class MLModelScorer(ScorerBase):
         for model in models:
             scorer_class = get_ml_scorer_cls_from_model_type(model.type)
             scorer = scorer_class.from_model_name(model.name)
-            scorers.append(scorer)
+            if scorer is not None:
+                scorers.append(scorer)
         return scorers
 
 
