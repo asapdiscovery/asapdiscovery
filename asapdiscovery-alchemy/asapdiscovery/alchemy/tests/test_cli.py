@@ -20,7 +20,6 @@ from asapdiscovery.data.testing.test_resources import fetch_test_file
 from click.testing import CliRunner
 from openfe.setup import LigandNetwork
 from rdkit import Chem
-import mock
 import traceback
 
 
