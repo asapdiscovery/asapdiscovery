@@ -604,8 +604,6 @@ def test_alchemy_stop_hard(monkeypatch):
 
     def set_tasks_status(*args, **kwargs):
         tasks = kwargs["tasks"]
-        network = ScopedKey.from_str(kwargs["network"])
-        assert network == network_key
         return tasks
 
     monkeypatch.setattr(
@@ -613,10 +611,12 @@ def test_alchemy_stop_hard(monkeypatch):
     )
     monkeypatch.setattr(AlchemiscaleClient, "set_tasks_status", set_tasks_status)
 
+    # mock keyboard input
+    monkeypatch.setattr('builtins.input', lambda _: "y")
     result = runner.invoke(alchemy, ["stop", "-nk", network_key, "--hard"])
     assert click_success(result)
     assert (
-        "Canceled 4 actioned tasks for network fakenetwork-12345-asap-alchemy-testing"
+        "Deleted 4 actioned tasks for network fakenetwork-12345-asap-alchemy-testing"
         in result.stdout
     )
 

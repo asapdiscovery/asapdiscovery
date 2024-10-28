@@ -359,7 +359,7 @@ class AlchemiscaleHelper:
             tasks_to_delete = running_tasks + waiting_tasks
             if tasks_to_delete:
                 canceled_tasks = self._client.set_tasks_status(
-                    running_tasks, status="deleted"
+                    tasks=running_tasks, status="deleted"
                 )
             else:
                 canceled_tasks = []

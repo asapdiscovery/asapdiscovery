@@ -778,6 +778,9 @@ def stop(network_key: str, hard: bool = False):
     print_header(console)
 
     client = AlchemiscaleHelper.from_settings()
+
+    verb = "Deleted" if hard else "Canceled"
+
     if hard:
         console.print(
             f"Warning: deleting all running/waiting tasks on network {network_key}. These will not be retrievable/re-runnable!"
@@ -798,7 +801,7 @@ def stop(network_key: str, hard: bool = False):
     cancel_status.stop()
 
     message = Padding(
-        f"Canceled {total_tasks} actioned tasks for network {network_key}",
+        f"{verb} {total_tasks} actioned tasks for network {network_key}",
         (1, 0, 1, 0),
     )
     console.print(message)
