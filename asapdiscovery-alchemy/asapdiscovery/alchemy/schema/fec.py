@@ -18,6 +18,7 @@ from openfe.protocols.openmm_utils.omm_settings import (
     OpenMMEngineSettings,
     OpenMMSolvationSettings,
 )
+from openfe.setup.atom_mapping import lomap_scorers, perses_scorers
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import Field
@@ -58,6 +59,123 @@ class SolventSettings(_SchemaBase):
 
     def to_solvent_component(self) -> gufe.SolventComponent:
         return gufe.SolventComponent(**self.dict(exclude={"type"}))
+
+
+class AdaptiveSettings(_SchemaBase):
+    """
+    A settings class to encode settings for adaptive settings. These were recommended by OpenFE.
+    """
+
+    type: Literal["AdaptiveSettings"] = "AdaptiveSettings"
+    adaptive_sampling: bool = Field(
+        True,
+        description="If True, will enable increase in production length of simulations given a `adaptive_sampling_multiplier` and `adaptive_sampling_threshold`.",
+    )
+    adaptive_sampling_multiplier: float = Field(
+        2.0,
+        description="The number of times more production simulation length (sampling time) that will be assigned to edges whose mapping scoring falls below the `adaptive_sampling_threshold`.",
+    )
+    adaptive_sampling_threshold: float = Field(
+        0.5,
+        description="The threshold that separates edges that are expected to perform well (higher; regular production simulation time) and poorly (lower; regular production simulation time * `adaptive_sampling_multiplier`). Recommended settings are 0.5 (LOMAP scorer) or 0.85 (PERSES scorer).",
+    )
+    adaptive_solvent_padding: bool = Field(
+        True,
+        description="Whether or not to use adaptive solvent padding; typically the complex phase can handle smaller padding size.",
+    )
+    solvent_padding_complex: FloatQuantity["nanometer"] = Field(  # noqa: F821
+        1.0 * OFFUnit.nanometer,
+        description="The solvent padding (in nm) to use for the complex phase of each edge.",
+    )
+    solvent_padding_solvated: FloatQuantity["nanometer"] = Field(  # noqa: F821
+        1.2 * OFFUnit.nanometer,
+        description="The solvent padding (in nm) to use for the solvated phase of each edge.",
+    )
+
+    def get_adapted_sampling_protocol(
+        self,
+        scorer_method: str,
+        mapping: "LigandAtomMapping",
+        protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+        base_sampling_length: FloatQuantity["nanometer"],  # noqa: F821
+    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
+        """
+        It's advisable to increase simulation time on edges that are expected to be less reliable. There
+        Aren't many good estimators for this, but the network planner edge scoring is a decent approximation.
+
+        If the edge scoring (computed using `scorer_method`) is below the `adaptive_sampling_threshold` the
+        simulation time is multiplied by `adaptive_sampling_multiplier`. Just to be sure, we use the base
+        protocol's sampling time and not the provided edge protocol sampling time as a base value.
+
+        Returns the adjusted OpenFE Protocol.
+        """
+        if scorer_method == "default_lomap":
+            scorer = lomap_scorers.default_lomap_score
+        elif scorer_method == "default_perses":
+            scorer = perses_scorers.default_perses_scorer
+        else:
+            raise ValueError(
+                f"Atom mapping scorer {scorer_method} not recognized; use one of `default_lomap`, `default_perses`."
+            )
+        if scorer(mapping) < self.adaptive_sampling_threshold:
+            protocol._settings.simulation_settings.production_length = (
+                base_sampling_length * self.adaptive_sampling_multiplier
+            )
+        return protocol
+
+    def get_adapted_solvent_protocol(
+        self,
+        leg: str,
+        protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
+        """
+        Certain water box shapes (such as dodecahedron) are able to handle slightly smaller padding size
+        in the complex phase compared to the solvated phase. Given the leg (either "solvent" or "complex")
+        this method applies the specified padding per phase (`solvent_padding_solvated` or
+        `solvent_padding_complex`, resp.).
+
+        Returns the adjusted OpenFE Protocol.
+        """
+        if leg == "solvent":
+            protocol._settings.solvation_settings.solvent_padding = (
+                self.solvent_padding_solvated
+            )
+        else:
+            protocol._settings.solvation_settings.solvent_padding = (
+                self.solvent_padding_complex
+            )
+        return protocol
+
+    def apply_settings(
+        self,
+        edge_protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+        network_scorer: str,
+        mapping: "LigandAtomMapping",
+        leg: str,
+        base_protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
+        """
+        Applies a set of adaptive settings to an OpenFE Protocol if requested.
+        """
+        import copy
+
+        # create a copy of the edge_protocol to make it editable - we're returning the copy
+        edge_protocol = copy.deepcopy(edge_protocol)
+
+        # double the simulation time if requested
+        if self.adaptive_sampling:
+            base_sampling_length = (
+                base_protocol.settings.simulation_settings.production_length
+            )
+            edge_protocol = self.get_adapted_sampling_protocol(
+                network_scorer, mapping, edge_protocol, base_sampling_length
+            )
+
+        # adjust solvent padding per phase if requested
+        if self.adaptive_solvent_padding:
+            edge_protocol = self.get_adapted_solvent_protocol(leg, edge_protocol)
+
+        return edge_protocol
 
 
 # TODO make base class with abstract methods to collect results.
@@ -225,8 +343,13 @@ class _FreeEnergyBase(_SchemaBase):
         MultiStateSimulationSettings(
             equilibration_length=1.0 * OFFUnit.nanoseconds,
             production_length=5.0 * OFFUnit.nanoseconds,
+            time_per_iteration=1 * OFFUnit.picoseconds,
         ),
         description="Settings for simulation control, including lengths and writing to disk.",
+    )
+    adaptive_settings: Optional[AdaptiveSettings] = Field(
+        AdaptiveSettings(),
+        description="Run adaptive settings depending on e.g. expected edge reliability or system phase.",
     )
     protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
         "RelativeHybridTopologyProtocol",
@@ -343,7 +466,6 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
             for leg in ["solvent", "complex"]:
                 sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
                 sys_b_dict = {"ligand": mapping.componentB, "solvent": solvent}
-
                 if leg == "complex":
                     sys_a_dict["protein"] = receptor
                     sys_b_dict["protein"] = receptor
@@ -355,6 +477,19 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
                 )
 
+                # run this edge's protocol through adaptive settings. If this list of things to pass
+                # grows any larger we should only pass the `FreeEnergyCalculationNetwork` and instead
+                # infer these parameters somewhere in self.adaptive_settings.
+                if self.adaptive_settings:
+                    edge_protocol = self.adaptive_settings.apply_settings(
+                        edge_protocol,  # the protocol to be adjusted
+                        self.network.scorer,  # the network edge scorer - for adaptive sampling
+                        mapping,  # the atom mapping for this edge - for adaptive sampling
+                        leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
+                        protocol,  # base protocol to compare with for internal checking
+                    )
+
+                # set up the transformation
                 transformation = openfe.Transformation(
                     stateA=system_a,
                     stateB=system_b,
