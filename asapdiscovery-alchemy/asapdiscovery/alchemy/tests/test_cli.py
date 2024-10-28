@@ -1,5 +1,6 @@
 import os
 import pathlib
+import traceback
 
 import pandas as pd
 import pytest
@@ -580,8 +581,8 @@ def test_alchemy_stop(monkeypatch):
     assert (
         "Canceled 4 actioned tasks for network fakenetwork-12345-asap-alchemy-testing"
         in result.stdout
-
     )
+
 
 def test_alchemy_stop_hard(monkeypatch):
     """Test canceling the actioned tasks on a network"""
@@ -605,20 +606,17 @@ def test_alchemy_stop_hard(monkeypatch):
         tasks = kwargs["tasks"]
         return tasks
 
-    monkeypatch.setattr(
-        AlchemiscaleClient, "get_network_tasks", get_network_tasks
-    )
+    monkeypatch.setattr(AlchemiscaleClient, "get_network_tasks", get_network_tasks)
     monkeypatch.setattr(AlchemiscaleClient, "set_tasks_status", set_tasks_status)
 
     # mock keyboard input
-    monkeypatch.setattr('builtins.input', lambda _: "y")
+    monkeypatch.setattr("builtins.input", lambda _: "y")
     result = runner.invoke(alchemy, ["stop", "-nk", network_key, "--hard"])
     assert click_success(result)
     assert (
         "Deleted 4 actioned tasks for network fakenetwork-12345-asap-alchemy-testing"
         in result.stdout
     )
-
 
 
 def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
