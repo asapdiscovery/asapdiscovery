@@ -332,7 +332,9 @@ class AlchemiscaleHelper:
                     error_data.append(failure)
         return error_data
 
-    def cancel_actioned_tasks(self, network_key: ScopedKey) -> list[ScopedKey]:
+    def cancel_actioned_tasks(
+        self, network_key: ScopedKey, hard: bool = False
+    ) -> list[ScopedKey]:
         """
         Cancel all currently actioned tasks on a network to stop all future compute.
 
@@ -342,17 +344,36 @@ class AlchemiscaleHelper:
 
         Args:
             network_key: The alchemiscale network key who's actioned tasks should be canceled.
+            hard: If true, all running/waiting tasks will be deleted. Warning: these are not retrievable/re-runnable.
 
         Returns:
             A list of the ScopedKeys of all canceled tasks.
         """
-        actioned_tasks = self._client.get_network_actioned_tasks(network=network_key)
-        if actioned_tasks:
-            canceled_tasks = self._client.cancel_tasks(
-                tasks=actioned_tasks, network=network_key
+        if hard:
+            running_tasks = self._client.get_network_tasks(
+                network=network_key, status="running"
             )
+            waiting_tasks = self._client.get_network_tasks(
+                network=network_key, status="waiting"
+            )
+            tasks_to_delete = running_tasks + waiting_tasks
+            if tasks_to_delete:
+                canceled_tasks = self._client.set_tasks_status(
+                    tasks=running_tasks, status="deleted"
+                )
+            else:
+                canceled_tasks = []
         else:
-            canceled_tasks = []
+            actioned_tasks = self._client.get_network_actioned_tasks(
+                network=network_key
+            )
+            if actioned_tasks:
+                canceled_tasks = self._client.cancel_tasks(
+                    tasks=actioned_tasks, network=network_key
+                )
+            else:
+                canceled_tasks = []
+
         return canceled_tasks
 
     def adjust_weight(
