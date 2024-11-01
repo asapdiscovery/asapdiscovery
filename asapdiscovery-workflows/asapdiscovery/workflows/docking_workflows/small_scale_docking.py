@@ -43,10 +43,10 @@ from asapdiscovery.docking.scorer import (
     MetaScorer,
     MLModelScorer,
 )
-from asapdiscovery.spectrum.fitness import target_has_fitness_data
 from asapdiscovery.ml.models import ASAPMLModelRegistry
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
+from asapdiscovery.spectrum.fitness import target_has_fitness_data
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
