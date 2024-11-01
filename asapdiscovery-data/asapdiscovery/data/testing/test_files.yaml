@@ -348,7 +348,7 @@ files:
   - resource: Mpro-YP_009725301_AFold_processed.pdb
     sha256hash: 3cdc93de0186243d790e7abd61d77eacde649f547f3d0cd0aaa58243631431f8
 
-  # asap-genetics testing
+  # asap-spectrum testing
   - resource: SARS_blast_results.xml
     sha256hash: d6e59d1f6b2eeee5162cca4dbeee7ffcd56eeeabdb733a505ff86ee1588cf8f6
 

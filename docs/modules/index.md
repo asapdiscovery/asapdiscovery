@@ -10,7 +10,7 @@ cli
 data
 dataviz
 docking
-genetics
+spectrum
 ml
 modeling
 simulation

@@ -4,12 +4,12 @@ from typing import Optional
 import click
 import pandas as pd
 from asapdiscovery.cli.cli_args import output_dir, pdb_file
-from asapdiscovery.genetics.blast import PDBEntry, get_blast_seqs
-from asapdiscovery.genetics.calculate_rmsd import (
+from asapdiscovery.spectrum.blast import PDBEntry, get_blast_seqs
+from asapdiscovery.spectrum.calculate_rmsd import (
     save_alignment_pymol,
     select_best_colabfold,
 )
-from asapdiscovery.genetics.cli_args import (
+from asapdiscovery.spectrum.cli_args import (
     blast_json,
     email,
     gen_ref_pdb,
@@ -18,16 +18,16 @@ from asapdiscovery.genetics.cli_args import (
     seq_file,
     seq_type,
 )
-from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
+from asapdiscovery.spectrum.seq_alignment import Alignment, do_MSA
 
 
 @click.group()
-def genetics():
-    """Run genetics alignment workflows for related protein search and alignment."""
+def spectrum():
+    """Run spectrum alignment workflows for related protein search and alignment."""
     pass
 
 
-@genetics.command()
+@spectrum.command()
 @seq_file
 @seq_type
 @output_dir
@@ -174,7 +174,7 @@ def seq_alignment(
             print(f"A PDB template for {record.label} was saved as {record.pdb_file}")
 
 
-@genetics.command()
+@spectrum.command()
 @seq_file
 @pdb_file
 @output_dir
@@ -248,4 +248,4 @@ def struct_alignment(
 
 
 if __name__ == "__main__":
-    genetics()
+    spectrum()

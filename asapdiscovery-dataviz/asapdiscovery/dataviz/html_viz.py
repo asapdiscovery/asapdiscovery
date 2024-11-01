@@ -37,7 +37,7 @@ from asapdiscovery.dataviz._html_blocks import HTMLBlockData
 from asapdiscovery.dataviz.visualizer import VisualizerBase
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from asapdiscovery.genetics.fitness import (
+from asapdiscovery.spectrum.fitness import (
     _FITNESS_DATA_FIT_THRESHOLD,
     get_fitness_scores_bloom_by_target,
     parse_fitness_json,
