@@ -15,6 +15,8 @@ from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 from rdkit import Chem, RDLogger
 import warnings
+import multiprocessing.pool
+import functools
 
 RDLogger.DisableLog(
     "rdApp.*"
@@ -599,6 +601,25 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         return coords_map, index_map
 
+    def timeout(max_timeout):
+        """Timeout decorator, parameter in seconds."""
+
+        def timeout_decorator(item):
+            """Wrap the original function."""
+
+            @functools.wraps(item)
+            def func_wrapper(*args, **kwargs):
+                """Closure for function."""
+                pool = multiprocessing.pool.ThreadPool(processes=1)
+                async_result = pool.apply_async(item, args, kwargs)
+                # raises a TimeoutError if execution exceeds max_timeout
+                return async_result.get(max_timeout)
+
+            return func_wrapper
+
+        return timeout_decorator
+
+    @timeout(0.2)
     def _generate_pose(
         self,
         target_ligand: Chem.Mol,
@@ -795,33 +816,31 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     progressbar.update(1)
         else:
             for mol in tqdm(ligands, total=len(ligands)):
-                try:
-                    posed_ligand = self._generate_pose(
-                        target_ligand=Chem.AddHs(mol.to_rdkit()),
-                        core_ligand=core_ligand,
-                        core_smarts=core_smarts,
-                    )
+                # try:
+                posed_ligand = self._generate_pose(
+                    target_ligand=Chem.AddHs(mol.to_rdkit()),
+                    core_ligand=core_ligand,
+                    core_smarts=core_smarts,
+                )
 
-                    off_mol = Molecule.from_rdkit(
-                        posed_ligand, allow_undefined_stereo=True
-                    )
-                    # we need to transfer the properties which would be lost
-                    openeye_mol = off_mol.to_openeye()
+                off_mol = Molecule.from_rdkit(posed_ligand, allow_undefined_stereo=True)
+                # we need to transfer the properties which would be lost
+                openeye_mol = off_mol.to_openeye()
 
-                    # make sure properties at the top level get added to the conformers
-                    sd_tags = get_SD_data(openeye_mol)
-                    set_SD_data(openeye_mol, sd_tags)
+                # make sure properties at the top level get added to the conformers
+                sd_tags = get_SD_data(openeye_mol)
+                set_SD_data(openeye_mol, sd_tags)
 
-                    if posed_ligand.GetNumConformers() > 0:
-                        # save the mol with all conformers
-                        result_ligands.append(openeye_mol)
-                    else:
-                        failed_ligands.append(openeye_mol)
-                except Exception as e:
-                    warnings.warn(
-                        f"Ligand posing failed for ligand {mol.compound_name}:{mol.smiles} with exception\n{e}"
-                    )
-                    failed_ligands.append(mol.to_oemol())
+                if posed_ligand.GetNumConformers() > 0:
+                    # save the mol with all conformers
+                    result_ligands.append(openeye_mol)
+                else:
+                    failed_ligands.append(openeye_mol)
+                # except Exception as e:
+                #     warnings.warn(
+                #         f"Ligand posing failed for ligand {mol.compound_name}:{mol.smiles} with exception: {e}"
+                #     )
+                #     failed_ligands.append(mol.to_oemol())
 
         # prue down the conformers
         oedu_receptor = prepared_complex.target.to_oedu()
