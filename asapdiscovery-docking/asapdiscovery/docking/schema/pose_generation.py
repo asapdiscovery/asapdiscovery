@@ -1,4 +1,5 @@
 import abc
+import warnings
 from enum import Enum
 from typing import Any, Literal, Optional
 
@@ -14,7 +15,6 @@ from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 from rdkit import Chem, RDLogger
-import warnings
 
 RDLogger.DisableLog(
     "rdApp.*"
