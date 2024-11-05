@@ -14,6 +14,7 @@ from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 from rdkit import Chem, RDLogger
+import warnings
 
 RDLogger.DisableLog(
     "rdApp.*"
@@ -692,6 +693,28 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         return target_ligand
 
+    def work(self, target_ligand, core_ligand, core_smarts):
+        """
+        Generates a pose for a target_ligand while wrapping the whole thing in a try-except
+        so we can catch edge-cases. This enables multi-processed pose generation to return
+        exceptions gracefully.
+
+        Returns a success bool, the posed ligand (or input ligand in case of fail) and the
+        error message.
+        """
+        try:
+            return (
+                True,
+                self._generate_pose(
+                    target_ligand=target_ligand.to_rdkit(),
+                    core_ligand=core_ligand,
+                    core_smarts=core_smarts,
+                ),
+                None,
+            )
+        except Exception as e:
+            return False, target_ligand, e
+
     def _generate_poses(
         self,
         prepared_complex: PreppedComplex,
@@ -731,9 +754,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             with ProcessPoolExecutor(max_workers=processors) as pool:
                 work_list = [
                     pool.submit(
-                        self._generate_pose,
+                        self.work,
                         **{
-                            "target_ligand": mol.to_rdkit(),
+                            "target_ligand": mol,
                             "core_ligand": core_ligand,
                             "core_smarts": core_smarts,
                         },
@@ -741,9 +764,46 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     for mol in ligands
                 ]
                 for work in as_completed(work_list):
-                    target_ligand = work.result()
+
+                    succ, target_ligand, err_code = work.result()
+                    if succ:
+                        try:
+                            off_mol = Molecule.from_rdkit(
+                                target_ligand, allow_undefined_stereo=True
+                            )
+                            # we need to transfer the properties which would be lost
+                            openeye_mol = off_mol.to_openeye()
+
+                            # make sure properties at the top level get added to the conformers
+                            sd_tags = get_SD_data(openeye_mol)
+                            set_SD_data(openeye_mol, sd_tags)
+
+                            if target_ligand.GetNumConformers() > 0:
+                                # save the mol with all conformers
+                                result_ligands.append(openeye_mol)
+                            else:
+                                failed_ligands.append(openeye_mol)
+                        except Exception as e:
+                            warnings.warn(
+                                f"Ligand posing failed for ligand {Chem.MolToSmiles(target_ligand)} with exception: {e}"
+                            )
+                    else:
+                        warnings.warn(
+                            f"Ligand posing failed for ligand {target_ligand.smiles} with exception: {err_code}"
+                        )
+
+                    progressbar.update(1)
+        else:
+            for mol in tqdm(ligands, total=len(ligands)):
+                try:
+                    posed_ligand = self._generate_pose(
+                        target_ligand=Chem.AddHs(mol.to_rdkit()),
+                        core_ligand=core_ligand,
+                        core_smarts=core_smarts,
+                    )
+
                     off_mol = Molecule.from_rdkit(
-                        target_ligand, allow_undefined_stereo=True
+                        posed_ligand, allow_undefined_stereo=True
                     )
                     # we need to transfer the properties which would be lost
                     openeye_mol = off_mol.to_openeye()
@@ -752,34 +812,16 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     sd_tags = get_SD_data(openeye_mol)
                     set_SD_data(openeye_mol, sd_tags)
 
-                    if target_ligand.GetNumConformers() > 0:
+                    if posed_ligand.GetNumConformers() > 0:
                         # save the mol with all conformers
                         result_ligands.append(openeye_mol)
                     else:
                         failed_ligands.append(openeye_mol)
-
-                    progressbar.update(1)
-        else:
-            for mol in tqdm(ligands, total=len(ligands)):
-                posed_ligand = self._generate_pose(
-                    target_ligand=Chem.AddHs(mol.to_rdkit()),
-                    core_ligand=core_ligand,
-                    core_smarts=core_smarts,
-                )
-
-                off_mol = Molecule.from_rdkit(posed_ligand, allow_undefined_stereo=True)
-                # we need to transfer the properties which would be lost
-                openeye_mol = off_mol.to_openeye()
-
-                # make sure properties at the top level get added to the conformers
-                sd_tags = get_SD_data(openeye_mol)
-                set_SD_data(openeye_mol, sd_tags)
-
-                if posed_ligand.GetNumConformers() > 0:
-                    # save the mol with all conformers
-                    result_ligands.append(openeye_mol)
-                else:
-                    failed_ligands.append(openeye_mol)
+                except Exception as e:
+                    warnings.warn(
+                        f"Ligand posing failed for ligand {mol.compound_name}:{mol.smiles} with exception\n{e}"
+                    )
+                    failed_ligands.append(mol.to_oemol())
 
         # prue down the conformers
         oedu_receptor = prepared_complex.target.to_oedu()
