@@ -693,7 +693,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         return target_ligand
 
-    def work(self, target_ligand, core_ligand, core_smarts):
+    def work(self, target_ligand, core_ligand, core_smarts, allowed_max_ha=200):
         """
         Generates a pose for a target_ligand while wrapping the whole thing in a try-except
         so we can catch edge-cases. This enables multi-processed pose generation to return
@@ -702,6 +702,11 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         Returns a success bool, the posed ligand (or input ligand in case of fail) and the
         error message.
         """
+        if len(target_ligand.smiles) > allowed_max_ha:
+            raise ValueError(
+                "Query ligand is larger than the allowed number "
+                f"of heavy atoms ({len(target_ligand.smiles)}>{allowed_max_ha})."
+            )
         try:
             return (
                 True,
@@ -796,10 +801,8 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         else:
             for mol in tqdm(ligands, total=len(ligands)):
                 try:
-                    posed_ligand = self._generate_pose(
-                        target_ligand=Chem.AddHs(mol.to_rdkit()),
-                        core_ligand=core_ligand,
-                        core_smarts=core_smarts,
+                    succ, posed_ligand, err_code = self.work(
+                        mol, core_ligand, core_smarts
                     )
 
                     off_mol = Molecule.from_rdkit(
