@@ -693,20 +693,27 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         return target_ligand
 
-    def work(self, target_ligand, core_ligand, core_smarts, allowed_max_ha=200):
+    def poser(self, target_ligand, core_ligand, core_smarts, allowed_max_ha=75):
         """
         Generates a pose for a target_ligand while wrapping the whole thing in a try-except
         so we can catch edge-cases. This enables multi-processed pose generation to return
         exceptions gracefully.
 
+        Also skips molecules that are larger than `allowed_max_ha` which has been set to a
+        reasonable default. If erroneously large ligands are fed into this docking workflow
+        they will take a prohibitive amount of walltime because of the large number of embeddings
+        to enumerate.
+
         Returns a success bool, the posed ligand (or input ligand in case of fail) and the
         error message.
         """
         if len(target_ligand.smiles) > allowed_max_ha:
-            raise ValueError(
-                "Query ligand is larger than the allowed number "
-                f"of heavy atoms ({len(target_ligand.smiles)}>{allowed_max_ha})."
+            return (
+                False,
+                target_ligand,
+                f"Query ligand is larger than the allowed number of heavy atoms ({len(target_ligand.smiles)}>{allowed_max_ha}).",
             )
+
         try:
             return (
                 True,
@@ -759,7 +766,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             with ProcessPoolExecutor(max_workers=processors) as pool:
                 work_list = [
                     pool.submit(
-                        self.work,
+                        self.poser,
                         **{
                             "target_ligand": mol,
                             "core_ligand": core_ligand,
@@ -801,9 +808,15 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         else:
             for mol in tqdm(ligands, total=len(ligands)):
                 try:
-                    succ, posed_ligand, err_code = self.work(
+                    succ, posed_ligand, err_code = self.poser(
                         mol, core_ligand, core_smarts
                     )
+                    if not succ:
+                        warnings.warn(
+                            f"Ligand posing failed for ligand {mol.compound_name}:{mol.smiles} with exception: {err_code}"
+                        )
+                        failed_ligands.append(mol.to_oemol())
+                        continue
 
                     off_mol = Molecule.from_rdkit(
                         posed_ligand, allow_undefined_stereo=True
