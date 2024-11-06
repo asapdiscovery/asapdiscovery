@@ -219,6 +219,7 @@ def alchemize(
     "--dataset-name",
     type=click.STRING,
     help="The name of the AlchemyDataset this will also be the name of the folder created.",
+    required=True,
 )
 @click.option(
     "-l",

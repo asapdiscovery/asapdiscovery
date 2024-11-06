@@ -126,5 +126,4 @@ class OpenFFCharges(_BaseChargeMethod):
             # stamp how the charges were made
             ligand.charge_provenance = provenance
 
-        # TODO: handle failed ligands upstream by return below
-        return charged_ligands
+        return charged_ligands, failed_ligands

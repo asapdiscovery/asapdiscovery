@@ -248,6 +248,31 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         return final_ligands
 
     @staticmethod
+    def _remove_charge_fails(
+        posed_ligands: list[Ligand], charge_issue_ligands: list[Ligand]
+    ) -> list[Ligand]:
+        """
+        A helper method to remove ligands from the posed list which are in the charge issue list.
+
+        Args:
+            posed_ligands: A list of posed ligands which should be filtered.
+            charge_issue_ligands: The list of ligands with charge issues which should be removed from the posed list.
+
+        Returns:
+            A list of posed ligands which have correct and consistent stereo.
+        """
+        # we need to carefully remove the molecules from the posed_ligands list
+        failed_hash = [
+            ligand.provenance.fixed_inchikey for ligand in charge_issue_ligands
+        ]
+        final_ligands = [
+            mol
+            for mol in posed_ligands
+            if mol.provenance.fixed_inchikey not in failed_hash
+        ]
+        return final_ligands
+
+    @staticmethod
     def _deduplicate_experimental_ligands(
         posed_ligands: list[Ligand], experimental_ligands: list[Ligand]
     ) -> list[Ligand]:
@@ -442,13 +467,19 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         if self.charge_method is not None:
             console.print(f"Generating charges locally using {self.charge_method}")
 
-            posed_ligands = self.charge_method.generate_charges(
+            posed_ligands, charge_fails = self.charge_method.generate_charges(
                 ligands=posed_ligands, processors=processors
             )
+            if charge_fails:
+                # add the new fails to the rest
+                failed_ligands["ChargeFail"] = charge_fails
+                posed_ligands = AlchemyPrepWorkflow._remove_charge_fails(
+                    posed_ligands=posed_ligands, charge_issue_ligands=charge_fails
+                )
             provenance[self.charge_method.type] = self.charge_method.provenance()
 
             message = Padding(
-                "[[green]✓[/green]] Charges successfully generated.",
+                f"[[green]✓[/green]] Charges successfully generated for {len(posed_ligands)} ligands.",
                 (1, 0, 1, 0),
             )
             console.print(message)
