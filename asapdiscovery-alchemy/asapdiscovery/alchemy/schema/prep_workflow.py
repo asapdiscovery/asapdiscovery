@@ -483,7 +483,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                 (1, 0, 1, 0),
             )
             console.print(message)
-        print(failed_ligands)
+
         # gather the results
         return AlchemyDataSet(
             **self.dict(exclude={"type"}),

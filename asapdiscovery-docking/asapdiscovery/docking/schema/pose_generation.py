@@ -10,6 +10,7 @@ from asapdiscovery.data.backend.openeye import (
     oeff,
     oeomega,
     set_SD_data,
+    smiles_to_oemol,
 )
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
@@ -119,7 +120,9 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             result.posed_ligands.append(Ligand.from_oemol(oemol))
 
         for fail_oemol in failed_ligands:
-            result.failed_ligands.append(Ligand.from_oemol(fail_oemol))
+            result.failed_ligands.append(
+                Ligand.from_oemol(fail_oemol, compound_name="failed_ligand")
+            )
         return result
 
     def _prune_clashes(self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]):
@@ -799,10 +802,14 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                             warnings.warn(
                                 f"Ligand posing failed for ligand {Chem.MolToSmiles(target_ligand)} with exception: {e}"
                             )
+                            failed_ligands.append(
+                                smiles_to_oemol(Chem.MolToSmiles(target_ligand))
+                            )
                     else:
                         warnings.warn(
                             f"Ligand posing failed for ligand {target_ligand.smiles} with exception: {err_code}"
                         )
+                        failed_ligands.append(target_ligand.to_oemol())
 
                     progressbar.update(1)
         else:
