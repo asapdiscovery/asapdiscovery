@@ -24,6 +24,7 @@ dependencies:
   - appdirs
   - mdanalysis
   - openff-toolkit
+  - openff-units <=0.2.2
   - openff-fragmenter <0.2.2
   - openff-bespokefit >=0.4.0
   - openff-forcefields >=2024.04.0
