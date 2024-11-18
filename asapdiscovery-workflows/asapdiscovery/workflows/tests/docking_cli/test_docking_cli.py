@@ -53,7 +53,7 @@ def test_project_support_docking_cli_fragalysis(
 )
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
-def test_project_support_docking_cli_structure_directory_dask(
+def test_project_support_docking_cli_structure_directory(
     ligand_file, structure_dir, tmp_path, subcommand
 ):
     runner = CliRunner()
@@ -84,7 +84,7 @@ def test_project_support_docking_cli_structure_directory_dask(
 )
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
-def test_project_support_docking_cli_structure_directory_du_cache_dask(
+def test_project_support_docking_cli_structure_directory_du_cache(
     ligand_file, structure_dir, du_cache, tmp_path, subcommand
 ):
     runner = CliRunner()
@@ -119,7 +119,7 @@ def test_project_support_docking_cli_structure_directory_du_cache_dask(
 )
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
-def test_project_support_docking_cli_pdb_file_dask(
+def test_project_support_docking_cli_pdb_file(
     ligand_file, pdb_file, tmp_path, subcommand
 ):
     runner = CliRunner()
