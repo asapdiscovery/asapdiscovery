@@ -364,49 +364,58 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
 
 def test_alchemy_prep_run_bad_chemistry(tmpdir):
     """Test running the alchemy prep workflow and make sure only some of the ligands pass as expected."""
+    import warnings
 
     # locate the ligands input file
-    ligand_file = fetch_test_file("tyk2_ligands_wonky_chemistry.sdf")
+    ligand_file = fetch_test_file("tyk2_ligands_cursed_chemistry.sdf")
     ref_complex_file = fetch_test_file("tyk2_complex.json")
 
     runner = CliRunner()
+    with warnings.catch_warnings(record=True) as w:
+        with tmpdir.as_cwd():
+            result = runner.invoke(
+                alchemy,
+                [
+                    "prep",
+                    "run",
+                    "-n",
+                    "tyk2-testing",
+                    "-l",
+                    ligand_file.as_posix(),
+                    "-r",
+                    ref_complex_file,
+                    "-p",
+                    1,
+                ],
+            )
+            assert click_success(result)
 
-    with tmpdir.as_cwd():
-        result = runner.invoke(
-            alchemy,
-            [
-                "prep",
-                "run",
-                "-n",
-                "tyk2-testing",
-                "-l",
-                ligand_file.as_posix(),
-                "-r",
-                ref_complex_file,
-                "-p",
-                1,
-            ],
-        )
-        assert click_success(result)
+            # check that only a subset of molecules have poses/charges made
+            assert "[✓] Pose generation successful for 4/14." in result.stdout
+            assert "[✓] Charges successfully generated for 3 ligands." in result.stdout
 
-        # check all molecules have poses made
-        assert "[✓] Pose generation successful for 5/5." in result.stdout
-        # make sure stereo filtering is not run
-        assert "[✓] Stereochemistry filtering complete" not in result.stdout
-        # check the failure warning is not printed
-        assert (
-            "WARNING 2 ligands failed to have poses generated see failed_ligands"
-            not in result.stdout
-        )
-        # check we can load the result
-        prep_dataset = AlchemyDataSet.from_file(
-            "tyk2-testing/prepared_alchemy_dataset.json"
-        )
-
-        assert prep_dataset.dataset_name == "tyk2-testing"
-        assert len(prep_dataset.input_ligands) == 5
-        assert len(prep_dataset.posed_ligands) == 5
-        assert len(prep_dataset.failed_ligands) is None
+            # check that we're catching the right warnings for these ligands. Ligands are
+            # shuffled randomly, so just count from the whole set of warnings.
+            all_warnings = [str(mess.message) for mess in w]
+            assert "".join(all_warnings).count("input ligand is likely unphysical") == 5
+            assert (
+                "".join(all_warnings).count(
+                    "Programming error: OpenEye atom stereochemistry assumptions failed."
+                )
+                == 1
+            )
+            assert (
+                "".join(all_warnings).count(
+                    "Query ligand is larger than the allowed number of heavy atoms (114>75)"
+                )
+                == 1
+            )
+            assert (
+                "".join(all_warnings).count(
+                    "Unable to assign charges: Warning: BCIChargeCorrector"
+                )
+                == 1
+            )
 
 
 def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow):

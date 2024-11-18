@@ -846,6 +846,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                         result_ligands.append(openeye_mol)
                     else:
                         failed_ligands.append(openeye_mol)
+
                 except Exception as e:
                     warnings.warn(
                         f"Ligand posing failed for ligand {mol.compound_name}:{mol.smiles} with exception: {e}"
