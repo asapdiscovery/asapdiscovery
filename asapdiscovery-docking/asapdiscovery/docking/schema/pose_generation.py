@@ -710,7 +710,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         Returns a success bool, the posed ligand (or input ligand in case of fail) and the
         error message.
         """
-        lig_num_ha = Chem.MolFromSmiles(target_ligand.smiles).GetNumHeavyAtoms()
+        lig_num_ha = Chem.MolFromSmiles(
+            target_ligand.smiles, sanitize=False
+        ).GetNumHeavyAtoms()
         if lig_num_ha > allowed_max_ha:
             return (
                 False,
