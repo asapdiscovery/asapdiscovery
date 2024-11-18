@@ -88,7 +88,7 @@ class AdaptiveSettings(_SchemaBase):
         description="The solvent padding (in nm) to use for the complex phase of each edge.",
     )
     solvent_padding_solvated: FloatQuantity["nanometer"] = Field(  # noqa: F821
-        1.2 * OFFUnit.nanometer,
+        1.5 * OFFUnit.nanometer,
         description="The solvent padding (in nm) to use for the solvated phase of each edge.",
     )
 
