@@ -710,11 +710,12 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         Returns a success bool, the posed ligand (or input ligand in case of fail) and the
         error message.
         """
-        if len(target_ligand.smiles) > allowed_max_ha:
+        lig_num_ha = Chem.MolFromSmiles(target_ligand.smiles).GetNumHeavyAtoms()
+        if lig_num_ha > allowed_max_ha:
             return (
                 False,
                 target_ligand,
-                f"Query ligand is larger than the allowed number of heavy atoms ({len(target_ligand.smiles)}>{allowed_max_ha}).",
+                f"Query ligand is larger than the allowed number of heavy atoms ({lig_num_ha}>{allowed_max_ha}).",
             )
 
         try:
