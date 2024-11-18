@@ -362,6 +362,53 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
         assert prep_dataset.failed_ligands is None
 
 
+def test_alchemy_prep_run_bad_chemistry(tmpdir):
+    """Test running the alchemy prep workflow and make sure only some of the ligands pass as expected."""
+
+    # locate the ligands input file
+    ligand_file = fetch_test_file("tyk2_ligands_wonky_chemistry.sdf")
+    ref_complex_file = fetch_test_file("tyk2_complex.json")
+
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        result = runner.invoke(
+            alchemy,
+            [
+                "prep",
+                "run",
+                "-n",
+                "tyk2-testing",
+                "-l",
+                ligand_file.as_posix(),
+                "-r",
+                ref_complex_file,
+                "-p",
+                1,
+            ],
+        )
+        assert click_success(result)
+
+        # check all molecules have poses made
+        assert "[✓] Pose generation successful for 5/5." in result.stdout
+        # make sure stereo filtering is not run
+        assert "[✓] Stereochemistry filtering complete" not in result.stdout
+        # check the failure warning is not printed
+        assert (
+            "WARNING 2 ligands failed to have poses generated see failed_ligands"
+            not in result.stdout
+        )
+        # check we can load the result
+        prep_dataset = AlchemyDataSet.from_file(
+            "tyk2-testing/prepared_alchemy_dataset.json"
+        )
+
+        assert prep_dataset.dataset_name == "tyk2-testing"
+        assert len(prep_dataset.input_ligands) == 5
+        assert len(prep_dataset.posed_ligands) == 5
+        assert len(prep_dataset.failed_ligands) is None
+
+
 def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow):
     """Test running the alchemy prep workflow and letting it select the receptor."""
 
