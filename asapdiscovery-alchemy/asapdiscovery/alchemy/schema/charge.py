@@ -115,7 +115,7 @@ class OpenFFCharges(_BaseChargeMethod):
             for ligand in tqdm(ligands, total=len(ligands)):
                 succ, result_ligand, err_code = self._charge_molecule(ligand=ligand)
                 if succ:
-                    charged_ligands.append()
+                    charged_ligands.append(result_ligand)
                 else:
                     failed_ligands.append(result_ligand)
                     warnings.warn(
