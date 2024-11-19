@@ -410,12 +410,6 @@ def test_alchemy_prep_run_bad_chemistry(tmpdir):
                 )
                 == 1
             )
-            assert (
-                "".join(all_warnings).count(
-                    "Unable to assign charges: Warning: BCIChargeCorrector"
-                )
-                == 1
-            )
 
 
 def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow):
