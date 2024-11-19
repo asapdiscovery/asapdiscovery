@@ -34,7 +34,7 @@ There are a range of workflows and tooling to use split into several namespace s
 
 `asapdiscovery-docking`: Docking and compound screening with the `OpenEye` toolkit
 
-`asapdiscovery-genetics`: Working with sequence and fitness information. See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/exploring_related_sequences_and_structures.html)
+`asapdiscovery-spectrum`: Working with sequence and fitness information. See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/exploring_related_sequences_and_structures.html)
 
 `asapdiscovery-ml`: Structure based ML models for predicting compound activity. See [tutorial](https://asapdiscovery.readthedocs.io/en/latest/tutorials/training_ml_models_on_asap_data.html) and CLI [guide](https://asapdiscovery.readthedocs.io/en/latest/guides/using_ml_cli.html)
 

@@ -23,7 +23,7 @@ The `asapdiscovery` toolkit is focused around the following core competencies, o
 
  - `asapdiscovery-docking`: Docking and compound screening with the [OpenEye toolkit](https://docs.eyesopen.com/toolkits/python/index.html)
 
- - `asapdiscovery-genetics`: Working with sequence and fitness information and conducting protein structure inference
+ - `asapdiscovery-spectrum`: Working with sequence and fitness information and conducting protein structure inference
 
  - `asapdiscovery-ml`: Structure and graph based ML models for predicting compound activity and other endpoints
 

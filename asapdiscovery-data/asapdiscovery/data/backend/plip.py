@@ -16,7 +16,7 @@ from asapdiscovery.data.backend.openeye import (
 from asapdiscovery.data.metadata.resources import FINTSCORE_PARAMETERS
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.dataviz._gif_blocks import GIFBlockData
-from asapdiscovery.genetics.fitness import parse_fitness_json, target_has_fitness_data
+from asapdiscovery.spectrum.fitness import parse_fitness_json, target_has_fitness_data
 
 logger = logging.getLogger(__name__)
 

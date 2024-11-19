@@ -3,9 +3,9 @@ import traceback
 
 import pandas as pd
 import pytest
-from asapdiscovery.genetics.blast import pdb_to_seq
-from asapdiscovery.genetics.cli import genetics as cli
-from asapdiscovery.genetics.seq_alignment import Alignment, do_MSA
+from asapdiscovery.spectrum.blast import pdb_to_seq
+from asapdiscovery.spectrum.cli import spectrum as cli
+from asapdiscovery.spectrum.seq_alignment import Alignment, do_MSA
 from click.testing import CliRunner
 
 

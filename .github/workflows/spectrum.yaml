@@ -1,4 +1,4 @@
-name: genetics-ci
+name: spectrum-ci
 
 on:
   push:
@@ -84,7 +84,7 @@ jobs:
         python -m pip install -e ./asapdiscovery-ml --no-deps
         python -m pip install -e ./asapdiscovery-modeling --no-deps
         python -m pip install -e ./asapdiscovery-simulation --no-deps
-        python -m pip install -e ./asapdiscovery-genetics --no-deps
+        python -m pip install -e ./asapdiscovery-spectrum --no-deps
         micromamba list
 
     - name: Run tests
@@ -96,8 +96,8 @@ jobs:
         # Exit immediately if a command exits with a non-zero status.
         set -e
         pytest -n auto --durations=10 -v --cov-report=xml --cov-report=term --color=yes \
-                       --cov=asapdiscovery-genetics \
-                       asapdiscovery-genetics/asapdiscovery/genetics/tests
+                       --cov=asapdiscovery-spectrum \
+                       asapdiscovery-spectrum/asapdiscovery/spectrum/tests
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3

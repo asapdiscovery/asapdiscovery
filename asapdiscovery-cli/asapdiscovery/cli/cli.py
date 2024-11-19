@@ -26,9 +26,9 @@ from asapdiscovery.ml.cli import ml  # noqa: F401, E402, F811
 
 cli.add_command(ml)
 
-from asapdiscovery.genetics.cli import genetics  # noqa: F401, E402, F811
+from asapdiscovery.spectrum.cli import spectrum  # noqa: F401, E402, F811
 
-cli.add_command(genetics)
+cli.add_command(spectrum)
 
 
 from asapdiscovery.dataviz.cli import visualization  # noqa: F401, E402, F811

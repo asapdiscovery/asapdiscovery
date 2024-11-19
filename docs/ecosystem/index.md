@@ -8,7 +8,7 @@ Ecosystem
 * `asap-alchemy` relies heavily on [Open Free Energy](https://openfree.energy/) and [alchemiscale](https://github.com/openforcefield/alchemiscale) to perform alchemical free energy calculations
 * `asap-ml` relies on [MTENN](https://github.com/choderalab/mtenn) to modularize training and evaluation of structure based ML
 * `asap-simulation` relies on [OpenMM](https://github.com/openmm/openmm) and [OpenForceField](https://openforcefield.org/) for running and parameterizing MD simulations respectively.
-* `asap-genetics` uses [Colabfold](https://github.com/sokrypton/ColabFold) for protein structure prediction.
+* `asap-spectrum` uses [Colabfold](https://github.com/sokrypton/ColabFold) for protein structure prediction.
 
 Thanks also to the whole FOSS community and the tireless work done to make all of this possible.
 
@@ -37,7 +37,7 @@ We are aiming to productize some aspects of the `asapdiscovery` stack into their
 
 ### Choppa
 
-[Choppa](https://github.com/asapdiscovery/choppa) is a spinout of our fitness PyMOL and HTML viewer for arbitrary fitness data in the form of for example DMS or phylogenetics experiments.
+[Choppa](https://github.com/asapdiscovery/choppa) is a spinout of our fitness PyMOL and HTML viewer for arbitrary fitness data in the form of for example DMS or phylospectrum experiments.
 
 ### ASAP-Alchemy
 

@@ -26,7 +26,7 @@ def test_toplevel_runnable():
         "protein-prep",
         "docking",
         "alchemy",
-        "genetics",
+        "spectrum",
         "ml",
         "visualization",
         "simulation",
