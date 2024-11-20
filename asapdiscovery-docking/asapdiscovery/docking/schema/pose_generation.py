@@ -1,4 +1,5 @@
 import abc
+import warnings
 from enum import Enum
 from typing import Any, Literal, Optional
 
@@ -9,6 +10,7 @@ from asapdiscovery.data.backend.openeye import (
     oeff,
     oeomega,
     set_SD_data,
+    smiles_to_oemol,
 )
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
@@ -118,7 +120,9 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             result.posed_ligands.append(Ligand.from_oemol(oemol))
 
         for fail_oemol in failed_ligands:
-            result.failed_ligands.append(Ligand.from_oemol(fail_oemol))
+            result.failed_ligands.append(
+                Ligand.from_oemol(fail_oemol, compound_name="failed_ligand")
+            )
         return result
 
     def _prune_clashes(self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]):
@@ -692,6 +696,46 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         return target_ligand
 
+    def poser(self, target_ligand, core_ligand, core_smarts, allowed_max_ha=75):
+        """
+        Generates a pose for a target_ligand while wrapping the whole thing in a try-except
+        so we can catch edge-cases. This enables multi-processed pose generation to return
+        exceptions gracefully.
+
+        Also skips molecules that are larger than `allowed_max_ha` which has been set to a
+        reasonable default. If erroneously large ligands are fed into this docking workflow
+        they will take a prohibitive amount of walltime because of the large number of embeddings
+        to enumerate.
+
+        Returns a success bool, the posed ligand (or input ligand in case of fail) and the
+        error message.
+        """
+        rdkit_mol = Chem.MolFromSmiles(target_ligand.smiles)
+        if not rdkit_mol:
+            raise ValueError(
+                "RDKit failed on sanitization - input ligand is likely unphysical."
+            )
+        lig_num_ha = rdkit_mol.GetNumHeavyAtoms()
+        if lig_num_ha > allowed_max_ha:
+            return (
+                False,
+                target_ligand,
+                f"Query ligand is larger than the allowed number of heavy atoms ({lig_num_ha}>{allowed_max_ha}).",
+            )
+
+        try:
+            return (
+                True,
+                self._generate_pose(
+                    target_ligand=target_ligand.to_rdkit(),
+                    core_ligand=core_ligand,
+                    core_smarts=core_smarts,
+                ),
+                None,
+            )
+        except Exception as e:
+            return False, target_ligand, e
+
     def _generate_poses(
         self,
         prepared_complex: PreppedComplex,
@@ -731,9 +775,9 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             with ProcessPoolExecutor(max_workers=processors) as pool:
                 work_list = [
                     pool.submit(
-                        self._generate_pose,
+                        self.poser,
                         **{
-                            "target_ligand": mol.to_rdkit(),
+                            "target_ligand": mol,
                             "core_ligand": core_ligand,
                             "core_smarts": core_smarts,
                         },
@@ -741,9 +785,54 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     for mol in ligands
                 ]
                 for work in as_completed(work_list):
-                    target_ligand = work.result()
+
+                    succ, target_ligand, err_code = work.result()
+                    if succ:
+                        try:
+                            off_mol = Molecule.from_rdkit(
+                                target_ligand, allow_undefined_stereo=True
+                            )
+                            # we need to transfer the properties which would be lost
+                            openeye_mol = off_mol.to_openeye()
+
+                            # make sure properties at the top level get added to the conformers
+                            sd_tags = get_SD_data(openeye_mol)
+                            set_SD_data(openeye_mol, sd_tags)
+
+                            if target_ligand.GetNumConformers() > 0:
+                                # save the mol with all conformers
+                                result_ligands.append(openeye_mol)
+                            else:
+                                failed_ligands.append(openeye_mol)
+                        except Exception as e:
+                            warnings.warn(
+                                f"Ligand posing failed for ligand {Chem.MolToSmiles(target_ligand)} with exception: {e}"
+                            )
+                            failed_ligands.append(
+                                smiles_to_oemol(Chem.MolToSmiles(target_ligand))
+                            )
+                    else:
+                        warnings.warn(
+                            f"Ligand posing failed for ligand {target_ligand.smiles} with exception: {err_code}"
+                        )
+                        failed_ligands.append(target_ligand.to_oemol())
+
+                    progressbar.update(1)
+        else:
+            for mol in tqdm(ligands, total=len(ligands)):
+                try:
+                    succ, posed_ligand, err_code = self.poser(
+                        mol, core_ligand, core_smarts
+                    )
+                    if not succ:
+                        warnings.warn(
+                            f"Ligand posing failed for ligand {mol.compound_name}:{mol.smiles} with exception: {err_code}"
+                        )
+                        failed_ligands.append(mol.to_oemol())
+                        continue
+
                     off_mol = Molecule.from_rdkit(
-                        target_ligand, allow_undefined_stereo=True
+                        posed_ligand, allow_undefined_stereo=True
                     )
                     # we need to transfer the properties which would be lost
                     openeye_mol = off_mol.to_openeye()
@@ -752,34 +841,17 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     sd_tags = get_SD_data(openeye_mol)
                     set_SD_data(openeye_mol, sd_tags)
 
-                    if target_ligand.GetNumConformers() > 0:
+                    if posed_ligand.GetNumConformers() > 0:
                         # save the mol with all conformers
                         result_ligands.append(openeye_mol)
                     else:
                         failed_ligands.append(openeye_mol)
 
-                    progressbar.update(1)
-        else:
-            for mol in tqdm(ligands, total=len(ligands)):
-                posed_ligand = self._generate_pose(
-                    target_ligand=Chem.AddHs(mol.to_rdkit()),
-                    core_ligand=core_ligand,
-                    core_smarts=core_smarts,
-                )
-
-                off_mol = Molecule.from_rdkit(posed_ligand, allow_undefined_stereo=True)
-                # we need to transfer the properties which would be lost
-                openeye_mol = off_mol.to_openeye()
-
-                # make sure properties at the top level get added to the conformers
-                sd_tags = get_SD_data(openeye_mol)
-                set_SD_data(openeye_mol, sd_tags)
-
-                if posed_ligand.GetNumConformers() > 0:
-                    # save the mol with all conformers
-                    result_ligands.append(openeye_mol)
-                else:
-                    failed_ligands.append(openeye_mol)
+                except Exception as e:
+                    warnings.warn(
+                        f"Ligand posing failed for ligand {mol.compound_name}:{mol.smiles} with exception: {e}"
+                    )
+                    failed_ligands.append(mol.to_oemol())
 
         # prue down the conformers
         oedu_receptor = prepared_complex.target.to_oedu()
