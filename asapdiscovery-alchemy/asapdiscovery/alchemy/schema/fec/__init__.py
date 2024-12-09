@@ -1,3 +1,4 @@
+from asapdiscovery.alchemy.interfaces import AlchemiscaleSettings
 from asapdiscovery.alchemy.schema.fec.base import (
     AdaptiveSettings,
     AlchemiscaleFailure,
@@ -7,7 +8,6 @@ from asapdiscovery.alchemy.schema.fec.base import (
     TransformationResult,
 )
 from asapdiscovery.alchemy.schema.fec.solvent import SolventSettings
-from asapdiscovery.alchemy.interfaces import AlchemiscaleSettings
 
 __all__ = [
     "AdaptiveSettings",

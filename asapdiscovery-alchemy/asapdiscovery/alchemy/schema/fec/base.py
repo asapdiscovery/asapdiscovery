@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import openfe
 from alchemiscale import ScopedKey
+from asapdiscovery.alchemy.schema._util import check_ligand_series_uniqueness_and_names
+from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
 from asapdiscovery.alchemy.schema.fec.protocols import SupportedProtocols
 from asapdiscovery.alchemy.schema.fec.protocols.nonequilibriumcycling import (
     NonEquilibriumCyclingSettings,
@@ -11,19 +13,17 @@ from asapdiscovery.alchemy.schema.fec.protocols.relativehybridtopology import (
     RelativeHybridTopologySettings,
 )
 from asapdiscovery.alchemy.schema.fec.solvent import SolventSettings
+from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
 from gufe.tokenization import GufeKey
 from openfe.setup.atom_mapping import lomap_scorers, perses_scorers
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import Field
 
-from asapdiscovery.alchemy.schema._util import check_ligand_series_uniqueness_and_names
-from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
-from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
-
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
     from gufe.mapping import LigandAtomMapping
+
 
 class AdaptiveSettings(_SchemaBase):
     """

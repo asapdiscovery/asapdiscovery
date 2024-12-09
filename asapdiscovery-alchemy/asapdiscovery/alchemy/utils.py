@@ -261,8 +261,7 @@ class AlchemiscaleHelper:
 
             # work out the name of the molecules and the phase of the calculation using the input transformation
             transformation = self._client.get_transformation(
-                transformation=transformation_key,
-                visualize=False
+                transformation=transformation_key, visualize=False
             )
             # track the phase to correctly work out the total relative energy as complex - solvent
             if "protein" in transformation.stateA.components:

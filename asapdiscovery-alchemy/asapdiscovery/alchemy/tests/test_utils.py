@@ -163,7 +163,6 @@ def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):
         transform_key = kwargs["transformation"]
         return keys_to_edges[transform_key]
 
-
     # mock the collection api
     monkeypatch.setattr(client._client, "get_network_results", get_network_results)
     monkeypatch.setattr(client._client, "get_transformation", get_transformation)
@@ -184,7 +183,8 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
 
     network_key = ScopedKey(gufe_key=alchemical_network.key, **scope.dict())
     task_keys = [
-        ScopedKey(gufe_key=f"task-{uuid4().hex}", **network_key.scope.dict()) for _ in range(7)
+        ScopedKey(gufe_key=f"task-{uuid4().hex}", **network_key.scope.dict())
+        for _ in range(7)
     ]
 
     def get_network_tasks(key: ScopedKey, status: str):
