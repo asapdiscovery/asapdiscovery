@@ -246,7 +246,7 @@ class AlchemiscaleHelper:
             network_key
         ).items()
         # use the process pool api point to gather all transformations for the network
-        for _, raw_result in alchemiscale_network_results:
+        for transformation_key, raw_result in alchemiscale_network_results:
             if raw_result is None:
                 continue
             # format into our custom result schema and save
@@ -259,28 +259,22 @@ class AlchemiscaleHelper:
                     for edge in raw_result.data.values()
                 ][0]
 
-            # work out the name of the molecules and the phase of the calculation
-            individual_runs = list(raw_result.data.values())
+            # work out the name of the molecules and the phase of the calculation using the input transformation
+            transformation = self._client.get_transformation(
+                transformation=transformation_key, visualize=False
+            )
             # track the phase to correctly work out the total relative energy as complex - solvent
-            if "protein" in individual_runs[0][0].inputs["stateA"].components:
+            if "protein" in transformation.stateA.components:
                 phase = "complex"
             else:
                 phase = "solvent"
 
             # extract the names of the end state ligands to build the affinity estimate graph
-            name_a = individual_runs[0][0].inputs["stateA"].components["ligand"].name
-            name_b = individual_runs[0][0].inputs["stateB"].components["ligand"].name
+            ligand_a = transformation.stateA.components["ligand"]
+            ligand_b = transformation.stateB.components["ligand"]
+            name_a = ligand_a.name if ligand_a.name else ligand_a.smiles
+            name_b = ligand_b.name if ligand_b.name else ligand_b.smiles
             # print(individual_runs[0][0].inputs["stateB"].components["ligand"], name_b)
-
-            # if end state ligands did not have names, use SMILES instead
-            if not name_a:
-                name_a = (
-                    individual_runs[0][0].inputs["stateA"].components["ligand"].smiles
-                )
-            if not name_b:
-                name_b = (
-                    individual_runs[0][0].inputs["stateB"].components["ligand"].smiles
-                )
 
             results.append(
                 TransformationResult(
@@ -591,7 +585,7 @@ class BespokeFitHelper:
                     # make sure we use the force field which we fit to
                     # this was taken from the network originally
                     bespoke_parameters = BespokeParameters(
-                        base_force_field=network.forcefield_settings.small_molecule_forcefield
+                        base_force_field=network.protocol_settings.forcefield_settings.small_molecule_forcefield
                     )
                     for parameter, values in refit_parameters.items():
                         bespoke_parameter = BespokeParameter(

@@ -1,64 +1,28 @@
 import warnings
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
-import gufe
 import openfe
 from alchemiscale import ScopedKey
-from gufe import settings
+from asapdiscovery.alchemy.schema._util import check_ligand_series_uniqueness_and_names
+from asapdiscovery.alchemy.schema.base import _SchemaBase, _SchemaBaseFrozen
+from asapdiscovery.alchemy.schema.fec.protocols import SupportedProtocols
+from asapdiscovery.alchemy.schema.fec.protocols.nonequilibriumcycling import (
+    NonEquilibriumCyclingSettings,
+)
+from asapdiscovery.alchemy.schema.fec.protocols.relativehybridtopology import (
+    RelativeHybridTopologySettings,
+)
+from asapdiscovery.alchemy.schema.fec.solvent import SolventSettings
+from asapdiscovery.alchemy.schema.network import NetworkPlanner, PlannedNetwork
 from gufe.tokenization import GufeKey
-from openfe.protocols.openmm_rfe.equil_rfe_settings import (
-    AlchemicalSettings,
-    LambdaSettings,
-    MultiStateOutputSettings,
-    OpenFFPartialChargeSettings,
-)
-from openfe.protocols.openmm_utils.omm_settings import (
-    IntegratorSettings,
-    MultiStateSimulationSettings,
-    OpenMMEngineSettings,
-    OpenMMSolvationSettings,
-)
 from openfe.setup.atom_mapping import lomap_scorers, perses_scorers
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic import Field
 
-from ._util import check_ligand_series_uniqueness_and_names
-from .base import _SchemaBase, _SchemaBaseFrozen
-from .network import NetworkPlanner, PlannedNetwork
-
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
     from gufe.mapping import LigandAtomMapping
-
-
-class SolventSettings(_SchemaBase):
-    """
-    A settings class to encode the solvent used in the OpenFE FEC calculations.
-    """
-
-    type: Literal["SolventSettings"] = "SolventSettings"
-
-    smiles: str = Field("O", description="The smiles pattern of the solvent.")
-    positive_ion: str = Field(
-        "Na+",
-        description="The positive monoatomic ion which should be used to neutralize the system and to adjust the ionic concentration.",
-    )
-    negative_ion: str = Field(
-        "Cl-",
-        description="The negative monoatomic ion which should be used to neutralize the system and to adjust the ionic concentration.",
-    )
-    neutralize: bool = Field(
-        True,
-        description="If the net charge of the chemical system should be neutralized by the ions defined by `positive_ion` and `negative_ion`.",
-    )
-    ion_concentration: FloatQuantity["molar"] = Field(  # noqa: F821
-        0.15 * OFFUnit.molar,
-        description="The ionic concentration required in molar units.",
-    )
-
-    def to_solvent_component(self) -> gufe.SolventComponent:
-        return gufe.SolventComponent(**self.dict(exclude={"type"}))
 
 
 class AdaptiveSettings(_SchemaBase):
@@ -307,91 +271,41 @@ class _FreeEnergyBase(_SchemaBase):
     """
 
     type: Literal["_FreeEnergyBase"] = "_FreeEnergyBase"
-
+    protocol_settings: Union[
+        RelativeHybridTopologySettings, NonEquilibriumCyclingSettings
+    ] = Field(
+        RelativeHybridTopologySettings.from_defaults(),
+        description="The settings of the protocol which is to be"
+        "used. The protocol is determined by the settings provided.",
+    )
     solvent_settings: SolventSettings = Field(
         SolventSettings(),
         description="The solvent settings which should be used during the free energy calculations.",
-    )
-    forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
-        settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.2.0.offxml"
-        ),
-        description="The force field settings used to parameterize the systems.",
-    )
-    thermo_settings: settings.ThermoSettings = Field(
-        settings.ThermoSettings(
-            temperature=298.15 * OFFUnit.kelvin, pressure=1 * OFFUnit.bar
-        ),
-        description="The settings for thermodynamic parameters.",
-    )
-    solvation_settings: OpenMMSolvationSettings = Field(
-        OpenMMSolvationSettings(box_shape="dodecahedron"),
-        description="Settings controlling how the systems should be solvated using OpenMM.",
-    )
-    alchemical_settings: AlchemicalSettings = Field(
-        AlchemicalSettings(softcore_LJ="gapsys"),
-        description="The alchemical protocol settings.",
-    )
-    engine_settings: OpenMMEngineSettings = Field(
-        OpenMMEngineSettings(), description="Openmm platform settings."
-    )
-    integrator_settings: IntegratorSettings = Field(
-        IntegratorSettings(),
-        description="Settings for the LangevinSplittingDynamicsMove integrator.",
-    )
-    simulation_settings: MultiStateSimulationSettings = Field(
-        MultiStateSimulationSettings(
-            equilibration_length=1.0 * OFFUnit.nanoseconds,
-            production_length=5.0 * OFFUnit.nanoseconds,
-            time_per_iteration=1 * OFFUnit.picoseconds,
-        ),
-        description="Settings for simulation control, including lengths and writing to disk.",
     )
     adaptive_settings: Optional[AdaptiveSettings] = Field(
         AdaptiveSettings(),
         description="Run adaptive settings depending on e.g. expected edge reliability or system phase.",
     )
-    protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
-        "RelativeHybridTopologyProtocol",
-        description="The name of the OpenFE alchemical protocol to use.",
-    )
-    protocol_repeats: int = Field(
-        1,
-        description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
-    )
-    lambda_settings: LambdaSettings = Field(
-        LambdaSettings(), description="Lambda schedule settings."
-    )
 
-    partial_charge_settings: OpenFFPartialChargeSettings = Field(
-        OpenFFPartialChargeSettings(),
-        description="The method which should be used to generate the partial charges if not provided with the ligand.",
-    )
-    output_settings: MultiStateOutputSettings = Field(
-        MultiStateOutputSettings(),
-        description="Settings for MultiState simulation output settings like writing to disk.",
-    )
+    @classmethod
+    def with_protocol_defaults(cls, protocol: SupportedProtocols):
 
-    def to_openfe_protocol(self):
-        protocol_settings = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings(
-            # workaround type hint being base FF engine class
-            forcefield_settings=self.forcefield_settings,
-            thermo_settings=self.thermo_settings,
-            # system_settings=self.system_settings,
-            solvation_settings=self.solvation_settings,
-            alchemical_settings=self.alchemical_settings,
-            # alchemical_sampler_settings=self.alchemical_sampler_settings,
-            engine_settings=self.engine_settings,
-            integrator_settings=self.integrator_settings,
-            simulation_settings=self.simulation_settings,
-            lambda_settings=self.lambda_settings,
-            protocol_repeats=self.protocol_repeats,
-            partial_charge_settings=self.partial_charge_settings,
-            output_settings=self.output_settings,
-        )
-        return openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol(
-            settings=protocol_settings
-        )
+        if protocol is SupportedProtocols.NonEquilibriumCyclingProtocol:
+            from asapdiscovery.alchemy.schema.fec.protocols.nonequilibriumcycling import (
+                NonEquilibriumCyclingSettings,
+            )
+
+            return cls(
+                protocol_settings=NonEquilibriumCyclingSettings.from_defaults(),
+            )
+        elif protocol is SupportedProtocols.RelativeHybridTopologyProtocol:
+            from asapdiscovery.alchemy.schema.fec.protocols.relativehybridtopology import (
+                RelativeHybridTopologySettings,
+            )
+
+            return cls(
+                protocol_settings=RelativeHybridTopologySettings.from_defaults(),
+            )
 
 
 class FreeEnergyCalculationNetwork(_FreeEnergyBase):
@@ -449,7 +363,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         ligand_network = self.network.to_ligand_network()
         solvent = self.solvent_settings.to_solvent_component()
         receptor = self.to_openfe_receptor()
-        protocol = self.to_openfe_protocol()
+        protocol = self.protocol_settings.to_openfe_protocol()
 
         # build the network
         for mapping in ligand_network.edges:
@@ -493,7 +407,8 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                 transformation = openfe.Transformation(
                     stateA=system_a,
                     stateB=system_b,
-                    mapping={"ligand": mapping},
+                    # provide a single mapping
+                    mapping=mapping,
                     protocol=edge_protocol,  # use protocol created above
                     name=f"{system_a.name}_{system_b.name}",
                 )
@@ -520,7 +435,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         from openff.units import unit
 
         # get the name of the base ff and load it
-        ff_string = self.forcefield_settings.small_molecule_forcefield
+        ff_string = self.protocol_settings.forcefield_settings.small_molecule_forcefield
         if ".offxml" not in ff_string:
             ff_string += ".offxml"
         ff = ForceField(ff_string)
@@ -607,6 +522,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
             ligands: The list of prepared and state enumerated ligands to use in the FEC calculation.
             central_ligand: An optional ligand which should be considered as the center only needed for radial networks.
                 Note this ligand will be deduplicated from the list if it appears in both.
+            graphml: The optional pre-planned OpenFE LigandNetwork which should be used to create this network.
             experimental_protocol: The name of the experimental protocol in the CDD vault that should be
                 associated with this Alchemy network.
             target: The name of the biological target associated with this Alchemy network.

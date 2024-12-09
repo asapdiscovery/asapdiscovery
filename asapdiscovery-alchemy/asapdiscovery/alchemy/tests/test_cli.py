@@ -31,22 +31,74 @@ def click_success(result):
     return result.exit_code == 0
 
 
-def test_alchemy_create(tmpdir):
+@pytest.mark.parametrize(
+    "protocol, expected_settings",
+    [
+        pytest.param(None, "RelativeHybridTopologySettings", id="default protocol"),
+        pytest.param(
+            "RelativeHybridTopologyProtocol",
+            "RelativeHybridTopologySettings",
+            id="RelativeHybridTopologySettings",
+        ),
+        pytest.param(
+            "NonEquilibriumCyclingProtocol",
+            "NonEquilibriumCyclingSettings",
+            id="NonEquilibriumCyclingSettings",
+        ),
+    ],
+)
+def test_alchemy_create(tmpdir, protocol, expected_settings):
     """Test making a workflow file using the cli"""
 
     runner = CliRunner()
 
     with tmpdir.as_cwd():
+        protocol_cmd = ["-ap", protocol] if protocol is not None else []
         result = runner.invoke(
             alchemy,
-            ["create", "workflow.json"],
+            ["create", *protocol_cmd, "workflow.json"],
         )
         assert result.exit_code == 0
         # make sure we can load the factory
-        _ = FreeEnergyCalculationFactory.from_file("workflow.json")
+        factory = FreeEnergyCalculationFactory.from_file("workflow.json")
+        # check that we have the correct protocol
+        assert factory.protocol_settings.type == expected_settings
+        # make sure our generic settings are updated
+        assert (
+            factory.protocol_settings.forcefield_settings.small_molecule_forcefield
+            == "openff-2.2.0"
+        )
+        assert (
+            factory.protocol_settings.thermo_settings.temperature.m_as("kelvin")
+            == 298.15
+        )
+        # need to use approx for precision issues in the conversion
+        assert (
+            pytest.approx(
+                factory.protocol_settings.thermo_settings.pressure.m_as("bar")
+            )
+            == 1.0
+        )
 
 
-def test_alchemy_plan_from_raw(tmpdir, tyk2_protein, tyk2_ligands):
+@pytest.mark.parametrize(
+    "protocol, expected_type",
+    [
+        pytest.param(
+            "RelativeHybridTopologyProtocol",
+            "RelativeHybridTopologySettings",
+            id="RelativeHybridTopologySettings",
+        ),
+        pytest.param(
+            "NonEquilibriumCyclingProtocol",
+            "NonEquilibriumCyclingSettings",
+            id="NonEquilibriumCyclingSettings",
+        ),
+    ],
+)
+def test_alchemy_plan_from_raw(
+    tmpdir, tyk2_protein, tyk2_ligands, protocol, expected_type
+):
     """Make sure we can plan networks using the CLI"""
 
     runner = CliRunner()
@@ -70,6 +122,8 @@ def test_alchemy_plan_from_raw(tmpdir, tyk2_protein, tyk2_ligands):
                 "tyk2_ligands.sdf",
                 "-r",
                 "tyk2_protein.pdb",
+                "-ap",
+                protocol,
             ],
         )
         assert click_success(result)
@@ -79,6 +133,12 @@ def test_alchemy_plan_from_raw(tmpdir, tyk2_protein, tyk2_ligands):
         )
         # make sure all ligands are in the network
         assert len(network.network.ligands) == len(tyk2_ligands)
+        # make sure the default protocol is used
+        assert network.protocol_settings.type == expected_type
+        assert (
+            f"Creating default FreeEnergyCalculationFactory with protocol {protocol}"
+            in result.stdout
+        )
 
 
 def test_alchemy_plan_from_alchemy_dataset(tmpdir):
@@ -531,7 +591,7 @@ def test_alchemy_status_all(monkeypatch):
     monkeypatch.setenv("ALCHEMISCALE_KEY", "my-key")
 
     network_key = ScopedKey(
-        gufe_key="fakenetwork",
+        gufe_key="A-fakenetwork",
         org="asap",
         campaign="alchemy",
         project="testing",
@@ -579,7 +639,7 @@ def test_alchemy_status_all(monkeypatch):
         in result.stdout
     )
     assert (
-        "│ fakenetwork-asap-alchemy-testing │ 1   │ 2  │ 3   │ 0  │ 0   │ 0  │ 5   │ 1  │"
+        "│ A-fakenetwork-asap-alchemy-testing │ 1  │ 2  │ 3  │ 0  │ 0   │ 0  │ 5   │ 1  │"
         in result.stdout
     )
 
@@ -1348,7 +1408,7 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
             assert ligand.bespoke_parameters is not None
             assert (
                 ligand.bespoke_parameters.base_force_field
-                == tyk2_network.forcefield_settings.small_molecule_forcefield
+                == tyk2_network.protocol_settings.forcefield_settings.small_molecule_forcefield
             )
             parameter = ligand.bespoke_parameters.parameters[0]
             assert parameter.smirks == "[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]"

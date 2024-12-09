@@ -4,6 +4,7 @@ from typing import Optional
 
 import click
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
+from asapdiscovery.alchemy.schema.fec.protocols import SupportedProtocols
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TagEnumBase,
     TargetTags,
@@ -21,13 +22,21 @@ def alchemy():
 
 @alchemy.command(
     help_priority=1,
-    short_help="Create a new free energy perturbation factory with default settings and save it to JSON file.",
+    short_help="Create a new free energy perturbation factory with default settings for the given protocol "
+    "and save it to JSON file.",
+)
+@click.option(
+    "-ap",
+    "--alchemical-protocol",
+    type=click.Choice([e.value for e in SupportedProtocols], case_sensitive=True),
+    help="The name of the alchemical Protocol to use for all Transformations in this network.",
+    default="RelativeHybridTopologyProtocol",
 )
 @click.argument(
     "filename",
     type=click.Path(exists=False, file_okay=True, dir_okay=False, writable=True),
 )
-def create(filename: str):
+def create(alchemical_protocol: str, filename: str):
     """
     Create a new free energy perturbation factory with default settings and save it to JSON file.
 
@@ -36,7 +45,11 @@ def create(filename: str):
     """
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
 
-    factory = FreeEnergyCalculationFactory()
+    alchemical_protocol = SupportedProtocols[alchemical_protocol]
+
+    factory = FreeEnergyCalculationFactory.with_protocol_defaults(
+        protocol=alchemical_protocol
+    )
     factory.to_file(filename=filename)
 
 
@@ -106,7 +119,15 @@ def create(filename: str):
     help="The name of the biological target associated with this workflow.",
     type=click.Choice(TargetTags.get_values(), case_sensitive=True),
 )
+@click.option(
+    "-ap",
+    "--alchemical-protocol",
+    type=click.Choice([e.value for e in SupportedProtocols], case_sensitive=True),
+    help="The name of the alchemical Protocol to use for all Transformations in this network.",
+    default="RelativeHybridTopologyProtocol",
+)
 def plan(
+    alchemical_protocol: str,
     name: Optional[str] = None,
     receptor: Optional[str] = None,
     ligands: Optional[str] = None,
@@ -146,13 +167,19 @@ def plan(
             "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
         )
 
-    click.echo("Loading FreeEnergyCalculationFactory ...")
-    # parse the factory is supplied else get the default
+    # parse the factory if supplied else get the default with the supplied protocol
+    # TODO should the provided protocol overwrite the factory file defined protocol?
     if factory_file is not None:
+        click.echo(f"Loading FreeEnergyCalculationFactory from {factory_file}")
         factory = FreeEnergyCalculationFactory.from_file(factory_file)
 
     else:
-        factory = FreeEnergyCalculationFactory()
+        click.echo(
+            f"Creating default FreeEnergyCalculationFactory with protocol {alchemical_protocol}"
+        )
+        factory = FreeEnergyCalculationFactory.with_protocol_defaults(
+            protocol=SupportedProtocols[alchemical_protocol]
+        )
 
     if alchemy_dataset is not None:
         import tempfile
@@ -612,7 +639,7 @@ def status(
         if network_key:
             if Path(network).exists():
                 click.echo(
-                    f"Network key provided: {network_key}, prefering over network file {network}."
+                    f"Network key provided: {network_key}, preferring over network file {network}."
                 )
 
         else:
