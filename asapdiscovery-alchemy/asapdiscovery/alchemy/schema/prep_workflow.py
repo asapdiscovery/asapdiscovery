@@ -248,6 +248,31 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         return final_ligands
 
     @staticmethod
+    def _remove_charge_fails(
+        posed_ligands: list[Ligand], charge_issue_ligands: list[Ligand]
+    ) -> list[Ligand]:
+        """
+        A helper method to remove ligands from the posed list which are in the charge issue list.
+
+        Args:
+            posed_ligands: A list of posed ligands which should be filtered.
+            charge_issue_ligands: The list of ligands with charge issues which should be removed from the posed list.
+
+        Returns:
+            A list of posed ligands which have correct and consistent stereo.
+        """
+        # we need to carefully remove the molecules from the posed_ligands list
+        failed_hash = [
+            ligand.provenance.fixed_inchikey for ligand in charge_issue_ligands
+        ]
+        final_ligands = [
+            mol
+            for mol in posed_ligands
+            if mol.provenance.fixed_inchikey not in failed_hash
+        ]
+        return final_ligands
+
+    @staticmethod
     def _deduplicate_experimental_ligands(
         posed_ligands: list[Ligand], experimental_ligands: list[Ligand]
     ) -> list[Ligand]:
@@ -345,7 +370,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             console.line()
 
         # now run the pose generation stage
-        pose_status = console.status(
+        console.print(
             f"Generating constrained poses using {self.pose_generator.type} for {len(ligands)} ligands."
         )
         # check for stereo in the reference ligand
@@ -355,7 +380,6 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             )
             console.line()
 
-        pose_status.start()
         pose_result = self.pose_generator.generate_poses(
             prepared_complex=reference_complex,
             ligands=ligands,
@@ -367,7 +391,6 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         # save any failed ligands
         if pose_result.failed_ligands:
             failed_ligands[self.pose_generator.type] = pose_result.failed_ligands
-        pose_status.stop()
         console.print(
             f"[[green]✓[/green]] Pose generation successful for {len(pose_result.posed_ligands)}/{len(ligands)}."
         )
@@ -412,18 +435,18 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             )
             sort_status.stop()
 
-            pose_status = console.status(
+            console.print(
                 f"Generating constrained poses using {self.pose_generator.type} for {self.n_references} reference"
                 "  ligands."
             )
-            pose_status.start()
+
             # use the wrapper to keep generating poses until we have the correct number
             posed_refs = self.pose_experimental_molecules(
                 reference_complex=reference_complex,
                 experimental_ligands=sorted_exp_ligands,
                 processors=processors,
             )
-            pose_status.stop()
+
             console.print(
                 f"[[green]✓[/green]] Pose generation successful for {len(posed_refs)}/{self.n_references} experimental "
                 "ligands:"
@@ -442,21 +465,23 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
 
         # Generate charges locally if requested
         if self.charge_method is not None:
-            charge_status = console.status(
-                f"Generating charges locally using {self.charge_method}"
-            )
-            charge_status.start()
+            console.print(f"Generating charges locally using {self.charge_method}")
 
-            posed_ligands = self.charge_method.generate_charges(
+            posed_ligands, charge_fails = self.charge_method.generate_charges(
                 ligands=posed_ligands, processors=processors
             )
+            if charge_fails:
+                # add the new fails to the rest
+                failed_ligands["ChargeFail"] = charge_fails
+                posed_ligands = AlchemyPrepWorkflow._remove_charge_fails(
+                    posed_ligands=posed_ligands, charge_issue_ligands=charge_fails
+                )
             provenance[self.charge_method.type] = self.charge_method.provenance()
 
             message = Padding(
-                "[[green]✓[/green]] Charges successfully generated.",
+                f"[[green]✓[/green]] Charges successfully generated for {len(posed_ligands)} ligands.",
                 (1, 0, 1, 0),
             )
-            charge_status.stop()
             console.print(message)
 
         # gather the results

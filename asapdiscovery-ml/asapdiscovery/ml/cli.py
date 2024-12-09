@@ -15,6 +15,7 @@ from asapdiscovery.ml.cli_args import (
     gat_args,
     graph_ds_args,
     grouped,
+    kvp_list_to_dict,
     loss_args,
     model_config_cache,
     model_rand_seed,
@@ -39,7 +40,6 @@ from asapdiscovery.ml.config import (
     DatasetConfig,
     DatasetSplitterType,
     EarlyStoppingType,
-    LossFunctionType,
     OptimizerType,
 )
 from asapdiscovery.ml.trainer import Trainer
@@ -120,7 +120,7 @@ def build_gat(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -161,10 +161,11 @@ def build_gat(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -181,7 +182,6 @@ def build_gat(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
     s3_path: str | None = None,
     upload_to_s3: bool | None = None,
 ):
@@ -256,17 +256,10 @@ def build_gat(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -279,7 +272,9 @@ def build_gat(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -322,6 +317,7 @@ def build_gat(
 @loss_args
 @trainer_args
 @overwrite_args
+@s3_args
 def build_schnet(
     output_dir: Path | None = None,
     save_weights: str | None = None,
@@ -340,7 +336,7 @@ def build_schnet(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -383,10 +379,11 @@ def build_schnet(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -403,7 +400,6 @@ def build_schnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
     s3_path: str | None = None,
     upload_to_s3: bool | None = None,
 ):
@@ -482,17 +478,10 @@ def build_schnet(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -505,7 +494,9 @@ def build_schnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -567,7 +558,7 @@ def build_e3nn(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -611,10 +602,11 @@ def build_e3nn(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -631,7 +623,6 @@ def build_e3nn(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
     s3_path: str | None = None,
     upload_to_s3: bool | None = None,
 ):
@@ -711,17 +702,10 @@ def build_e3nn(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -734,7 +718,9 @@ def build_e3nn(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -761,6 +747,7 @@ def build_e3nn(
 @build.command(name="visnet")
 @output_dir
 @save_weights
+@weights_path
 @trainer_config_cache
 @optim_args
 @model_config_cache
@@ -780,6 +767,7 @@ def build_e3nn(
 def build_visnet(
     output_dir: Path | None = None,
     save_weights: str | None = None,
+    weights_path: Path | None = None,
     trainer_config_cache: Path | None = None,
     optimizer_type: OptimizerType | None = None,
     lr: float | None = None,
@@ -794,7 +782,7 @@ def build_visnet(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -843,10 +831,11 @@ def build_visnet(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -863,7 +852,6 @@ def build_visnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
     s3_path: str | None = None,
     upload_to_s3: bool | None = None,
 ):
@@ -886,6 +874,7 @@ def build_visnet(
         "overwrite_cache": overwrite_model_config_cache,
         "model_type": ModelType.visnet,
         "rand_seed": model_rand_seed,
+        "weights_path": weights_path,
         "grouped": grouped,
         "strategy": strategy,
         "pred_readout": pred_readout,
@@ -941,22 +930,16 @@ def build_visnet(
         "cache": ds_split_config_cache,
         "overwrite_cache": overwrite_ds_split_config_cache,
         "split_type": ds_split_type,
+        "grouped": grouped,
         "train_frac": train_frac,
         "val_frac": val_frac,
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -969,7 +952,9 @@ def build_visnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -1030,7 +1015,7 @@ def build_and_train_gat(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -1071,10 +1056,11 @@ def build_and_train_gat(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -1091,7 +1077,6 @@ def build_and_train_gat(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
     s3_path: str | None = None,
     upload_to_s3: bool | None = None,
 ):
@@ -1166,17 +1151,10 @@ def build_and_train_gat(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -1189,7 +1167,9 @@ def build_and_train_gat(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -1256,7 +1236,7 @@ def build_and_train_schnet(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -1299,10 +1279,11 @@ def build_and_train_schnet(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -1319,7 +1300,6 @@ def build_and_train_schnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
     s3_path: str | None = None,
     upload_to_s3: bool | None = None,
 ):
@@ -1398,17 +1378,10 @@ def build_and_train_schnet(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -1421,7 +1394,9 @@ def build_and_train_schnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -1488,7 +1463,7 @@ def build_and_train_e3nn(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -1532,10 +1507,11 @@ def build_and_train_e3nn(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -1552,7 +1528,6 @@ def build_and_train_e3nn(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
     s3_path: str | None = None,
     upload_to_s3: bool | None = None,
 ):
@@ -1632,17 +1607,10 @@ def build_and_train_e3nn(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -1655,7 +1623,9 @@ def build_and_train_e3nn(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -1720,7 +1690,7 @@ def build_and_train_visnet(
     use_wandb: bool | None = None,
     wandb_project: str | None = None,
     wandb_name: str | None = None,
-    extra_config: list[str] | None = None,
+    extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
     pred_readout: ReadoutConfig | None = None,
@@ -1769,10 +1739,11 @@ def build_and_train_visnet(
     test_frac: float | None = None,
     enforce_one: bool | None = None,
     ds_rand_seed: int | None = None,
+    ds_split_dict: Path | None = None,
     ds_split_config_cache: Path | None = None,
-    loss_type: LossFunctionType | None = None,
-    semiquant_fill: float | None = None,
-    loss_config_cache: Path | None = None,
+    loss: tuple[str] = (),
+    loss_weights: tuple[float] = (),
+    eval_loss_weights: tuple[float] = (),
     auto_init: bool | None = None,
     start_epoch: int | None = None,
     n_epochs: int | None = None,
@@ -1789,7 +1760,6 @@ def build_and_train_visnet(
     overwrite_ds_config_cache: bool = False,
     overwrite_ds_cache: bool = False,
     overwrite_ds_split_config_cache: bool = False,
-    overwrite_loss_config_cache: bool = False,
     s3_path: str | None = None,
     upload_to_s3: bool | None = None,
 ):
@@ -1873,17 +1843,10 @@ def build_and_train_visnet(
         "test_frac": test_frac,
         "enforce_one": enforce_one,
         "rand_seed": ds_rand_seed,
+        "split_dict": ds_split_dict,
     }
-    loss_config = {
-        "cache": loss_config_cache,
-        "overwrite_cache": overwrite_loss_config_cache,
-        "loss_type": loss_type,
-        "semiquant_fill": semiquant_fill,
-    }
-    data_aug_configs = [
-        {kv.split(":")[0]: kv.split(":")[1] for kv in aug_str.split(",")}
-        for aug_str in data_aug
-    ]
+    loss_configs = [kvp_list_to_dict(loss_str) for loss_str in loss]
+    data_aug_configs = [kvp_list_to_dict(aug_str) for aug_str in data_aug]
 
     # Parse loss_dict
     if loss_dict:
@@ -1896,7 +1859,9 @@ def build_and_train_visnet(
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
-        "loss_config": loss_config,
+        "loss_configs": loss_configs,
+        "loss_weights": loss_weights,
+        "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
@@ -2168,7 +2133,11 @@ def _build_ds_config(
         "for_e3nn": for_e3nn,
         "overwrite": pkl_overwrite,
     }
-    config_kwargs = {k: v for k, v in config_kwargs.items() if v is not None}
+    config_kwargs = {
+        k: v
+        for k, v in config_kwargs.items()
+        if not ((v is None) or (isinstance(v, tuple) and len(v) == 0))
+    }
 
     # Pick correct DatasetType
     if is_structural:
@@ -2222,7 +2191,11 @@ def _build_trainer(
     """
 
     # Filter out None Trainer kwargs
-    trainer_kwargs = {k: v for k, v in trainer_kwargs.items() if v is not None}
+    trainer_kwargs = {
+        k: v
+        for k, v in trainer_kwargs.items()
+        if not ((v is None) or (isinstance(v, tuple) and len(v) == 0))
+    }
 
     # If we got a config for the Trainer, load those args and merge with CLI args
     if trainer_config_cache and trainer_config_cache.exists():
@@ -2239,9 +2212,14 @@ def _build_trainer(
                     {
                         k: v
                         for k, v in trainer_kwargs[config_name].items()
-                        if v is not None
+                        if not ((v is None) or (isinstance(v, tuple) and len(v) == 0))
                     }
                 )
+            elif (isinstance(config_val, list) or isinstance(config_val, tuple)) and (
+                len(trainer_kwargs[config_name]) == 0
+            ):
+                # If no values are passed to CLI keep config values
+                pass
             else:
                 config_trainer_kwargs[config_name] = trainer_kwargs[config_name]
 

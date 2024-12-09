@@ -86,6 +86,9 @@ class Sweeper(Trainer):
         Parse the W&B sweep config and update the internal config objects appropriately.
         """
 
+        # Clone self into a dict so we can update stuff
+        new_trainer_dict = self.dict()
+
         # Decompose parameter names into nested dict
         config_update_dict = {}
         for k, v in wandb.config.items():
@@ -101,17 +104,21 @@ class Sweeper(Trainer):
         # Loop through keys and try to update configs
         failed_configs = []
         for config_name, config_d in config_update_dict.items():
-            try:
-                orig_config = getattr(self, config_name)
-            except AttributeError:
+            if config_name not in new_trainer_dict:
                 failed_configs.append(config_name)
+                continue
 
-            setattr(self, config_name, orig_config.update(config_d))
+            try:
+                new_trainer_dict[config_name].update(config_d)
+            except AttributeError:
+                new_trainer_dict[config_name] = config_d
 
         if len(failed_configs) > 0:
             raise AttributeError(
                 f"Could not assign values for these keys: {failed_configs}"
             )
+
+        return Sweeper(**new_trainer_dict)
 
     @staticmethod
     def _sweep_dispatch(sweeper: "Sweeper"):
@@ -136,7 +143,7 @@ class Sweeper(Trainer):
         sweeper.output_dir = sweeper.output_dir / run_id
 
         # Update internal configs from sweep config
-        sweeper._update_from_wandb_config()
+        sweeper = sweeper._update_from_wandb_config()
 
         # Update W&B config to include everything from all the Trainer configs
         # Don't serialize input_data for confidentiality/size reasons
@@ -146,11 +153,22 @@ class Sweeper(Trainer):
         config["ds_config"] = ds_config
         wandb.config.update(config)
 
+        # Get Trainer config dict (before initialization so we don't have extra stuff)
+        trainer_config_dict = sweeper.dict()
+        # Get rid of Sweeper-specific args
+        del trainer_config_dict["sweep_config"]
+        del trainer_config_dict["force_new_sweep"]
+
         # Temporarily un-set use_wandb flag to avoid confusing the initialize method
         sweeper.use_wandb = False
         # Run initialize to build all the objects
         sweeper.initialize()
         sweeper.use_wandb = True
+
+        # Update output directory to save in sweep run id dir
+        trainer_config_dict["output_dir"] = sweeper.output_dir
+        t = Trainer(**trainer_config_dict)
+        (sweeper.output_dir / "trainer.json").write_text(t.json())
 
         # Log dataset splits
         for split, table in zip(

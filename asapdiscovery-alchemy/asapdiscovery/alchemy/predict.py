@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import panel
 import plotmol
+from asapdiscovery.data.schema.ligand import Ligand
 from bokeh.models import Band, ColumnDataSource, Range1d, Whisker
 from cinnabar import stats
 from openff.units import unit
@@ -775,7 +776,7 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
     plotting_df = dataframe.dropna(axis=0, inplace=False)
     plotting_df.reset_index(inplace=True)
     # only make the plot if we have exp data and more than one point
-    if len(plotting_df) > 1 and "DG (kcal/mol) (EXPT)" in plotting_df.columns:
+    if len(plotting_df) > 3 and "DG (kcal/mol) (EXPT)" in plotting_df.columns:
 
         # add pIC50 columns beside DG
         add_pic50_columns(plotting_df)
@@ -888,7 +889,7 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
     number_format = bokeh.models.widgets.tables.NumberFormatter(format="0.0000")
     # only plot the graph if we have exp data and more than a single point
     make_plots_stats = (
-        len(plotting_df) > 1 and "DDG (kcal/mol) (EXPT)" in plotting_df.columns
+        len(plotting_df) > 3 and "DDG (kcal/mol) (EXPT)" in plotting_df.columns
     )
 
     if make_plots_stats:
@@ -1001,6 +1002,7 @@ def clean_result_network(network, console=None):
 
     returns the loaded FreeEnergyCalculationNetwork.
     """
+    import math
     from collections import defaultdict
 
     import numpy as np
@@ -1046,21 +1048,64 @@ def clean_result_network(network, console=None):
             tf_res = results[0]
 
         deduped_results.append(tf_res)
-
     num_dupes_removed = len(cleaned_results) - len(deduped_results)
+
+    # remove predictions that have a NaN as either prediction or unc - this is extremely rare
+    denand_results = []
+    for result in deduped_results:
+        if not math.isnan(result.estimate.magnitude) and not math.isnan(
+            result.uncertainty.magnitude
+        ):
+            denand_results.append(result)
+
     if console:
         message = Padding(
-            f"Cleaned incoming result network. Removed {num_0_0_removed} edges with DG==0.0 kcal/mol and removed {num_dupes_removed} edges to balance between complex/solvent replicates.",
+            f"Cleaned incoming result network:\n- Removed {num_0_0_removed} edge(s) with DG==0.0 kcal/mol\n- Removed {num_dupes_removed} edge(s) to balance between complex/solvent replicates.\n- Removed {len(deduped_results)-len(denand_results)} edge(s) that contained a NaN measurement",
             (1, 0, 1, 0),
         )
         console.print(message)
     data = network_schema.dict(exclude={"results"})
     # unpack the deduped results into dicts
     results = AlchemiscaleResults(
-        results=deduped_results, network_key=network_schema.results.network_key
+        results=denand_results, network_key=network_schema.results.network_key
     ).dict()
     data["results"] = results
 
     fec = FreeEnergyCalculationNetwork.parse_obj(data)
-    # fec.results = deduped_results
+
     return fec
+
+
+def get_top_n_poses(
+    absolute_df, ligands, top_n, console=False, write_file=True
+) -> list[Ligand]:
+    """
+    Takes the `top_n` number of ligands from the FE predictions and creates a list of `Ligand` objects.
+    If specified, will write a multi-SDF file of those ligands into the local directory while logging this.
+    """
+
+    from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
+    from rich.padding import Padding
+
+    # get a dict of ligands so we can more easily grab them by name
+    ligands_dict = {ligand.compound_name: ligand for ligand in ligands}
+
+    # write out each compound of the top n to the multi-SDF
+    top_n_ligands = []
+    if top_n > len(absolute_df):  # cap the slice to the max number of predictions
+        top_n = len(absolute_df)
+
+    docked_hits_path = f"top_{top_n}_posed_ligands.sdf"
+    for compound_name in absolute_df.sort_values(by="DG (kcal/mol) (FECS)")["label"][
+        :top_n
+    ]:
+        top_n_ligands.append(ligands_dict[compound_name])
+    if write_file:
+        write_ligands_to_multi_sdf(docked_hits_path, top_n_ligands, overwrite=True)
+        if console:
+            message = Padding(
+                f"Top {top_n} compound poses written to [repr.filename]{docked_hits_path}[/repr.filename]",
+                (1, 0, 1, 0),
+            )
+            console.print(message)
+    return top_n_ligands

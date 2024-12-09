@@ -55,6 +55,22 @@ class POSITDockingResults(DockingResult):
 
     type: Literal["POSITDockingResults"] = "POSITDockingResults"
 
+    def _get_single_pose_results(self) -> list["POSITDockingResults"]:
+        """
+        Since Ligand can contain multiple poses, but our scoring methods don't (as of 2024.04.24) support
+        multiple poses, it's useful to have a method that can get single pose docking results.
+        """
+        return [
+            POSITDockingResults(
+                input_pair=self.input_pair,
+                posed_ligand=lig,
+                probability=lig.tags[DockingResultCols.DOCKING_CONFIDENCE_POSIT.value],
+                provenance=self.provenance,
+                pose_id=lig.tags["Pose_ID"],
+            )
+            for lig in self.posed_ligand.to_single_conformers()
+        ]
+
     @staticmethod
     def make_df_from_docking_results(results: list["DockingResult"]):
         """
@@ -124,9 +140,9 @@ class POSITDocker(DockingBase):
         False, description="Use dense conformer generation with omega"
     )
     num_poses: PositiveInt = Field(1, description="Number of poses to generate")
-    allow_low_posit_prob: bool = Field(False, description="Allow low posit probability")
+    allow_low_posit_prob: bool = Field(True, description="Allow low posit probability")
     low_posit_prob_thresh: float = Field(
-        0.1,
+        0.0,
         description="Minimum posit probability threshold if allow_low_posit_prob is False",
     )
     allow_final_clash: bool = Field(
@@ -135,6 +151,9 @@ class POSITDocker(DockingBase):
     allow_retries: bool = Field(
         True,
         description="Allow retries with different options if docking fails initially",
+    )
+    last_ditch_fred: bool = Field(
+        False, description="Use pure FRED docking as a last ditch effort"
     )
 
     @root_validator
@@ -208,26 +227,31 @@ class POSITDocker(DockingBase):
 
         for set in inputs:
             try:
-                if output_dir is not None:
-                    docked_result_json_path = Path(
-                        Path(output_dir) / set.unique_name / "docking_result.json"
-                    )
+                # make sure its a path
+                output_dir = Path(output_dir) if output_dir is not None else None
 
-                if (
-                    set.is_cacheable
-                    and (output_dir is not None)
-                    and (docked_result_json_path.exists())
-                ):
+                if output_dir is not None:
+                    docked_result_path = Path(Path(output_dir) / set.unique_name)
+
+                    jsons = list(
+                        docked_result_path.glob("docking_result_*.json")
+                    )  # can be multiple poses
+
+                # first check if output exists
+                if set.is_cacheable and (output_dir is not None) and (len(jsons) > 0):
                     logger.info(
                         f"Docking result for {set.unique_name} already exists, reading from disk"
                     )
-                    output_dir = Path(output_dir)
-                    if return_for_disk_backend:
-                        docking_results.append(docked_result_json_path)
-                    else:
-                        docking_results.append(
-                            POSITDockingResults.from_json_file(docked_result_json_path)
-                        )
+                    for docked_result_json_path in jsons:
+                        if return_for_disk_backend:
+                            docking_results.append(docked_result_json_path)
+                        else:
+                            docking_results.append(
+                                POSITDockingResults.from_json_file(
+                                    docked_result_json_path
+                                )
+                            )
+                # run docking if output does not exist
                 else:
                     dus = set.to_design_units()
                     lig_oemol = oechem.OEMol(set.ligand.to_oemol())
@@ -298,8 +322,24 @@ class POSITDocker(DockingBase):
                                 opts, pose_res, dus, lig_oemol, self.num_poses
                             )
 
+                    # try again with FRED
+                    if (
+                        retcode != oedocking.OEDockingReturnCode_Success
+                        and self.last_ditch_fred
+                    ):
+                        opts_fred = oedocking.OEPositOptions()
+                        opts_fred.SetIgnoreNitrogenStereo(True)
+                        opts_fred.SetPositMethods(POSIT_METHOD.FRED)
+                        opts_fred.SetPoseRelaxMode(self.relax_mode.value)
+                        pose_res, retcode = self.run_oe_posit_docking(
+                            opts_fred, pose_res, dus, lig_oemol, self.num_poses
+                        )
+
                     if retcode == oedocking.OEDockingReturnCode_Success:
-                        for result in pose_res.GetSinglePoseResults():
+                        input_pairs = []
+                        posed_ligands = []
+                        num_poses = pose_res.GetNumPoses()
+                        for i, result in enumerate(pose_res.GetSinglePoseResults()):
                             posed_mol = result.GetPose()
                             prob = result.GetProbability()
 
@@ -312,30 +352,50 @@ class POSITDocker(DockingBase):
                                 DockingResultCols.POSIT_METHOD.value: oedocking.OEPositMethodGetName(
                                     result.GetPositMethod()
                                 ),
+                                "Pose_ID": i,
+                                "Num_Poses": num_poses,
                             }
                             posed_ligand.set_SD_data(sd_data)
+                            posed_ligands.append(posed_ligand)
 
                             # Generate info about which target was actually used by multi-reference docking
                             if isinstance(set, DockingInputMultiStructure):
                                 docked_target = set.complexes[result.GetReceptorIndex()]
-                                input_pair = DockingInputPair(
-                                    ligand=set.ligand, complex=docked_target
+                                input_pairs.append(
+                                    DockingInputPair(
+                                        ligand=set.ligand, complex=docked_target
+                                    )
                                 )
                             else:
-                                input_pair = set
+                                input_pairs.append(set)
 
-                            docking_result = POSITDockingResults(
-                                input_pair=input_pair,
-                                posed_ligand=posed_ligand,
-                                probability=prob,
-                                provenance=self.provenance(),
+                        # Create Docking Results Objects
+                        docking_results_objects = []
+                        for input_pair, posed_ligand in zip(input_pairs, posed_ligands):
+                            docking_results_objects.append(
+                                POSITDockingResults(
+                                    input_pair=input_pair,
+                                    posed_ligand=posed_ligand,
+                                    probability=posed_ligand.tags[
+                                        DockingResultCols.DOCKING_CONFIDENCE_POSIT.value
+                                    ],
+                                    provenance=self.provenance(),
+                                    pose_id=posed_ligand.tags["Pose_ID"],
+                                    num_poses=posed_ligand.tags["Num_Poses"],
+                                )
                             )
+                        # Now we can decide if we want to return a path to the json file or the actual object
+                        for docking_result in docking_results_objects:
+
+                            if output_dir is not None:
+                                json_path = docking_result.write_docking_files(
+                                    output_dir
+                                )
                             if return_for_disk_backend:
-                                docking_results.append(docked_result_json_path)
+                                docking_results.append(json_path)
                             else:
                                 docking_results.append(docking_result)
-                            if output_dir is not None:
-                                docking_result.write_docking_files(output_dir)
+
             except Exception as e:
                 error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name} with error: {e}"
                 if failure_mode == "skip":

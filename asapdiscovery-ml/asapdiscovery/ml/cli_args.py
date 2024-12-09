@@ -6,7 +6,6 @@ from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.config import (
     DatasetSplitterType,
     EarlyStoppingType,
-    LossFunctionType,
     OptimizerType,
 )
 from mtenn.config import CombinationConfig, ReadoutConfig, StrategyConfig
@@ -109,7 +108,6 @@ def overwrite_args(func):
         ds_config_cache_overwrite,
         ds_cache_overwrite,
         ds_split_config_cache_overwrite,
-        loss_config_cache_overwrite,
     ]:
         func = fn(func)
 
@@ -177,14 +175,6 @@ def ds_split_config_cache_overwrite(func):
         "--overwrite-ds-split-config-cache",
         is_flag=True,
         help="Overwrite any existing DatasetSplitterConfig JSON cache file.",
-    )(func)
-
-
-def loss_config_cache_overwrite(func):
-    return click.option(
-        "--overwrite-loss-config-cache",
-        is_flag=True,
-        help="Overwrite any existing LossFunctionConfig JSON cache file.",
     )(func)
 
 
@@ -1134,6 +1124,7 @@ def ds_split_args(func):
         test_frac,
         enforce_one,
         ds_rand_seed,
+        ds_split_dict,
         ds_split_config_cache,
     ]:
         func = fn(func)
@@ -1192,6 +1183,18 @@ def ds_rand_seed(func):
     )(func)
 
 
+def ds_split_dict(func):
+    return click.option(
+        "--ds-split-dict",
+        type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+        help=(
+            "JSON file containing the split dict to use in the case of manual "
+            'splitting. The dict should map the keys ["train", "val", "test"] '
+            "to lists containing the compounds that belong in each split."
+        ),
+    )(func)
+
+
 def ds_split_config_cache(func):
     return click.option(
         "--ds-split-config-cache",
@@ -1209,38 +1212,51 @@ def ds_split_config_cache(func):
 ################################################################################
 # Loss function args
 def loss_args(func):
-    for fn in [loss_type, semiquant_fill, loss_config_cache]:
+    for fn in [loss, loss_weights, eval_loss_weights]:
         func = fn(func)
 
     return func
 
 
-def loss_type(func):
+def loss(func):
     return click.option(
-        "--loss-type",
-        type=LossFunctionType,
+        "--loss",
+        type=str,
+        multiple=True,
         help=(
-            "Loss function to use. "
-            f"Options are [{', '.join(LossFunctionType.get_values())}]."
+            "Specifications for loss function(s) to use. Multiple can be passed, and "
+            "they will be weighted as specified with --loss-weights. Each individual "
+            "loss function should be specified as a comma separated list of "
+            "<key>:<value> pairs, which will be passed directly to the "
+            "LossFunctionConfig class. For example, to add a loss term that penalizes "
+            "predictions for being outside a normal pIC50 range, you could pass "
+            "--loss loss_type:range,range_lower_lim:0,range_upper_lim:10."
         ),
     )(func)
 
 
-def semiquant_fill(func):
+def loss_weights(func):
     return click.option(
-        "--semiquant-fill",
+        "--loss-weights",
         type=float,
-        help="Value to fill in for semiquant uncertainty values in gaussian_sq loss.",
+        multiple=True,
+        help=(
+            "Weights for each loss function. If no weights values are passed, each "
+            "loss term will be weighted equally. These args are assumed to be in the "
+            "same order as the --loss args that they correspond to."
+        ),
     )(func)
 
 
-def loss_config_cache(func):
+def eval_loss_weights(func):
     return click.option(
-        "--loss-config-cache",
-        type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+        "--eval-loss-weights",
+        type=float,
+        multiple=True,
         help=(
-            "LossFunctionConfig JSON cache file. Other loss function-related "
-            "args that are passed will supersede anything stored in this file."
+            "Weights for each loss function for val and test sets. If no values are "
+            "passed, will reuse the values from --loss-weights. These args are assumed "
+            "to be in the same order as the --loss args that they correspond to."
         ),
     )(func)
 
@@ -1374,6 +1390,30 @@ def sweep_start_only(func):
         default=False,
         help="Only start the sweep, don't run any training.",
     )(func)
+
+
+################################################################################
+
+
+################################################################################
+# Helper functions
+def kvp_list_to_dict(kvp_list_str):
+    """
+    Convert a string that consists of a comma-separated list of <key>:<value> pairs into
+    a dict.
+
+    Parameters
+    ----------
+    kvp_list_str : str
+        String from CLI containing key:value pairs
+
+    Returns
+    -------
+    dict
+        Python dict built from the input string
+    """
+
+    return {kvp.split(":")[0]: kvp.split(":")[1] for kvp in kvp_list_str.split(",")}
 
 
 ################################################################################

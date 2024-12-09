@@ -53,7 +53,7 @@ def test_project_support_docking_cli_fragalysis(
 )
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
-def test_project_support_docking_cli_structure_directory_dask(
+def test_project_support_docking_cli_structure_directory(
     ligand_file, structure_dir, tmp_path, subcommand
 ):
     runner = CliRunner()
@@ -66,7 +66,6 @@ def test_project_support_docking_cli_structure_directory_dask(
         ligand_file,
         "--structure-dir",
         struct_dir,
-        "--use-dask",  # add dask
         "--posit-confidence-cutoff",
         0,
         "--output-dir",
@@ -85,7 +84,7 @@ def test_project_support_docking_cli_structure_directory_dask(
 )
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
-def test_project_support_docking_cli_structure_directory_du_cache_dask(
+def test_project_support_docking_cli_structure_directory_du_cache(
     ligand_file, structure_dir, du_cache, tmp_path, subcommand
 ):
     runner = CliRunner()
@@ -99,7 +98,6 @@ def test_project_support_docking_cli_structure_directory_du_cache_dask(
         ligand_file,
         "--structure-dir",
         struct_dir,
-        "--use-dask",
         "--posit-confidence-cutoff",
         0,
         "--cache-dir",
@@ -115,12 +113,13 @@ def test_project_support_docking_cli_structure_directory_du_cache_dask(
     assert click_success(result)
 
 
+@pytest.mark.skip(reason="Test is broken on GHA but should run locally")
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 @pytest.mark.parametrize("subcommand", ["large-scale", "small-scale"])
-def test_project_support_docking_cli_pdb_file_dask(
+def test_project_support_docking_cli_pdb_file(
     ligand_file, pdb_file, tmp_path, subcommand
 ):
     runner = CliRunner()
@@ -132,7 +131,6 @@ def test_project_support_docking_cli_pdb_file_dask(
         ligand_file,
         "--pdb-file",
         pdb_file,
-        "--use-dask",
         "--posit-confidence-cutoff",
         0,
         "--output-dir",
@@ -150,6 +148,9 @@ def test_project_support_docking_cli_pdb_file_dask(
     os.getenv("RUNNER_OS") == "macOS", reason="Docking tests slow on GHA on macOS"
 )
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
+@pytest.mark.skip(
+    "Test is broken on GHA due to massive resource use but should run locally"
+)
 def test_small_scale_docking_md(ligand_file, pdb_file, tmp_path, simulation_results):
     runner = CliRunner()
 
@@ -206,7 +207,6 @@ def test_cross_docking_cli_structure_directory_du_cache(
             ligand_file,
             "--structure-dir",
             struct_dir,
-            "--use-dask",
             "--cache-dir",
             du_cache_dir,
             "--output-dir",

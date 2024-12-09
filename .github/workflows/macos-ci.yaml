@@ -31,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macOS-latest]
-        python-version: ["3.10"]
+        python-version: ["3.11"]
 
     env:
       OE_LICENSE: ${{ github.workspace }}/oe_license.txt
@@ -54,6 +54,10 @@ jobs:
     - name: Setup Conda Environment
       uses: mamba-org/setup-micromamba@v1
       with:
+        # default - will pull down 2.0 which we don't want!
+        # micromamba-version: latest
+        # pin to latest 1.x release
+        micromamba-version: '1.5.10-0'
         environment-file: devtools/conda-envs/asapdiscovery-${{ matrix.os }}.yml
         environment-name: asapdiscovery
         cache-environment: true
@@ -80,7 +84,7 @@ jobs:
         python -m pip install -e ./asapdiscovery-ml --no-deps
         python -m pip install -e ./asapdiscovery-modeling --no-deps
         python -m pip install -e ./asapdiscovery-simulation --no-deps
-        python -m pip install -e ./asapdiscovery-genetics --no-deps
+        python -m pip install -e ./asapdiscovery-spectrum --no-deps
         micromamba list
 
     - name: Run tests
@@ -99,7 +103,7 @@ jobs:
                        --cov=asapdiscovery-ml \
                        --cov=asapdiscovery-modeling \
                        --cov=asapdiscovery-simulation \
-                        --cov=asapdiscovery-genetics \
+                        --cov=asapdiscovery-spectrum \
                        asapdiscovery-alchemy/asapdiscovery/alchemy/tests \
                        asapdiscovery-data/asapdiscovery/data/tests \
                        asapdiscovery-dataviz/asapdiscovery/dataviz/tests \
@@ -107,7 +111,7 @@ jobs:
                        asapdiscovery-ml/asapdiscovery/ml/tests \
                        asapdiscovery-modeling/asapdiscovery/modeling/tests \
                        asapdiscovery-simulation/asapdiscovery/simulation/tests \
-                       asapdiscovery-genetics/asapdiscovery/genetics/tests
+                       asapdiscovery-spectrum/asapdiscovery/spectrum/tests
 
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v3

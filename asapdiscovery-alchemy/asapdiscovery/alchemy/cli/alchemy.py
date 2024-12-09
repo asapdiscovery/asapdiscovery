@@ -94,6 +94,12 @@ def create(alchemical_protocol: str, filename: str):
     help="The file which contains the center ligand, only required by radial type networks.",
 )
 @click.option(
+    "-g",
+    "--graphml",
+    help="Read a graphml representation of the ligand network directly from file",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+)
+@click.option(
     "-cn",
     "--custom-network-file",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
@@ -126,6 +132,7 @@ def plan(
     receptor: Optional[str] = None,
     ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
+    graphml: Optional[str] = None,
     custom_network_file: Optional[str] = None,
     factory_file: Optional[str] = None,
     alchemy_dataset: Optional[str] = None,
@@ -144,7 +151,18 @@ def plan(
     from asapdiscovery.data.readers.molfile import MolFileFactory
 
     # check mutually exclusive args
-    if ligands is None and alchemy_dataset is None:
+    if ligands and graphml:
+        raise RuntimeError(
+            "Please provide either a ligand file or a graphml file, not both."
+        )
+
+    if graphml and custom_network_file:
+        raise RuntimeError(
+            "Please provide either a graphml file or a custom network file, not both."
+        )
+
+    # nothing specified
+    if ligands is None and graphml is None and alchemy_dataset is None:
         raise RuntimeError(
             "Please provide either an AlchemyDataSet created with `asap-alchemy prep run` or ligand and receptor input files."
         )
@@ -166,6 +184,10 @@ def plan(
     if alchemy_dataset is not None:
         import tempfile
 
+        if graphml:
+            raise RuntimeError(
+                "Please provide either dataset file or a graphml file, not both."
+            )
         # load the set of posed ligands and the receptor from our dataset
         click.echo(f"Loading Ligands and protein from AlchemyDataSet {alchemy_dataset}")
         alchemy_ds = AlchemyDataSet.from_file(alchemy_dataset)
@@ -180,10 +202,15 @@ def plan(
             receptor = openfe.ProteinComponent.from_pdb_file(fp.name)
 
     else:
-        # load from separate files
-        click.echo(f"Loading Ligands from {ligands}")
-        # parse all required data/ assume sdf currently
-        input_ligands = MolFileFactory(filename=ligands).load()
+        if graphml:
+            # load from graphml further down the line
+            click.echo("Loading Ligands from graphml ...")
+            input_ligands = None
+        else:
+            # load from separate files
+            click.echo(f"Loading Ligands from {ligands}")
+            # parse all required data/ assume sdf currently
+            input_ligands = MolFileFactory(filename=ligands).load()
 
         click.echo(f"Loading protein from {receptor}")
         receptor = openfe.ProteinComponent.from_pdb_file(receptor)
@@ -197,6 +224,15 @@ def plan(
             )
 
         center_ligand = center_ligand[0]
+
+    if graphml is not None:
+        # load the graphml file
+        with open(graphml) as f:
+            graphml = f.read()
+        click.echo("Graphml file loaded: Using explicit ligand network.")
+
+    if not name:
+        raise RuntimeError("Please provide a name for the dataset.")
 
     if custom_network_file is not None:
         from asapdiscovery.alchemy.schema.network import CustomNetworkPlanner
@@ -216,6 +252,7 @@ def plan(
         central_ligand=center_ligand,
         experimental_protocol=experimental_protocol,
         target=target,
+        graphml=graphml,
     )
     click.echo(f"Writing results to {name}")
     # output the data to a folder named after the dataset
@@ -291,9 +328,16 @@ def submit(
         project: The name of the project this network should be submitted under.
         repeats: The total number of times each transformation should be ran.
     """
+    import rich
     from alchemiscale import Scope
+    from asapdiscovery.alchemy.cli.utils import print_header, print_message
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+    from rich import pretty
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
 
     # make sure the org/campaign combination is valid
     if organization == "asap" and campaign not in ("public", "confidential"):
@@ -302,30 +346,39 @@ def submit(
         )
 
     # launch the helper which will try to login
-    click.echo("Connecting to Alchemiscale...")
+    print_message(console=console, message="Connecting to Alchemiscale")
     client = AlchemiscaleHelper.from_settings()
     # create the scope
     network_scope = Scope(org=organization, campaign=campaign, project=project)
     # load the network
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
     # create network on alchemiscale
-    click.echo(
-        f"Creating network on Alchemiscale instance: {client._client.api_url} with scope {network_scope}"
+    print_message(
+        console=console,
+        message=(
+            f"Creating network on Alchemiscale instance: {client._client.api_url} with scope {network_scope}"
+        ),
     )
     submitted_network = client.create_network(
         planned_network=planned_network, scope=network_scope
     )
+
     # write the network with its key to file before we try and add compute incase we hit an issue
-    click.echo("Network made; saving network key to network file")
+    print_message(
+        console=console, message="Network made; saving network key to network file"
+    )
     submitted_network.to_file(network)
     # now action the tasks
-    click.echo("Creating and actioning FEC tasks on Alchemiscale...")
+    print_message(
+        console=console, message="Creating and actioning FEC tasks on Alchemiscale"
+    )
     task_ids = client.action_network(planned_network=submitted_network, repeats=repeats)
     # check that all tasks were created
     missing_tasks = sum([1 for task in task_ids if task is None])
     total_tasks = len(task_ids)
-    click.echo(
-        f"{total_tasks - missing_tasks}/{total_tasks} created. Status can be checked using `asap-alchemy status`"
+    print_message(
+        console=console,
+        message=f"{total_tasks - missing_tasks}/{total_tasks} created. Status can be checked using `asap-alchemy status`",
     )
 
 
@@ -586,7 +639,7 @@ def status(
         if network_key:
             if Path(network).exists():
                 click.echo(
-                    f"Network key provided: {network_key}, prefering over network file {network}."
+                    f"Network key provided: {network_key}, preferring over network file {network}."
                 )
 
         else:
@@ -735,7 +788,12 @@ def prioritize(network_key: str, weight: float):
     help="The network key of the network to be stopped. This can be found by running e.g. `asap-alchemy status -a`.",
     required=True,
 )
-def stop(network_key: str):
+@click.option(
+    "--hard",
+    is_flag=True,
+    help="If used, all waiting and running tasks will be deleted instead of un-actioned. Warning: these tasks will not be retrievable/re-runnable.",
+)
+def stop(network_key: str, hard: bool = False):
     """Stop (i.e. set to 'error') a network's running and waiting tasks."""
     import rich
     from asapdiscovery.alchemy.cli.utils import print_header
@@ -748,15 +806,30 @@ def stop(network_key: str):
     print_header(console)
 
     client = AlchemiscaleHelper.from_settings()
+
+    verb = "Deleted" if hard else "Canceled"
+
+    if hard:
+        console.print(
+            f"Warning: deleting all running/waiting tasks on network {network_key}. These will not be retrievable/re-runnable!"
+        )
+        inp = input("Continue? (y/n)")
+        if inp == "y":
+            pass
+        elif inp == "n":
+            print("Aborting.")
+            return
+        else:
+            raise ValueError("Option not recognized.")
     cancel_status = console.status(f"Canceling actioned tasks on network {network_key}")
     cancel_status.start()
-    canceled_tasks = client.cancel_actioned_tasks(network_key=network_key)
+    canceled_tasks = client.cancel_actioned_tasks(network_key=network_key, hard=hard)
     # check how many were canceled as some maybe None if not found
     total_tasks = len([task for task in canceled_tasks if task is not None])
     cancel_status.stop()
 
     message = Padding(
-        f"Canceled {total_tasks} actioned tasks for network {network_key}",
+        f"{verb} {total_tasks} actioned tasks for network {network_key}",
         (1, 0, 1, 0),
     )
     console.print(message)
@@ -823,6 +896,14 @@ def stop(network_key: str):
     help="Make predictions using only the largest subnetwork present in the results. "
     "Useful in cases where the network is disconnected by e.g. simulation failures.",
 )
+@click.option(
+    "-wtop",
+    "--write-top-n-poses",
+    help="The number of top-scoring poses to write to a multi-SDF in the local directory. By default writes the top 1000 (or all if the ligand series is smaller).",
+    type=click.INT,
+    default=1000,
+    show_default=False,
+)
 def predict(
     network: str,
     reference_units: str,
@@ -832,11 +913,13 @@ def predict(
     postera_molset_name: Optional[str] = None,
     clean: Optional[bool] = False,
     force_largest: Optional[bool] = False,
+    write_top_n_poses: Optional[int] = 1000,
 ):
     """
     Predict relative and absolute free energies for the set of ligands, using any provided experimental data to shift the
     results to the relevant energy range.
     """
+    import numpy as np
     import rich
     from asapdiscovery.alchemy.cli.utils import (
         cinnabar_femap_get_largest_subnetwork,
@@ -849,6 +932,7 @@ def predict(
         create_absolute_report,
         create_relative_report,
         get_data_from_femap,
+        get_top_n_poses,
     )
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from rich import pretty
@@ -887,7 +971,13 @@ def predict(
     is_connected = cinnabar_femap_is_connected(fe_map)
 
     if is_connected:
-        fe_map.generate_absolute_values()
+        try:
+            fe_map.generate_absolute_values()
+        except np.linalg.LinAlgError:
+            raise ValueError(
+                "MLE failed during absolute value generation. Does your result network contain "
+                "NaNs? You can manually remove these or run `predict -c` to remove them automatically."
+            )
     elif not is_connected and force_largest:
         fe_map = cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console)
         fe_map.generate_absolute_values()
@@ -925,6 +1015,12 @@ def predict(
         (1, 0, 1, 0),
     )
     console.print(message)
+
+    # if requested, write an SDF of the top n compounds' docked poses
+    if write_top_n_poses > 0:
+        _ = get_top_n_poses(
+            absolute_df, ligands, write_top_n_poses, console, write_file=True
+        )
 
     # check if we have a biological target
     bio_target = target or result_network.target

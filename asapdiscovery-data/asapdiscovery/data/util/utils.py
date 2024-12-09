@@ -44,6 +44,11 @@ def construct_regex_function(pat, fail_val=None, ret_groups=False):
     """
     Construct a function that searches for the given regex pattern, either returning
     fail_val or raising an error if no match is found.
+    The output of the returned function will depend on the value passed for
+    ``ret_groups``. If ``True``, then both the overall match and the tuple of captured
+    groups will be returned. If ``False``, only one value will be returned. If there is
+    a capture group in ``pat``, we assume that's what should be matched and will return
+    the first captured group. Otherwise, the full match will be returned.
 
     Parameters
     ----------
@@ -69,6 +74,9 @@ def construct_regex_function(pat, fail_val=None, ret_groups=False):
         if m:
             if ret_groups:
                 return m.group(), m.groups()
+            elif len(m.groups()) > 0:
+                # Take capture group to be what we're looking for
+                return m.groups()[0]
             else:
                 return m.group()
         elif fail_val is not None:
@@ -823,6 +831,7 @@ def parse_fluorescence_data_cdd(
     assay_name="ProteaseAssay_Fluorescence_Dose-Response_Weizmann",
     dG_T=298.0,
     cp_values=None,
+    pic50_stderr_filt=10.0,
 ):
     """
     Filter a dataframe of molecules to retain those specified. Required columns are:
@@ -866,6 +875,9 @@ def parse_fluorescence_data_cdd(
         Cheng-Prussoff equation. These values are assumed to be in the same
         concentration units. If no values are passed for this, pIC50 values
         will be used as an approximation of the Ki
+    pic50_stderr_filt : float, default=10.0
+        Max allowable standard error in pIC50 units. Overly large errors lead to rounded
+        values that don't make sense, so set anything that will cause issues to NaN
 
     Returns
     -------
@@ -889,6 +901,7 @@ def parse_fluorescence_data_cdd(
     pIC50_range_series = []
     pIC50_lower_series = []
     pIC50_upper_series = []
+    pic50_filt_compounds = []
     for _, row in mol_df.iterrows():
         try:
             IC50 = float(row[f"{assay_name}: IC50 (µM)"])
@@ -944,19 +957,36 @@ def parse_fluorescence_data_cdd(
             and (pIC50_range == 0)
             and isinstance(IC50_stderr, float)
         ):
-            # Have numbers for IC50 and stderr so can do rounding
-            try:
-                import sigfig
+            # Check error for filtering
+            if pIC50_stderr > pic50_stderr_filt:
+                # Set everything to NaN
+                IC50 = np.nan
+                pIC50 = np.nan
+                IC50_stderr = np.nan
+                IC50_lower = np.nan
+                IC50_upper = np.nan
+                pIC50_stderr = np.nan
+                pIC50_lower = np.nan
+                pIC50_upper = np.nan
 
-                IC50, IC50_stderr = sigfig.round(
-                    IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
-                )  # strings
-                pIC50, pIC50_stderr = sigfig.round(
-                    pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
-                )  # strings
-            except ModuleNotFoundError:
-                # Don't round
-                pass
+                # Store the compound to log later
+                pic50_filt_compounds.append(row["name"])
+            else:
+                # Have numbers for IC50 and stderr so can do rounding
+                try:
+                    import sigfig
+
+                    # BUG: rounding here with large error bars can cause the values to be clipped
+                    # to 0 or 10, we should just drop these. See #1234
+                    IC50, IC50_stderr = sigfig.round(
+                        IC50, uncertainty=IC50_stderr, sep=tuple, output_type=str
+                    )  # strings
+                    pIC50, pIC50_stderr = sigfig.round(
+                        pIC50, uncertainty=pIC50_stderr, sep=tuple, output_type=str
+                    )  # strings
+                except ModuleNotFoundError:
+                    # Don't round
+                    pass
 
         IC50_series.append(float(IC50) * 1e-6)
         IC50_stderr_series.append(float(IC50_stderr) * 1e-6)
@@ -968,6 +998,15 @@ def parse_fluorescence_data_cdd(
         pIC50_range_series.append(pIC50_range)
         pIC50_lower_series.append(pIC50_lower)
         pIC50_upper_series.append(pIC50_upper)
+
+    # Let the user know we found some invalid values
+    if len(pic50_filt_compounds) > 0:
+        logging.debug(
+            (
+                "These compounds had standard errors outside the set range and were "
+                f"filtered to NaNs: {pic50_filt_compounds}"
+            ),
+        )
 
     mol_df["IC50 (M)"] = IC50_series
     mol_df["IC50_stderr (M)"] = IC50_stderr_series

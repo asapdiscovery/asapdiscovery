@@ -218,7 +218,8 @@ def alchemize(
     "-n",
     "--dataset-name",
     type=click.STRING,
-    help="The name of the AlchemyDataset this will also be the name of the folder created.",
+    help="The name of the AlchemyDataset. This will also be the name of the folder created.",
+    default="production",
 )
 @click.option(
     "-l",
@@ -275,7 +276,7 @@ def run(
     structure_dir: Optional[str] = None,
     factory_file: Optional[str] = None,
     core_smarts: Optional[str] = None,
-    processors: int = 1,
+    processors: str | int = 1,
     postera_molset_name: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
 ):
@@ -297,11 +298,14 @@ def run(
     postera_molset_name: The name of the postera molecule set we should pull the data from instead of a local file.
     """
     import pathlib
-    from multiprocessing import cpu_count
 
     import pandas
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header, pull_from_postera
+    from asapdiscovery.alchemy.cli.utils import (
+        get_cpus,
+        print_header,
+        pull_from_postera,
+    )
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from asapdiscovery.data.readers.molfile import MolFileFactory
     from asapdiscovery.data.schema.complex import PreppedComplex
@@ -376,14 +380,7 @@ def run(
         console.print(message)
 
     # workout the number of processes to use if auto or all
-    all_cpus = cpu_count()
-    if processors == "all":
-        processors = all_cpus
-    elif processors == "auto":
-        processors = all_cpus - 1
-    else:
-        # can be a string from click
-        processors = int(processors)
+    processors = get_cpus(processors)
 
     # check if we need to add experimental ligands
     if experimental_protocol is not None and factory.n_references > 0:

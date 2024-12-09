@@ -9,5 +9,5 @@ pip install -e asapdiscovery-dataviz/.
 pip install -e asapdiscovery-docking/.
 pip install -e asapdiscovery-ml/.
 pip install -e asapdiscovery-alchemy/.
-pip install -e asapdiscovery-genetics/.
+pip install -e asapdiscovery-spectrum/.
 pip install -e asapdiscovery-workflows/.
