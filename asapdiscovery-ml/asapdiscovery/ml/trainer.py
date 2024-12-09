@@ -779,6 +779,7 @@ class Trainer(BaseModel):
                 weights_path = self.output_dir / f"{self.start_epoch - 1}.th"
                 if not weights_path.exists():
                     weights_path = self.output_dir / "weights.th"
+                print(f"Using weights file {weights_path.name}", flush=True)
                 self.model_config = self.model_config.update(
                     {
                         "model_weights": torch.load(
@@ -786,7 +787,6 @@ class Trainer(BaseModel):
                         )
                     }
                 )
-                print(f"Using weights file {weights_path.name}", flush=True)
             except FileNotFoundError:
                 raise FileNotFoundError(
                     f"Found {self.start_epoch} epochs of training, but didn't find "
@@ -852,6 +852,13 @@ class Trainer(BaseModel):
         # Save initial model weights for debugging
         if not self.cont:
             torch.save(self.model.state_dict(), self.output_dir / "init.th")
+
+        # Return early if trying to continue but training has already reached the end
+        if self.start_epoch == self.n_epochs:
+            print("Alrady trained for all epochs, not resuming training.", flush=True)
+            if self.use_wandb:
+                wandb.finish()
+            return
 
         # Train for n epochs
         for epoch_idx in range(self.start_epoch, self.n_epochs):
