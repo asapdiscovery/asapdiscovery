@@ -34,6 +34,7 @@ from pydantic.v1 import (
     Extra,
     Field,
     ValidationError,
+    confloat,
     conlist,
     root_validator,
     validator,
@@ -84,6 +85,14 @@ class Trainer(BaseModel):
             "Values will be normalized to add up to 1. If no values are passed, the "
             "weights from loss_weights will be used. If any values are passed, there "
             "must be one for each loss function."
+        ),
+    )
+    weight_decay: confloat(ge=0.0, allow_inf_nan=False) = Field(
+        0.0,
+        description=(
+            "Weight decay weighting for training. This will add a term of "
+            "weight_decay / 2 * the square of the L2-norm of the model weights, "
+            "excluding any bias terms."
         ),
     )
     data_aug_configs: list[DataAugConfig] = Field(
@@ -992,6 +1001,24 @@ class Trainer(BaseModel):
                 # If all target props were missing, there's no backprop to do
                 if not loss.requires_grad:
                     continue
+
+                # Add in weight decay term if requested
+                if self.weight_decay:
+                    # Square of the sum of L2 norms of each parameter (excluding bias
+                    #  terms)
+                    weight_norm = torch.pow(
+                        torch.sum(
+                            torch.stack(
+                                [
+                                    torch.linalg.norm(x)
+                                    for n, x in self.model.named_parameters()
+                                    if n.split(".")[-1] != "bias"
+                                ]
+                            )
+                        ),
+                        2,
+                    )
+                    loss += self.weight_decay / 2 * weight_norm
 
                 # Can just call loss.backward, grads will accumulate additively
                 loss.backward()
