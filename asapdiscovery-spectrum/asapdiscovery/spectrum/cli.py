@@ -191,17 +191,38 @@ def seq_alignment(
     help="Path to save pymol session with aligned proteins.",
 )
 @click.option(
+    "--chain",
+    type=str,
+    default="A",
+    help="Chain to use for aligning the proteins ('A', 'B').",
+)
+@click.option(
+    "--pymol-hide-chain",
+    is_flag=True,
+    default=False,
+    help="Whether to hide non-alignment chain on the reference protein from the visualization (when the folded structures are monomers).",
+)
+@click.option(
+    "--color-by-rmsd",
+    is_flag=True,
+    default=False,
+    help="Option to generate a PyMOL session were targets are colored by RMSD with respect to ref.",
+)
+@click.option(
     "--cf-format",
     type=str,
-    default="_unrelaxed_rank_001_alphafold2_ptm",
-    help="Format of pdb file saved by ColabFold, according to the folding model and relaxation used.",
+    default="alphafold2_ptm",
+    help="Model used with ColabFold. Either 'alphafold2_ptm' or 'alphafold2_multimer_v3'",
 )
 def struct_alignment(
     seq_file: str,
     pdb_file: str,
     cfold_results: Optional[str] = "./",
     pymol_save: Optional[str] = "aligned_proteins.pse",
-    cf_format: Optional[str] = "_unrelaxed_rank_001_alphafold2_ptm",
+    color_by_rmsd: Optional[bool] = False,
+    chain: Optional[str] = "A",
+    pymol_hide_chain: Optional[bool] = False,
+    cf_format: Optional[str] = "alphafold2_ptm",
     output_dir: str = "output",
 ):
     """
@@ -231,11 +252,14 @@ def struct_alignment(
         mol = row["id"]
         final_pdb = save_dir / f"{mol}_aligned.pdb"
         # Select best seed repetition
+        align_chain = chain
+        if chain == 'both':
+            align_chain = "A"
         min_rmsd, min_file = select_best_colabfold(
             results_dir,
             mol,
             ref_pdb,
-            chain="A",
+            chain=align_chain,
             final_pdb=final_pdb,
             fold_model=cf_format,
         )
@@ -244,7 +268,7 @@ def struct_alignment(
         seq_labels.append(mol)
 
     session_save = save_dir / pymol_save
-    save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save)
+    save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, pymol_hide_chain, color_by_rmsd)
 
 
 if __name__ == "__main__":
