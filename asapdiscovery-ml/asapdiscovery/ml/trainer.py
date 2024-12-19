@@ -1068,7 +1068,7 @@ class Trainer(BaseModel):
 
             epoch_train_loss = np.mean(tmp_loss)
 
-            self.model.eval()
+            ## Val and test splits
             tmp_loss = []
             for compound, pose in self.ds_val:
                 if type(compound) is tuple:
@@ -1114,7 +1114,8 @@ class Trainer(BaseModel):
                     model_inp = pose
 
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(model_inp)
+                with torch.no_grad():
+                    pred, pose_preds = self.model(model_inp)
                 losses = [
                     (
                         loss_func(
@@ -1205,7 +1206,8 @@ class Trainer(BaseModel):
                     model_inp = pose
 
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(model_inp)
+                with torch.no_grad():
+                    pred, pose_preds = self.model(model_inp)
                 losses = [
                     (
                         loss_func(
@@ -1250,7 +1252,6 @@ class Trainer(BaseModel):
 
                 tmp_loss.append(loss.item())
             epoch_test_loss = np.mean(tmp_loss)
-            self.model.train()
 
             if self.use_wandb:
                 wandb.log(
