@@ -246,7 +246,7 @@ def struct_alignment(
         final_pdb = save_dir / f"{mol}_aligned.pdb"
         # Select best seed repetition
         align_chain = chain
-        if chain == 'both':
+        if chain == "both":
             align_chain = "A"
         min_rmsd, min_file = select_best_colabfold(
             results_dir,
@@ -261,7 +261,9 @@ def struct_alignment(
         seq_labels.append(mol)
 
     session_save = save_dir / pymol_save
-    save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd)
+    save_alignment_pymol(
+        aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd
+    )
 
 
 if __name__ == "__main__":
