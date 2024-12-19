@@ -100,7 +100,7 @@ def select_best_colabfold(
         print(f"RMSD for seed {seed} is {rmsd} A")
 
     if len(rmsds) == 0:
-        print(f"The ColabFold directory {results_dir} was empty.")
+        print(f"No ColabFold entry for {seq_name} and model {fold_model} found.")
         return 0, ""
     min_rmsd = np.argmin(rmsds)
     min_rmsd_file = file_seed[min_rmsd]
@@ -116,7 +116,7 @@ def select_best_colabfold(
 
 
 def save_alignment_pymol(
-    pdbs: list, labels: list, reference: str, session_save: str, align_chain=str, hide_chain=False, color_by_rmsd=False,
+    pdbs: list, labels: list, reference: str, session_save: str, align_chain=str, color_by_rmsd=False,
 ) -> None:
     """Imports the provided PDBs into a Pymol session and saves
 
@@ -132,11 +132,17 @@ def save_alignment_pymol(
         File name for the saved PyMOL session.
     align_chain : str
         Chain of ref to align target with.
-    hide_chain : bool, optional
-        Optionally hide the other chain from visualization.
     color_by_rmsd : bool, optional
         Option to color aligned targets by RMSD with respect to reference.
     """
+    def hide_chain(p, chain, obj):
+        ''' Hide the other chain from visualization in obj
+        '''
+        dimer_chains = {"A", "B"}
+        hide_chain = (dimer_chains - {chain}).pop()
+        p.cmd.select("chainb", f"{obj} and chain {hide_chain.upper()}")
+        p.cmd.remove("chainb")
+        p.cmd.delete("chainb")
 
     p = pymol2.PyMOL()
     p.start()
@@ -144,20 +150,14 @@ def save_alignment_pymol(
     p.cmd.load(reference, object="ref_protein")
     p.cmd.color("gray", "ref_protein")
     # Optionaly remove other chain from the reference protein
-    if align_chain == 'both':
+    if align_chain == "both":
         align_sel = ""
-        align_chain = "A"
     else:
         align_sel = f" and chain {align_chain}"  
-    if hide_chain and len(align_chain)==1:
-        dimer_chains = {"A", "B"}
-        hide_chain = (dimer_chains - {align_chain}).pop()
-        p.cmd.select("chainb", f"ref_protein and chain {hide_chain.upper()}")
-        p.cmd.remove("chainb")
-        p.cmd.delete("chainb")
+        hide_chain(p, align_chain, "ref_protein")
+
     p.cmd.select("chaina", f"ref_protein{align_sel}")
     p.cmd.color("gray", "ref_protein")
-    p.cmd.select("ligand", "resn UNK or resn LIG")
 
     for i, pdb in enumerate(pdbs):
         if len(pdb) > 0:
@@ -165,11 +165,15 @@ def save_alignment_pymol(
             pname = labels[i]
             p.cmd.load(pdb, object=pname)
             # PDBs should be aligned but in case they are not
-            p.cmd.select("chainp", f"{pname}{align_sel}")
-            p.cmd.align(f"chainp", "chaina")
+            p.cmd.select("chainp", pname+align_sel)
+            # It's better to align wrt a single chain than the whole protein (at least one binding site to compare)
+            p.cmd.align(f"{pname} and chain A", "ref_protein and chain A") 
             if color_by_rmsd:
                 colorbyrmsd(p, "chainp", "chaina", minimum=0, maximum=2)
                 p.cmd.color("red", "ref_protein")
+            if len(align_chain) == 1:
+                hide_chain(p, align_chain, pname)
+            p.cmd.delete("chainp")
     p.cmd.delete("chaina")
 
     # set visualization

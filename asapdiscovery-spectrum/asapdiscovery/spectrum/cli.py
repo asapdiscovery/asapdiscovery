@@ -193,14 +193,8 @@ def seq_alignment(
 @click.option(
     "--chain",
     type=str,
-    default="A",
-    help="Chain to use for aligning the proteins ('A', 'B').",
-)
-@click.option(
-    "--pymol-hide-chain",
-    is_flag=True,
-    default=False,
-    help="Whether to hide non-alignment chain on the reference protein from the visualization (when the folded structures are monomers).",
+    default="both",
+    help="Chains to display on visualization ('A', 'B' or 'both'). The default 'both' will align wrt chain A but display both chains.",
 )
 @click.option(
     "--color-by-rmsd",
@@ -221,7 +215,6 @@ def struct_alignment(
     pymol_save: Optional[str] = "aligned_proteins.pse",
     color_by_rmsd: Optional[bool] = False,
     chain: Optional[str] = "A",
-    pymol_hide_chain: Optional[bool] = False,
     cf_format: Optional[str] = "alphafold2_ptm",
     output_dir: str = "output",
 ):
@@ -268,7 +261,7 @@ def struct_alignment(
         seq_labels.append(mol)
 
     session_save = save_dir / pymol_save
-    save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, pymol_hide_chain, color_by_rmsd)
+    save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd)
 
 
 if __name__ == "__main__":
