@@ -1006,17 +1006,17 @@ class Trainer(BaseModel):
                 if self.weight_decay:
                     # Square of the sum of L2 norms of each parameter (excluding bias
                     #  terms)
-                    weight_norm = torch.pow(
-                        torch.sum(
+                    weight_norm = torch.sum(
+                        torch.pow(
                             torch.stack(
                                 [
                                     torch.linalg.norm(x)
                                     for n, x in self.model.named_parameters()
                                     if n.split(".")[-1] != "bias"
                                 ]
-                            )
-                        ),
-                        2,
+                            ),
+                            2,
+                        )
                     )
                     loss += self.weight_decay / 2 * weight_norm
 
