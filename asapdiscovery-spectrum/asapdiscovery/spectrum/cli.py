@@ -181,8 +181,17 @@ def seq_alignment(
 @click.option(
     "--cfold-results",
     type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
-    default="./",
     help="Path to folder where all ColabFold results are stored.",
+)
+@click.option(
+    "--pdb-align",
+    type=str,
+    help="Path to PDB to align. Not needed when --cfold-results is given.",
+)
+@click.option(
+    "--struct-dir",
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
+    help="Path to folder where structures to align are stored. Not needed when --cfold-results or --pdb-align is given.",
 )
 @click.option(
     "--pymol-save",
@@ -211,7 +220,9 @@ def seq_alignment(
 def struct_alignment(
     seq_file: str,
     pdb_file: str,
-    cfold_results: Optional[str] = "./",
+    cfold_results: Optional[str] = None,
+    struct_dir: Optional[str] = None,
+    pdb_align: Optional[str] = None,
     pymol_save: Optional[str] = "aligned_proteins.pse",
     color_by_rmsd: Optional[bool] = False,
     chain: Optional[str] = "A",
@@ -222,21 +233,40 @@ def struct_alignment(
     Align PDB structures generated from ColabFold with respect to a reference pdb_file, as listed in the csv seq_file used for the folding.
     """
 
-    if not Path(seq_file).exists():
-        raise FileNotFoundError(f"Sequence file {seq_file} does not exist")
-
     ref_pdb = Path(pdb_file)
     if not ref_pdb.exists():
         raise FileNotFoundError(f"Ref PDB file {ref_pdb} does not exist")
 
-    results_dir = Path(cfold_results)
-    if not results_dir.exists():
-        raise FileNotFoundError(
-            f"The folder with ColabFold results {results_dir} does not exist"
-        )
     save_dir = Path(output_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
+    session_save = save_dir / pymol_save
 
+    if not (cfold_results or struct_dir or pdb_align):
+        raise ValueError("At least one of 'cfold_results', 'struct_dir', or 'pdb_align' must be provided.")
+
+    if cfold_results is None:   
+        session_save = save_dir / pymol_save
+        if pdb_align is not None: # priority given to pdb_align
+            results_dir = Path(pdb_align)
+            aligned_pdbs = [str(results_dir)]
+            seq_labels = [results_dir.stem]
+        else:
+            results_dir = Path(struct_dir)
+            aligned_pdbs = []
+            seq_labels = []
+            for file_path in results_dir.glob("*.pdb"):
+                print(f"Reading structure {file_path.stem}")
+                aligned_pdbs.append(str(file_path))
+                seq_labels.append(file_path.stem)
+        if not results_dir.exists():
+            raise FileNotFoundError(
+                f"The folder with pdbs to align {results_dir} does not exist"
+            )
+        save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd)
+        return 
+
+    if not Path(seq_file).exists():
+        raise FileNotFoundError(f"Sequence file {seq_file} does not exist")
     aligned_pdbs = []
     seq_labels = []
     seq_df = pd.read_csv(seq_file)
