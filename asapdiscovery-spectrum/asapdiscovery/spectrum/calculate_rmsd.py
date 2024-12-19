@@ -222,13 +222,13 @@ def colorbyrmsd(p: pymol2.PyMOL, target_sel: str, ref_sel: str, quiet=True, mini
     p.cmd.align(target_sel, ref_sel, cycles=0, transform=0, object=aln)
     p.cmd.select(selboth, f"{target_sel} or {ref_sel}")
 
-    idx2coords = dict()
+    idx2coords = {}
     p.cmd.iterate_state(-1, selboth, 'idx2coords[model,index] = (x,y,z)', space=locals())
 
     if p.cmd.count_atoms('?' + aln, 1, 1) == 0:
         p.cmd.refresh()
 
-    b_dict = dict()
+    b_dict = {}
     for col in p.cmd.get_raw_alignment(aln):
         assert len(col) == 2
         b = cpv.distance(idx2coords[col[0]], idx2coords[col[1]])
