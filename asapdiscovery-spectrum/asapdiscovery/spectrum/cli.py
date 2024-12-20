@@ -3,6 +3,7 @@ from typing import Optional
 
 import click
 import pandas as pd
+
 from asapdiscovery.cli.cli_args import output_dir, pdb_file
 from asapdiscovery.spectrum.blast import PDBEntry, get_blast_seqs
 from asapdiscovery.spectrum.calculate_rmsd import (
@@ -17,9 +18,15 @@ from asapdiscovery.spectrum.cli_args import (
     n_chains,
     seq_file,
     seq_type,
+    pymol_save,
+    max_mismatches,
 )
 from asapdiscovery.spectrum.seq_alignment import Alignment, do_MSA
-
+from asapdiscovery.spectrum.align_seq_match import (
+    pairwise_alignment, 
+    fasta_alignment,
+    save_pymol_seq_align,
+)
 
 @click.group()
 def spectrum():
@@ -78,9 +85,9 @@ def spectrum():
     help="Start index for reference aminoacids in html alignment (Useful when matching idxs to PyMOL labels)",
 )
 @click.option(
-    "--max-mismatches",
-    default=2,
-    help="Maximum number of aminoacid group missmatches to be allowed in color-seq-match mode.",
+    "--custom-order",
+    default="",
+    help="Custom order of aligned sequences (not including ref) can be provided as a string with comma-sep indexes.",
 )
 def seq_alignment(
     seq_file: str,
@@ -99,6 +106,7 @@ def seq_alignment(
     color_seq_match: bool = False,
     align_start_idx: int = 0,
     max_mismatches: int = 2,
+    custom_order: str = '',
 ):
     """
     Find similarities between reference protein and its related proteins by sequence.
@@ -161,6 +169,7 @@ def seq_alignment(
             color_seq_match,
             align_start_idx,
             max_mismatches,
+            custom_order,
         )
 
         # Generate PDB file for template if requested (only for the reference structure)
@@ -292,6 +301,105 @@ def struct_alignment(
 
     session_save = save_dir / pymol_save
     save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd)
+
+
+@spectrum.command()
+@pdb_file
+@click.option(
+    "-t",
+    "--type",
+    type=str,
+    default="pdb",
+    help="If 'pdb', pdb is to be given for a pairwise alignment with pdb-complex. With 'fasta', a fasta file is provided with the precomputed alignment.",
+)
+@click.option(
+    "--pdb-align",
+    type=str,
+    help="Path to PDB to align",
+)
+@click.option(
+    "--struct-dir",
+    type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
+    help="Path to folder where structures to align are stored. Not needed when --cfold-results or --pdb-align is given.",
+)
+@click.option(
+    "--pdb-label",
+    type=str,
+    default="ref,pdb",
+    help="Label of PDB in PyMOL.",
+)
+@pymol_save
+@click.option(
+    "--fasta-a",
+    type=str,
+    default=None,
+    help="Path to fasta with chain A alignment",
+)
+@click.option(
+    "--fasta-b",
+    type=str,
+    default=None,
+    help="Path to fasta with chain B alignment",
+)
+@click.option(
+    "--fasta-sel",
+    type=str,
+    default="0,1",
+    help="Index of sequences in fasta file to use in the alignment. To use when --struct-align is provided.",
+)
+@click.option(
+    "--start-a",
+    type=int,
+    default="0",
+    help="Start index for chain A",
+)
+@click.option(
+    "--start-b",
+    type=int,
+    default="0",
+    help="Start index for chain B",
+)
+@max_mismatches
+def fitness_alignment(
+    pdb_file: str,
+    pdb_label: str,
+    type:str,
+    pymol_save: str,
+    pdb_align: str,
+    struct_dir: str,
+    fasta_sel:str,
+    start_a=0,
+    start_b=0,
+    fasta_a=None,
+    fasta_b=None,
+    max_mismatches=0,
+    ) -> None:
+
+    start_idxA = start_a
+    start_idxB = start_b
+
+    session_save = pymol_save
+    pdb_labels = pdb_label.split(",")
+    if type == "pdb":
+        pdb_align, colorsA, colorsB = pairwise_alignment(pdb_file, 
+                                                         pdb_align, 
+                                                         start_idxA, 
+                                                         start_idxB)
+    elif type == "align":
+        assert fasta_a is not None
+        assert fasta_b is not None
+        pdb_align, colorsA, colorsB, pdb_labels = fasta_alignment(fasta_a, 
+                                                                  fasta_b, 
+                                                                  fasta_sel, 
+                                                                  pdb_labels, 
+                                                                  start_idxA, 
+                                                                  start_idxB,
+                                                                  pdb_align, 
+                                                                  struct_dir,
+                                                                  max_mismatches)
+    else:
+        raise NotImplementedError("Types allowed are 'pdb' and 'align'")
+    save_pymol_seq_align(pdb_align, pdb_labels, pdb_file, [colorsA, colorsB], session_save)
 
 
 if __name__ == "__main__":
