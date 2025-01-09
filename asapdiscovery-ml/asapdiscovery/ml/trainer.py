@@ -1069,6 +1069,7 @@ class Trainer(BaseModel):
             epoch_train_loss = np.mean(tmp_loss)
 
             ## Val and test splits
+            self.model.eval()
             tmp_loss = []
             for compound, pose in self.ds_val:
                 if type(compound) is tuple:
@@ -1252,6 +1253,7 @@ class Trainer(BaseModel):
 
                 tmp_loss.append(loss.item())
             epoch_test_loss = np.mean(tmp_loss)
+            self.model.train()
 
             if self.use_wandb:
                 wandb.log(
