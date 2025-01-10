@@ -122,10 +122,10 @@ class Trainer(BaseModel):
         ),
     )
     batch_size: int = Field(
-        1,
+        -1,
         description=(
             "Number of samples to predict on before performing backprop."
-            "Set to -1 to use the entire training set as a batch."
+            "Set to -1 (default) to use the entire training set as a batch."
         ),
     )
     target_prop: str = Field("pIC50", description=("Target property to train against."))
