@@ -1276,6 +1276,7 @@ def trainer_args(func):
         loss_dict,
         device,
         data_aug,
+        trainer_weight_decay,
     ]:
         func = fn(func)
     return func
@@ -1351,6 +1352,18 @@ def data_aug(func):
             "DataAugConfig class. For example, to add positional jittering that draws "
             "noise from a fixed Gaussian with a std of 0.05, you would pass "
             "--data-aug aug_type:jitter_fixed,jitter_fixed_std:0.05."
+        ),
+    )(func)
+
+
+def trainer_weight_decay(func):
+    return click.option(
+        "--trainer-weight-decay",
+        type=float,
+        help=(
+            "Weight decay weighting for training. This will add a term of "
+            "weight_decay / 2 * the square of the L2-norm of the model weights, "
+            "excluding any bias terms."
         ),
     )(func)
 
