@@ -68,7 +68,7 @@ class AdaptiveSettings(_SchemaBase):
 
     type: Literal["AdaptiveSettings"] = "AdaptiveSettings"
     adaptive_sampling: bool = Field(
-        True,
+        False,
         description="If True, will enable increase in production length of simulations given a `adaptive_sampling_multiplier` and `adaptive_sampling_threshold`.",
     )
     adaptive_sampling_multiplier: float = Field(
@@ -84,7 +84,7 @@ class AdaptiveSettings(_SchemaBase):
         description="Whether or not to use adaptive solvent padding; typically the complex phase can handle smaller padding size.",
     )
     solvent_padding_complex: FloatQuantity["nanometer"] = Field(  # noqa: F821
-        1.0 * OFFUnit.nanometer,
+        1.5 * OFFUnit.nanometer,
         description="The solvent padding (in nm) to use for the complex phase of each edge.",
     )
     solvent_padding_solvated: FloatQuantity["nanometer"] = Field(  # noqa: F821
