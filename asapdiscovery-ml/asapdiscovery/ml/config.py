@@ -21,7 +21,7 @@ from asapdiscovery.ml.es import (
     ConvergedEarlyStopping,
     PatientConvergedEarlyStopping,
 )
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, confloat, Field, root_validator, validator
 
 
 class ConfigBase(BaseModel):
@@ -76,7 +76,9 @@ class OptimizerConfig(ConfigBase):
     )
     # Common parameters
     lr: float = Field(0.0001, description="Optimizer learning rate.")
-    weight_decay: float = Field(0, description="Optimizer weight decay (L2 penalty).")
+    weight_decay: confloat(ge=0.0, allow_inf_nan=False) = Field(
+        0, description="Optimizer weight decay (L2 penalty)."
+    )
 
     # SGD-only parameters
     momentum: float = Field(0, description="Momentum for SGD optimizer.")
@@ -310,6 +312,16 @@ class DatasetConfig(ConfigBase):
     # Don't use (and overwrite) any existing cache_file
     overwrite: bool = Field(False, description="Overwrite any existing cache_file.")
 
+    # Torch device to send loaded dataset to
+    device: torch.device = Field("cpu", description="Device to send loaded dataset to.")
+
+    class Config:
+        # Allow torch.device Fields
+        arbitrary_types_allowed = True
+
+        # Custom encoder to cast device to str before trying to serialize
+        json_encoders = {torch.device: lambda d: str(d)}
+
     @root_validator(pre=False)
     def check_data_type(cls, values):
         inp = values["input_data"][0]
@@ -332,6 +344,14 @@ class DatasetConfig(ConfigBase):
                 raise ValueError(f"Unknown dataset type {other}.")
 
         return values
+
+    @validator("device", pre=True)
+    def fix_device(cls, v):
+        """
+        The torch device gets serialized as a string and the Trainer class doesn't
+        automatically cast it back to a device.
+        """
+        return torch.device(v)
 
     @classmethod
     def from_exp_file(cls, exp_file: Path, **config_kwargs):
@@ -491,6 +511,16 @@ class DatasetConfig(ConfigBase):
             ds = pkl.loads(self.cache_file.read_bytes())
             if self.for_e3nn:
                 ds = DatasetConfig.fix_e3nn_labels(ds, grouped=self.grouped)
+
+            # Shuttle data to desired device
+            for _, d in ds:
+                for k, v in d.items():
+                    try:
+                        d[k] = v.to(self.device)
+                    except AttributeError:
+                        # Not a tensor so just let it go
+                        pass
+
             return ds
 
         # Build directly from Complexes/Ligands
@@ -520,6 +550,14 @@ class DatasetConfig(ConfigBase):
         if self.cache_file:
             self.cache_file.write_bytes(pkl.dumps(ds))
 
+        # Shuttle data to desired device
+        for _, d in ds:
+            for k, v in d.items():
+                try:
+                    d[k] = v.to(self.device)
+                except AttributeError:
+                    # Not a tensor so just let it go
+                    pass
         return ds
 
     @staticmethod
