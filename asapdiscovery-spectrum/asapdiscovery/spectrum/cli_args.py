@@ -41,7 +41,7 @@ def email(func):
 def max_mismatches(func):
     return click.option(
         "--max-mismatches",
-        default=2,
+        default=0,
         help="Maximum number of aminoacid group missmatches to be allowed in color-seq-match mode.",
     )(func)
 

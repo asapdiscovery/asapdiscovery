@@ -253,7 +253,7 @@ def struct_alignment(
     if not (cfold_results or struct_dir or pdb_align):
         raise ValueError("At least one of 'cfold_results', 'struct_dir', or 'pdb_align' must be provided.")
 
-    if cfold_results is None:   
+    if cfold_results is None: # cfold results has priority  
         session_save = save_dir / pymol_save
         if pdb_align is not None: # priority given to pdb_align
             results_dir = Path(pdb_align)
@@ -273,31 +273,36 @@ def struct_alignment(
             )
         save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd)
         return 
-
-    if not Path(seq_file).exists():
-        raise FileNotFoundError(f"Sequence file {seq_file} does not exist")
-    aligned_pdbs = []
-    seq_labels = []
-    seq_df = pd.read_csv(seq_file)
-    for index, row in seq_df.iterrows():
-        # iterate over each csv entry
-        mol = row["id"]
-        final_pdb = save_dir / f"{mol}_aligned.pdb"
-        # Select best seed repetition
-        align_chain = chain
-        if chain == 'both':
-            align_chain = "A"
-        min_rmsd, min_file = select_best_colabfold(
-            results_dir,
-            mol,
-            ref_pdb,
-            chain=align_chain,
-            final_pdb=final_pdb,
-            fold_model=cf_format,
-        )
-
-        aligned_pdbs.append(min_file)
-        seq_labels.append(mol)
+    else:
+        # ColabFold results pipeline 
+        results_dir = Path(cfold_results)
+        if not results_dir.exists():
+            raise FileNotFoundError(
+                f"The folder with ColabFold results {results_dir} does not exist"
+            )
+        if not Path(seq_file).exists():
+            raise FileNotFoundError(f"Sequence file {seq_file} does not exist")
+        aligned_pdbs = []
+        seq_labels = []
+        seq_df = pd.read_csv(seq_file)
+        for index, row in seq_df.iterrows():
+            # iterate over each csv entry
+            mol = row["id"]
+            final_pdb = save_dir / f"{mol}_aligned.pdb"
+            # Select best seed repetition
+            align_chain = chain
+            if chain == 'both':
+                align_chain = "A"
+            min_rmsd, min_file = select_best_colabfold(
+                results_dir,
+                mol,
+                ref_pdb,
+                chain=align_chain,
+                final_pdb=final_pdb,
+                fold_model=cf_format,
+            )
+            aligned_pdbs.append(min_file)
+            seq_labels.append(mol)
 
     session_save = save_dir / pymol_save
     save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd)
@@ -309,8 +314,8 @@ def struct_alignment(
     "-t",
     "--type",
     type=str,
-    default="pdb",
-    help="If 'pdb', pdb is to be given for a pairwise alignment with pdb-complex. With 'fasta', a fasta file is provided with the precomputed alignment.",
+    default="pwise",
+    help="If 'pwise', a pairwise alignment is done with pdb-complex. With 'fasta', a fasta file is provided with the precomputed alignment.",
 )
 @click.option(
     "--pdb-align",
@@ -374,13 +379,16 @@ def fitness_alignment(
     fasta_b=None,
     max_mismatches=0,
     ) -> None:
+    """
+    Align PDB structures and color by parwise or multi-sequence alignment match
+    """
 
     start_idxA = start_a
     start_idxB = start_b
 
     session_save = pymol_save
     pdb_labels = pdb_label.split(",")
-    if type == "pdb":
+    if type == "pwise":
         pdb_align, colorsA, colorsB = pairwise_alignment(pdb_file, 
                                                          pdb_align, 
                                                          start_idxA, 
@@ -398,7 +406,7 @@ def fitness_alignment(
                                                                   struct_dir,
                                                                   max_mismatches)
     else:
-        raise NotImplementedError("Types allowed are 'pdb' and 'align'")
+        raise NotImplementedError("Types allowed are 'pwise' and 'align'")
     save_pymol_seq_align(pdb_align, pdb_labels, pdb_file, [colorsA, colorsB], session_save)
 
 
