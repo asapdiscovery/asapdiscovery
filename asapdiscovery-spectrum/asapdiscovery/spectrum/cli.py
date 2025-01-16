@@ -3,8 +3,12 @@ from typing import Optional
 
 import click
 import pandas as pd
-
 from asapdiscovery.cli.cli_args import output_dir, pdb_file
+from asapdiscovery.spectrum.align_seq_match import (
+    fasta_alignment,
+    pairwise_alignment,
+    save_pymol_seq_align,
+)
 from asapdiscovery.spectrum.blast import PDBEntry, get_blast_seqs
 from asapdiscovery.spectrum.calculate_rmsd import (
     save_alignment_pymol,
@@ -14,19 +18,15 @@ from asapdiscovery.spectrum.cli_args import (
     blast_json,
     email,
     gen_ref_pdb,
+    max_mismatches,
     multimer,
     n_chains,
+    pymol_save,
     seq_file,
     seq_type,
-    pymol_save,
-    max_mismatches,
 )
 from asapdiscovery.spectrum.seq_alignment import Alignment, do_MSA
-from asapdiscovery.spectrum.align_seq_match import (
-    pairwise_alignment, 
-    fasta_alignment,
-    save_pymol_seq_align,
-)
+
 
 @click.group()
 def spectrum():
@@ -106,7 +106,7 @@ def seq_alignment(
     color_seq_match: bool = False,
     align_start_idx: int = 0,
     max_mismatches: int = 2,
-    custom_order: str = '',
+    custom_order: str = "",
 ):
     """
     Find similarities between reference protein and its related proteins by sequence.
@@ -251,11 +251,13 @@ def struct_alignment(
     session_save = save_dir / pymol_save
 
     if not (cfold_results or struct_dir or pdb_align):
-        raise ValueError("At least one of 'cfold_results', 'struct_dir', or 'pdb_align' must be provided.")
+        raise ValueError(
+            "At least one of 'cfold_results', 'struct_dir', or 'pdb_align' must be provided."
+        )
 
-    if cfold_results is None: # cfold results has priority  
+    if cfold_results is None:  # cfold results has priority
         session_save = save_dir / pymol_save
-        if pdb_align is not None: # priority given to pdb_align
+        if pdb_align is not None:  # priority given to pdb_align
             results_dir = Path(pdb_align)
             aligned_pdbs = [str(results_dir)]
             seq_labels = [results_dir.stem]
@@ -271,10 +273,12 @@ def struct_alignment(
             raise FileNotFoundError(
                 f"The folder with pdbs to align {results_dir} does not exist"
             )
-        save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd)
-        return 
+        save_alignment_pymol(
+            aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd
+        )
+        return
     else:
-        # ColabFold results pipeline 
+        # ColabFold results pipeline
         results_dir = Path(cfold_results)
         if not results_dir.exists():
             raise FileNotFoundError(
@@ -291,7 +295,7 @@ def struct_alignment(
             final_pdb = save_dir / f"{mol}_aligned.pdb"
             # Select best seed repetition
             align_chain = chain
-            if chain == 'both':
+            if chain == "both":
                 align_chain = "A"
             min_rmsd, min_file = select_best_colabfold(
                 results_dir,
@@ -370,17 +374,17 @@ def struct_alignment(
 def fitness_alignment(
     pdb_file: str,
     pdb_label: str,
-    type:str,
+    type: str,
     pymol_save: str,
     pdb_align: str,
     struct_dir: str,
-    fasta_sel:str,
+    fasta_sel: str,
     start_a=1,
     start_b=1,
     fasta_a=None,
     fasta_b=None,
     max_mismatches=0,
-    ) -> None:
+) -> None:
     """
     Align PDB structures and color by parwise or multi-sequence alignment match
     """
@@ -392,26 +396,31 @@ def fitness_alignment(
     pdb_labels = pdb_label.split(",")
     if type == "pwise":
         if pdb_align is None:
-            raise ValueError("pdb-align must be provided in pairwise mode! struct-dir pairwise alignment is not possible.")
-        pdb_align, colorsA, colorsB = pairwise_alignment(pdb_file, 
-                                                         pdb_align, 
-                                                         start_idxA, 
-                                                         start_idxB)
+            raise ValueError(
+                "pdb-align must be provided in pairwise mode! struct-dir pairwise alignment is not possible."
+            )
+        pdb_align, colorsA, colorsB = pairwise_alignment(
+            pdb_file, pdb_align, start_idxA, start_idxB
+        )
     elif type == "fasta":
         assert fasta_a is not None
         assert fasta_b is not None
-        pdb_align, colorsA, colorsB, pdb_labels = fasta_alignment(fasta_a, 
-                                                                  fasta_b, 
-                                                                  fasta_sel, 
-                                                                  pdb_labels, 
-                                                                  start_idxA, 
-                                                                  start_idxB,
-                                                                  pdb_align, 
-                                                                  struct_dir,
-                                                                  max_mismatches)
+        pdb_align, colorsA, colorsB, pdb_labels = fasta_alignment(
+            fasta_a,
+            fasta_b,
+            fasta_sel,
+            pdb_labels,
+            start_idxA,
+            start_idxB,
+            pdb_align,
+            struct_dir,
+            max_mismatches,
+        )
     else:
         raise NotImplementedError("Types allowed are 'pwise' and 'fasta'")
-    save_pymol_seq_align(pdb_align, pdb_labels, pdb_file, [colorsA, colorsB], session_save)
+    save_pymol_seq_align(
+        pdb_align, pdb_labels, pdb_file, [colorsA, colorsB], session_save
+    )
 
 
 if __name__ == "__main__":

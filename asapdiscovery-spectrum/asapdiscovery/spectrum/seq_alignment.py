@@ -210,12 +210,12 @@ class Alignment:
         # The function takes a biopython alignment object as input.
         aln = self.align_obj
         if len(reorder[0]) > 0:
-            aln_ref = aln[:1] # ref
+            aln_ref = aln[:1]  # ref
             aln_sorted = [aln[int(i)] for i in reorder]
             aln_ref.extend(aln_sorted)
             aln = aln_ref
-        
-        aln = aln[::-1] # So outputs are ordered from top to bottom
+
+        aln = aln[::-1]  # So outputs are ordered from top to bottom
         seqs = [rec.seq for rec in (aln)]  # Each sequence input
         text = [i for s in list(seqs) for i in s]  # Al units joind on same list
 
@@ -241,7 +241,9 @@ class Alignment:
             for col in range(N):  # Go through each column
                 # Note: AlignIO item retrieval is done through a get_item function, so this has to be done with a loop
                 col_string = aln[:, col]
-                color, font_color, match_key = get_colors_by_aa_group(col_string, max_mismatch, colors_dict)
+                color, font_color, match_key = get_colors_by_aa_group(
+                    col_string, max_mismatch, colors_dict
+                )
                 col_colors.append(color)
                 font_colors.append(font_color)
                 match_keys.append(match_key)
@@ -250,7 +252,10 @@ class Alignment:
             font_colors = np.array(font_colors).T.flatten()
             # get a dictionary with counts for a printed report
             from collections import Counter
-            print("The multi-sequence alignment returns the following matches:", )
+
+            print(
+                "The multi-sequence alignment returns the following matches:",
+            )
             for key, value in Counter(match_keys).items():
                 print(f"{key}: {value}/{N}")
         else:
