@@ -331,7 +331,7 @@ def struct_alignment(
     "--pdb-label",
     type=str,
     default="ref,pdb",
-    help="Label of PDB in PyMOL.",
+    help="Label of PDB in PyMOL. Provide as string 'REF,ALIGN1,<ALIGN2>,<ALIGN3>,...'",
 )
 @pymol_save
 @click.option(
@@ -393,7 +393,7 @@ def fitness_alignment(
                                                          pdb_align, 
                                                          start_idxA, 
                                                          start_idxB)
-    elif type == "align":
+    elif type == "fasta":
         assert fasta_a is not None
         assert fasta_b is not None
         pdb_align, colorsA, colorsB, pdb_labels = fasta_alignment(fasta_a, 
@@ -406,7 +406,7 @@ def fitness_alignment(
                                                                   struct_dir,
                                                                   max_mismatches)
     else:
-        raise NotImplementedError("Types allowed are 'pwise' and 'align'")
+        raise NotImplementedError("Types allowed are 'pwise' and 'fasta'")
     save_pymol_seq_align(pdb_align, pdb_labels, pdb_file, [colorsA, colorsB], session_save)
 
 
