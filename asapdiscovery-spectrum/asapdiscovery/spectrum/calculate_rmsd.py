@@ -116,7 +116,12 @@ def select_best_colabfold(
 
 
 def save_alignment_pymol(
-    pdbs: list, labels: list, reference: str, session_save: str, align_chain=str, color_by_rmsd=False,
+    pdbs: list,
+    labels: list,
+    reference: str,
+    session_save: str,
+    align_chain=str,
+    color_by_rmsd=False,
 ) -> None:
     """Imports the provided PDBs into a Pymol session and saves
 
@@ -135,9 +140,9 @@ def save_alignment_pymol(
     color_by_rmsd : bool, optional
         Option to color aligned targets by RMSD with respect to reference.
     """
+
     def hide_chain(p, chain, obj):
-        ''' Hide the other chain from visualization in obj
-        '''
+        """Hide the other chain from visualization in obj"""
         dimer_chains = {"A", "B"}
         hide_chain = (dimer_chains - {chain}).pop()
         p.cmd.select("chainb", f"{obj} and chain {hide_chain.upper()}")
@@ -153,7 +158,7 @@ def save_alignment_pymol(
     if align_chain == "both":
         align_sel = ""
     else:
-        align_sel = f" and chain {align_chain}"  
+        align_sel = f" and chain {align_chain}"
         hide_chain(p, align_chain, "ref_protein")
 
     p.cmd.select("chaina", f"ref_protein{align_sel}")
@@ -165,9 +170,9 @@ def save_alignment_pymol(
             pname = labels[i]
             p.cmd.load(pdb, object=pname)
             # PDBs should be aligned but in case they are not
-            p.cmd.select("chainp", pname+align_sel)
+            p.cmd.select("chainp", pname + align_sel)
             # It's better to align wrt a single chain than the whole protein (at least one binding site to compare)
-            p.cmd.align(f"{pname} and chain A", "ref_protein and chain A") 
+            p.cmd.align(f"{pname} and chain A", "ref_protein and chain A")
             if color_by_rmsd:
                 colorbyrmsd(p, "chainp", "chaina", minimum=0, maximum=2)
                 p.cmd.color("red", "ref_protein")
@@ -195,7 +200,15 @@ def save_alignment_pymol(
     p.cmd.save(session_save)
     return
 
-def colorbyrmsd(p: pymol2.PyMOL, target_sel: str, ref_sel: str, quiet=True, minimum=None, maximum=None):
+
+def colorbyrmsd(
+    p: pymol2.PyMOL,
+    target_sel: str,
+    ref_sel: str,
+    quiet=True,
+    minimum=None,
+    maximum=None,
+):
     """Color aligned proteins by RMSD with respect to the target.
     Based on script by original authors Shivender Shandilya and Jason Vertrees,
     rewrite by Thomas Holder. License: BSD-2-Clause.
@@ -223,9 +236,11 @@ def colorbyrmsd(p: pymol2.PyMOL, target_sel: str, ref_sel: str, quiet=True, mini
     p.cmd.select(selboth, f"{target_sel} or {ref_sel}")
 
     idx2coords = {}
-    p.cmd.iterate_state(-1, selboth, 'idx2coords[model,index] = (x,y,z)', space=locals())
+    p.cmd.iterate_state(
+        -1, selboth, "idx2coords[model,index] = (x,y,z)", space=locals()
+    )
 
-    if p.cmd.count_atoms('?' + aln, 1, 1) == 0:
+    if p.cmd.count_atoms("?" + aln, 1, 1) == 0:
         p.cmd.refresh()
 
     b_dict = {}
@@ -235,12 +250,12 @@ def colorbyrmsd(p: pymol2.PyMOL, target_sel: str, ref_sel: str, quiet=True, mini
         for idx in col:
             b_dict[idx] = b
 
-    p.cmd.alter(selboth, 'b = b_dict.get((model, index), -1)', space=locals())
+    p.cmd.alter(selboth, "b = b_dict.get((model, index), -1)", space=locals())
 
     p.cmd.orient(selboth)
-    p.cmd.show_as('cartoon', 'byobj ' + selboth)
-    p.cmd.color('gray', selboth)
-    p.cmd.spectrum('b', 'red_blue', selboth + ' and b > -0.5', minimum, maximum)
+    p.cmd.show_as("cartoon", "byobj " + selboth)
+    p.cmd.color("gray", selboth)
+    p.cmd.spectrum("b", "red_blue", selboth + " and b > -0.5", minimum, maximum)
 
     # Make colorbar
     if minimum is not None and maximum is not None:
@@ -249,10 +264,11 @@ def colorbyrmsd(p: pymol2.PyMOL, target_sel: str, ref_sel: str, quiet=True, mini
     if not quiet:
         print("ColorByRMSD: Minimum Distance: %.2f" % (min(b_dict.values())))
         print("ColorByRMSD: Maximum Distance: %.2f" % (max(b_dict.values())))
-        print("ColorByRMSD: Average Distance: %.2f" % (sum(b_dict.values()) / len(b_dict)))
+        print(
+            "ColorByRMSD: Average Distance: %.2f" % (sum(b_dict.values()) / len(b_dict))
+        )
 
     p.cmd.delete(aln)
     p.cmd.delete(selboth)
 
     return
-

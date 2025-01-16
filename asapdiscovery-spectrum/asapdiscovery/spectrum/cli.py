@@ -305,7 +305,9 @@ def struct_alignment(
             seq_labels.append(mol)
 
     session_save = save_dir / pymol_save
-    save_alignment_pymol(aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd)
+    save_alignment_pymol(
+        aligned_pdbs, seq_labels, ref_pdb, session_save, chain, color_by_rmsd
+    )
 
 
 @spectrum.command()
