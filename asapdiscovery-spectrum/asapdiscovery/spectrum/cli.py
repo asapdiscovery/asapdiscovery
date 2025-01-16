@@ -331,7 +331,7 @@ def struct_alignment(
     "--pdb-label",
     type=str,
     default="ref,pdb",
-    help="Label of PDB in PyMOL. Provide as string 'REF,ALIGN1,<ALIGN2>,<ALIGN3>,...'",
+    help="Label of PDB in PyMOL (optional). Provide as string 'REF,ALIGN1,<ALIGN2>,<ALIGN3>,...'",
 )
 @pymol_save
 @click.option(
@@ -350,19 +350,19 @@ def struct_alignment(
     "--fasta-sel",
     type=str,
     default="0,1",
-    help="Index of sequences in fasta file to use in the alignment. To use when --struct-align is provided.",
+    help="Index of sequences in fasta file to use in the alignment (optional for --struct-dir mode).",
 )
 @click.option(
     "--start-a",
     type=int,
-    default="0",
-    help="Start index for chain A",
+    default="1",
+    help="Start index for chain A. In multi-sequence alignment mode, all proteins to align must have the same start idx",
 )
 @click.option(
     "--start-b",
     type=int,
-    default="0",
-    help="Start index for chain B",
+    default="1",
+    help="Start index for chain B. In multi-sequence alignment mode, all proteins to align must have the same start idx",
 )
 @max_mismatches
 def fitness_alignment(
@@ -373,8 +373,8 @@ def fitness_alignment(
     pdb_align: str,
     struct_dir: str,
     fasta_sel:str,
-    start_a=0,
-    start_b=0,
+    start_a=1,
+    start_b=1,
     fasta_a=None,
     fasta_b=None,
     max_mismatches=0,
@@ -389,6 +389,8 @@ def fitness_alignment(
     session_save = pymol_save
     pdb_labels = pdb_label.split(",")
     if type == "pwise":
+        if pdb_align is None:
+            raise ValueError("pdb-align must be provided in pairwise mode! struct-dir pairwise alignment is not possible.")
         pdb_align, colorsA, colorsB = pairwise_alignment(pdb_file, 
                                                          pdb_align, 
                                                          start_idxA, 

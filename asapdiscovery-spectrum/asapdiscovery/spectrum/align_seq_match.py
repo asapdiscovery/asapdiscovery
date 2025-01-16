@@ -20,7 +20,7 @@ def pairwise_alignment(pdb_file, pdb_align, start_idxA, start_idxB):
     seq1 = str(rec1.seq).replace("X", "")
     seq2 = str(rec2.seq).replace("X", "")
     alignmentsA = pairwise2.align.globalms(seq1, seq2, 2, -1, -0.8, -0.5)[0]
-    print(pairwise2.format_alignment(*alignmentsA))
+    print("Pwise alignment for Chain A", "\n", pairwise2.format_alignment(*alignmentsA))
 
     # Chain B
     rec1 = pdb_to_seq(pdb1, chain="B")
@@ -28,7 +28,7 @@ def pairwise_alignment(pdb_file, pdb_align, start_idxA, start_idxB):
     seq1 = str(rec1.seq).replace("X", "")
     seq2 = str(rec2.seq).replace("X", "")
     alignmentsB = pairwise2.align.globalms(seq1, seq2, 2, -1, -0.8, -0.5)[0]
-    print(pairwise2.format_alignment(*alignmentsB))
+    print("Pwise alignment for Chain B", "\n", pairwise2.format_alignment(*alignmentsB))
 
     colorsA = get_colors_pairwise(alignmentsA, start_idxA)
     colorsB = get_colors_pairwise(alignmentsB, start_idxB)
@@ -46,29 +46,45 @@ def fasta_alignment(fasta_a,
                     struct_dir=None,
                     max_mismatches=0,
     ):
-    """Align ref pdb_file with pdb_align or pdbs in struct_dir based on multi-seq alignment 
+    """Align ref pdb_file with pdb_align or pdbs in struct_dir based on multi-seq alignment
     """
     alignmentsA = AlignIO.read(fasta_a, format='fasta')
     alignmentsB = AlignIO.read(fasta_b, format='fasta')
+    if len(alignmentsA) != len(alignmentsB) :
+        raise ValueError("The fasta alignments for Chains A and B must have the same entries.")
     if len(alignmentsA) < 2 or len(alignmentsB) < 2:
         raise ValueError("Each fasta file must AT LEAST contain a reference and one sequence to align.")
-
     fasta_sel = list(map(int, fasta_sel.split(",")))
+
+    def check_for_trailing_aas(pdb, aln_entry, chain):
+        """Check if there's trailing AA's at the beggining of alignment"""
+        rec = pdb_to_seq(pdb, chain=chain)
+        first_aa = rec.seq[0]
+        start_add = aln_entry.seq.find(first_aa)
+        return start_add
+
     if pdb_align is not None:
+        # 2-protein alignment mode
         print(f"Performing a 2-protein alignment of {pdb_align} to reference.")
         if len(fasta_sel) != 2:
             raise ValueError("the fasta_sel variable must be a comma-separated list of 2 indexes for the 1-pdb alignment mode.")
-        pdb_align = [pdb_align]
         if len(alignmentsA) > 2 and fasta_sel==[0,1]:
             warnings.warn("The default of fasta_sel '0,1' is being used with an alignment>2. You may want to set the sel manually.")
+        extra_start_idxA = check_for_trailing_aas(Path(pdb_align), alignmentsA[fasta_sel[1]], "A")
+        extra_start_idxB = check_for_trailing_aas(Path(pdb_align), alignmentsB[fasta_sel[1]], "B")
+        start_idxA -= extra_start_idxA
+        start_idxB -= extra_start_idxB
+        pdb_align = [pdb_align]
+
     elif struct_dir is not None:
+        # Multi-protein alignment mode
         print(f"Performing a multi-protein alignment from folder {struct_dir} to reference.")
         pdb_align = []
         labels = ["ref_protein"]
         aln_sel = [0] # Make ref to be always on the top
         for seq_entry in alignmentsA:
         # loop over alignment file:
-            seq_name = seq_entry.name.split("|")[1].split(".")[0] 
+            seq_name = seq_entry.name.split("|")[1].split(".")[0]
             f_name = list(Path(struct_dir).glob(f"{seq_name}*.pdb"))[0]
             if not f_name.exists():
                 print(f"Seq entry for {seq_name} didn't have a PDB in {struct_dir}")
@@ -76,6 +92,15 @@ def fasta_alignment(fasta_a,
             print(f"Reading structure {f_name.stem}, for seq {seq_name}")
             labels.append(f_name.stem)
             pdb_align.append(str(f_name))
+        pdb_alignB = []
+        for seq_entry in alignmentsB:
+            seq_name = seq_entry.name.split("|")[1].split(".")[0]
+            f_name = list(Path(struct_dir).glob(f"{seq_name}*.pdb"))[0]
+            if not f_name.exists():
+                continue
+            pdb_alignB.append(str(f_name))
+        if pdb_align != pdb_alignB :
+            raise ValueError("The fasta files for Chains A and B did not have the same entries! Make sure they do.")
         aln_sel = list(range(len(pdb_align)))
         if len(pdb_align) == 0:
             # In this case, the entry names may not match the pdb names, so we try to match by sequence
@@ -89,11 +114,15 @@ def fasta_alignment(fasta_a,
         else:
             if len(fasta_sel) > len(pdb_align):
                 warnings.warn("More fasta indexes given than pdbs in directory! Will determine automatically.")
-            fasta_sel = aln_sel 
+            fasta_sel = aln_sel
+        # For now, the functionality of start_idx only works if all proteins have the same value
+        extra_start_idxA = check_for_trailing_aas(Path(pdb_align[0]), alignmentsA[fasta_sel[1]], "A")
+        extra_start_idxB = check_for_trailing_aas(Path(pdb_align[0]), alignmentsB[fasta_sel[1]], "B")
+        start_idxA -= extra_start_idxA
+        start_idxB -= extra_start_idxB
 
     colorsA = get_colors_multi(alignmentsA, fasta_sel, start_idxA, max_mismatch=max_mismatches)
     colorsB = get_colors_multi(alignmentsB, fasta_sel, start_idxB, max_mismatch=max_mismatches)
-
     return pdb_align, colorsA, colorsB, pdb_labels
 
 def get_idx_by_seq(dir_path:str, alignments:Align.MultipleSeqAlignment):
@@ -141,11 +170,9 @@ def get_colors_pairwise(alignment, start_idx=0):
         col_string = ''.join(columns[col])
         colors_dict = {"exact": "white", "group": "orange", "none": "red"}
         color, font_color, key = get_colors_by_aa_group(col_string, 0, colors_dict)
-        print(col_string, color)
         if col_string[1] != '-':
             col_colors.append(color)
             i += 1
-    print('END')
     color_dict =  {(index+start_idx): string for index, string in enumerate(col_colors)}
     return color_dict
 
@@ -213,8 +240,8 @@ def save_pymol_seq_align(
     p.cmd.set("transparency", 0.8)
 
     # Color ligand and binding site
-    p.cmd.select("ligand", "resn LIG")
-    p.cmd.extract("ligand", "ligand")
+    p.cmd.select("lig", "resn LIG or resn UNK")
+    p.cmd.extract("ligand", "lig")
     p.cmd.show("sticks", "ligand")
 
     if len(pdbs) < 3:
@@ -224,7 +251,7 @@ def save_pymol_seq_align(
 
     p.cmd.delete("chaina")
     p.cmd.delete("chainb")
-    p.cmd.delete("ligand")
+    p.cmd.delete("lig")
     p.cmd.save(session_save)
     return
 
