@@ -1073,7 +1073,7 @@ class Trainer(BaseModel):
 
             epoch_train_loss = np.mean(tmp_loss)
 
-            ## Val and test splits
+            # Val and test splits
             self.model.eval()
             tmp_loss = []
             for compound, pose in self.ds_val:
