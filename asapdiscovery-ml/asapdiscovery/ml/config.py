@@ -21,7 +21,7 @@ from asapdiscovery.ml.es import (
     ConvergedEarlyStopping,
     PatientConvergedEarlyStopping,
 )
-from pydantic.v1 import BaseModel, confloat, Field, root_validator, validator
+from pydantic.v1 import BaseModel, Field, confloat, root_validator, validator
 
 
 class ConfigBase(BaseModel):
