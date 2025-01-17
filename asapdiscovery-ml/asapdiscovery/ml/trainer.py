@@ -95,6 +95,9 @@ class Trainer(BaseModel):
             "excluding any bias terms."
         ),
     )
+    batch_norm: bool = Field(
+        False, description="Normalize batch gradient by batch size."
+    )
     data_aug_configs: list[DataAugConfig] = Field(
         [],
         description="List of data augmentations to be applied in order to each pose.",
@@ -1030,12 +1033,14 @@ class Trainer(BaseModel):
 
                 # Perform backprop if we've done all the preds for this batch
                 if batch_counter == self.batch_size:
-                    # Need to scale the gradients by batch_size to get to MSE loss
-                    for p in self.model.parameters():
-                        p.grad /= batch_counter
+                    if self.batch_norm:
+                        # Need to scale the gradients by batch_size to get to MSE loss
+                        for p in self.model.parameters():
+                            p.grad /= batch_counter
 
                     # Backprop
                     self.optimizer.step()
+                    print("optimizer step", flush=True)
                     if any(
                         [
                             p.grad.isnan().any().item()
@@ -1050,12 +1055,12 @@ class Trainer(BaseModel):
                     self.optimizer.zero_grad()
 
             if batch_counter > 0:
-                # Need to scale the gradients by batch_size to get to MSE loss
-                for p in self.model.parameters():
-                    p.grad /= batch_counter
+                if self.batch_norm:
+                    # Need to scale the gradients by batch_size to get to MSE loss
+                    for p in self.model.parameters():
+                        p.grad /= batch_counter
 
                 # Backprop for final incomplete batch
-                self.optimizer.step()
                 if any(
                     [
                         p.grad.isnan().any().item()
