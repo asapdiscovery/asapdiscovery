@@ -1277,6 +1277,7 @@ def trainer_args(func):
         device,
         data_aug,
         trainer_weight_decay,
+        batch_norm,
     ]:
         func = fn(func)
     return func
@@ -1365,6 +1366,12 @@ def trainer_weight_decay(func):
             "weight_decay / 2 * the square of the L2-norm of the model weights, "
             "excluding any bias terms."
         ),
+    )(func)
+
+
+def batch_norm(func):
+    return click.option(
+        "--batch-norm", type=bool, help="Normalize batch gradient by batch size."
     )(func)
 
 
