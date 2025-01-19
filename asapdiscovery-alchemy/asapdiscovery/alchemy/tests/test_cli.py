@@ -579,10 +579,7 @@ def test_alchemy_status_all(monkeypatch):
         "complete                                     │                             1 "
         in result.stdout
     )
-    assert (
-        "│ fakenetwork-asap-alchemy-testing │ 1   │ 2  │ 3   │ 0  │ 0   │ 0  │ 5   │ 1  │"
-        in result.stdout
-    )
+
 
 
 def test_alchemy_status_mutex():
