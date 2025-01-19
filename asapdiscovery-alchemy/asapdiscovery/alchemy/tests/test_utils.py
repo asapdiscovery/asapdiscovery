@@ -92,7 +92,7 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     def create_tasks(transformation, count):
         "Mock creating tasks for a transform"
         return [
-            ScopedKey(gufe_key=uuid4().hex, **transformation.scope.dict())
+            ScopedKey(gufe_key=f"blah-{uuid4().hex}", **transformation.scope.dict())
             for _ in range(count)
         ]
 
@@ -177,7 +177,7 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
 
     network_key = ScopedKey(gufe_key=alchemical_network.key, **scope.dict())
     task_keys = [
-        ScopedKey(gufe_key=uuid4().hex, **network_key.scope.dict()) for _ in range(7)
+        ScopedKey(gufe_key=f"blah-{uuid4().hex}", **network_key.scope.dict()) for _ in range(7)
     ]
 
     def get_network_tasks(key: ScopedKey, status: str):

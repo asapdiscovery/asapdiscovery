@@ -1,6 +1,7 @@
 import os
 import pathlib
 import traceback
+from uuid import uuid4
 
 import pandas as pd
 import pytest
@@ -531,7 +532,7 @@ def test_alchemy_status_all(monkeypatch):
     monkeypatch.setenv("ALCHEMISCALE_KEY", "my-key")
 
     network_key = ScopedKey(
-        gufe_key="fakenetwork",
+        gufe_key=f"blah-{uuid4().hex}",
         org="asap",
         campaign="alchemy",
         project="testing",
