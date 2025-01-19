@@ -581,7 +581,6 @@ def test_alchemy_status_all(monkeypatch):
     )
 
 
-
 def test_alchemy_status_mutex():
     runner = CliRunner()
     result = runner.invoke(alchemy, ["status", "-n", "fakenetwork", "-nk", "1234"])
