@@ -455,6 +455,7 @@ def do_MSA(
     color_by_group: bool,
     start_alignment_idx: int,
     max_mismatch: int,
+    custom_order: str,
 ):
     save_file = alignment.dir_save / file_prefix
     # Select sequeneces of interest
@@ -489,6 +490,7 @@ def do_MSA(
         color_by_group=color_by_group,
         start_idx=start_alignment_idx,
         max_mismatch=max_mismatch,
+        reorder=custom_order.split(',')
     )
     print(f"A html file {align_html} have been generated with the aligned sequences")
 

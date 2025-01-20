@@ -84,6 +84,7 @@ def spectrum():
     default=0,
     help="Start index for reference aminoacids in html alignment (Useful when matching idxs to PyMOL labels)",
 )
+@max_mismatches
 @click.option(
     "--custom-order",
     default="",
