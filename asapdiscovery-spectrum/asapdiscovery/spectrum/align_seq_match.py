@@ -266,7 +266,7 @@ def save_pymol_seq_align(
     # Load other pdbs
     for i, pdb in enumerate(pdbs):
         p.cmd.load(pdb, object=labels[i + 1])
-        p.cmd.align(labels[i + 1], labels[0])
+        p.cmd.align(f"{labels[i + 1]} and chain A", f"{labels[0]} and chain A")
         p.cmd.color("gray", labels[i + 1])
         p.cmd.select("chaina", f"{labels[i+1]} and chain A")
         p.cmd.select("chainb", f"{labels[i+1]} and chain B")

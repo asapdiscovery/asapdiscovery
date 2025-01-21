@@ -30,7 +30,7 @@ def rmsd_alignment(
 
     Returns
     -------
-    float, str
+    float, Path
        RMSD after alignment, Path to saved PDB
     """
     protein = load_openeye_pdb(target_pdb)
@@ -165,7 +165,7 @@ def save_alignment_pymol(
     p.cmd.color("gray", "ref_protein")
 
     for i, pdb in enumerate(pdbs):
-        if len(pdb) > 0:
+        if len(str(pdb)) > 0:
             # In case the entry is empty (when no CF output was found)
             pname = labels[i]
             p.cmd.load(pdb, object=pname)

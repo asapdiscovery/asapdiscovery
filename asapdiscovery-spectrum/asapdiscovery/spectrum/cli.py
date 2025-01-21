@@ -332,7 +332,7 @@ def struct_alignment(
 @click.option(
     "--struct-dir",
     type=click.Path(resolve_path=True, exists=True, file_okay=False, dir_okay=True),
-    help="Path to folder where structures to align are stored. Not needed when --cfold-results or --pdb-align is given.",
+    help="Path to folder where structures to align are stored. Not needed when --pdb-align is given.",
 )
 @click.option(
     "--pdb-label",
