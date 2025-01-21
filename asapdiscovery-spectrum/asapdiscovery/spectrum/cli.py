@@ -290,6 +290,7 @@ def struct_alignment(
         aligned_pdbs = []
         seq_labels = []
         seq_df = pd.read_csv(seq_file)
+        seq_df.columns = seq_df.columns.str.lower() # make case-insensitive
         for index, row in seq_df.iterrows():
             # iterate over each csv entry
             mol = row["id"]

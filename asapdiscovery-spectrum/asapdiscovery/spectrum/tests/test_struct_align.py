@@ -109,6 +109,8 @@ def test_struct_alignment_one_chain(blast_csv_path, protein_path, protein_apo_pa
             protein_path,
             "--pdb-align",
             protein_apo_path,
+            "--output-dir",
+            tmp_path,
             "--pymol-save",
             tmp_path/"file.pse",
             "--chain",
@@ -133,6 +135,8 @@ def test_struct_alignment_struct_dir(blast_csv_path, protein_path, structure_dir
             protein_path,
             "--struct-dir",
             struct_dir,
+            "--output-dir",
+            tmp_path,
             "--pymol-save",
             tmp_path/"file.pse",
             "--chain",
@@ -146,7 +150,7 @@ def test_struct_alignment_struct_dir(blast_csv_path, protein_path, structure_dir
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
 def test_struct_alignment_cfold_dir(blast_csv_path, protein_path, cfold_dir, tmp_path):
     runner = CliRunner()
-    struct_dir, _ = structure_dir
+    cfold_dir, _ = cfold_dir
     result = runner.invoke(
         cli,
         [
@@ -157,6 +161,8 @@ def test_struct_alignment_cfold_dir(blast_csv_path, protein_path, cfold_dir, tmp
             protein_path,
             "--cfold-results",
             cfold_dir,
+            "--output-dir",
+            tmp_path,
             "--pymol-save",
             tmp_path/"file.pse",
             "--chain",
