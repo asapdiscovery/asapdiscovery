@@ -100,20 +100,20 @@ def fasta_alignment(
         for seq_entry in alignmentsA:
             # loop over alignment file:
             seq_name = seq_entry.name.split("|")[1].split(".")[0]
-            f_name = list(Path(struct_dir).glob(f"{seq_name}*.pdb"))[0]
-            if not f_name.exists():
+            f_name = list(Path(struct_dir).glob(f"{seq_name}*.pdb"))
+            if len(f_name) == 0:
                 print(f"Seq entry for {seq_name} didn't have a PDB in {struct_dir}")
                 continue
-            print(f"Reading structure {f_name.stem}, for seq {seq_name}")
-            labels.append(f_name.stem)
-            pdb_align.append(str(f_name))
+            print(f"Reading structure {f_name[0].stem}, for seq {seq_name}")
+            labels.append(f_name[0].stem)
+            pdb_align.append(str(f_name[0]))
         pdb_alignB = []
         for seq_entry in alignmentsB:
             seq_name = seq_entry.name.split("|")[1].split(".")[0]
-            f_name = list(Path(struct_dir).glob(f"{seq_name}*.pdb"))[0]
-            if not f_name.exists():
+            f_name = list(Path(struct_dir).glob(f"{seq_name}*.pdb"))
+            if len(f_name) == 0:
                 continue
-            pdb_alignB.append(str(f_name))
+            pdb_alignB.append(str(f_name[0]))
         if pdb_align != pdb_alignB:
             raise ValueError(
                 "The fasta files for Chains A and B did not have the same entries! Make sure they do."
