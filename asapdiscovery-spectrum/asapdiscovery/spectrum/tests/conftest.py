@@ -58,4 +58,3 @@ def all_cfold_dir_fns():
 def cfold_dir(all_cfold_dir_fns):
     all_paths = [fetch_test_file(f) for f in all_cfold_dir_fns]
     return all_paths[0].parent, all_paths
-

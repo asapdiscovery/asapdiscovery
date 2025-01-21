@@ -2,10 +2,14 @@ import os
 import traceback
 
 import pytest
-from asapdiscovery.spectrum.cli import spectrum as cli
+from asapdiscovery.spectrum.align_seq_match import (
+    pairwise_alignment,
+    save_pymol_seq_align,
+)
 from asapdiscovery.spectrum.calculate_rmsd import rmsd_alignment, save_alignment_pymol
-from asapdiscovery.spectrum.align_seq_match import pairwise_alignment, save_pymol_seq_align
+from asapdiscovery.spectrum.cli import spectrum as cli
 from click.testing import CliRunner
+
 
 def click_success(result):
     if result.exit_code != 0:  # -no-cov-  (only occurs on test error)
@@ -25,6 +29,7 @@ def test_rmsd_alignment(protein_path, protein_apo_path, tmp_path):
     )
     assert isinstance(rmsd, float)
     assert pdb_out.exists()
+
 
 def test_save_alignment(protein_path, protein_apo_path, tmp_path):
     pse_out = tmp_path / "file.pse"
@@ -47,29 +52,30 @@ def test_pairwise_alignment(protein_path):
         start_idxA=start_idx,
         start_idxB=start_idx,
     )
-    assert len(pdb_align)==1
-    assert len(set(colorsA.values()))==1 # All should be white
-    assert len(set(colorsB.values()))==1
+    assert len(pdb_align) == 1
+    assert len(set(colorsA.values())) == 1  # All should be white
+    assert len(set(colorsB.values())) == 1
     assert colorsA[start_idx] == "white"
     assert colorsB[start_idx] == "white"
 
+
 def test_pymol_seq_align(protein_path, tmp_path):
     import MDAnalysis as mda
+
     u = mda.Universe(protein_path)
     nres = len(u.select_atoms("protein").residues)
-    colorsA = {
-        (index + 1): string for index, string in enumerate(["white"]*nres)
-    }
+    colorsA = {(index + 1): string for index, string in enumerate(["white"] * nres)}
     pse_out = tmp_path / "file.pse"
 
     save_pymol_seq_align(
         pdbs=[protein_path],
-        labels=["ref","pdb"],
+        labels=["ref", "pdb"],
         reference=protein_path,
         color_dict=[colorsA, colorsA],
         session_save=pse_out,
     )
     assert pse_out.exists()
+
 
 @pytest.mark.skipif(os.getenv("RUNNER_OS") == "macOS", reason="Slow on macOS")
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
@@ -86,10 +92,10 @@ def test_struct_alignment_single_pdb(blast_csv_path, protein_path, tmp_path):
             "--pdb-align",
             protein_path,
             "--pymol-save",
-            tmp_path/"file.pse",
+            tmp_path / "file.pse",
             "--chain",
             "both",
-            "--color-by-rmsd"
+            "--color-by-rmsd",
         ],
     )
     assert click_success(result)
@@ -97,7 +103,9 @@ def test_struct_alignment_single_pdb(blast_csv_path, protein_path, tmp_path):
 
 @pytest.mark.skipif(os.getenv("RUNNER_OS") == "macOS", reason="Slow in macOS")
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
-def test_struct_alignment_one_chain(blast_csv_path, protein_path, protein_apo_path, tmp_path):
+def test_struct_alignment_one_chain(
+    blast_csv_path, protein_path, protein_apo_path, tmp_path
+):
     runner = CliRunner()
     result = runner.invoke(
         cli,
@@ -112,17 +120,20 @@ def test_struct_alignment_one_chain(blast_csv_path, protein_path, protein_apo_pa
             "--output-dir",
             tmp_path,
             "--pymol-save",
-            tmp_path/"file.pse",
+            tmp_path / "file.pse",
             "--chain",
             "A",
-            "--color-by-rmsd"
+            "--color-by-rmsd",
         ],
     )
     assert click_success(result)
 
+
 @pytest.mark.skipif(os.getenv("RUNNER_OS") == "macOS", reason="Slow in macOS")
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
-def test_struct_alignment_struct_dir(blast_csv_path, protein_path, structure_dir, tmp_path):
+def test_struct_alignment_struct_dir(
+    blast_csv_path, protein_path, structure_dir, tmp_path
+):
     runner = CliRunner()
     struct_dir, _ = structure_dir
     result = runner.invoke(
@@ -138,13 +149,14 @@ def test_struct_alignment_struct_dir(blast_csv_path, protein_path, structure_dir
             "--output-dir",
             tmp_path,
             "--pymol-save",
-            tmp_path/"file.pse",
+            tmp_path / "file.pse",
             "--chain",
             "both",
-            "--color-by-rmsd"
+            "--color-by-rmsd",
         ],
     )
     assert click_success(result)
+
 
 @pytest.mark.skipif(os.getenv("RUNNER_OS") == "macOS", reason="Slow in macOS")
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
@@ -164,7 +176,7 @@ def test_struct_alignment_cfold_dir(blast_csv_path, protein_path, cfold_dir, tmp
             "--output-dir",
             tmp_path,
             "--pymol-save",
-            tmp_path/"file.pse",
+            tmp_path / "file.pse",
             "--chain",
             "both",
             "--color-by-rmsd",
@@ -192,14 +204,17 @@ def test_fitness_alignment_pairwise(blast_csv_path, protein_path, tmp_path):
             "--pdb-label",
             "ref,pdb",
             "--pymol-save",
-            tmp_path/"file.pse",
+            tmp_path / "file.pse",
         ],
     )
     assert click_success(result)
 
+
 @pytest.mark.skipif(os.getenv("RUNNER_OS") == "macOS", reason="Slow in macOS")
 @pytest.mark.skipif(os.getenv("SKIP_EXPENSIVE_TESTS"), reason="Expensive tests skipped")
-def test_fitness_alignment_fasta(blast_csv_path, fasta_alignment_path, protein_path, protein_mers_path, tmp_path):
+def test_fitness_alignment_fasta(
+    blast_csv_path, fasta_alignment_path, protein_path, protein_mers_path, tmp_path
+):
     runner = CliRunner()
     result = runner.invoke(
         cli,
@@ -214,7 +229,7 @@ def test_fitness_alignment_fasta(blast_csv_path, fasta_alignment_path, protein_p
             "--pdb-label",
             "ref,pdb",
             "--pymol-save",
-            tmp_path/"file.pse",
+            tmp_path / "file.pse",
             "--fasta-a",
             fasta_alignment_path,
             "--fasta-b",
@@ -224,4 +239,3 @@ def test_fitness_alignment_fasta(blast_csv_path, fasta_alignment_path, protein_p
         ],
     )
     assert click_success(result)
-
