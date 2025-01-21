@@ -16,9 +16,11 @@ def blast_xml_path():
 def blast_csv_path():
     return fetch_test_file("SARS_blast_results.csv")
 
+
 @pytest.fixture()
 def protein_apo_path():
     return fetch_test_file("Mpro-YP_009725301_AFold_processed.pdb")
+
 
 @pytest.fixture()
 def all_structure_dir_fns():
@@ -32,4 +34,3 @@ def all_structure_dir_fns():
 def structure_dir(all_structure_dir_fns):
     all_paths = [fetch_test_file(f) for f in all_structure_dir_fns]
     return all_paths[0].parent, all_paths
-

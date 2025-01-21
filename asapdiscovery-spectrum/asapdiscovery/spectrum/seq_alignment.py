@@ -490,7 +490,7 @@ def do_MSA(
         color_by_group=color_by_group,
         start_idx=start_alignment_idx,
         max_mismatch=max_mismatch,
-        reorder=custom_order.split(',')
+        reorder=custom_order.split(","),
     )
     print(f"A html file {align_html} have been generated with the aligned sequences")
 

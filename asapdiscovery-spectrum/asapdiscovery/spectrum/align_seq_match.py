@@ -1,8 +1,8 @@
 import warnings
 from pathlib import Path
 from typing import Union
-import numpy as np
 
+import numpy as np
 import pymol2
 from asapdiscovery.spectrum.blast import pdb_to_seq
 from asapdiscovery.spectrum.seq_alignment import get_colors_by_aa_group
