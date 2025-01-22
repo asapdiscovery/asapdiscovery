@@ -358,6 +358,15 @@ files:
   - resource: SARS_blast_results.csv
     sha256hash: 1867827bd921e269b44c88476c1dfad2f198266388eef15696eefbb669e24abd
 
+  - resource: mers_8hut.pdb
+    sha256hash: ad5d14671ffc290ee59b1809b4f0b8b31fb709798271dcae97c5633338750b9d
+
+  - resource: sars_alignment.fasta
+    sha256hash: 7e0ab56374e4e4e54197a23649d5d48daa2ba3bfecaed1f3f92d39983a1d9ddc
+
+  - resource: spectrum_dir/YP_009725295_1_unrelaxed_rank_001_alphafold2_multimer_v3_model_1_seed_000.pdb
+    sha256hash: 5eadcaa47f507281f80eb3cd8a84453dbd5012e549ef6151c808f56bad1dfc7b
+
   - resource: tyk2_result_network_ddg0s.json
     sha256hash: f9ba9049f40eaa41e108a4cea5efafc726d08729b636c1df61fa771677f4c093
 

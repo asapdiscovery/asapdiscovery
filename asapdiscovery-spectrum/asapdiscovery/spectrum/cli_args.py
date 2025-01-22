@@ -38,6 +38,14 @@ def email(func):
     )(func)
 
 
+def max_mismatches(func):
+    return click.option(
+        "--max-mismatches",
+        default=0,
+        help="Maximum number of aminoacid group missmatches to be allowed in color-seq-match mode.",
+    )(func)
+
+
 def gen_ref_pdb(func):
     return click.option(
         "--gen-ref-pdb",
@@ -64,4 +72,13 @@ def n_chains(func):
         default=None,
         help="Number of repeated chains that will be saved in csv file."
         ' Requires calling the "--multimer" flag',
+    )(func)
+
+
+def pymol_save(func):
+    return click.option(
+        "--pymol-save",
+        type=str,
+        default="session.pse",
+        help="Path to file where session will be saved.",
     )(func)
