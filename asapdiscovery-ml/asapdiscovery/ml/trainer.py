@@ -1069,6 +1069,10 @@ class Trainer(BaseModel):
                     ]
                 ):
                     raise ValueError("NaN gradients")
+
+                # Backprop
+                self.optimizer.step()
+
             end_time = time()
 
             epoch_train_loss = np.mean(tmp_loss)
