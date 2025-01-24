@@ -1276,6 +1276,8 @@ def trainer_args(func):
         loss_dict,
         device,
         data_aug,
+        trainer_weight_decay,
+        batch_norm,
     ]:
         func = fn(func)
     return func
@@ -1352,6 +1354,24 @@ def data_aug(func):
             "noise from a fixed Gaussian with a std of 0.05, you would pass "
             "--data-aug aug_type:jitter_fixed,jitter_fixed_std:0.05."
         ),
+    )(func)
+
+
+def trainer_weight_decay(func):
+    return click.option(
+        "--trainer-weight-decay",
+        type=float,
+        help=(
+            "Weight decay weighting for training. This will add a term of "
+            "weight_decay / 2 * the square of the L2-norm of the model weights, "
+            "excluding any bias terms."
+        ),
+    )(func)
+
+
+def batch_norm(func):
+    return click.option(
+        "--batch-norm", type=bool, help="Normalize batch gradient by batch size."
     )(func)
 
 
