@@ -1040,7 +1040,6 @@ class Trainer(BaseModel):
 
                     # Backprop
                     self.optimizer.step()
-                    print("optimizer step", flush=True)
                     if any(
                         [
                             p.grad.isnan().any().item()
