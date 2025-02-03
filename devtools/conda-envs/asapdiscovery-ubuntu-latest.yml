@@ -30,7 +30,7 @@ dependencies:
   - openmmforcefields >= 0.13.0
   - pandas
   - pebble
-  - pydantic >=1.10.8,<2.0.0a0
+  - pydantic >=2.0.0a0
   - rdkit
   - seaborn
   - panel

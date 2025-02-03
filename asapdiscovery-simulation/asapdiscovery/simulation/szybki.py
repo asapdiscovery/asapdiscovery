@@ -7,7 +7,7 @@ import pandas as pd
 from asapdiscovery.data.backend.openeye import oechem, oeszybki
 from asapdiscovery.data.util.logging import FileLogger
 from openmm import unit
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class SzybkiFreeformResult(BaseModel):

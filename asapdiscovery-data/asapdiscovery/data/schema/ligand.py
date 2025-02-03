@@ -37,7 +37,7 @@ from asapdiscovery.data.schema.identifiers import (
     LigandProvenance,
 )
 from asapdiscovery.data.schema.schema_base import DataStorageType
-from pydantic import Field, root_validator, validator
+from pydantic.v1 import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (

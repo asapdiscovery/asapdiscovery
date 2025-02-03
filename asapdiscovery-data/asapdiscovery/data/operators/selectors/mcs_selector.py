@@ -14,7 +14,7 @@ from asapdiscovery.data.util.dask_utils import (
 )
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
 from dask import delayed
-from pydantic import Field
+from pydantic.v1 import Field
 from rdkit import Chem, rdBase
 from rdkit.Chem import rdRascalMCES
 

@@ -10,7 +10,7 @@ from asapdiscovery.data.util.dask_utils import (
     actualise_dask_delayed_iterable,
 )
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class SelectorBase(abc.ABC, BaseModel):
