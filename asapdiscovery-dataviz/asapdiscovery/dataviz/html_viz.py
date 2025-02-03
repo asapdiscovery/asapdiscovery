@@ -37,13 +37,13 @@ from asapdiscovery.dataviz._html_blocks import HTMLBlockData
 from asapdiscovery.dataviz.visualizer import VisualizerBase
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from asapdiscovery.genetics.fitness import (
+from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
+from asapdiscovery.spectrum.fitness import (
     _FITNESS_DATA_FIT_THRESHOLD,
     get_fitness_scores_bloom_by_target,
     parse_fitness_json,
     target_has_fitness_data,
 )
-from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 from multimethod import multimethod
 from pydantic.v1 import Field, root_validator
 

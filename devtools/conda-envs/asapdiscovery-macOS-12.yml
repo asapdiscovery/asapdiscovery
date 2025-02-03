@@ -5,7 +5,7 @@ channels:
 dependencies:
   # Base depends
   - pip
-  - python >=3.10,<3.11
+  - python >=3.10,<3.12
 
   # Testing
   - pytest
@@ -24,8 +24,10 @@ dependencies:
   - appdirs
   - mdanalysis
   - openff-toolkit
+  - openff-fragmenter <0.2.2
+  - openff-bespokefit >=0.4.0
   - openff-forcefields >=2024.04.0
-  - openeye-toolkits <2023.2.3
+  - openeye-toolkits # may need  <2023.2.3 for lilac GLIBC
   - openmmforcefields >= 0.13.0
   - pandas
   - pebble
@@ -64,14 +66,13 @@ dependencies:
   - dgl <=2.0.0
   - dgllife
   - pooch
-  - mtenn >=0.6.1
+  - mtenn =0.6.2
   - wandb
 
   # md
   - openmm
   - openmmforcefields
   - mdtraj
-  - openff-toolkit
 
   # execution
   - distributed

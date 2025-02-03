@@ -199,6 +199,7 @@ def cross_docking_workflow(inputs: CrossDockingWorkflowInputs):
         low_posit_prob_thresh=inputs.low_posit_prob_thresh,
         allow_final_clash=inputs.allow_final_clash,
         allow_retries=inputs.allow_retries,
+        last_ditch_fred=False,
     )
     results = docker.dock(
         sets,

@@ -215,6 +215,57 @@ class EnsembleMLModelSpec(MLModelSpecBase):
             **self.dict(exclude={"models"}),
         )
 
+    def pull_plot(
+        self, plotname: str, filename: Optional[str] = None, return_as="memory"
+    ) -> str:
+        """
+        Pull plot of model performance from a URL
+
+        Parameters
+        ----------
+        plotname : str
+            Name of plot
+        filename : Optional[str], optional
+            Filename to save plot to, by default None
+        return_as : str, optional
+            How to return the plot, either 'memory', 'file' or 'url', by default 'memory'
+
+        Returns
+        -------
+        str
+            Plot data, filename or url
+        """
+        # check all the base urls are the same
+        base_url = self.models[0].base_url
+        if not all([model.base_url == base_url for model in self.models]):
+            raise ValueError("All models in an ensemble must have the same base url")
+        # get plot at baseurl/plotname
+        plot_url = urljoin(base_url, plotname)
+
+        # pull using requests to in memory
+        try:
+            response = requests.get(plot_url)
+            response.raise_for_status()
+        except Exception as e:
+            warnings.warn(
+                f"Failed to download plot from {plot_url}, skipping. Error: {e}"
+            )
+            return None
+        # return as memory or file
+        if return_as == "memory":
+            return response.content
+        elif return_as == "file":
+            # save to file
+            if not filename:
+                filename = plotname
+            with open(filename, "wb") as f:
+                f.write(response.content)
+            return filename
+        elif return_as == "url":
+            return plot_url
+        else:
+            raise ValueError("return_as must be 'memory' or 'file' or 'url'")
+
 
 def _url_to_yaml(url: str) -> dict:
     # Retrieve the file content from the URL

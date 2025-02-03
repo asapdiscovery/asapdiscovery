@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex
@@ -743,3 +744,27 @@ class GraphDataset(Dataset):
     def __iter__(self):
         for s in self.structures:
             yield (s["compound"], s)
+
+
+def dataset_to_dataframe(dataset):
+    all_data = []
+    for k, v in dataset:
+        # add all string castable data in v to a dict
+        data_dict = {}
+        for key, value in v.items():
+            try:
+                value = str(value)
+                data_dict[key] = value
+            except:  # noqa: E722
+                pass
+
+        # add compound tuple to dict
+        data_dict["xtal_id"] = k[0]
+        data_dict["compound_id"] = k[1]
+        all_data.append(data_dict)
+    return pd.DataFrame(all_data)
+
+
+def dataset_to_csv(dataset, filename):
+    dataset_to_dataframe(dataset).to_csv(filename, index=False)
+    return filename

@@ -27,7 +27,7 @@ python:
     - method: pip
       path: asapdiscovery-docking
     - method: pip
-      path: asapdiscovery-genetics
+      path: asapdiscovery-spectrum
     - method: pip
       path: asapdiscovery-ml
     - method: pip
