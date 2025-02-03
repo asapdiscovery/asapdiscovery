@@ -23,7 +23,7 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 if TYPE_CHECKING:
     from distributed import Client

@@ -23,7 +23,7 @@ from asapdiscovery.ml.models import (
 # static import of models from base yaml here
 from dgllife.utils import CanonicalAtomFeaturizer
 from mtenn.config import E3NNModelConfig, GATModelConfig, ModelType, SchNetModelConfig
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 """
 TODO

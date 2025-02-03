@@ -43,7 +43,7 @@ from asapdiscovery.spectrum.fitness import target_has_fitness_data
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic import Field, PositiveInt
+from pydantic.v1 import Field, PositiveInt
 
 
 class LargeScaleDockingInputs(PosteraDockingWorkflowInputs):

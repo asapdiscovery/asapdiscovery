@@ -18,7 +18,7 @@ from asapdiscovery.data.services.services_config import (
     S3Settings,
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from pydantic import BaseModel, Field, root_validator
+from pydantic.v1 import BaseModel, Field, root_validator
 
 
 class ArtifactType(Enum):
