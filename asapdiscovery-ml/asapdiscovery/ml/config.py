@@ -952,10 +952,18 @@ class LossFunctionType(StringEnum):
     Enum for different methods of splitting a dataset.
     """
 
+    # Standard L1 loss
+    l1 = "l1"
+    # Stepped L1 loss (adjusted loss for values outside assay range)
+    l1_step = "l1_step"
     # Standard MSE loss
     mse = "mse"
     # Stepped MSE loss (adjusted loss for values outside assay range)
     mse_step = "mse_step"
+    # Standard smooth L1 loss
+    smooth_l1 = "smooth_l1"
+    # Stepped smooth L1 loss (adjusted loss for values outside assay range)
+    smooth_l1_step = "smooth_l1_step"
     # Gaussian NLL loss (ignoring semiquant values)
     gaussian = "gaussian"
     # Gaussian NLL loss (including semiquant values)
@@ -1016,16 +1024,26 @@ class LossFunctionConfig(ConfigBase):
     def build(self):
         from asapdiscovery.ml.loss import (
             GaussianNLLLoss,
+            L1Loss,
             MSELoss,
             PoseCrossEntropyLoss,
             RangeLoss,
+            SmoothL1Loss,
         )
 
         match self.loss_type:
+            case LossFunctionType.l1:
+                return L1Loss()
+            case LossFunctionType.l1_step:
+                return L1Loss("step")
             case LossFunctionType.mse:
                 return MSELoss()
             case LossFunctionType.mse_step:
                 return MSELoss("step")
+            case LossFunctionType.smooth_l1:
+                return SmoothL1Loss()
+            case LossFunctionType.smooth_l1_step:
+                return SmoothL1Loss("step")
             case LossFunctionType.gaussian:
                 return GaussianNLLLoss(keep_sq=False)
             case LossFunctionType.gaussian_sq:
