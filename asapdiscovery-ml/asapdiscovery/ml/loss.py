@@ -93,7 +93,9 @@ class L1Loss(TorchL1Loss):
                     np.ravel(pred.detach().cpu()),
                     np.ravel(target.detach().cpu()),
                     np.ravel(
-                        in_range.detach().cpu() if in_range is not None else in_range
+                        in_range.detach().cpu()
+                        if in_range is not None
+                        else [None] * len(pred.flatten())
                     ),
                 )
             ]
@@ -102,7 +104,7 @@ class L1Loss(TorchL1Loss):
 
         # Need to add the max in the denominator in case there are no values that we
         #  want to calculate loss for
-        loss = (loss * mask) / max(torch.sum(mask), 1)
+        loss = (loss * mask).sum() / max(torch.sum(mask), 1)
 
         return loss
 
@@ -193,7 +195,9 @@ class MSELoss(TorchMSELoss):
                     np.ravel(pred.detach().cpu()),
                     np.ravel(target.detach().cpu()),
                     np.ravel(
-                        in_range.detach().cpu() if in_range is not None else in_range
+                        in_range.detach().cpu()
+                        if in_range is not None
+                        else [None] * len(pred.flatten())
                     ),
                 )
             ]
@@ -202,7 +206,7 @@ class MSELoss(TorchMSELoss):
 
         # Need to add the max in the denominator in case there are no values that we
         #  want to calculate loss for
-        loss = (loss * mask) / max(torch.sum(mask), 1)
+        loss = (loss * mask).sum() / max(torch.sum(mask), 1)
 
         return loss
 
@@ -293,7 +297,9 @@ class SmoothL1Loss(TorchSmoothL1Loss):
                     np.ravel(pred.detach().cpu()),
                     np.ravel(target.detach().cpu()),
                     np.ravel(
-                        in_range.detach().cpu() if in_range is not None else in_range
+                        in_range.detach().cpu()
+                        if in_range is not None
+                        else [None] * len(pred.flatten())
                     ),
                 )
             ]
@@ -302,7 +308,7 @@ class SmoothL1Loss(TorchSmoothL1Loss):
 
         # Need to add the max in the denominator in case there are no values that we
         #  want to calculate loss for
-        loss = (loss * mask) / max(torch.sum(mask), 1)
+        loss = (loss * mask).sum() / max(torch.sum(mask), 1)
 
         return loss
 
