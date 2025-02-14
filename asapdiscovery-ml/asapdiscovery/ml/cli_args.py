@@ -357,6 +357,7 @@ def mtenn_args(func):
     for fn in [
         grouped,
         strategy,
+        strategy_layer_norm,
         pred_readout,
         combination,
         comb_readout,
@@ -388,6 +389,14 @@ def strategy(func):
             "Which Strategy to use for combining complex, protein, and ligand "
             "representations in the MTENN Model."
         ),
+    )(func)
+
+
+def strategy_layer_norm(func):
+    return click.option(
+        "--strategy-layer-norm",
+        type=bool,
+        help="Apply a LayerNorm operation in the Strategy.",
     )(func)
 
 
