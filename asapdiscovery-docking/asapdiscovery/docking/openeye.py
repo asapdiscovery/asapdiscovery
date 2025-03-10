@@ -19,7 +19,7 @@ from asapdiscovery.docking.docking import (
     DockingResult,
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from pydantic import Field, PositiveInt, root_validator
+from pydantic.v1 import Field, PositiveInt, root_validator
 
 logger = logging.getLogger(__name__)
 
