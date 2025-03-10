@@ -2,8 +2,8 @@ import numpy as np
 import torch
 from torch.nn import CrossEntropyLoss as TorchCrossEntropyLoss
 from torch.nn import GaussianNLLLoss as TorchGaussianNLLLoss
-from torch.nn import MSELoss as TorchMSELoss
 from torch.nn import L1Loss as TorchL1Loss
+from torch.nn import MSELoss as TorchMSELoss
 from torch.nn import SmoothL1Loss as TorchSmoothL1Loss
 
 
