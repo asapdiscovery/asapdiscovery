@@ -992,13 +992,14 @@ def download_cdd_data(protocol_name: str) -> pd.DataFrame:
     return formatted_data
 
 
-def clean_result_network(network, console=None):
+def clean_result_network(network, console=None, ddg_outlier_threshold=15):
     """
     Cleans an incoming result network JSON file from some issues that might occur. Current procedures:
     - removes edges that have DG==0.0, this happens when there is inconsistent stereo annotation in input ligands
     such that after stereo enumeration there are duplicate ligands.
     - cleans imbalanced complex/solvent legs, e.g. when some have failed or when stereo expansion was done unintentionally.
     Averages duplicate legs to come to a single value.
+    - removes edges that have erroneously large DDGs (anything absolute above ddg_outlier_threshold in kcal/mol)
 
     returns the loaded FreeEnergyCalculationNetwork.
     """
@@ -1058,16 +1059,49 @@ def clean_result_network(network, console=None):
         ):
             denand_results.append(result)
 
+    # remove edges that have erroneously high DDG values
+    results_complex = []
+    results_solvent = []
+
+    for edge_result in denand_results:
+        if edge_result.phase == "complex":
+            results_complex.append(edge_result)
+        elif edge_result.phase == "solvent":
+            results_solvent.append(edge_result)
+        else:
+            raise ValueError(
+                f"Edge phase {edge_result.phase} not recognized for edge {edge_result}"
+            )
+    results_not_overly_large = []
+    large_edge_removal_counter = 0
+    for res_complex in results_complex:
+        # find the solvent match
+        for res_solvent in results_solvent:
+            if (
+                res_complex.ligand_a == res_solvent.ligand_a
+                and res_complex.ligand_b == res_solvent.ligand_b
+            ):
+                # only add back in if the edge's DDG is below the outlier threshold
+                if (
+                    abs(res_solvent.estimate.magnitude - res_complex.estimate.magnitude)
+                    < ddg_outlier_threshold
+                ):
+                    results_not_overly_large.append(res_solvent)
+                    results_not_overly_large.append(res_complex)
+                else:
+                    large_edge_removal_counter += 1
+
+    # done! let's repack everything.
     if console:
         message = Padding(
-            f"Cleaned incoming result network:\n- Removed {num_0_0_removed} edge(s) with DG==0.0 kcal/mol\n- Removed {num_dupes_removed} edge(s) to balance between complex/solvent replicates.\n- Removed {len(deduped_results)-len(denand_results)} edge(s) that contained a NaN measurement",
+            f"Cleaned incoming result network:\n- Removed {num_0_0_removed} edge(s) with DG==0.0 kcal/mol\n- Removed {num_dupes_removed} edge(s) to balance between complex/solvent replicates.\n- Removed {len(deduped_results)-len(denand_results)} edge(s) that contained a NaN measurement\n- Removed {large_edge_removal_counter} edges that have an abs(DDG) of more than {ddg_outlier_threshold} kcal/mol",
             (1, 0, 1, 0),
         )
         console.print(message)
     data = network_schema.dict(exclude={"results"})
     # unpack the deduped results into dicts
     results = AlchemiscaleResults(
-        results=denand_results, network_key=network_schema.results.network_key
+        results=results_not_overly_large, network_key=network_schema.results.network_key
     ).dict()
     data["results"] = results
 

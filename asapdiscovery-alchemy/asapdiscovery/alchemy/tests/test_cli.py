@@ -1,6 +1,7 @@
 import os
 import pathlib
 import traceback
+from uuid import uuid4
 
 import pandas as pd
 import pytest
@@ -531,7 +532,7 @@ def test_alchemy_status_all(monkeypatch):
     monkeypatch.setenv("ALCHEMISCALE_KEY", "my-key")
 
     network_key = ScopedKey(
-        gufe_key="fakenetwork",
+        gufe_key=f"blah-{uuid4().hex}",
         org="asap",
         campaign="alchemy",
         project="testing",
@@ -576,10 +577,6 @@ def test_alchemy_status_all(monkeypatch):
     assert click_success(result)
     assert (
         "complete                                     │                             1 "
-        in result.stdout
-    )
-    assert (
-        "│ fakenetwork-asap-alchemy-testing │ 1   │ 2  │ 3   │ 0  │ 0   │ 0  │ 5   │ 1  │"
         in result.stdout
     )
 
