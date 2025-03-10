@@ -9,6 +9,7 @@ def plot_split_losses(
     loss_label="Loss",
     legend_title="label",
     label_trans=None,
+    for_fig=False,
     **kwargs,
 ):
     """
@@ -31,6 +32,9 @@ def plot_split_losses(
         str -> str. This function will be applied to each label, and each key in the
         output will be added as a column to the DataFrame with its corresponding value
         as the entry for that row in DF
+    for_fig : bool, default=False
+        Plotting for a figure rather than just visualization. Will take some liberties
+        with capitalization to make labels look a bit more professional
     kwargs : dict
         Anything else to pass directly to relplot
     """
@@ -38,7 +42,10 @@ def plot_split_losses(
     all_dfs = []
     for lab, pred_tracker in pred_tracker_dict.items():
         df = pred_tracker.to_plot_df(agg_compounds=True, agg_losses=True)
-        df[legend_title] = lab
+        if for_fig:
+            df[legend_title] = lab.title()
+        else:
+            df[legend_title] = lab
 
         # Apply label transform and add any new columns
         if callable(label_trans):
@@ -53,22 +60,35 @@ def plot_split_losses(
     # Subset
     all_dfs = all_dfs.loc[all_dfs["split"].isin(splits), :]
 
+    # Capitalize for figure
+    if for_fig:
+        all_dfs["Split"] = [s.title() for s in all_dfs["split"]]
+        splits_fig = [s.title() for s in splits]
+
     if ("hue" not in kwargs) and ("style" not in kwargs):
         # Figure out styles
         if len(pred_tracker_dict) > 1:
             # More than one different experiment, so use color for experiment and style
             #  for split
             hue = legend_title
-            hue_order = list(pred_tracker_dict.keys())
+            hue_order = [lab.title() for lab in pred_tracker_dict.keys()]
             if len(splits) > 1:
-                style = "split"
-                style_order = splits
+                if for_fig:
+                    style = "Split"
+                    style_order = splits_fig
+                else:
+                    style = "split"
+                    style_order = splits
             else:
                 style = None
                 style_order = None
         else:
-            hue = "split"
-            hue_order = splits
+            if for_fig:
+                hue = "Split"
+                hue_order = splits_fig
+            else:
+                hue = "split"
+                hue_order = splits
             style = None
             style_order = None
     else:
@@ -106,7 +126,15 @@ def plot_split_losses(
 
 
 def plot_model_preds_scatter(
-    pred_tracker_dict, stats_dict, out_fn=None, split="test", use_epoch=-1, **kwargs
+    pred_tracker_dict,
+    stats_dict,
+    out_fn=None,
+    split="test",
+    use_epoch=-1,
+    label_trans=None,
+    plot_stats=True,
+    table_stats=False,
+    **kwargs,
 ):
     """
     Plot a scatterplot of experimental vs predicted values.
@@ -124,6 +152,11 @@ def plot_model_preds_scatter(
         Which split to plot
     use_epoch : int, default=-1
         Which epoch of training to take predictions from. Set to -1 to use final epoch
+    label_trans : callable, optional
+        Function that should take a string as input and return a dict mapping
+        str -> str. This function will be applied to each label, and each key in the
+        output will be added as a column to the DataFrame with its corresponding value
+        as the entry for that row in DF
     kwargs : dict
         Anything else to pass directly to relplot
 
@@ -135,6 +168,13 @@ def plot_model_preds_scatter(
     for lab, pred_tracker in pred_tracker_dict.items():
         df = pred_tracker.to_plot_df(agg_losses=True)
         df["label"] = lab
+
+        # Apply label transform and add any new columns
+        if callable(label_trans):
+            new_cols = label_trans(lab)
+            for k, v in new_cols.items():
+                df[k] = v
+
         all_dfs.append(df)
 
     all_dfs = pandas.concat(all_dfs, ignore_index=True)
@@ -163,12 +203,19 @@ def plot_model_preds_scatter(
     # If any facet_kws are passed in kwargs, update the defaults
     facet_kws = {"sharex": False, "sharey": False} | kwargs.pop("facet_kws", {})
 
+    col = kwargs.pop("col", "label")
+    col_order = kwargs.pop("col_order", list(all_dfs[col].unique()))
+
+    if table_stats and plot_stats:
+        col_order += ["blank"]
+
     # plt.rc("font", size=18)
     fg = sns.relplot(
         data=all_dfs,
         x="target",
         y="pred",
-        col="label",
+        col=col,
+        col_order=col_order,
         style="Assay Range",
         markers={
             "Below Assay Range": "<",
@@ -196,7 +243,19 @@ def plot_model_preds_scatter(
 
     sns.move_legend(fg, loc="upper center", bbox_to_anchor=(0.5, 0), ncols=3)
 
+    if table_stats and plot_stats:
+        stats_table_text = [
+            [""],
+            ["MAE"],
+            ["RMSE"],
+            ["Spearman's $\\rho$"],
+            ["Kendall's $\\tau$"],
+        ]
     for lab, ax in fg.axes_dict.items():
+        if lab == "blank":
+            ax.set_title("")
+            continue
+
         # Set title
         ax.set_title(lab, fontweight="bold")
 
@@ -225,32 +284,50 @@ def plot_model_preds_scatter(
         )
 
         # Stats labels
-        stats_text = []
-        for stat, stat_label in zip(
-            ["mae", "rmse", "sp_r", "tau"],
-            ["MAE", "RMSE", "Spearman's $\\rho$", "Kendall's $\\tau$"],
-        ):
-            stats_str = (
-                f"{stat_label}: "
-                f"{stats_dict[lab]['test'][stat]['value']:0.2f}"
-                f"$_{{{stats_dict[lab]['test'][stat]['95ci_low']:0.2f}}}"
-                f"^{{{stats_dict[lab]['test'][stat]['95ci_high']:0.2f}}}$"
-            )
-            stats_text.append(stats_str)
+        if table_stats and plot_stats:
+            stats_table_text[0].append(lab)
+            for i, stat in enumerate(["mae", "rmse", "sp_r", "tau"]):
+                stats_str = (
+                    f"{stats_dict[lab]['test'][stat]['value']:0.2f}"
+                    f"$_{{{stats_dict[lab]['test'][stat]['95ci_low']:0.2f}}}"
+                    f"^{{{stats_dict[lab]['test'][stat]['95ci_high']:0.2f}}}$"
+                )
+                stats_table_text[i + 1].append(stats_str)
+        elif plot_stats:
+            stats_text = []
+            for stat, stat_label in zip(
+                ["mae", "rmse", "sp_r", "tau"],
+                ["MAE", "RMSE", "Spearman's $\\rho$", "Kendall's $\\tau$"],
+            ):
+                stats_str = (
+                    f"{stat_label}: "
+                    f"{stats_dict[lab]['test'][stat]['value']:0.2f}"
+                    f"$_{{{stats_dict[lab]['test'][stat]['95ci_low']:0.2f}}}"
+                    f"^{{{stats_dict[lab]['test'][stat]['95ci_high']:0.2f}}}$"
+                )
+                stats_text.append(stats_str)
 
-        ax.text(
-            0.7,
-            0.01,
-            "\n".join(stats_text),
-            transform=ax.transAxes,
-            va="bottom",
-            # fontsize=14,
-        )
+            ax.text(
+                0.7,
+                0,
+                "\n".join(stats_text),
+                transform=ax.transAxes,
+                va="bottom",
+                linespacing=0.8,
+                # fontsize=14,
+            )
 
         # Make it a square
         ax.set_aspect("equal", "box")
         ax.set_xlim((min_val, max_val))
         ax.set_ylim((min_val, max_val))
+
+    if table_stats and plot_stats:
+        ax = fg.axes.flatten()[-1]
+        ax.set_axis_off()
+        ax.table(
+            cellText=stats_table_text, cellLoc="center", loc="center", edges="open"
+        )
 
     if out_fn:
         fg.savefig(out_fn, bbox_inches="tight", dpi=200)
