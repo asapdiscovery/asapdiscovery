@@ -1134,9 +1134,11 @@ def parse_fluorescence_data_cdd(
     if keep_best_per_mol:
 
         def get_best_mol(g):
-            g = g.sort_values(
-                by=[f"{assay_name}: Curve class", "pIC50_stderr"], ascending=True
-            )
+            if f"{assay_name}: Curve class" in g:
+                sort_vals = [f"{assay_name}: Curve class", "pIC50_stderr"]
+            else:
+                sort_vals = ["pIC50_stderr"]
+            g = g.sort_values(by=sort_vals, ascending=True)
             return g.iloc[0, :]
 
         mol_df = mol_df.groupby("name", as_index=False, group_keys=False).apply(
