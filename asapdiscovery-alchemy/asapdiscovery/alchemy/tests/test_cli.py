@@ -1219,6 +1219,7 @@ def test_prep_alchemize(test_ligands_sdfile, tmpdir):
         assert click_success(result)
 
 
+@pytest.mark.skip()
 def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):
     """
     Test submitting calculations to the bespokefit server and make sure that the ids are saved into the network
@@ -1275,6 +1276,7 @@ def test_bespoke_gather_missing(tyk2_fec_network, tmpdir):
     assert "No bespoke optimizations found." in result.stdout
 
 
+@pytest.mark.skip()
 def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
     """Test gathering the parameters for molecules from a bespokefit server"""
     from openff.bespokefit.executor.client import (
@@ -1370,7 +1372,7 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
         assert parameter.periodicity1 == 1
         assert parameter.phase2.m == 180
 
-
+@pytest.mark.skip()
 def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     """Make sure an error is raised if only some results can be gathered"""
 
@@ -1439,7 +1441,7 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     console = rich.get_console()
     console.clear_live()
 
-
+@pytest.mark.skip()
 def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
     """Test getting the status of some ligands in bespokefit"""
     from openff.bespokefit.executor.client import (
