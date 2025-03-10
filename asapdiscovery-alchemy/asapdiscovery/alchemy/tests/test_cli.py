@@ -1372,6 +1372,7 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
         assert parameter.periodicity1 == 1
         assert parameter.phase2.m == 180
 
+
 @pytest.mark.skip()
 def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     """Make sure an error is raised if only some results can be gathered"""
@@ -1440,6 +1441,7 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     # reset the console after an error
     console = rich.get_console()
     console.clear_live()
+
 
 @pytest.mark.skip()
 def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
