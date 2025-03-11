@@ -87,6 +87,7 @@ class OpenFFCharges(_BaseChargeMethod):
         processors: int = 1,
     ) -> list[Ligand]:
         from concurrent.futures import ProcessPoolExecutor, as_completed
+        from tqdm import tqdm
 
         provenance = self.provenance()
         charged_ligands = []
