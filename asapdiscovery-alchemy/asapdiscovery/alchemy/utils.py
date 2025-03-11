@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from alchemiscale import Scope, ScopedKey
+from .schema._alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.interfaces import AlchemiscaleSettings
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleFailure,

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import gufe
 import openfe
-from alchemiscale import ScopedKey
+from ._alchemiscale import ScopedKey
 from gufe import settings
 from gufe.tokenization import GufeKey
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
