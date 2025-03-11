@@ -102,3 +102,4 @@ dependencies:
   - rich
   - alchemiscale-client >=0.5.1
   - cinnabar >=0.4.1
+  - tqdm
