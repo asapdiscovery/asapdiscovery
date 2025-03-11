@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from .schema._alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.interfaces import AlchemiscaleSettings
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleFailure,
@@ -11,6 +10,8 @@ from asapdiscovery.alchemy.schema.fec import (
 )
 from asapdiscovery.alchemy.schema.forcefield import ForceFieldParams
 from openmm.app import ForceField, Modeller, PDBFile
+
+from .schema._alchemiscale import Scope, ScopedKey
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.complex import PreppedComplex

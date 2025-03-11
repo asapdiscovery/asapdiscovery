@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import gufe
 import openfe
-from ._alchemiscale import ScopedKey
 from gufe import settings
 from gufe.tokenization import GufeKey
 from openfe.protocols.openmm_rfe.equil_rfe_settings import (
@@ -23,6 +22,7 @@ from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
 from pydantic.v1 import Field
 
+from ._alchemiscale import ScopedKey
 from ._util import check_ligand_series_uniqueness_and_names
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork

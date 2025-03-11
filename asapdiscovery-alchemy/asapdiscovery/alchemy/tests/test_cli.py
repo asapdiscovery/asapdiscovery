@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 import rich
 from alchemiscale import AlchemiscaleClient
-from asapdiscovery.alchemy.models._alchemiscale import ScopedKey
 from asapdiscovery.alchemy.cli.cli import alchemy
+from asapdiscovery.alchemy.models._alchemiscale import ScopedKey
 from asapdiscovery.alchemy.schema.fec import (
     FreeEnergyCalculationFactory,
     FreeEnergyCalculationNetwork,
