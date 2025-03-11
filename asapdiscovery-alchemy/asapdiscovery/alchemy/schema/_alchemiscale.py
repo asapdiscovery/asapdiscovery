@@ -4,15 +4,14 @@
 
 """
 
-from typing import Optional, Union
-from pydantic.v1 import BaseModel, Field, validator, root_validator
-from gufe.tokenization import GufeKey
-from re import fullmatch
-import unicodedata
 import string
+import unicodedata
+from re import fullmatch
+from typing import Optional, Union
 
 from gufe.tokenization import GufeKey
 from pydantic import BaseModel, Field, root_validator, validator
+from pydantic.v1 import BaseModel, Field, root_validator, validator
 
 
 class Scope(BaseModel):
