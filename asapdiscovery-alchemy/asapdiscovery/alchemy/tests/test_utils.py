@@ -4,7 +4,7 @@ from uuid import uuid4
 import pandas
 import pytest
 from asapdiscovery.alchemy.cli.utils import get_cdd_molecules, upload_to_postera
-from asapdiscovery.alchemy.models._alchemiscale import Scope, ScopedKey
+from asapdiscovery.alchemy.schema._alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
