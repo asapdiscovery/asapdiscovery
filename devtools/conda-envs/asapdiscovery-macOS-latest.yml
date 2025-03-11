@@ -30,6 +30,7 @@ dependencies:
   - pandas
   - pebble
   - pydantic >=2.0.0a0
+  - pydantic-settings
   - rdkit
   - seaborn
   - pebble
