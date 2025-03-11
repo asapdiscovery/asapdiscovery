@@ -92,11 +92,11 @@ dependencies:
   - logomaker
 
   # simulation
-  - openfe >=1.1.0
-  - gufe >=1.0.0
+  - openfe >=1.3.0
+  - gufe >=1.2.0
   - httpx
   - perses >=0.10.2
   - kartograf
   - rich
-  - alchemiscale-client >=0.5.1
+  - alchemiscale-client >=0.6.1
   - cinnabar >=0.4.1
