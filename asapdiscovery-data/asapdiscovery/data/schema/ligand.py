@@ -37,7 +37,7 @@ from asapdiscovery.data.schema.identifiers import (
     LigandProvenance,
 )
 from asapdiscovery.data.schema.schema_base import DataStorageType
-from pydantic import Field, root_validator, validator
+from pydantic.v1 import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -145,10 +145,9 @@ class Ligand(DataModelAbstractBase):
         description="SDF file stored as a string to hold internal data state",
         repr=False,
     )
-    data_format: DataStorageType = Field(
+    data_format: Literal[DataStorageType] = Field(
         DataStorageType.sdf,
         description="Enum describing the data storage method",
-        const=True,
         allow_mutation=False,
     )
 
