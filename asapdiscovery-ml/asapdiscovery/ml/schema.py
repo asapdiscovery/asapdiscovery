@@ -1,3 +1,7 @@
+from itertools import product
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas
 import torch
@@ -932,3 +936,229 @@ class TrainingPredictionTracker(BaseModel):
             }
 
         return stats_dict
+
+
+def load_collection_tpt(
+    top_level_dir: Path,
+    model_dir_str: str,
+    model_spec_kwargs: dict[str, list[str]],
+    spec_name_to_output_name: dict[str, str] = None,
+    spec_lab_to_output_lab: dict[str, dict[str, str]] = None,
+):
+    """
+    Load a collection of TrainingPredictionTracker objects from a group of run
+    directories that all share a similar name format. The output will be dict mapping
+    from a dict giving the parameters used to load the run to the loaded
+    TrainingPredictionTracker. The keys and values in the key tuple for the output can
+    be transformed using the `spec_name_to_output_name` and `spec_lab_to_output_lab`
+    parameters.
+
+    Parameters
+    ----------
+    top_level_dir : Path
+        The top level directory that contains all the desired run directories
+    model_dir_str : str
+        Format of all the run directories to access. This string will have the `format`
+        method called on it, and all fields to be formatted should have names that match
+        the keys in `model_spec_kwargs`
+    model_spec_kwargs : dict[str, list[str]]
+        Dict mapping list of field names from `model_dir_str` to all the possible
+        options for each field. The runs that will be loaded will be the cartesian
+        product of all the values in this dict
+    spec_name_to_output_name : dict[str, str], optional
+        Dict mapping the field name in `model_dir_str`/`model_spec_kwargs` to a
+        different string to be used as the keys in the output key tuples. If not provided
+        or if a specific field is missing, the raw field name will be used
+    spec_lab_to_output_lab : dict[str, dict[str, str]], optional
+        Dict mapping the field name in `model_dir_str`/`model_spec_kwargs` to a dict
+        that provides mappings for the individual labels (ie the values in the lists
+        in `model_spec_kwargs`) to a different string to be used as the values in the
+        output key tuples. If not provided or if a specific field/label is missing, the
+        raw values will be used
+
+    Returns
+    -------
+    dict[tuple[str, str], TrainingPredictionTracker]
+    """
+    tpt_dict = {}
+    for spec_args in product(*model_spec_kwargs.values()):
+        # Dict mapping field name to specific value for this iteration
+        kwargs_dict = dict(zip(model_spec_kwargs.keys(), spec_args))
+        print(kwargs_dict, flush=True)
+
+        # Format dir string and try to load files
+        cur_model_dir = model_dir_str.format(**kwargs_dict)
+        run_id_fn = top_level_dir / cur_model_dir / "run_id"
+        if not run_id_fn.exists():
+            print(kwargs_dict, "not run yet", flush=True)
+            continue
+        run_id = run_id_fn.read_text()
+        pred_tracker_fn = top_level_dir / cur_model_dir / f"{run_id}/pred_tracker.json"
+        if not pred_tracker_fn.exists():
+            print(kwargs_dict, "still running", flush=True)
+            continue
+
+        # Try and map field names and values
+        key_dict = {}
+        for orig_key, orig_val in kwargs_dict.items():
+            # Use original key if it's not found in the mapping dict
+            new_key = spec_name_to_output_name.get(orig_key, orig_key)
+            # Try and get the val mapping dict, return an empty dict if not found so
+            #  next step works
+            val_map_dict = spec_lab_to_output_lab.get(orig_key, {})
+            new_val = val_map_dict.get(orig_val, orig_val)
+            key_dict[new_key] = new_val
+
+        # Convert to tuple for hashing purposes
+        key_dict = tuple(tuple(kvp) for kvp in key_dict.items())
+        tpt_dict[key_dict] = TrainingPredictionTracker(
+            **json.loads(pred_tracker_fn.read_text())
+        )
+
+    return tpt_dict
+
+
+def calc_epoch_stats(g):
+    """
+    Function to calculate per-epoch mean loss and MAE, meant to be called via df.apply.
+    """
+    return pandas.DataFrame(
+        {"MAE": [np.mean(np.abs(g["pred"] - g["target"]))], "loss": [g["loss"].mean()]}
+    )
+
+
+def load_collection_df(
+    top_level_dir: Path,
+    model_dir_str: str,
+    model_spec_kwargs: dict[str, list[str]],
+    spec_name_to_output_name: dict[str, str] = None,
+    spec_lab_to_output_lab: dict[str, dict[str, str]] = None,
+    extract_epochs: list[str | int] = None,
+    target_prop: str = "pIC50",
+):
+    """
+    Load a collection of TrainingPredictionTracker objects from a group of run
+    directories that all share a similar name format. The output will be a DataFrame
+    containing the loss and MAE for each epoch, as well as the per-compound predictions
+    for each epoch specified in `extract_epochs`. Additionally a column will be added
+    for each field in `model_spec_kwargs`, with the ability to map these variables to
+    alternative names using the `spec_name_to_output_name` and `spec_lab_to_output_lab`
+    parameters
+
+    Parameters
+    ----------
+    top_level_dir : Path
+        The top level directory that contains all the desired run directories
+    model_dir_str : str
+        Format of all the run directories to access. This string will have the `format`
+        method called on it, and all fields to be formatted should have names that match
+        the keys in `model_spec_kwargs`
+    model_spec_kwargs : dict[str, list[str]]
+        Dict mapping list of field names from `model_dir_str` to all the possible
+        options for each field. The runs that will be loaded will be the cartesian
+        product of all the values in this dict
+    spec_name_to_output_name : dict[str, str], optional
+        Dict mapping the field name in `model_dir_str`/`model_spec_kwargs` to a
+        different string to be used as the keys in the output key tuples. If not provided
+        or if a specific field is missing, the raw field name will be used
+    spec_lab_to_output_lab : dict[str, dict[str, str]], optional
+        Dict mapping the field name in `model_dir_str`/`model_spec_kwargs` to a dict
+        that provides mappings for the individual labels (ie the values in the lists
+        in `model_spec_kwargs`) to a different string to be used as the values in the
+        output key tuples. If not provided or if a specific field/label is missing, the
+        raw values will be used
+    extract_epochs : list[str | int], optional
+        Return per-compound predictions from specific epoch(s). A new DF will be created
+        for each entry in this list. If the entry is an int, that int will be used as
+        the epoch to extract. Special options for these entries are:
+        * -1: take the last epoch
+        * "all": return the per-compound predictions for every epoch (note that this DF
+                 will likely be quite large)
+        * "best_loss": take the epoch with the lowest loss
+        * "best_mae": take the epoch with lowest MAE
+    target_prop : str, default="pIC50"
+        Target property to use when calling `pred_tracker.to_plot_df`
+
+    Returns
+    -------
+    dict[tuple[str, str], TrainingPredictionTracker]
+    """
+    per_epoch_df = []
+    per_compound_dfs = []
+    for spec_args in product(*model_spec_kwargs.values()):
+        # Dict mapping field name to specific value for this iteration
+        kwargs_dict = dict(zip(model_spec_kwargs.keys(), spec_args))
+        print(kwargs_dict, flush=True)
+
+        # Format dir string and try to load files
+        cur_model_dir = model_dir_str.format(**kwargs_dict)
+        run_id_fn = top_level_dir / cur_model_dir / "run_id"
+        if not run_id_fn.exists():
+            print(kwargs_dict, "not run yet", flush=True)
+            continue
+        run_id = run_id_fn.read_text()
+        pred_tracker_fn = top_level_dir / cur_model_dir / f"{run_id}/pred_tracker.json"
+        if not pred_tracker_fn.exists():
+            print(kwargs_dict, "still running", flush=True)
+            continue
+        pred_tracker = TrainingPredictionTracker(
+            **json.loads(pred_tracker_fn.read_text())
+        )
+
+        # DF with each compound's pred for each epoch
+        compound_df = pred_tracker.to_plot_df(
+            agg_compounds=False, agg_losses=True, target_prop=target_prop
+        )
+        epoch_df = (
+            compound_df.groupby(["split", "epoch"])
+            .apply(calc_epoch_stats)
+            .reset_index(level=["split", "epoch"])
+            .reset_index(drop=True)
+        )
+
+        for orig_key, orig_val in kwargs_dict.items():
+            # Use original key if it's not found in the mapping dict
+            new_key = spec_name_to_output_name.get(orig_key, orig_key)
+            # Try and get the val mapping dict, return an empty dict if not found so
+            #  next step works
+            val_map_dict = spec_lab_to_output_lab.get(orig_key, {})
+            new_val = val_map_dict.get(orig_val, orig_val)
+
+            # Set cols in dfs
+            compound_df[new_key] = new_val
+            epoch_df[new_key] = new_val
+
+        # Just need to append to list
+        per_epoch_df.append(epoch_df)
+
+        # Will be a list of lists, so need to get the right list index
+        for i, epoch in enumerate(extract_epochs):
+            if epoch == "all":
+                per_compound_dfs.append(compound_df)
+                continue
+            if epoch == -1:
+                epoch = compound_df["epoch"].max()
+            elif epoch == "best_loss":
+                idx = np.argmin(epoch_df["loss"])
+                epoch = compound_df.iloc[idx, :]["epoch"]
+            elif epoch == "best_mae":
+                idx = np.argmin(epoch_df["MAE"])
+                epoch = compound_df.iloc[idx, :]["epoch"]
+
+            try:
+                per_compound_dfs[i].append(
+                    compound_df.loc[compound_df["epoch"] == epoch, :]
+                )
+            except IndexError:
+                per_compound_dfs.append(
+                    [compound_df.loc[compound_df["epoch"] == epoch, :]]
+                )
+
+    # Combine all lists of DFs into one DF
+    per_epoch_df = pandas.concat(per_epoch_df, axis=0, ignore_index=True)
+    per_compound_dfs = [
+        pandas.concat(compound_df, axis=0, ignore_index=True)
+        for compound_df in per_compound_dfs
+    ]
+
+    return per_epoch_df, per_compound_dfs
