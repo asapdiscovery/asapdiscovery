@@ -1,5 +1,5 @@
-from itertools import product
 import json
+from itertools import product
 from pathlib import Path
 
 import numpy as np
