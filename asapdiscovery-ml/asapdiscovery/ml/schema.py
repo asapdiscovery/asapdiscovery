@@ -1,5 +1,7 @@
-import json
+from functools import partial
 from itertools import product
+import json
+import multiprocessing as mp
 from pathlib import Path
 
 import numpy as np
@@ -938,12 +940,18 @@ class TrainingPredictionTracker(BaseModel):
         return stats_dict
 
 
+def _load_one_tpt(fn):
+    print(fn, flush=True)
+    return TrainingPredictionTracker(**json.loads(fn.read_text()))
+
+
 def load_collection_tpt(
     top_level_dir: Path,
     model_dir_str: str,
     model_spec_kwargs: dict[str, list[str]],
     spec_name_to_output_name: dict[str, str] = None,
     spec_lab_to_output_lab: dict[str, dict[str, str]] = None,
+    n_workers: int = 1,
 ):
     """
     Load a collection of TrainingPredictionTracker objects from a group of run
@@ -975,16 +983,20 @@ def load_collection_tpt(
         in `model_spec_kwargs`) to a different string to be used as the values in the
         output key tuples. If not provided or if a specific field/label is missing, the
         raw values will be used
+    n_workers : int, default=1
+        Number of concurrent processes to use for loading files
 
     Returns
     -------
     dict[tuple[str, str], TrainingPredictionTracker]
     """
-    tpt_dict = {}
+
+    # Gather all the files to load
+    load_fns = []
+    key_tups = []
     for spec_args in product(*model_spec_kwargs.values()):
         # Dict mapping field name to specific value for this iteration
         kwargs_dict = dict(zip(model_spec_kwargs.keys(), spec_args))
-        print(kwargs_dict, flush=True)
 
         # Format dir string and try to load files
         cur_model_dir = model_dir_str.format(**kwargs_dict)
@@ -997,6 +1009,7 @@ def load_collection_tpt(
         if not pred_tracker_fn.exists():
             print(kwargs_dict, "still running", flush=True)
             continue
+        load_fns.append(pred_tracker_fn)
 
         # Try and map field names and values
         key_dict = {}
@@ -1008,14 +1021,13 @@ def load_collection_tpt(
             val_map_dict = spec_lab_to_output_lab.get(orig_key, {})
             new_val = val_map_dict.get(orig_val, orig_val)
             key_dict[new_key] = new_val
-
         # Convert to tuple for hashing purposes
-        key_dict = tuple(tuple(kvp) for kvp in key_dict.items())
-        tpt_dict[key_dict] = TrainingPredictionTracker(
-            **json.loads(pred_tracker_fn.read_text())
-        )
+        key_tups.append(tuple(tuple(kvp) for kvp in key_dict.items()))
 
-    return tpt_dict
+    with mp.Pool(processes=n_workers) as pool:
+        res = pool.map(_load_one_tpt, load_fns)
+
+    return dict(zip(key_tups, res))
 
 
 def calc_epoch_stats(g):
@@ -1027,6 +1039,46 @@ def calc_epoch_stats(g):
     )
 
 
+def _load_one_df(fn, new_cols_dict, extract_epochs, target_prop):
+    print(fn, flush=True)
+    pred_tracker = TrainingPredictionTracker(**json.loads(fn.read_text()))
+
+    # DF with each compound's pred for each epoch
+    compound_df = pred_tracker.to_plot_df(
+        agg_compounds=False, agg_losses=True, target_prop=target_prop
+    )
+    epoch_df = (
+        compound_df.groupby(["split", "epoch"])
+        .apply(calc_epoch_stats)
+        .reset_index(level=["split", "epoch"])
+        .reset_index(drop=True)
+    )
+
+    for new_key, new_val in new_cols_dict.items():
+        # Set cols in dfs
+        compound_df[new_key] = new_val
+        epoch_df[new_key] = new_val
+
+    # Will be a list of lists, so need to get the right list index
+    per_compound_dfs = []
+    for epoch in extract_epochs:
+        if epoch == "all":
+            per_compound_dfs.append(compound_df)
+            continue
+        if epoch == -1:
+            epoch = compound_df["epoch"].max()
+        elif epoch == "best_loss":
+            idx = np.argmin(epoch_df["loss"])
+            epoch = compound_df.iloc[idx, :]["epoch"]
+        elif epoch == "best_mae":
+            idx = np.argmin(epoch_df["MAE"])
+            epoch = compound_df.iloc[idx, :]["epoch"]
+
+        per_compound_dfs.append(compound_df.loc[compound_df["epoch"] == epoch, :])
+
+    return epoch_df, per_compound_dfs
+
+
 def load_collection_df(
     top_level_dir: Path,
     model_dir_str: str,
@@ -1035,6 +1087,7 @@ def load_collection_df(
     spec_lab_to_output_lab: dict[str, dict[str, str]] = None,
     extract_epochs: list[str | int] = None,
     target_prop: str = "pIC50",
+    n_workers: int = 1,
 ):
     """
     Load a collection of TrainingPredictionTracker objects from a group of run
@@ -1078,17 +1131,21 @@ def load_collection_df(
         * "best_mae": take the epoch with lowest MAE
     target_prop : str, default="pIC50"
         Target property to use when calling `pred_tracker.to_plot_df`
+    n_workers : int, default=1
+        Number of concurrent processes to use for loading files
 
     Returns
     -------
     dict[tuple[str, str], TrainingPredictionTracker]
     """
-    per_epoch_df = []
-    per_compound_dfs = []
+    mp_func = partial(
+        _load_one_df, extract_epochs=extract_epochs, target_prop=target_prop
+    )
+
+    mp_args = []
     for spec_args in product(*model_spec_kwargs.values()):
         # Dict mapping field name to specific value for this iteration
         kwargs_dict = dict(zip(model_spec_kwargs.keys(), spec_args))
-        print(kwargs_dict, flush=True)
 
         # Format dir string and try to load files
         cur_model_dir = model_dir_str.format(**kwargs_dict)
@@ -1101,21 +1158,8 @@ def load_collection_df(
         if not pred_tracker_fn.exists():
             print(kwargs_dict, "still running", flush=True)
             continue
-        pred_tracker = TrainingPredictionTracker(
-            **json.loads(pred_tracker_fn.read_text())
-        )
 
-        # DF with each compound's pred for each epoch
-        compound_df = pred_tracker.to_plot_df(
-            agg_compounds=False, agg_losses=True, target_prop=target_prop
-        )
-        epoch_df = (
-            compound_df.groupby(["split", "epoch"])
-            .apply(calc_epoch_stats)
-            .reset_index(level=["split", "epoch"])
-            .reset_index(drop=True)
-        )
-
+        new_cols_dict = {}
         for orig_key, orig_val in kwargs_dict.items():
             # Use original key if it's not found in the mapping dict
             new_key = spec_name_to_output_name.get(orig_key, orig_key)
@@ -1123,36 +1167,16 @@ def load_collection_df(
             #  next step works
             val_map_dict = spec_lab_to_output_lab.get(orig_key, {})
             new_val = val_map_dict.get(orig_val, orig_val)
+            new_cols_dict[new_key] = new_val
 
-            # Set cols in dfs
-            compound_df[new_key] = new_val
-            epoch_df[new_key] = new_val
+        mp_args.append((pred_tracker_fn, new_cols_dict))
 
-        # Just need to append to list
-        per_epoch_df.append(epoch_df)
+    with mp.Pool(processes=n_workers) as pool:
+        res = pool.starmap(mp_func, mp_args)
 
-        # Will be a list of lists, so need to get the right list index
-        for i, epoch in enumerate(extract_epochs):
-            if epoch == "all":
-                per_compound_dfs.append(compound_df)
-                continue
-            if epoch == -1:
-                epoch = compound_df["epoch"].max()
-            elif epoch == "best_loss":
-                idx = np.argmin(epoch_df["loss"])
-                epoch = compound_df.iloc[idx, :]["epoch"]
-            elif epoch == "best_mae":
-                idx = np.argmin(epoch_df["MAE"])
-                epoch = compound_df.iloc[idx, :]["epoch"]
-
-            try:
-                per_compound_dfs[i].append(
-                    compound_df.loc[compound_df["epoch"] == epoch, :]
-                )
-            except IndexError:
-                per_compound_dfs.append(
-                    [compound_df.loc[compound_df["epoch"] == epoch, :]]
-                )
+    # Extract the results into lists of DFs to concatenate
+    per_epoch_df = [r[0] for r in res]
+    per_compound_dfs = list(zip(*[r[1] for r in res]))
 
     # Combine all lists of DFs into one DF
     per_epoch_df = pandas.concat(per_epoch_df, axis=0, ignore_index=True)
