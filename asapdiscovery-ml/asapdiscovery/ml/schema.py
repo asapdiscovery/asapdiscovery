@@ -1138,6 +1138,8 @@ def load_collection_df(
     -------
     dict[tuple[str, str], TrainingPredictionTracker]
     """
+    if extract_epochs is None:
+        extract_epochs = []
     mp_func = partial(
         _load_one_df, extract_epochs=extract_epochs, target_prop=target_prop
     )
