@@ -1,7 +1,7 @@
-from functools import partial
-from itertools import product
 import json
 import multiprocessing as mp
+from functools import partial
+from itertools import product
 from pathlib import Path
 
 import numpy as np
