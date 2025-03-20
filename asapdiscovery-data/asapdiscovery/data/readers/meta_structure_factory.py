@@ -6,7 +6,7 @@ from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.services.fragalysis.fragalysis_reader import FragalysisFactory
 from asapdiscovery.data.util.dask_utils import FailureMode
-from pydantic import BaseModel, Field, root_validator
+from pydantic.v1 import BaseModel, Field, root_validator
 
 logger = logging.getLogger(__name__)
 

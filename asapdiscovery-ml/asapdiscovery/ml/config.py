@@ -21,7 +21,7 @@ from asapdiscovery.ml.es import (
     ConvergedEarlyStopping,
     PatientConvergedEarlyStopping,
 )
-from pydantic import BaseModel, Field, root_validator
+from pydantic.v1 import BaseModel, Field, confloat, root_validator, validator
 
 
 class ConfigBase(BaseModel):
@@ -76,7 +76,9 @@ class OptimizerConfig(ConfigBase):
     )
     # Common parameters
     lr: float = Field(0.0001, description="Optimizer learning rate.")
-    weight_decay: float = Field(0, description="Optimizer weight decay (L2 penalty).")
+    weight_decay: confloat(ge=0.0, allow_inf_nan=False) = Field(
+        0, description="Optimizer weight decay (L2 penalty)."
+    )
 
     # SGD-only parameters
     momentum: float = Field(0, description="Momentum for SGD optimizer.")
@@ -310,6 +312,16 @@ class DatasetConfig(ConfigBase):
     # Don't use (and overwrite) any existing cache_file
     overwrite: bool = Field(False, description="Overwrite any existing cache_file.")
 
+    # Torch device to send loaded dataset to
+    device: torch.device = Field("cpu", description="Device to send loaded dataset to.")
+
+    class Config:
+        # Allow torch.device Fields
+        arbitrary_types_allowed = True
+
+        # Custom encoder to cast device to str before trying to serialize
+        json_encoders = {torch.device: lambda d: str(d)}
+
     @root_validator(pre=False)
     def check_data_type(cls, values):
         inp = values["input_data"][0]
@@ -332,6 +344,14 @@ class DatasetConfig(ConfigBase):
                 raise ValueError(f"Unknown dataset type {other}.")
 
         return values
+
+    @validator("device", pre=True)
+    def fix_device(cls, v):
+        """
+        The torch device gets serialized as a string and the Trainer class doesn't
+        automatically cast it back to a device.
+        """
+        return torch.device(v)
 
     @classmethod
     def from_exp_file(cls, exp_file: Path, **config_kwargs):
@@ -491,6 +511,16 @@ class DatasetConfig(ConfigBase):
             ds = pkl.loads(self.cache_file.read_bytes())
             if self.for_e3nn:
                 ds = DatasetConfig.fix_e3nn_labels(ds, grouped=self.grouped)
+
+            # Shuttle data to desired device
+            for _, d in ds:
+                for k, v in d.items():
+                    try:
+                        d[k] = v.to(self.device)
+                    except AttributeError:
+                        # Not a tensor so just let it go
+                        pass
+
             return ds
 
         # Build directly from Complexes/Ligands
@@ -520,6 +550,14 @@ class DatasetConfig(ConfigBase):
         if self.cache_file:
             self.cache_file.write_bytes(pkl.dumps(ds))
 
+        # Shuttle data to desired device
+        for _, d in ds:
+            for k, v in d.items():
+                try:
+                    d[k] = v.to(self.device)
+                except AttributeError:
+                    # Not a tensor so just let it go
+                    pass
         return ds
 
     @staticmethod
@@ -914,10 +952,18 @@ class LossFunctionType(StringEnum):
     Enum for different methods of splitting a dataset.
     """
 
+    # Standard L1 loss
+    l1 = "l1"
+    # Stepped L1 loss (adjusted loss for values outside assay range)
+    l1_step = "l1_step"
     # Standard MSE loss
     mse = "mse"
     # Stepped MSE loss (adjusted loss for values outside assay range)
     mse_step = "mse_step"
+    # Standard smooth L1 loss
+    smooth_l1 = "smooth_l1"
+    # Stepped smooth L1 loss (adjusted loss for values outside assay range)
+    smooth_l1_step = "smooth_l1_step"
     # Gaussian NLL loss (ignoring semiquant values)
     gaussian = "gaussian"
     # Gaussian NLL loss (including semiquant values)
@@ -978,16 +1024,26 @@ class LossFunctionConfig(ConfigBase):
     def build(self):
         from asapdiscovery.ml.loss import (
             GaussianNLLLoss,
+            L1Loss,
             MSELoss,
             PoseCrossEntropyLoss,
             RangeLoss,
+            SmoothL1Loss,
         )
 
         match self.loss_type:
+            case LossFunctionType.l1:
+                return L1Loss()
+            case LossFunctionType.l1_step:
+                return L1Loss("step")
             case LossFunctionType.mse:
                 return MSELoss()
             case LossFunctionType.mse_step:
                 return MSELoss("step")
+            case LossFunctionType.smooth_l1:
+                return SmoothL1Loss()
+            case LossFunctionType.smooth_l1_step:
+                return SmoothL1Loss("step")
             case LossFunctionType.gaussian:
                 return GaussianNLLLoss(keep_sq=False)
             case LossFunctionType.gaussian_sq:

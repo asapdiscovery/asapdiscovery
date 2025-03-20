@@ -243,6 +243,12 @@ def download_cdd(
     help="Output CSV file.",
 )
 @click.option(
+    "-smi",
+    "--out-smi-csv",
+    type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=Path),
+    help="Output CSV file containing the SMILES and compound id of each compound.",
+)
+@click.option(
     "-type",
     "--data-type",
     default="std",
@@ -261,6 +267,7 @@ def run_cdd_to_schema(
     in_file: Path,
     out_json: Path,
     out_csv: Path | None = None,
+    out_smi_csv: Path | None = None,
     data_type: str = "std",
     frag_dir: Path | None = None,
 ):
@@ -303,3 +310,9 @@ def run_cdd_to_schema(
         n_added = sum(["xtal_ligand" in c.experimental_data for c in compounds])
         print(f"Added {n_added} Ligands", flush=True)
         out_json.write_text("[" + ", ".join([c.json() for c in compounds]) + "]")
+
+    # Write out SMILES
+    if out_smi_csv:
+        out_smi_csv.write_text(
+            "\n".join([f"{c.smiles},{c.compound_id}" for c in compounds])
+        )

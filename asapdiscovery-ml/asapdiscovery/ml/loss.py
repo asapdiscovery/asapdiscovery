@@ -2,7 +2,111 @@ import numpy as np
 import torch
 from torch.nn import CrossEntropyLoss as TorchCrossEntropyLoss
 from torch.nn import GaussianNLLLoss as TorchGaussianNLLLoss
+from torch.nn import L1Loss as TorchL1Loss
 from torch.nn import MSELoss as TorchMSELoss
+from torch.nn import SmoothL1Loss as TorchSmoothL1Loss
+
+
+class L1Loss(TorchL1Loss):
+    def __init__(self, loss_type=None):
+        """
+        Class for calculating L1 (MAE) loss, with various options
+
+        Parameters
+        ----------
+        loss_type : str, optional
+            Which type of loss to use:
+             * None: vanilla MAE
+             * "step": step MAE loss
+             * "uncertainty": MAE loss with added uncertainty
+        """
+        # No reduction so we can apply whatever adjustment to each sample
+        super().__init__(reduction="none")
+
+        if loss_type is not None:
+            loss_type = loss_type.lower()
+            if loss_type == "step":
+                self.loss_function = self.step_loss
+            elif loss_type == "uncertainty":
+                self.loss_function = self.uncertainty_loss
+            else:
+                raise ValueError(f'Unknown loss_type "{loss_type}"')
+        else:
+            self.loss_function = super().forward
+
+        self.loss_type = loss_type
+
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
+        """
+        Dispatch method for calculating loss. All arguments should be passed
+        regardless of actual loss function to keep an identical signature for
+        this class. Data is passed to `self.loss_function`.
+        """
+
+        if self.loss_type is None:
+            # Just need to calculate mean to get MAE
+            return self.loss_function(pred, target).mean()
+        elif self.loss_type == "step":
+            # Call step_loss
+            return self.loss_function(pred, target, in_range)
+        elif self.loss_type == "uncertainty":
+            # Call uncertainty_loss
+            return self.loss_function(pred, target, uncertainty)
+
+    def step_loss(self, pred, target, in_range=None):
+        """
+        Step loss calculation. For `in_range` < 0, loss is returned as 0 if
+        `pred` < `target`, otherwise MAE is calculated as normal. For
+        `in_range` > 0, loss is returned as 0 if `pred` > `target`, otherwise
+        MAE is calculated as normal. For `in_range` == 0, MAE is calculated as
+        normal.
+
+        Parameters
+        ----------
+        pred : torch.Tensor
+            Model prediction
+        target : torch.Tensor
+            Prediction target
+        in_range : torch.Tensor, optional
+            `target`'s presence in the dynamic range of the assay. Give a value
+            of < 0 for `target` below lower bound, > 0 for `target` above upper
+            bound, and 0 or None for inside range
+
+        Returns
+        -------
+        torch.Tensor
+            Calculated loss
+        """
+        # Calculate loss
+        loss = super().forward(pred, target)
+
+        # Calculate mask:
+        #  1.0 - If pred or data is semiquant and prediction is inside the
+        #    assay range
+        #  0.0 - If data is semiquant and prediction is outside the assay range
+        # r < 0 -> measurement is below thresh, want to count if pred > target
+        # r > 0 -> measurement is above thresh, want to count if pred < target
+        mask = torch.tensor(
+            [
+                1.0 if ((r == 0) or (r is None)) else ((r < 0) == (t < i))
+                for i, t, r in zip(
+                    np.ravel(pred.detach().cpu()),
+                    np.ravel(target.detach().cpu()),
+                    np.ravel(
+                        in_range.detach().cpu()
+                        if in_range is not None
+                        else [None] * len(pred.flatten())
+                    ),
+                )
+            ]
+        )
+        mask = mask.to(pred.device)
+
+        # Need to add the max in the denominator in case there are no values that we
+        #  want to calculate loss for
+        loss = (loss * mask).sum() / max(torch.sum(mask), 1)
+
+        return loss
 
 
 class MSELoss(TorchMSELoss):
@@ -91,7 +195,9 @@ class MSELoss(TorchMSELoss):
                     np.ravel(pred.detach().cpu()),
                     np.ravel(target.detach().cpu()),
                     np.ravel(
-                        in_range.detach().cpu() if in_range is not None else in_range
+                        in_range.detach().cpu()
+                        if in_range is not None
+                        else [None] * len(pred.flatten())
                     ),
                 )
             ]
@@ -100,7 +206,109 @@ class MSELoss(TorchMSELoss):
 
         # Need to add the max in the denominator in case there are no values that we
         #  want to calculate loss for
-        loss = (loss * mask) / max(torch.sum(mask), 1)
+        loss = (loss * mask).sum() / max(torch.sum(mask), 1)
+
+        return loss
+
+
+class SmoothL1Loss(TorchSmoothL1Loss):
+    def __init__(self, loss_type=None):
+        """
+        Class for calculating smooth L1 loss, with various options
+
+        Parameters
+        ----------
+        loss_type : str, optional
+            Which type of loss to use:
+             * None: vanilla smooth L1
+             * "step": step smooth L1 loss
+             * "uncertainty": smooth L1 loss with added uncertainty
+        """
+        # No reduction so we can apply whatever adjustment to each sample
+        super().__init__(reduction="none")
+
+        if loss_type is not None:
+            loss_type = loss_type.lower()
+            if loss_type == "step":
+                self.loss_function = self.step_loss
+            elif loss_type == "uncertainty":
+                self.loss_function = self.uncertainty_loss
+            else:
+                raise ValueError(f'Unknown loss_type "{loss_type}"')
+        else:
+            self.loss_function = super().forward
+
+        self.loss_type = loss_type
+
+    def forward(self, pred, pose_preds, target, in_range, uncertainty):
+        """
+        Dispatch method for calculating loss. All arguments should be passed
+        regardless of actual loss function to keep an identical signature for
+        this class. Data is passed to `self.loss_function`.
+        """
+
+        if self.loss_type is None:
+            # Just need to calculate mean
+            return self.loss_function(pred, target).mean()
+        elif self.loss_type == "step":
+            # Call step_loss
+            return self.loss_function(pred, target, in_range)
+        elif self.loss_type == "uncertainty":
+            # Call uncertainty_loss
+            return self.loss_function(pred, target, uncertainty)
+
+    def step_loss(self, pred, target, in_range=None):
+        """
+        Step loss calculation. For `in_range` < 0, loss is returned as 0 if
+        `pred` < `target`, otherwise loss is calculated as normal. For
+        `in_range` > 0, loss is returned as 0 if `pred` > `target`, otherwise
+        loss is calculated as normal. For `in_range` == 0, loss is calculated as
+        normal.
+
+        Parameters
+        ----------
+        pred : torch.Tensor
+            Model prediction
+        target : torch.Tensor
+            Prediction target
+        in_range : torch.Tensor, optional
+            `target`'s presence in the dynamic range of the assay. Give a value
+            of < 0 for `target` below lower bound, > 0 for `target` above upper
+            bound, and 0 or None for inside range
+
+        Returns
+        -------
+        torch.Tensor
+            Calculated loss
+        """
+        # Calculate loss
+        loss = super().forward(pred, target)
+
+        # Calculate mask:
+        #  1.0 - If pred or data is semiquant and prediction is inside the
+        #    assay range
+        #  0.0 - If data is semiquant and prediction is outside the assay range
+        # r < 0 -> measurement is below thresh, want to count if pred > target
+        # r > 0 -> measurement is above thresh, want to count if pred < target
+        mask = torch.tensor(
+            [
+                1.0 if ((r == 0) or (r is None)) else ((r < 0) == (t < i))
+                for i, t, r in zip(
+                    np.ravel(pred.detach().cpu()),
+                    np.ravel(target.detach().cpu()),
+                    np.ravel(
+                        in_range.detach().cpu()
+                        if in_range is not None
+                        else [None] * len(pred.flatten())
+                    ),
+                )
+            ]
+        )
+        mask = mask.to(pred.device)
+
+        # Need to add the max in the denominator in case there are no values that we
+        #  want to calculate loss for
+        loss = (loss * mask).sum() / max(torch.sum(mask), 1)
 
         return loss
 

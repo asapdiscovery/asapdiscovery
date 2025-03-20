@@ -3,7 +3,6 @@ from glob import glob
 from pathlib import Path
 
 import click
-import pydantic
 import torch
 from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (
@@ -44,6 +43,7 @@ from asapdiscovery.ml.config import (
 )
 from asapdiscovery.ml.trainer import Trainer
 from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
+from pydantic.v1 import ValidationError
 
 
 @click.group()
@@ -123,6 +123,7 @@ def build_gat(
     extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
+    strategy_layer_norm: bool | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
     comb_readout: ReadoutConfig | None = None,
@@ -175,6 +176,8 @@ def build_gat(
     loss_dict: dict | None = None,
     device: torch.device | None = None,
     data_aug: tuple[str] = (),
+    trainer_weight_decay: float | None = None,
+    batch_norm: bool | None = None,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -207,6 +210,7 @@ def build_gat(
         "weights_path": weights_path,
         "grouped": grouped,
         "strategy": strategy,
+        "strategy_layer_norm": strategy_layer_norm,
         "pred_readout": pred_readout,
         "combination": combination,
         "comb_readout": comb_readout,
@@ -276,6 +280,8 @@ def build_gat(
         "loss_weights": loss_weights,
         "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
+        "weight_decay": trainer_weight_decay,
+        "batch_norm": batch_norm,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -339,6 +345,7 @@ def build_schnet(
     extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
+    strategy_layer_norm: bool | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
     comb_readout: ReadoutConfig | None = None,
@@ -393,6 +400,8 @@ def build_schnet(
     loss_dict: dict | None = None,
     device: torch.device | None = None,
     data_aug: tuple[str] = (),
+    trainer_weight_decay: float | None = None,
+    batch_norm: bool | None = None,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -425,6 +434,7 @@ def build_schnet(
         "weights_path": weights_path,
         "grouped": grouped,
         "strategy": strategy,
+        "strategy_layer_norm": strategy_layer_norm,
         "pred_readout": pred_readout,
         "combination": combination,
         "comb_readout": comb_readout,
@@ -498,6 +508,8 @@ def build_schnet(
         "loss_weights": loss_weights,
         "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
+        "weight_decay": trainer_weight_decay,
+        "batch_norm": batch_norm,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -561,6 +573,7 @@ def build_e3nn(
     extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
+    strategy_layer_norm: bool | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
     comb_readout: ReadoutConfig | None = None,
@@ -616,6 +629,8 @@ def build_e3nn(
     loss_dict: dict | None = None,
     device: torch.device | None = None,
     data_aug: tuple[str] = (),
+    trainer_weight_decay: float | None = None,
+    batch_norm: bool | None = None,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -648,6 +663,7 @@ def build_e3nn(
         "weights_path": weights_path,
         "grouped": grouped,
         "strategy": strategy,
+        "strategy_layer_norm": strategy_layer_norm,
         "pred_readout": pred_readout,
         "combination": combination,
         "comb_readout": comb_readout,
@@ -722,6 +738,8 @@ def build_e3nn(
         "loss_weights": loss_weights,
         "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
+        "weight_decay": trainer_weight_decay,
+        "batch_norm": batch_norm,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -785,6 +803,7 @@ def build_visnet(
     extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
+    strategy_layer_norm: bool | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
     comb_readout: ReadoutConfig | None = None,
@@ -845,6 +864,8 @@ def build_visnet(
     loss_dict: dict | None = None,
     device: torch.device | None = None,
     data_aug: tuple[str] = (),
+    trainer_weight_decay: float | None = None,
+    batch_norm: bool | None = None,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -877,6 +898,7 @@ def build_visnet(
         "weights_path": weights_path,
         "grouped": grouped,
         "strategy": strategy,
+        "strategy_layer_norm": strategy_layer_norm,
         "pred_readout": pred_readout,
         "combination": combination,
         "comb_readout": comb_readout,
@@ -956,6 +978,8 @@ def build_visnet(
         "loss_weights": loss_weights,
         "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
+        "weight_decay": trainer_weight_decay,
+        "batch_norm": batch_norm,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -1018,6 +1042,7 @@ def build_and_train_gat(
     extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
+    strategy_layer_norm: bool | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
     comb_readout: ReadoutConfig | None = None,
@@ -1070,6 +1095,8 @@ def build_and_train_gat(
     loss_dict: dict | None = None,
     device: torch.device | None = None,
     data_aug: tuple[str] = (),
+    trainer_weight_decay: float | None = None,
+    batch_norm: bool | None = None,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -1102,6 +1129,7 @@ def build_and_train_gat(
         "weights_path": weights_path,
         "grouped": grouped,
         "strategy": strategy,
+        "strategy_layer_norm": strategy_layer_norm,
         "pred_readout": pred_readout,
         "combination": combination,
         "comb_readout": comb_readout,
@@ -1171,6 +1199,8 @@ def build_and_train_gat(
         "loss_weights": loss_weights,
         "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
+        "weight_decay": trainer_weight_decay,
+        "batch_norm": batch_norm,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -1239,6 +1269,7 @@ def build_and_train_schnet(
     extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
+    strategy_layer_norm: bool | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
     comb_readout: ReadoutConfig | None = None,
@@ -1293,6 +1324,8 @@ def build_and_train_schnet(
     loss_dict: dict | None = None,
     device: torch.device | None = None,
     data_aug: tuple[str] = (),
+    trainer_weight_decay: float | None = None,
+    batch_norm: bool | None = None,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -1325,6 +1358,7 @@ def build_and_train_schnet(
         "weights_path": weights_path,
         "grouped": grouped,
         "strategy": strategy,
+        "strategy_layer_norm": strategy_layer_norm,
         "pred_readout": pred_readout,
         "combination": combination,
         "comb_readout": comb_readout,
@@ -1398,6 +1432,8 @@ def build_and_train_schnet(
         "loss_weights": loss_weights,
         "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
+        "weight_decay": trainer_weight_decay,
+        "batch_norm": batch_norm,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -1466,6 +1502,7 @@ def build_and_train_e3nn(
     extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
+    strategy_layer_norm: bool | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
     comb_readout: ReadoutConfig | None = None,
@@ -1521,6 +1558,8 @@ def build_and_train_e3nn(
     loss_dict: dict | None = None,
     device: torch.device | None = None,
     data_aug: tuple[str] = (),
+    trainer_weight_decay: float | None = None,
+    batch_norm: bool | None = None,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -1553,6 +1592,7 @@ def build_and_train_e3nn(
         "weights_path": weights_path,
         "grouped": grouped,
         "strategy": strategy,
+        "strategy_layer_norm": strategy_layer_norm,
         "pred_readout": pred_readout,
         "combination": combination,
         "comb_readout": comb_readout,
@@ -1627,6 +1667,8 @@ def build_and_train_e3nn(
         "loss_weights": loss_weights,
         "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
+        "weight_decay": trainer_weight_decay,
+        "batch_norm": batch_norm,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -1693,6 +1735,7 @@ def build_and_train_visnet(
     extra_config: tuple[str] | None = None,
     grouped: bool | None = None,
     strategy: StrategyConfig | None = None,
+    strategy_layer_norm: bool | None = None,
     pred_readout: ReadoutConfig | None = None,
     combination: CombinationConfig | None = None,
     comb_readout: ReadoutConfig | None = None,
@@ -1753,6 +1796,8 @@ def build_and_train_visnet(
     loss_dict: dict | None = None,
     device: torch.device | None = None,
     data_aug: tuple[str] = (),
+    trainer_weight_decay: float | None = None,
+    batch_norm: bool | None = None,
     overwrite_trainer_config_cache: bool = False,
     overwrite_optimizer_config_cache: bool = False,
     overwrite_model_config_cache: bool = False,
@@ -1785,6 +1830,7 @@ def build_and_train_visnet(
         "rand_seed": model_rand_seed,
         "grouped": grouped,
         "strategy": strategy,
+        "strategy_layer_norm": strategy_layer_norm,
         "pred_readout": pred_readout,
         "combination": combination,
         "comb_readout": comb_readout,
@@ -1863,6 +1909,8 @@ def build_and_train_visnet(
         "loss_weights": loss_weights,
         "eval_loss_weights": eval_loss_weights,
         "data_aug_configs": data_aug_configs,
+        "weight_decay": trainer_weight_decay,
+        "batch_norm": batch_norm,
         "auto_init": auto_init,
         "start_epoch": start_epoch,
         "n_epochs": n_epochs,
@@ -2152,7 +2200,7 @@ def _build_ds_config(
             cpd_regex=cpd_regex,
             for_training=True,
             exp_file=exp_file,
-            **config_kwargs
+            **config_kwargs,
         )
     else:
         ds_config = DatasetConfig.from_exp_file(exp_file, **config_kwargs)
@@ -2227,7 +2275,7 @@ def _build_trainer(
 
     try:
         t = Trainer(**trainer_kwargs)
-    except pydantic.ValidationError as exc:
+    except ValidationError as exc:
         # Only want to handle missing values, so if anything else went wrong just raise
         #  the pydantic error
         if any([err["type"] != "value_error.missing" for err in exc.errors()]):

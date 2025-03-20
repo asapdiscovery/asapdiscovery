@@ -25,7 +25,7 @@ from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, 
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
 from openmmforcefields.generators import SystemGenerator
 from openmmtools.utils import get_fastest_platform
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     Field,
     PositiveFloat,
