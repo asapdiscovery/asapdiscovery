@@ -1,5 +1,6 @@
 import abc
 import warnings
+from tqdm import tqdm
 from typing import Any, Literal
 
 from asapdiscovery.alchemy.schema.base import _SchemaBase
@@ -8,7 +9,6 @@ from pydantic.v1 import Field
 
 
 class _BaseChargeMethod(_SchemaBase, abc.ABC):
-
     type: Literal["_BaseChargeMethod"] = "_BaseChargeMethod"
 
     def provenance(self) -> dict[str, str]:
@@ -42,7 +42,6 @@ class _BaseChargeMethod(_SchemaBase, abc.ABC):
 
 
 class OpenFFCharges(_BaseChargeMethod):
-
     type: Literal["OpenFFCharges"] = "OpenFFCharges"
 
     charge_method: Literal["am1bccelf10", "am1bcc"] = Field(

@@ -21,7 +21,7 @@ from openfe.protocols.openmm_utils.omm_settings import (
 from openfe.setup.atom_mapping import lomap_scorers, perses_scorers
 from openff.models.types import FloatQuantity
 from openff.units import unit as OFFUnit
-from pydantic.v1 import BaseSettings, Field
+from pydantic.v1 import Field
 
 from ._util import check_ligand_series_uniqueness_and_names
 from .base import _SchemaBase, _SchemaBaseFrozen
