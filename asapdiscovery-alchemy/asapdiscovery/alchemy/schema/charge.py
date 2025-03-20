@@ -1,11 +1,11 @@
 import abc
 import warnings
-from tqdm import tqdm
 from typing import Any, Literal
 
 from asapdiscovery.alchemy.schema.base import _SchemaBase
 from asapdiscovery.data.schema.ligand import Ligand
 from pydantic.v1 import Field
+from tqdm import tqdm
 
 
 class _BaseChargeMethod(_SchemaBase, abc.ABC):
