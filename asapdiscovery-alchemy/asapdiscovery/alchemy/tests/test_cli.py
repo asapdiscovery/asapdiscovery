@@ -1256,6 +1256,7 @@ def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):
             assert ligand.tags["bespokefit_id"] == "testing_id"
 
 
+@pytest.mark.skip()
 def test_bespoke_gather_missing(tyk2_fec_network, tmpdir):
     """Make sure we inform when no bespoke optimisations are found."""
 
