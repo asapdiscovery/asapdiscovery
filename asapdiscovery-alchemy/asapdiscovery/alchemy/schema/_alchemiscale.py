@@ -10,8 +10,7 @@ from re import fullmatch
 from typing import Optional, Union
 
 from gufe.tokenization import GufeKey
-from pydantic import BaseModel, Field, root_validator, validator
-from pydantic.v1 import BaseModel, Field, root_validator, validator
+from pydantic.v1 import BaseModel, root_validator, validator
 
 
 class Scope(BaseModel):
@@ -118,7 +117,8 @@ class Scope(BaseModel):
         return all(self.to_tuple())
 
 
-class InvalidGufeKeyError(ValueError): ...
+class InvalidGufeKeyError(ValueError):
+    ...
 
 
 class ScopedKey(BaseModel):
@@ -201,7 +201,8 @@ class ScopedKey(BaseModel):
         return cls(**d)
 
 
-class InvalidScopeError(ValueError): ...
+class InvalidScopeError(ValueError):
+    ...
 
 
 def _is_wildcard(char: Union[str, None]) -> bool:

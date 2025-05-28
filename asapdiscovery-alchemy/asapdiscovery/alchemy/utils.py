@@ -525,6 +525,7 @@ class BespokeFitHelper:
     """
     A convenience class to handle BespokeFit submissions restarts and results gathering.
     """
+    from openff.bespokefit.workflows import BespokeWorkflowFactory
 
     def __init__(self):
         from openff.bespokefit.executor.client import BespokeFitClient, Settings
