@@ -74,6 +74,7 @@ def tyk2_small_custom_network_faulty_with_spaces():
 @pytest.fixture(scope="function")
 def alchemiscale_helper():
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
+
     # use a fake api url for testing
     client = AlchemiscaleHelper(api_url="", key="key", identifier="asap")
 
