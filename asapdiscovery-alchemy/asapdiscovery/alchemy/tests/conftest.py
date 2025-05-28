@@ -5,7 +5,6 @@ import openfe
 import pytest
 from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
-from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
@@ -74,6 +73,7 @@ def tyk2_small_custom_network_faulty_with_spaces():
 
 @pytest.fixture(scope="function")
 def alchemiscale_helper():
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
     # use a fake api url for testing
     client = AlchemiscaleHelper(api_url="", key="key", identifier="asap")
 
