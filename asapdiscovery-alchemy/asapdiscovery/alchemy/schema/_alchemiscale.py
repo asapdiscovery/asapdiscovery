@@ -117,8 +117,7 @@ class Scope(BaseModel):
         return all(self.to_tuple())
 
 
-class InvalidGufeKeyError(ValueError):
-    ...
+class InvalidGufeKeyError(ValueError): ...
 
 
 class ScopedKey(BaseModel):
@@ -201,8 +200,7 @@ class ScopedKey(BaseModel):
         return cls(**d)
 
 
-class InvalidScopeError(ValueError):
-    ...
+class InvalidScopeError(ValueError): ...
 
 
 def _is_wildcard(char: Union[str, None]) -> bool:
