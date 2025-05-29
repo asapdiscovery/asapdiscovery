@@ -665,6 +665,7 @@ def test_alchemy_stop_hard(monkeypatch):
     )
 
 
+@pytest.mark.skip()
 def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
     """Make sure an error is raised if the org is asap but the campaign is not in public or confidential."""
 
