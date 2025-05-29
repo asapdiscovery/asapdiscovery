@@ -1062,6 +1062,7 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
     console = rich.get_console()
     console.clear_live()
 
+
 @pytest.mark.skip()
 def test_prioritize_weight_not_set(monkeypatch):
     """
