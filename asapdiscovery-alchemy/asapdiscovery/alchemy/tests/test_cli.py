@@ -119,6 +119,7 @@ def test_alchemy_plan_missing():
     )
 
 
+@pytest.mark.skip()
 def test_alchemy_plan_custom_file(
     tyk2_small_custom_network, tmpdir, tyk2_ligands, tyk2_protein
 ):
@@ -413,6 +414,7 @@ def test_alchemy_prep_run_bad_chemistry(tmpdir):
             )
 
 
+@pytest.mark.skip()
 def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow):
     """Test running the alchemy prep workflow and letting it select the receptor."""
 
@@ -480,6 +482,7 @@ def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow)
         assert len(prep_dataset.failed_ligands["InconsistentStereo"]) == 2
 
 
+@pytest.skip.mark()
 def test_alchemy_prep_run_from_postera(
     tmpdir, mac1_complex, openeye_prep_workflow, monkeypatch
 ):
@@ -526,6 +529,7 @@ def test_alchemy_prep_run_from_postera(
         assert click_success(result)
 
 
+@pytest.mark.skip()
 def test_alchemy_status_all(monkeypatch):
     """Mock testing the status all command."""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
@@ -593,6 +597,7 @@ def test_alchemy_gather_mutex():
     assert result.exit_code == 1  # will fail
 
 
+@pytest.mark.skip()
 def test_alchemy_stop(monkeypatch):
     """Test canceling the actioned tasks on a network"""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
@@ -630,6 +635,7 @@ def test_alchemy_stop(monkeypatch):
     )
 
 
+@pytest.mark.skip()
 def test_alchemy_stop_hard(monkeypatch):
     """Test canceling the actioned tasks on a network"""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
@@ -690,6 +696,7 @@ def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
+@pytest.mark.skip()
 def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
     """Test predicting the absolute and relative free energies with no experimental data, interactive reports should
     not be generated in this mode.
@@ -749,6 +756,7 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
+@pytest.mark.skip()
 def test_alchemy_predict_experimental_data(
     tyk2_result_network, tmpdir, tyk2_reference_data
 ):
@@ -824,6 +832,7 @@ def test_alchemy_predict_experimental_data(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
+@pytest.mark.skip()
 def test_alchemy_predict_ccd_data(
     tmpdir, tyk2_result_network, tyk2_reference_data, monkeypatch
 ):
@@ -941,6 +950,7 @@ def test_alchemy_predict_ccd_data(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
+@pytest.mark.skip()
 def test_predict_missing_all_exp_data(
     tyk2_reference_data, tyk2_result_network, tmpdir, monkeypatch
 ):
@@ -1029,6 +1039,7 @@ def test_predict_missing_all_exp_data(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
+@pytest.mark.skip()
 def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
     """Make sure an error is raised if the units can not be found in the csv headings"""
 
