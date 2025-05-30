@@ -4,8 +4,7 @@ from typing import Any, Literal
 
 from asapdiscovery.alchemy.schema.base import _SchemaBase
 from asapdiscovery.data.schema.ligand import Ligand
-from pydantic import Field
-from tqdm import tqdm
+from pydantic.v1 import Field
 
 
 class _BaseChargeMethod(_SchemaBase, abc.ABC):
@@ -88,6 +87,8 @@ class OpenFFCharges(_BaseChargeMethod):
         processors: int = 1,
     ) -> list[Ligand]:
         from concurrent.futures import ProcessPoolExecutor, as_completed
+
+        from tqdm import tqdm
 
         provenance = self.provenance()
         charged_ligands = []

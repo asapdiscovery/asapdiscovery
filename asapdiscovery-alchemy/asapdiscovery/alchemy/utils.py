@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.interfaces import AlchemiscaleSettings
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleFailure,
@@ -12,11 +11,12 @@ from asapdiscovery.alchemy.schema.fec import (
 from asapdiscovery.alchemy.schema.forcefield import ForceFieldParams
 from openmm.app import ForceField, Modeller, PDBFile
 
+from .schema._alchemiscale import Scope, ScopedKey
+
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.complex import PreppedComplex
     from asapdiscovery.data.schema.ligand import Ligand
     from asapdiscovery.data.schema.target import PreppedTarget
-    from openff.bespokefit.workflows import BespokeWorkflowFactory
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
@@ -525,6 +525,8 @@ class BespokeFitHelper:
     """
     A convenience class to handle BespokeFit submissions restarts and results gathering.
     """
+
+    from openff.bespokefit.workflows import BespokeWorkflowFactory
 
     def __init__(self):
         from openff.bespokefit.executor.client import BespokeFitClient, Settings

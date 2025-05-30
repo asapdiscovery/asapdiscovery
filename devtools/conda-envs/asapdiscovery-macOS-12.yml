@@ -25,13 +25,14 @@ dependencies:
   - mdanalysis
   - openff-toolkit
   - openff-fragmenter <0.2.2
-  - openff-bespokefit >=0.4.0
+  # - openff-bespokefit >=0.4.0
   - openff-forcefields >=2024.04.0
   - openeye-toolkits # may need  <2023.2.3 for lilac GLIBC
   - openmmforcefields >= 0.13.0
   - pandas
   - pebble
-  - pydantic >=1.10.8,<2.0.0a0
+  - pydantic >=2.0.0a0
+  - pydantic-settings
   - rdkit
   - seaborn
   - panel
@@ -66,7 +67,7 @@ dependencies:
   - dgl <=2.0.0
   - dgllife
   - pooch
-  - mtenn =0.6.2
+  - mtenn =0.6.3
   - wandb
 
   # md
@@ -100,3 +101,4 @@ dependencies:
   - rich
   - alchemiscale-client >=0.5.1
   - cinnabar >=0.4.1
+  - tqdm

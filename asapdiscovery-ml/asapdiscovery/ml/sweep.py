@@ -4,7 +4,7 @@ from pathlib import Path
 import wandb
 import yaml
 from asapdiscovery.ml.trainer import Trainer
-from pydantic import Field, validator
+from pydantic.v1 import Field, validator
 
 
 class Sweeper(Trainer):

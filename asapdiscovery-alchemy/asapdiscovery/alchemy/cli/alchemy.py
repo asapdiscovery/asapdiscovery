@@ -302,8 +302,8 @@ def submit(
         repeats: The total number of times each transformation should be ran.
     """
     import rich
-    from alchemiscale import Scope
     from asapdiscovery.alchemy.cli.utils import print_header, print_message
+    from asapdiscovery.alchemy.schema._alchemiscale import Scope
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
     from rich import pretty
