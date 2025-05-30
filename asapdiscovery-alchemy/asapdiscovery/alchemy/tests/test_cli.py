@@ -119,7 +119,7 @@ def test_alchemy_plan_missing():
     )
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_alchemy_plan_custom_file(
     tyk2_small_custom_network, tmpdir, tyk2_ligands, tyk2_protein
 ):
@@ -414,7 +414,7 @@ def test_alchemy_prep_run_bad_chemistry(tmpdir):
             )
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow):
     """Test running the alchemy prep workflow and letting it select the receptor."""
 
@@ -529,7 +529,7 @@ def test_alchemy_prep_run_from_postera(
         assert click_success(result)
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_alchemy_status_all(monkeypatch):
     """Mock testing the status all command."""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
@@ -597,7 +597,7 @@ def test_alchemy_gather_mutex():
     assert result.exit_code == 1  # will fail
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_alchemy_stop(monkeypatch):
     """Test canceling the actioned tasks on a network"""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
@@ -635,7 +635,7 @@ def test_alchemy_stop(monkeypatch):
     )
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_alchemy_stop_hard(monkeypatch):
     """Test canceling the actioned tasks on a network"""
     monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
@@ -671,7 +671,7 @@ def test_alchemy_stop_hard(monkeypatch):
     )
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
     """Make sure an error is raised if the org is asap but the campaign is not in public or confidential."""
 
@@ -696,7 +696,7 @@ def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
     """Test predicting the absolute and relative free energies with no experimental data, interactive reports should
     not be generated in this mode.
@@ -756,7 +756,7 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_alchemy_predict_experimental_data(
     tyk2_result_network, tmpdir, tyk2_reference_data
 ):
@@ -832,7 +832,7 @@ def test_alchemy_predict_experimental_data(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_alchemy_predict_ccd_data(
     tmpdir, tyk2_result_network, tyk2_reference_data, monkeypatch
 ):
@@ -950,7 +950,7 @@ def test_alchemy_predict_ccd_data(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_predict_missing_all_exp_data(
     tyk2_reference_data, tyk2_result_network, tmpdir, monkeypatch
 ):
@@ -1039,7 +1039,7 @@ def test_predict_missing_all_exp_data(
 @pytest.mark.skipif(
     os.getenv("RUNNER_OS") == "macOS", reason="Flake on MacOS for some reason"
 )
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
     """Make sure an error is raised if the units can not be found in the csv headings"""
 
@@ -1063,7 +1063,7 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
     console.clear_live()
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_prioritize_weight_not_set(monkeypatch):
     """
     Make sure an error is raised if the weight of the network is not
@@ -1232,7 +1232,7 @@ def test_prep_alchemize(test_ligands_sdfile, tmpdir):
         assert click_success(result)
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):
     """
     Test submitting calculations to the bespokefit server and make sure that the ids are saved into the network
@@ -1269,7 +1269,7 @@ def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):
             assert ligand.tags["bespokefit_id"] == "testing_id"
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_bespoke_gather_missing(tyk2_fec_network, tmpdir):
     """Make sure we inform when no bespoke optimisations are found."""
 
@@ -1290,7 +1290,7 @@ def test_bespoke_gather_missing(tyk2_fec_network, tmpdir):
     assert "No bespoke optimizations found." in result.stdout
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
     """Test gathering the parameters for molecules from a bespokefit server"""
     from openff.bespokefit.executor.client import (
@@ -1387,7 +1387,7 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
         assert parameter.phase2.m == 180
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     """Make sure an error is raised if only some results can be gathered"""
 
@@ -1457,7 +1457,7 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     console.clear_live()
 
 
-@pytest.mark.skip()
+@pytest.mark.skip
 def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
     """Test getting the status of some ligands in bespokefit"""
     from openff.bespokefit.executor.client import (
