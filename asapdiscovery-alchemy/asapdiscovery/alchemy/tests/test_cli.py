@@ -482,7 +482,7 @@ def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow)
         assert len(prep_dataset.failed_ligands["InconsistentStereo"]) == 2
 
 
-@pytest.skip.mark()
+@pytest.mark.skip()
 def test_alchemy_prep_run_from_postera(
     tmpdir, mac1_complex, openeye_prep_workflow, monkeypatch
 ):
