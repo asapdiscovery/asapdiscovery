@@ -1,6 +1,4 @@
-"""Interface for signed URL generation via CloudFront.
-
-"""
+"""Interface for signed URL generation via CloudFront."""
 
 import datetime
 from os import PathLike
