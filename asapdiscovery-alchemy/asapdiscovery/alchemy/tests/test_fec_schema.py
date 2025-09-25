@@ -2,7 +2,7 @@ import functools
 
 import openfe
 import pytest
-from alchemiscale import Scope, ScopedKey
+from asapdiscovery.alchemy.schema._alchemiscale import Scope, ScopedKey
 from asapdiscovery.alchemy.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,

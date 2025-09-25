@@ -1,9 +1,9 @@
 import json
 
-import pydantic
 import pytest
 from asapdiscovery.ml.config import LossFunctionConfig
 from asapdiscovery.ml.schema import TrainingPrediction, TrainingPredictionTracker
+from pydantic.v1 import ValidationError
 
 
 @pytest.fixture()
@@ -98,7 +98,7 @@ def test_training_pred_tracker_constructor_bad_dict(identifiers, loss_configs):
     tp1 = TrainingPrediction(**identifiers[0], loss_config=loss_configs[0])
     tp2 = TrainingPrediction(**identifiers[1], loss_config=loss_configs[1])
 
-    with pytest.raises(pydantic.error_wrappers.ValidationError):
+    with pytest.raises(ValidationError):
         _ = TrainingPredictionTracker(split_dict={"train": [tp1], "val": [tp2]})
 
 
