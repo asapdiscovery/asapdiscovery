@@ -6,7 +6,7 @@ from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.postera.postera_factory import PosteraFactory
 from asapdiscovery.data.services.services_config import PosteraSettings
-from pydantic import BaseModel, Field, root_validator
+from pydantic.v1 import BaseModel, Field, root_validator
 
 logger = logging.getLogger(__name__)
 

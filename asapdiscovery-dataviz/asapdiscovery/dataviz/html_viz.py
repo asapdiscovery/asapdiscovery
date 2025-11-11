@@ -45,7 +45,7 @@ from asapdiscovery.spectrum.fitness import (
     target_has_fitness_data,
 )
 from multimethod import multimethod
-from pydantic import Field, root_validator
+from pydantic.v1 import Field, root_validator
 
 logger = logging.getLogger(__name__)
 
