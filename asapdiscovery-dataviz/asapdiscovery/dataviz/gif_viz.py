@@ -18,7 +18,7 @@ from asapdiscovery.dataviz.visualizer import VisualizerBase
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.simulation.simulate import SimulationResult
 from multimethod import multimethod
-from pydantic import Field, PositiveInt
+from pydantic.v1 import Field, PositiveInt
 
 logger = logging.getLogger(__name__)
 

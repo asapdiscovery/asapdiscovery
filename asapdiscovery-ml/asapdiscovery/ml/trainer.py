@@ -29,11 +29,12 @@ from mtenn.config import (
     SchNetModelConfig,
     ViSNetModelConfig,
 )
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     Extra,
     Field,
     ValidationError,
+    confloat,
     conlist,
     root_validator,
     validator,
@@ -86,6 +87,17 @@ class Trainer(BaseModel):
             "must be one for each loss function."
         ),
     )
+    weight_decay: confloat(ge=0.0, allow_inf_nan=False) = Field(
+        0.0,
+        description=(
+            "Weight decay weighting for training. This will add a term of "
+            "weight_decay / 2 * the square of the L2-norm of the model weights, "
+            "excluding any bias terms."
+        ),
+    )
+    batch_norm: bool = Field(
+        False, description="Normalize batch gradient by batch size."
+    )
     data_aug_configs: list[DataAugConfig] = Field(
         [],
         description="List of data augmentations to be applied in order to each pose.",
@@ -113,10 +125,10 @@ class Trainer(BaseModel):
         ),
     )
     batch_size: int = Field(
-        1,
+        -1,
         description=(
             "Number of samples to predict on before performing backprop."
-            "Set to -1 to use the entire training set as a batch."
+            "Set to -1 (default) to use the entire training set as a batch."
         ),
     )
     target_prop: str = Field("pIC50", description=("Target property to train against."))
@@ -779,6 +791,7 @@ class Trainer(BaseModel):
                 weights_path = self.output_dir / f"{self.start_epoch - 1}.th"
                 if not weights_path.exists():
                     weights_path = self.output_dir / "weights.th"
+                print(f"Using weights file {weights_path.name}", flush=True)
                 self.model_config = self.model_config.update(
                     {
                         "model_weights": torch.load(
@@ -786,7 +799,6 @@ class Trainer(BaseModel):
                         )
                     }
                 )
-                print(f"Using weights file {weights_path.name}", flush=True)
             except FileNotFoundError:
                 raise FileNotFoundError(
                     f"Found {self.start_epoch} epochs of training, but didn't find "
@@ -852,6 +864,13 @@ class Trainer(BaseModel):
         # Save initial model weights for debugging
         if not self.cont:
             torch.save(self.model.state_dict(), self.output_dir / "init.th")
+
+        # Return early if trying to continue but training has already reached the end
+        if self.start_epoch == self.n_epochs:
+            print("Alrady trained for all epochs, not resuming training.", flush=True)
+            if self.use_wandb:
+                wandb.finish()
+            return
 
         # Train for n epochs
         for epoch_idx in range(self.start_epoch, self.n_epochs):
@@ -986,6 +1005,24 @@ class Trainer(BaseModel):
                 if not loss.requires_grad:
                     continue
 
+                # Add in weight decay term if requested
+                if self.weight_decay:
+                    # Square of the sum of L2 norms of each parameter (excluding bias
+                    #  terms)
+                    weight_norm = torch.sum(
+                        torch.pow(
+                            torch.stack(
+                                [
+                                    torch.linalg.norm(x)
+                                    for n, x in self.model.named_parameters()
+                                    if n.split(".")[-1] != "bias"
+                                ]
+                            ),
+                            2,
+                        )
+                    )
+                    loss += self.weight_decay / 2 * weight_norm
+
                 # Can just call loss.backward, grads will accumulate additively
                 loss.backward()
 
@@ -996,9 +1033,10 @@ class Trainer(BaseModel):
 
                 # Perform backprop if we've done all the preds for this batch
                 if batch_counter == self.batch_size:
-                    # Need to scale the gradients by batch_size to get to MSE loss
-                    for p in self.model.parameters():
-                        p.grad /= batch_counter
+                    if self.batch_norm:
+                        # Need to scale the gradients by batch_size to get to MSE loss
+                        for p in self.model.parameters():
+                            p.grad /= batch_counter
 
                     # Backprop
                     self.optimizer.step()
@@ -1016,12 +1054,12 @@ class Trainer(BaseModel):
                     self.optimizer.zero_grad()
 
             if batch_counter > 0:
-                # Need to scale the gradients by batch_size to get to MSE loss
-                for p in self.model.parameters():
-                    p.grad /= batch_counter
+                if self.batch_norm:
+                    # Need to scale the gradients by batch_size to get to MSE loss
+                    for p in self.model.parameters():
+                        p.grad /= batch_counter
 
                 # Backprop for final incomplete batch
-                self.optimizer.step()
                 if any(
                     [
                         p.grad.isnan().any().item()
@@ -1030,10 +1068,15 @@ class Trainer(BaseModel):
                     ]
                 ):
                     raise ValueError("NaN gradients")
+
+                # Backprop
+                self.optimizer.step()
+
             end_time = time()
 
             epoch_train_loss = np.mean(tmp_loss)
 
+            # Val and test splits
             self.model.eval()
             tmp_loss = []
             for compound, pose in self.ds_val:
@@ -1080,7 +1123,8 @@ class Trainer(BaseModel):
                     model_inp = pose
 
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(model_inp)
+                with torch.no_grad():
+                    pred, pose_preds = self.model(model_inp)
                 losses = [
                     (
                         loss_func(
@@ -1171,7 +1215,8 @@ class Trainer(BaseModel):
                     model_inp = pose
 
                 # Make prediction and calculate loss
-                pred, pose_preds = self.model(model_inp)
+                with torch.no_grad():
+                    pred, pose_preds = self.model(model_inp)
                 losses = [
                     (
                         loss_func(
