@@ -1,6 +1,4 @@
-"""Interface for object generation on S3.
-
-"""
+"""Interface for object generation on S3."""
 
 import os
 from os import PathLike

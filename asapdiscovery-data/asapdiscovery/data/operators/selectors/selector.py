@@ -58,7 +58,7 @@ class SelectorBase(abc.ABC, BaseModel):
 
     @staticmethod
     def _pair_type_from_complex(
-        complex: Union[Complex, PreppedComplex]
+        complex: Union[Complex, PreppedComplex],
     ) -> Literal["CompoundStructurePair", "DockingInputPair"]:
         """
         Returns the pair type that matches a given Complex type.

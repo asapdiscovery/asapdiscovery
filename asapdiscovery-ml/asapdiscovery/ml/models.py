@@ -916,7 +916,7 @@ class MLModelRegistry(BaseModel):
 
     @staticmethod
     def parse_yaml_to_models_dict(
-        yaml_file: Union[str, Path]
+        yaml_file: Union[str, Path],
     ) -> dict[str, MLModelSpecBase]:
         """
         Parse models registry from yaml spec file
