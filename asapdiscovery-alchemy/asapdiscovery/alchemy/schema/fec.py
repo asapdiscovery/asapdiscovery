@@ -28,8 +28,9 @@ from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
 
 if TYPE_CHECKING:
-    from asapdiscovery.data.schema.ligand import Ligand
     from gufe.mapping import LigandAtomMapping
+
+    from asapdiscovery.data.schema.ligand import Ligand
 
 
 class SolventSettings(_SchemaBase):

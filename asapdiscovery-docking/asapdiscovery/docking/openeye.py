@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import ClassVar, Literal, Optional, Union
 
 import pandas as pd
+from pydantic import Field, PositiveInt, root_validator
+
 from asapdiscovery.data.backend.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.dask_utils import dask_vmap
@@ -19,7 +21,6 @@ from asapdiscovery.docking.docking import (
     DockingResult,
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from pydantic import Field, PositiveInt, root_validator
 
 logger = logging.getLogger(__name__)
 

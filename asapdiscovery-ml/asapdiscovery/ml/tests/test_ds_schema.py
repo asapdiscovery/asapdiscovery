@@ -2,6 +2,7 @@ from datetime import datetime
 from functools import reduce
 
 import pytest
+
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file

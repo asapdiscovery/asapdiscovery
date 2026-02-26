@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import dask
 import yaml
+from pydantic import BaseModel, Field
+
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
@@ -23,7 +25,6 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from distributed import Client

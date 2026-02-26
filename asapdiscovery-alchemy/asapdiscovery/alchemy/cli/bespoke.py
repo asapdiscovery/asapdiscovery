@@ -2,6 +2,7 @@ import shutil
 from typing import Optional
 
 import click
+
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
 
 
@@ -49,11 +50,12 @@ def submit(
     been set.
     """
     import rich
+    from openff.bespokefit.workflows import BespokeWorkflowFactory
+    from rich import pretty
+
     from asapdiscovery.alchemy.cli.utils import print_header, print_message
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import BespokeFitHelper
-    from openff.bespokefit.workflows import BespokeWorkflowFactory
-    from rich import pretty
 
     pretty.install()
     console = rich.get_console()
@@ -161,10 +163,11 @@ def gather(network: str, allow_missing: bool):
         RuntimeError if not all optimisation are complete and allowing missing is False.
     """
     import rich
+    from rich import pretty
+
     from asapdiscovery.alchemy.cli.utils import print_header, print_message
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import BespokeFitHelper
-    from rich import pretty
 
     pretty.install()
     console = rich.get_console()
@@ -238,11 +241,12 @@ def status(network: str):
     Check the progress of the BespokeFit optimisations for this network
     """
     import rich
+    from rich import pretty
+    from rich.table import Table
+
     from asapdiscovery.alchemy.cli.utils import print_header, print_message
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import BespokeFitHelper
-    from rich import pretty
-    from rich.table import Table
 
     pretty.install()
     console = rich.get_console()

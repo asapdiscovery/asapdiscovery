@@ -3,9 +3,10 @@ import warnings
 from typing import Dict, Optional, Tuple, Union  # noqa: F401
 
 import pandas as pd
+from typing_extensions import TypedDict
+
 from asapdiscovery.data.services.web_utils import _BaseWebAPI
 from asapdiscovery.data.util.stringenum import StringEnum
-from typing_extensions import TypedDict
 
 from .manifold_data_validation import ManifoldAllowedTags
 

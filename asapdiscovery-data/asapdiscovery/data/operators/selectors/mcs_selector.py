@@ -3,6 +3,11 @@ import warnings
 from typing import ClassVar, Union
 
 import numpy as np
+from dask import delayed
+from pydantic import Field
+from rdkit import Chem, rdBase
+from rdkit.Chem import rdRascalMCES
+
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.operators.selectors.selector import SelectorBase
 from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
@@ -13,10 +18,6 @@ from asapdiscovery.data.util.dask_utils import (
     actualise_dask_delayed_iterable,
 )
 from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
-from dask import delayed
-from pydantic import Field
-from rdkit import Chem, rdBase
-from rdkit.Chem import rdRascalMCES
 
 logger = logging.getLogger(__name__)
 

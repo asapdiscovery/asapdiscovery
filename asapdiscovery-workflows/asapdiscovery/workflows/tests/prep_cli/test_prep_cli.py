@@ -2,10 +2,11 @@ import os
 import traceback
 
 import pytest
+from click.testing import CliRunner
+
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.workflows.prep_workflows.cli import protein_prep as cli
-from click.testing import CliRunner
 
 
 def click_success(result):

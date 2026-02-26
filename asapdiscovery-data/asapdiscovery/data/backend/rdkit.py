@@ -1,8 +1,9 @@
 from pathlib import Path
 from typing import Union
 
-from asapdiscovery.data.schema.schema_base import read_file_directly
 from rdkit import Chem
+
+from asapdiscovery.data.schema.schema_base import read_file_directly
 
 
 def _set_SD_data(mol: Union[Chem.Mol, Chem.Conformer], data: dict[str, str]):

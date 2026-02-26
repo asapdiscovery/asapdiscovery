@@ -8,6 +8,10 @@ import pytest
 import rich
 from alchemiscale import AlchemiscaleClient
 from alchemiscale.models import ScopedKey
+from click.testing import CliRunner
+from openfe.setup import LigandNetwork
+from rdkit import Chem
+
 from asapdiscovery.alchemy.cli.cli import alchemy
 from asapdiscovery.alchemy.schema.fec import (
     FreeEnergyCalculationFactory,
@@ -19,9 +23,6 @@ from asapdiscovery.alchemy.schema.prep_workflow import (
 )
 from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from click.testing import CliRunner
-from openfe.setup import LigandNetwork
-from rdkit import Chem
 
 
 def click_success(result):

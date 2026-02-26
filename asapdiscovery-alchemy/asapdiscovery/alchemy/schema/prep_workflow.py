@@ -2,6 +2,10 @@ import copy
 from typing import Any, Literal, Optional, Union
 
 import rich
+from pydantic import Field
+from rich import pretty
+from rich.padding import Padding
+
 from asapdiscovery.alchemy.schema.base import _SchemaBase
 from asapdiscovery.alchemy.schema.charge import OpenFFCharges
 from asapdiscovery.data.operators.state_expanders.protomer_expander import (
@@ -18,9 +22,6 @@ from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
     RDKitConstrainedPoseGenerator,
 )
-from pydantic import Field
-from rich import pretty
-from rich.padding import Padding
 
 
 class _AlchemyPrepBase(_SchemaBase):
@@ -146,6 +147,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             The experimental_ligands in order of MCS overlap with the reference ligand
         """
         import numpy as np
+
         from asapdiscovery.data.operators.selectors.mcs_selector import sort_by_mcs
 
         # use the mcs code to get the ordered indices of the matches
