@@ -1,0 +1,56 @@
+name: simulation
+channels:
+  - openeye
+  - conda-forge
+dependencies:
+  # Base
+  - pip
+  - python >=3.10,<3.12
+
+  # Testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - pytest-timeout
+  - pytest-console-scripts
+  - codecov
+  - requests-mock
+  - mock
+
+  # Core
+  - click
+  - appdirs
+  - pydantic >2
+  - pydantic-settings
+  - numpy
+  - pandas
+  - pebble
+  - rdkit
+  - openff-toolkit
+  - openff-forcefields >=2024.04.0
+  - openeye-toolkits
+  - multimethod
+
+  # Data services
+  - requests
+  - boto3
+  - moto
+  - flask
+  - flask-cors
+  - typing-extensions
+  - biopython
+  - validators
+  - pyyaml
+  - ase
+  - sigfig
+
+  # Execution
+  - dask
+  - distributed
+  - dask-jobqueue
+  - netifaces
+
+  # Simulation / MD
+  - openmm
+  - openmmforcefields >= 0.13.0
+  - mdtraj

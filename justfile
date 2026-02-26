@@ -7,18 +7,24 @@ packages := "alchemy cli data dataviz docking ml modeling simulation spectrum wo
 default:
     @just --list
 
-# Create conda dev environment (auto-detects platform)
-create-env name:
+# Create conda dev environment for a single module (e.g. just create-env alchemy myenv -- -y)
+create-env module name *FLAGS:
     #!/usr/bin/env bash
     set -euo pipefail
     case "$(uname -s)-$(uname -m)" in
-        Linux-*)       env_file="devtools/conda-envs/asapdiscovery-ubuntu-latest.yml" ;;
-        Darwin-arm64)  env_file="devtools/conda-envs/asapdiscovery-macOS-latest.yml" ;;
-        Darwin-x86_64) env_file="devtools/conda-envs/asapdiscovery-macOS-12.yml" ;;
+        Linux-*)       platform="ubuntu-latest" ;;
+        Darwin-arm64)  platform="macos-latest" ;;
+        Darwin-x86_64) platform="macos-latest" ;;
         *)             echo "Unsupported platform: $(uname -s)-$(uname -m)"; exit 1 ;;
     esac
+    env_file="devtools/conda-envs/${platform}/{{ module }}.yaml"
+    if [ ! -f "$env_file" ]; then
+        echo "No env file found: $env_file"
+        echo "Available modules: all alchemy cli data dataviz docking ml modeling simulation spectrum workflows"
+        exit 1
+    fi
     echo "Using env file: $env_file"
-    micromamba create -n {{ name }} -f "$env_file"
+    micromamba create -n {{ name }} -f "$env_file" {{ FLAGS }}
 
 # Install a single subpackage (e.g. just install data)
 install pkg:

@@ -1,43 +1,37 @@
-name: asapdiscovery
+name: workflows
 channels:
   - openeye
   - conda-forge
 dependencies:
-  # Base depends
+  # Base
   - pip
   - python >=3.10,<3.12
+
   # Testing
   - pytest
   - pytest-cov
   - pytest-xdist
-  - codecov
-  - pytest-console-scripts
   - pytest-timeout
+  - pytest-console-scripts
+  - codecov
   - requests-mock
   - mock
 
-  # cli
+  # Core
   - click
-
-  # Others
   - appdirs
-  - mdanalysis
-  - openff-toolkit
-  - openff-forcefields >=2024.04.0
-  - openeye-toolkits # may need  <2023.2.3 for lilac GLIBC
-  #- openff-bespokefit >=0.4.0
-  - openmmforcefields >= 0.13.0
-  - pandas
-  - pebble
   - pydantic >2
   - pydantic-settings
+  - numpy
+  - pandas
+  - pebble
   - rdkit
-  - seaborn
-  - panel
-  - plotmol
-  - semver
+  - openff-toolkit
+  - openff-forcefields >=2024.04.0
+  - openeye-toolkits
+  - multimethod
 
-  # data
+  # Data services
   - requests
   - boto3
   - moto
@@ -49,15 +43,19 @@ dependencies:
   - pyyaml
   - ase
   - sigfig
-  - multimethod
 
-  # ml
+  # Execution
+  - dask
+  - distributed
+  - dask-jobqueue
+  - netifaces
+
+  # ML
   - pytorch
   - pytorch_geometric >=2.5.0
   - pytorch_cluster
   - pytorch_scatter
   - pytorch_sparse
-  - numpy
   - h5py
   - e3nn
   - dgl <=2.0.0
@@ -66,17 +64,19 @@ dependencies:
   - mtenn =0.6.2
   - wandb
 
-  # md
+  # Simulation / MD
   - openmm
+  - openmmforcefields >= 0.13.0
   - mdtraj
 
-  # execution
-  - distributed
-  - dask
-  - dask-jobqueue
-  - netifaces
+  # Docking
+  - mdanalysis
 
-  # viz
+  # Visualization
+  - seaborn
+  - panel
+  - plotmol
+  - semver
   - imageio
   - pymol-open-source
   - gifsicle
@@ -86,13 +86,3 @@ dependencies:
   - pygifsicle
   - airium
   - logomaker
-
-  # simulation
-  - openfe >=1.8.0
-  - gufe >=1.7.2
-  - httpx
-  - perses >=0.10.2
-  - kartograf
-  - rich
-  - alchemiscale-client >=0.7.2
-  - cinnabar >=0.4.1

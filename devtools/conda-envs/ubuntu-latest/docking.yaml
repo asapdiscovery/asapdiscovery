@@ -1,0 +1,77 @@
+name: docking
+channels:
+  - openeye
+  - conda-forge
+dependencies:
+  # Base
+  - pip
+  - python =3.12
+
+  # Testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - pytest-timeout
+  - pytest-console-scripts
+  - codecov
+  - requests-mock
+  - mock
+
+  # Core
+  - click
+  - appdirs
+  - pydantic >2
+  - pydantic-settings
+  - numpy
+  - pandas
+  - pebble
+  - rdkit
+  - openff-toolkit
+  - openff-fragmenter
+  - openff-forcefields >=2024.04.0
+  - openeye-toolkits
+  - multimethod
+  - scipy >=1.13.1
+
+  # Data services
+  - requests
+  - boto3
+  - moto
+  - flask
+  - flask-cors
+  - typing-extensions
+  - biopython
+  - validators
+  - pyyaml
+  - ase
+  - sigfig
+
+  # Execution
+  - dask
+  - distributed
+  - dask-jobqueue
+  - netifaces
+
+  # Sequence alignment
+  - mafft
+
+  # Docking
+  - mdanalysis
+
+  # ML (required: docking.scorer imports ml.inference, ml.models at top level)
+  - pytorch
+  - pytorch_geometric >=2.5.0
+  - pytorch_cluster
+  - pytorch_scatter
+  - pytorch_sparse
+  - h5py
+  - e3nn
+  - dgl <=2.0.0
+  - dgllife
+  - pooch
+  - mtenn =0.6.2
+  - wandb
+  - seaborn
+  - semver
+  - cudatoolkit
+  - dask-cuda
