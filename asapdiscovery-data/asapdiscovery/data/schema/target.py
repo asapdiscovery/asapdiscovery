@@ -2,8 +2,6 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
-from pydantic import Field, root_validator
-
 from asapdiscovery.data.backend.openeye import (
     bytes64_to_oedu,
     load_openeye_design_unit,
@@ -22,6 +20,7 @@ from asapdiscovery.modeling.modeling import (  # TODO: move to backend
     split_openeye_mol,
 )
 from asapdiscovery.modeling.schema import MoleculeFilter  # TODO: move to backend
+from pydantic import Field, root_validator
 
 from .schema_base import (
     DataModelAbstractBase,

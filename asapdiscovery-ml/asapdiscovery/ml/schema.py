@@ -1,10 +1,9 @@
 import numpy as np
 import pandas
 import torch
+from asapdiscovery.ml.config import LossFunctionConfig
 from pydantic import BaseModel, Extra, Field, validator
 from scipy.stats import bootstrap, kendalltau, spearmanr
-
-from asapdiscovery.ml.config import LossFunctionConfig
 
 
 class TrainingPrediction(BaseModel):

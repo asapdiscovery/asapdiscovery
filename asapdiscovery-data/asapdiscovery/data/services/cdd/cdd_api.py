@@ -3,7 +3,6 @@ import time
 from typing import Optional
 
 import pandas
-
 from asapdiscovery.data.services.services_config import CDDSettings
 from asapdiscovery.data.services.web_utils import _BaseWebAPI
 

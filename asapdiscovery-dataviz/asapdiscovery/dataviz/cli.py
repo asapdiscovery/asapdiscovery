@@ -5,7 +5,6 @@ from typing import Union
 
 import click
 import mdtraj as md
-
 from asapdiscovery.cli.cli_args import (
     ligands,
     loglevel,

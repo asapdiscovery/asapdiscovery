@@ -3,11 +3,10 @@ import traceback
 from unittest import mock
 
 import pytest
-from click.testing import CliRunner
-
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.simulation.simulate import SimulationResult, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.cli import docking as cli
+from click.testing import CliRunner
 
 
 def click_success(result):

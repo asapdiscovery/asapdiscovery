@@ -1,5 +1,4 @@
 import click
-
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
 from asapdiscovery.data.util.dask_utils import DaskType, FailureMode
 from asapdiscovery.ml.models import ASAPMLModelRegistry

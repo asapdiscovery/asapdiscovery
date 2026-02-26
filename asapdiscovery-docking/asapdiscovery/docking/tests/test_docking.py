@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 import pytest
-
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSIT_METHOD, POSITDocker
 

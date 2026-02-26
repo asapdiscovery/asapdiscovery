@@ -1,9 +1,8 @@
 import abc
 from typing import Literal
 
-from pydantic import BaseModel, Field
-
 from asapdiscovery.data.schema.ligand import Ligand
+from pydantic import BaseModel, Field
 
 
 class StateExpanderBase(abc.ABC, BaseModel):

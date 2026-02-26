@@ -9,8 +9,6 @@ from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
 import numpy as np
-from pydantic import BaseModel, Field, PositiveFloat
-
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     oechem,
@@ -23,6 +21,7 @@ from asapdiscovery.data.schema.sets import MultiStructureBase
 from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
 from asapdiscovery.modeling.modeling import split_openeye_design_unit
+from pydantic import BaseModel, Field, PositiveFloat
 
 logger = logging.getLogger(__name__)
 

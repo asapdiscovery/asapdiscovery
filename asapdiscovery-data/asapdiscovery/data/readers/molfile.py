@@ -2,10 +2,9 @@ import logging
 from pathlib import Path
 from typing import Union
 
-from pydantic import BaseModel, Field, validator
-
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.ligand import Ligand
+from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 
