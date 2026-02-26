@@ -8,7 +8,7 @@ default:
     @just --list
 
 # Create conda dev environment (auto-detects platform)
-create-env:
+create-env name:
     #!/usr/bin/env bash
     set -euo pipefail
     case "$(uname -s)-$(uname -m)" in
@@ -18,7 +18,7 @@ create-env:
         *)             echo "Unsupported platform: $(uname -s)-$(uname -m)"; exit 1 ;;
     esac
     echo "Using env file: $env_file"
-    mamba env create -f "$env_file"
+    micromamba create -n {{ name }} -f "$env_file"
 
 # Install a single subpackage (e.g. just install data)
 install pkg:

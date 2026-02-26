@@ -488,7 +488,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
 
         # gather the results
         return AlchemyDataSet(
-            **self.dict(exclude={"type"}),
+            **self.model_dump(exclude={"type"}),
             dataset_name=dataset_name,
             reference_complex=reference_complex,
             input_ligands=input_ligands,

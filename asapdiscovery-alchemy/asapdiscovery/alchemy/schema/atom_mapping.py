@@ -58,7 +58,7 @@ class LomapAtomMapper(_BaseAtomMapper):
         from openfe import LomapAtomMapper
 
         # TODO use an alias once we can use pydantic-2
-        data = self.dict(exclude={"type", "timeout"})
+        data = self.model_dump(exclude={"type", "timeout"})
         data["time"] = self.timeout
         return LomapAtomMapper(**data)
 
@@ -100,7 +100,7 @@ class PersesAtomMapper(_BaseAtomMapper):
     def _get_mapper(self):
         from openfe import PersesAtomMapper
 
-        return PersesAtomMapper(**self.dict(exclude={"type"}))
+        return PersesAtomMapper(**self.model_dump(exclude={"type"}))
 
     def provenance(self) -> dict[str, str]:
         import openeye.oechem
@@ -145,7 +145,7 @@ class KartografAtomMapper(_BaseAtomMapper):
         from kartograf.atom_mapper import KartografAtomMapper, mapping_algorithm
 
         # workaround the awkward argument name
-        settings = self.dict(exclude={"type", "mapping_algorithm"})
+        settings = self.model_dump(exclude={"type", "mapping_algorithm"})
         settings["_mapping_algorithm"] = (
             mapping_algorithm.linear_sum_assignment
             if self.mapping_algorithm == "linear_sum_assignment"

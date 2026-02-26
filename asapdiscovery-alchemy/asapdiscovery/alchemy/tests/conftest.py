@@ -127,7 +127,7 @@ def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailur
 
 @pytest.fixture(scope="session")
 def mac1_complex():
-    return PreppedComplex.parse_file(
+    return PreppedComplex.from_json_file(
         fetch_test_file("constrained_conformer/complex.json")
     )
 

@@ -20,7 +20,7 @@ class _BaseChargeMethod(_SchemaBase, abc.ABC):
         Returns:
             A dict of the charge generation method with the software versions.
         """
-        data = {"protocol": self.dict(), "provenance": self._provenance()}
+        data = {"protocol": self.model_dump(), "provenance": self._provenance()}
         return data
 
     @abc.abstractmethod

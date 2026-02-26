@@ -5,7 +5,7 @@ channels:
 dependencies:
   # Base depends
   - pip
-  - python >=3.10,<3.12
+  - python =3.12
   # Testing
   - pytest
   - pytest-cov
@@ -30,7 +30,8 @@ dependencies:
   - openmmforcefields >= 0.13.0
   - pandas
   - pebble
-  - pydantic >=1.10.8,<2.0.0a0
+  - pydantic >=2.0.0
+  - pydantic-settings
   - rdkit
   - seaborn
   - panel
@@ -93,11 +94,11 @@ dependencies:
   - logomaker
 
   # simulation
-  - openfe >=1.1.0
-  - gufe >=1.0.0
+  - openfe >=1.8.0
+  - gufe >=1.7.2
   - httpx
   - perses >=0.10.2
   - kartograf
   - rich
-  - alchemiscale-client >=0.5.1
+  - alchemiscale-client >=0.7.2
   - cinnabar >=0.4.1
