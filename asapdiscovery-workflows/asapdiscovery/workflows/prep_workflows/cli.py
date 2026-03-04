@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
 import click
-
 from asapdiscovery.cli.cli_args import (
     active_site_chain,
     dask_args,

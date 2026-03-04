@@ -5,8 +5,6 @@ from pathlib import Path
 import click
 import pydantic
 import torch
-from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
-
 from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (
     ds_cache_overwrite,
@@ -45,6 +43,7 @@ from asapdiscovery.ml.config import (
     OptimizerType,
 )
 from asapdiscovery.ml.trainer import Trainer
+from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
 
 
 @click.group()

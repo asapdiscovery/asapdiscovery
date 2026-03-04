@@ -1,6 +1,5 @@
-from pydantic import BaseModel
-
 from asapdiscovery.data.schema.ligand import Ligand
+from pydantic import BaseModel
 
 
 class LigandDeDuplicator(BaseModel):

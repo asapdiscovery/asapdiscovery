@@ -4,8 +4,6 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from pydantic import Field
-
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_design_unit,
@@ -18,6 +16,7 @@ from asapdiscovery.data.schema.schema_base import DataModelAbstractBase
 from asapdiscovery.data.schema.target import PreppedTarget, Target
 from asapdiscovery.modeling.modeling import split_openeye_mol
 from asapdiscovery.modeling.schema import MoleculeFilter
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 

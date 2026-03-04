@@ -1,5 +1,4 @@
 import pytest
-
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 

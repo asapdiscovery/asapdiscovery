@@ -8,7 +8,6 @@ import pathlib
 
 import pkg_resources
 import pytest
-
 from asapdiscovery.data.services.rcsb.rcsb_download import download_pdb_structure
 
 

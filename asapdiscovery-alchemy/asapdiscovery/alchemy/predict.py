@@ -10,13 +10,12 @@ import numpy as np
 import pandas as pd
 import panel
 import plotmol
+from asapdiscovery.data.schema.ligand import Ligand
 from bokeh.models import Band, ColumnDataSource, Range1d, Whisker
 from cinnabar import stats
 from openff.units import unit
 from rdkit import Chem
 from rdkit.Chem import Draw
-
-from asapdiscovery.data.schema.ligand import Ligand
 
 # run to enable plotting with bokeh
 panel.extension()
@@ -1008,13 +1007,12 @@ def clean_result_network(network, console=None, ddg_outlier_threshold=15):
     from collections import defaultdict
 
     import numpy as np
-    from rich.padding import Padding
-
     from asapdiscovery.alchemy.schema.fec import (
         AlchemiscaleResults,
         FreeEnergyCalculationNetwork,
         TransformationResult,
     )
+    from rich.padding import Padding
 
     # load in to schema  and extract the results
     network_schema = FreeEnergyCalculationNetwork.from_file(network)
@@ -1120,9 +1118,8 @@ def get_top_n_poses(
     If specified, will write a multi-SDF file of those ligands into the local directory while logging this.
     """
 
-    from rich.padding import Padding
-
     from asapdiscovery.data.schema.ligand import write_ligands_to_multi_sdf
+    from rich.padding import Padding
 
     # get a dict of ligands so we can more easily grab them by name
     ligands_dict = {ligand.compound_name: ligand for ligand in ligands}

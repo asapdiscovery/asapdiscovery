@@ -3,11 +3,10 @@ import traceback
 
 import pandas as pd
 import pytest
-from click.testing import CliRunner
-
 from asapdiscovery.spectrum.blast import pdb_to_seq
 from asapdiscovery.spectrum.cli import spectrum as cli
 from asapdiscovery.spectrum.seq_alignment import Alignment, do_MSA
+from click.testing import CliRunner
 
 
 def click_success(result):

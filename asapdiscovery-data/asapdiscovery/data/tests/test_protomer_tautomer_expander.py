@@ -1,5 +1,4 @@
 import pytest
-
 from asapdiscovery.data.backend.openeye import oe_smiles_roundtrip
 from asapdiscovery.data.operators.state_expanders.protomer_expander import (
     ProtomerExpander,

@@ -2,7 +2,6 @@ import logging
 from typing import Optional, Union
 
 import click
-
 from asapdiscovery.cli.cli_args import (
     active_site_chain,
     cache_dir,

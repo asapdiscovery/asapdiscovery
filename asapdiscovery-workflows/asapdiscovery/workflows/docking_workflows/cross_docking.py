@@ -6,8 +6,6 @@ Removes all the additional layers in the other workflows and adds some features 
 from pathlib import Path
 from shutil import rmtree
 
-from pydantic import Field, PositiveInt
-
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.readers.molfile import MolFileFactory
@@ -27,6 +25,7 @@ from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     DockingWorkflowInputsBase,
 )
+from pydantic import Field, PositiveInt
 
 
 class CrossDockingWorkflowInputs(DockingWorkflowInputsBase):

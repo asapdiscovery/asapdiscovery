@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset
-
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
+from torch.utils.data import Dataset
 
 
 class DockedDataset(Dataset):

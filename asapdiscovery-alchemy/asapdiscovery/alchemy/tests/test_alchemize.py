@@ -1,7 +1,5 @@
 from glob import glob
 
-from rdkit import Chem
-
 from asapdiscovery.alchemy.alchemize import (
     calc_mcs_residuals,
     compute_clusters,
@@ -9,6 +7,7 @@ from asapdiscovery.alchemy.alchemize import (
     rescue_outsiders,
     write_clusters,
 )
+from rdkit import Chem
 
 
 def test_compute_clusters(test_ligands):

@@ -1,11 +1,10 @@
 import os
 
 import pytest
-from dgllife.utils import CanonicalAtomFeaturizer
-from rdkit import Chem
-
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 from asapdiscovery.ml.dataset import GraphDataset
+from dgllife.utils import CanonicalAtomFeaturizer
+from rdkit import Chem
 
 
 @pytest.fixture()

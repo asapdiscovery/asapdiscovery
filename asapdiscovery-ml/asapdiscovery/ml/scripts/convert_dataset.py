@@ -3,7 +3,6 @@ from glob import glob
 from pathlib import Path
 
 import click
-
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.util.utils import (
     MOONSHOT_CDD_ID_REGEX,

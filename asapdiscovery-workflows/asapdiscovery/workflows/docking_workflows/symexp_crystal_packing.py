@@ -1,8 +1,6 @@
 from pathlib import Path
 from shutil import rmtree
 
-from pydantic import Field
-
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelector
 from asapdiscovery.data.operators.symmetry_expander import SymmetryExpander
@@ -36,6 +34,7 @@ from asapdiscovery.modeling.protein_prep import ProteinPrepper
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
+from pydantic import Field
 
 
 class SymExpCrystalPackingInputs(PosteraDockingWorkflowInputs):
