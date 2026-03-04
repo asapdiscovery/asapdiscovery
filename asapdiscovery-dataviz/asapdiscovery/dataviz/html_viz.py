@@ -11,6 +11,9 @@ import logomaker
 import matplotlib.pyplot as plt
 import pandas as pd
 from airium import Airium
+from multimethod import multimethod
+from pydantic import Field, root_validator
+
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     load_openeye_pdb,
@@ -44,8 +47,6 @@ from asapdiscovery.spectrum.fitness import (
     parse_fitness_json,
     target_has_fitness_data,
 )
-from multimethod import multimethod
-from pydantic import Field, root_validator
 
 logger = logging.getLogger(__name__)
 

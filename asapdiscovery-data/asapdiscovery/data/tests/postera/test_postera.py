@@ -3,6 +3,8 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
+from requests import Session
+
 from asapdiscovery.data.services.postera.molecule_set import (
     Molecule,
     MoleculeList,
@@ -10,7 +12,6 @@ from asapdiscovery.data.services.postera.molecule_set import (
     MoleculeUpdateList,
 )
 from asapdiscovery.data.services.services_config import PosteraSettings
-from requests import Session
 
 
 class TestMoleculeList:

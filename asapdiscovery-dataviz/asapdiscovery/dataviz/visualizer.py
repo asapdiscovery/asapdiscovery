@@ -1,9 +1,10 @@
 import abc
 
 import pandas as pd
+from pydantic import BaseModel
+
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
 from asapdiscovery.docking.docking import DockingResult
-from pydantic import BaseModel
 
 
 class VisualizerBase(abc.ABC, BaseModel):

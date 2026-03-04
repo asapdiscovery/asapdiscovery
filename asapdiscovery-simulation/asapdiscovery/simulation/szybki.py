@@ -4,10 +4,11 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-from asapdiscovery.data.backend.openeye import oechem, oeszybki
-from asapdiscovery.data.util.logging import FileLogger
 from openmm import unit
 from pydantic import BaseModel
+
+from asapdiscovery.data.backend.openeye import oechem, oeszybki
+from asapdiscovery.data.util.logging import FileLogger
 
 
 class SzybkiFreeformResult(BaseModel):

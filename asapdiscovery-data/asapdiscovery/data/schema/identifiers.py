@@ -1,8 +1,9 @@
 from typing import Any, Literal, Optional
 
+from pydantic import BaseModel, Field, validator
+
 from asapdiscovery.data.schema.schema_base import DataModelAbstractBase
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
-from pydantic import BaseModel, Field, validator
 
 
 class LigandIdentifiers(DataModelAbstractBase):

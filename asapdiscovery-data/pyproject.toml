@@ -18,7 +18,10 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
 ]
-dependencies = []
+dependencies = [
+    # No internal asapdiscovery dependencies (foundation package).
+    # External deps are provided by conda; see devtools/conda-envs/.
+]
 
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"

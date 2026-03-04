@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from asapdiscovery.ml.es import (
     BestEarlyStopping,
     ConvergedEarlyStopping,

@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from asapdiscovery.data.backend.openeye import load_openeye_sdf
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file

@@ -9,6 +9,10 @@ from typing import Any, ClassVar, Optional, Union
 import MDAnalysis as mda
 import numpy as np
 import pandas as pd
+from mtenn.config import ModelType
+from multimethod import multimethod
+from pydantic import BaseModel, Field, validator
+
 from asapdiscovery.data.backend.openeye import oedocking, oemol_to_pdb_string
 from asapdiscovery.data.backend.plip import compute_fint_score
 from asapdiscovery.data.schema.complex import Complex
@@ -26,9 +30,6 @@ from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models import MLModelSpecBase
 from asapdiscovery.spectrum.fitness import target_has_fitness_data
-from mtenn.config import ModelType
-from multimethod import multimethod
-from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 

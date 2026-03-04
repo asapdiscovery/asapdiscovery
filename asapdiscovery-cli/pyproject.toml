@@ -18,7 +18,14 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
 ]
-dependencies = []
+dependencies = [
+    # cli_args.py imports from these packages directly.
+    # cli.py aggregates ALL subpackage CLIs at runtime, but those are not
+    # declared here to avoid a dependency cycle; use install-all instead.
+    "asapdiscovery-data",
+    "asapdiscovery-ml",
+    "asapdiscovery-simulation",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"

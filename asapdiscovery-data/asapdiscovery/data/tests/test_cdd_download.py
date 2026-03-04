@@ -7,6 +7,8 @@ import os
 import pandas
 import pytest
 import requests_mock
+from numpy.testing import assert_allclose
+
 from asapdiscovery.data.services.cdd.cdd_download import (
     CDD_URL,
     MOONSHOT_ALL_SMI_SEARCH,
@@ -20,7 +22,6 @@ from asapdiscovery.data.util.utils import (
     filter_molecules_dataframe,
     parse_fluorescence_data_cdd,
 )
-from numpy.testing import assert_allclose
 
 # Columns added by filter_molecules_dataframe
 FILTER_ADDED_COLS = ["name", "smiles", "achiral", "racemic", "enantiopure", "semiquant"]

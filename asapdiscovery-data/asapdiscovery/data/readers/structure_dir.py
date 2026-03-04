@@ -3,12 +3,13 @@ from pathlib import Path
 from typing import List  # noqa: F401
 
 import dask
+from pydantic import BaseModel, Field, validator
+
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.util.dask_utils import (
     FailureMode,
     actualise_dask_delayed_iterable,
 )
-from pydantic import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 

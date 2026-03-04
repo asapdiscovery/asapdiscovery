@@ -26,18 +26,31 @@ create-env module name *FLAGS:
     echo "Using env file: $env_file"
     micromamba create -n {{ name }} -f "$env_file" {{ FLAGS }}
 
-# Install a single subpackage (e.g. just install data)
+# Install a single subpackage without deps (e.g. just install data)
 install pkg:
     pip install --no-deps -e ./asapdiscovery-{{ pkg }}
 
-# Install all subpackages in editable mode
+# Install a subpackage and all its internal dependencies in topological order
+install-with-deps pkg:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for dep in $(python devtools/scripts/resolve_deps.py {{ pkg }}); do
+        echo "Installing asapdiscovery-$dep..."
+        pip install --no-deps -e "./asapdiscovery-$dep"
+    done
+
+# Install all subpackages in editable mode (topological order)
 install-all:
     #!/usr/bin/env bash
     set -euo pipefail
-    for pkg in {{ packages }}; do
+    for pkg in $(python devtools/scripts/resolve_deps.py all); do
         echo "Installing asapdiscovery-$pkg..."
         pip install --no-deps -e "./asapdiscovery-$pkg"
     done
+
+# Show the internal dependency graph
+deps *PKG:
+    python devtools/scripts/resolve_deps.py {{ if PKG == "" { "--graph" } else { PKG } }}
 
 # Run tests for a single subpackage (e.g. just test data)
 test pkg:

@@ -5,6 +5,8 @@ from shutil import rmtree
 from typing import Optional, Union
 
 import click
+from openmm import unit
+
 from asapdiscovery.cli.cli_args import (
     ligands,
     loglevel,
@@ -19,7 +21,6 @@ from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
-from openmm import unit
 
 
 @click.group()

@@ -18,7 +18,10 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
 ]
-dependencies = []
+dependencies = [
+    "asapdiscovery-data",
+    "asapdiscovery-docking",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"
