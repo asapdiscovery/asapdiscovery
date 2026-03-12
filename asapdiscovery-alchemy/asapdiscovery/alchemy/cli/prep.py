@@ -421,15 +421,21 @@ def run(
     )
     console.print(message)
 
+    output_folder = pathlib.Path(dataset_name)
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    # Use incremental SDF output so posed ligands are saved as they are generated
+    # and the workflow can resume if interrupted.
+    posed_ligand_file = output_folder.joinpath("posed_ligands.sdf")
+
     alchemy_dataset = factory.create_alchemy_dataset(
         dataset_name=dataset_name,
         ligands=asap_ligands,
         reference_complex=ref_complex,
         processors=processors,
         reference_ligands=ref_ligands,
+        output_sdf=str(posed_ligand_file),
     )
-    output_folder = pathlib.Path(dataset_name)
-    output_folder.mkdir(parents=True, exist_ok=True)
 
     dataset_file = output_folder.joinpath("prepared_alchemy_dataset.json")
     alchemy_dataset.to_file(dataset_file)
@@ -439,7 +445,8 @@ def run(
     )
     console.print(message)
 
-    posed_ligand_file = output_folder.joinpath("posed_ligands.sdf")
+    # Write the final posed ligands SDF (overwrites the incremental file with the
+    # complete set including any charged ligands)
     alchemy_dataset.save_posed_ligands(posed_ligand_file)
     message = Padding(
         f"Saved posed ligands to [repr.filename]{posed_ligand_file}[/repr.filename]",

@@ -110,6 +110,38 @@ class AlchemyDataSet(_AlchemyPrepBase):
         oemols = [ligand.to_oemol() for ligand in self.posed_ligands]
         save_openeye_sdfs(oemols, filename)
 
+    @staticmethod
+    def save_ligands_incremental(ligands: list[Ligand], filename: str):
+        """
+        Append posed ligands to an SDF file incrementally.
+
+        Parameters
+        ----------
+        ligands: The list of ligands to append to the SDF file.
+        filename: The name of the SDF file to append to.
+        """
+        from asapdiscovery.data.backend.openeye import save_openeye_sdfs
+
+        oemols = [ligand.to_oemol() for ligand in ligands]
+        save_openeye_sdfs(oemols, filename)
+
+    @staticmethod
+    def load_posed_ligands(filename: str) -> list[Ligand]:
+        """
+        Load previously posed ligands from an SDF file for workflow resumption.
+
+        Parameters
+        ----------
+        filename: The path to the SDF file containing previously posed ligands.
+
+        Returns
+        -------
+        A list of Ligand objects loaded from the SDF file.
+        """
+        from asapdiscovery.data.readers.molfile import MolFileFactory
+
+        return MolFileFactory(filename=filename).load()
+
 
 class AlchemyPrepWorkflow(_AlchemyPrepBase):
     """
@@ -317,6 +349,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         reference_complex: PreppedComplex,
         processors: int = 1,
         reference_ligands: Optional[list[Ligand]] = None,
+        output_sdf: Optional[str] = None,
     ) -> AlchemyDataSet:
         """
         Run the set of input ligands through the state enumeration and pose generation workflow to create a set of posed
@@ -327,6 +360,10 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             until `self.n_references` have been successfully added. The ligands will be sorted by their MCS overlap with
             the crystal reference ligand to ensure a pose can be generated.
 
+            If `output_sdf` is provided, posed ligands will be written incrementally to this file as they
+            are generated. If the file already exists, previously posed ligands will be loaded and skipped,
+            allowing the workflow to resume from where it left off.
+
         Args:
             dataset_name: The name which should be given to this dataset.
             ligands: The list of input ligands which should be run through the workflow.
@@ -335,14 +372,34 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             processors: The number of parallel processors that should be used to run the workflow.
             reference_ligands: The list of reference ligands with experimental data which we should also generate
                 poses for if `self.n_references` > 0.
+            output_sdf: Optional path to an SDF file for incremental writing of posed ligands. If the file
+                already exists, previously posed ligands will be loaded and their posing will be skipped.
 
         Returns:
             A prepared AlchemyDataset with state expanded ligands posed in the receptor ready for FEC, along with the
             provenance information of the workflow.
         """
+        import pathlib
+
         # use rich to display progress
         pretty.install()
         console = rich.get_console()
+
+        # Check for previously posed ligands to resume from
+        resumed_ligands = []
+        resumed_inchikeys = set()
+        if output_sdf is not None and pathlib.Path(output_sdf).exists():
+            console.print(
+                f"Found existing posed ligands file [repr.filename]{output_sdf}[/repr.filename], loading for resume..."
+            )
+            resumed_ligands = AlchemyDataSet.load_posed_ligands(output_sdf)
+            resumed_inchikeys = {
+                lig.provenance.fixed_inchikey for lig in resumed_ligands
+            }
+            console.print(
+                f"[[green]✓[/green]] Loaded {len(resumed_ligands)} previously posed ligands. These will be skipped."
+            )
+            console.line()
 
         # deduplicate ligands first important for FEC networks?
         input_ligands = copy.deepcopy(ligands)
@@ -372,8 +429,21 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             console.line()
 
         # now run the pose generation stage
+        # filter out ligands that were already posed in a previous run
+        if resumed_inchikeys:
+            ligands_to_pose = [
+                lig
+                for lig in ligands
+                if lig.provenance.fixed_inchikey not in resumed_inchikeys
+            ]
+            console.print(
+                f"Skipping {len(ligands) - len(ligands_to_pose)} already-posed ligands."
+            )
+        else:
+            ligands_to_pose = ligands
+
         console.print(
-            f"Generating constrained poses using {self.pose_generator.type} for {len(ligands)} ligands."
+            f"Generating constrained poses using {self.pose_generator.type} for {len(ligands_to_pose)} ligands."
         )
         # check for stereo in the reference ligand
         if reference_complex.ligand.has_perceived_stereo:
@@ -382,19 +452,36 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             )
             console.line()
 
-        pose_result = self.pose_generator.generate_poses(
-            prepared_complex=reference_complex,
-            ligands=ligands,
-            core_smarts=self.core_smarts,
-            processors=processors,
-        )
-        posed_ligands = pose_result.posed_ligands
-        provenance[self.pose_generator.type] = self.pose_generator.provenance()
-        # save any failed ligands
-        if pose_result.failed_ligands:
-            failed_ligands[self.pose_generator.type] = pose_result.failed_ligands
+        if ligands_to_pose:
+            pose_result = self.pose_generator.generate_poses(
+                prepared_complex=reference_complex,
+                ligands=ligands_to_pose,
+                core_smarts=self.core_smarts,
+                processors=processors,
+            )
+            newly_posed_ligands = pose_result.posed_ligands
+            provenance[self.pose_generator.type] = self.pose_generator.provenance()
+            # save any failed ligands
+            if pose_result.failed_ligands:
+                failed_ligands[self.pose_generator.type] = pose_result.failed_ligands
+
+            # write newly posed ligands incrementally if output_sdf is set
+            if output_sdf is not None and newly_posed_ligands:
+                AlchemyDataSet.save_ligands_incremental(
+                    ligands=newly_posed_ligands, filename=output_sdf
+                )
+                console.print(
+                    f"Incrementally saved {len(newly_posed_ligands)} newly posed ligands to [repr.filename]{output_sdf}[/repr.filename]."
+                )
+        else:
+            newly_posed_ligands = []
+
+        # combine resumed and newly posed ligands
+        posed_ligands = resumed_ligands + newly_posed_ligands
+        total_attempted = len(ligands_to_pose) + len(resumed_ligands)
         console.print(
-            f"[[green]✓[/green]] Pose generation successful for {len(pose_result.posed_ligands)}/{len(ligands)}."
+            f"[[green]✓[/green]] Pose generation successful for {len(posed_ligands)}/{total_attempted} "
+            f"({len(resumed_ligands)} resumed, {len(newly_posed_ligands)} new)."
         )
         console.line()
 
