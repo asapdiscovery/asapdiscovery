@@ -18,13 +18,9 @@ SARS_CoV_2_N_protein_SEQRES = (
 EV_D68_3Cpro_SEQRES = RESOURCE_BASE_PATH / "master_seqres/ev_d68_3cpro.yaml"
 EV_A71_3Cpro_SEQRES = RESOURCE_BASE_PATH / "master_seqres/ev_a71_3cpro.yaml"
 EV_A71_2Apro_SEQRES = RESOURCE_BASE_PATH / "master_seqres/ev_a71_2apro.yaml"
-ZIKV_NS2B_NS3pro_SEQRES = (
-    RESOURCE_BASE_PATH / "master_seqres/zikv_ns2b_ns3pro.yaml"
-)
+ZIKV_NS2B_NS3pro_SEQRES = RESOURCE_BASE_PATH / "master_seqres/zikv_ns2b_ns3pro.yaml"
 ZIKV_RdRppro_SEQRES = RESOURCE_BASE_PATH / "master_seqres/zikv_rdrppro.yaml"
-DENV_NS2B_NS3pro_SEQRES = (
-    RESOURCE_BASE_PATH / "master_seqres/denv_ns2b_ns3pro.yaml"
-)
+DENV_NS2B_NS3pro_SEQRES = RESOURCE_BASE_PATH / "master_seqres/denv_ns2b_ns3pro.yaml"
 EV_A71_Capsid_SEQRES = RESOURCE_BASE_PATH / "master_seqres/ev_a71_capsid.yaml"
 
 EV_D68_Capsid_SEQRES = RESOURCE_BASE_PATH / "master_seqres/ev_d68_capsid.yaml"
@@ -72,11 +68,9 @@ master_structures = {
     "EV-D68-3Cpro": RESOURCE_BASE_PATH / "master_structures/ev_d68_3cpro.pdb",
     "EV-A71-3Cpro": RESOURCE_BASE_PATH / "master_structures/ev_a71_3cpro.pdb",
     "EV-A71-2Apro": RESOURCE_BASE_PATH / "master_structures/ev_a71_2apro.pdb",
-    "ZIKV-NS2B-NS3pro": RESOURCE_BASE_PATH
-    / "master_structures/zikv_ns2b_ns3pro.pdb",
+    "ZIKV-NS2B-NS3pro": RESOURCE_BASE_PATH / "master_structures/zikv_ns2b_ns3pro.pdb",
     "ZIKV-RdRppro": RESOURCE_BASE_PATH / "master_structures/zikv_rdrppro.pdb",
-    "DENV-NS2B-NS3pro": RESOURCE_BASE_PATH
-    / "master_structures/denv_ns2b_ns3pro.pdb",
+    "DENV-NS2B-NS3pro": RESOURCE_BASE_PATH / "master_structures/denv_ns2b_ns3pro.pdb",
     "EV-A71-Capsid": RESOURCE_BASE_PATH / "master_structures/ev_a71_capsid.pdb",
     "EV-D68-Capsid": RESOURCE_BASE_PATH / "master_structures/ev_d68_capsid.pdb",
 }

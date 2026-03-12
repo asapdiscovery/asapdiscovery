@@ -4,13 +4,12 @@ import warnings
 from collections import defaultdict
 from collections.abc import Iterable
 from enum import Enum
+from importlib import resources
 from pathlib import Path
 from typing import List, Optional, Tuple, Union  # noqa: F401
 
 import pandas as pd
 import yaml
-from importlib import resources
-
 from asapdiscovery.data.util.stringenum import StringEnum
 
 logger = logging.getLogger(__name__)
