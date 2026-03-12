@@ -145,11 +145,9 @@ class Ligand(DataModelAbstractBase):
         description="SDF file stored as a string to hold internal data state",
         repr=False,
     )
-    data_format: DataStorageType = Field(
+    data_format: Literal[DataStorageType.sdf] = Field(
         DataStorageType.sdf,
         description="Enum describing the data storage method",
-        const=True,
-        allow_mutation=False,
     )
 
     @root_validator(pre=True)
