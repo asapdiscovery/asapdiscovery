@@ -5,7 +5,7 @@ channels:
 dependencies:
   # Base
   - pip
-  - python >=3.12
+  - python >=3.12,<3.14
 
   # Testing
   - pytest

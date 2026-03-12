@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **asapdiscovery** is a structure-based open antiviral drug discovery toolkit by the [ASAP Discovery Consortium](https://asapdiscovery.org/). It is a PEP 420 namespace package composed of 11 independently installable subpackages sharing the `asapdiscovery` namespace.
 
-Python compatibility: **>=3.9, <3.12**
+Python compatibility: **>=3.12, <3.14**
 
 ## Build & Development Setup
 
