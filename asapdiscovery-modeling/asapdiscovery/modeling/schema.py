@@ -14,11 +14,12 @@ from asapdiscovery.data.backend.openeye import (
     save_openeye_pdb,
     split_openeye_design_unit,
 )
-from asapdiscovery.data.schema.schema_base import MoleculeComponent, MoleculeFilter
 from asapdiscovery.data.schema.identifiers import TargetIdentifiers
 from asapdiscovery.data.schema.schema_base import (
     DataModelAbstractBase,
     DataStorageType,
+    MoleculeComponent,
+    MoleculeFilter,
     schema_dict_get_val_overload,
 )
 

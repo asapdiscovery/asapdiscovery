@@ -1,6 +1,10 @@
 import pytest
 
-from asapdiscovery.data.backend.openeye import load_openeye_pdb, oechem, split_openeye_mol
+from asapdiscovery.data.backend.openeye import (
+    load_openeye_pdb,
+    oechem,
+    split_openeye_mol,
+)
 from asapdiscovery.data.schema.schema_base import MoleculeFilter
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 

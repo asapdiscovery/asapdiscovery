@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, ByteSize, ConfigDict, Field
 
@@ -132,7 +131,7 @@ class MoleculeFilter(BaseModel):
         default_factory=list,
         description="List of chains containing the desired protein. An empty list will return all chains.",
     )
-    ligand_chain: Optional[str] = Field(
+    ligand_chain: str | None = Field(
         None,
         description="Chain containing the desired ligand. An empty list will return all chains.",
     )

@@ -1,6 +1,5 @@
 import warnings
 from pathlib import Path
-from typing import Optional, Union
 
 from asapdiscovery.data.backend.openeye import (
     oechem,
@@ -8,11 +7,8 @@ from asapdiscovery.data.backend.openeye import (
     oegrid,
     oespruce,
     openeye_perceive_residues,
-    split_openeye_design_unit,
-    split_openeye_mol,
-    trim_small_chains,
 )
-from asapdiscovery.data.schema.schema_base import MoleculeComponent, MoleculeFilter
+from asapdiscovery.data.schema.schema_base import MoleculeComponent
 
 
 def add_seqres_to_openeye_protein(
