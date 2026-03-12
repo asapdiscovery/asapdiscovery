@@ -3,9 +3,6 @@ import warnings
 from enum import Enum
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
-from rdkit import Chem, RDLogger
-
 from asapdiscovery.data.backend.openeye import (
     get_SD_data,
     oechem,
@@ -17,6 +14,8 @@ from asapdiscovery.data.backend.openeye import (
 )
 from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+from rdkit import Chem, RDLogger
 
 RDLogger.DisableLog(
     "rdApp.*"

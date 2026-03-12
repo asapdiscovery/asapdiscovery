@@ -2,7 +2,6 @@ import json
 
 import pydantic
 import pytest
-
 from asapdiscovery.ml.config import LossFunctionConfig
 from asapdiscovery.ml.schema import TrainingPrediction, TrainingPredictionTracker
 

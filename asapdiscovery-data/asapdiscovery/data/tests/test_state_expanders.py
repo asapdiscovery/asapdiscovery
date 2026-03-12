@@ -1,7 +1,6 @@
 import subprocess
 
 import pytest
-
 from asapdiscovery.data.backend.openeye import oe_smiles_roundtrip, save_openeye_sdfs
 from asapdiscovery.data.operators.state_expanders.protomer_expander import (
     EpikExpander,

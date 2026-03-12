@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Optional
 
 import click
-
 from asapdiscovery.data.services.cdd.cdd_download import download_molecules
 from asapdiscovery.data.services.fragalysis.fragalysis_download import (  # noqa: E402
     API_CALL_BASE_LEGACY,

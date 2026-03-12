@@ -6,13 +6,12 @@ You will need local copies of tyk2_small_network.json and tyk2_result_network.js
 
 import json
 
-from openff.units import unit
-
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
     TransformationResult,
 )
+from openff.units import unit
 
 
 def main():

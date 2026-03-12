@@ -1,5 +1,4 @@
 import pytest
-
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 from asapdiscovery.data.schema.ligand import Ligand

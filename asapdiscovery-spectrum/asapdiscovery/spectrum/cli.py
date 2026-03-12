@@ -3,7 +3,6 @@ from typing import Optional
 
 import click
 import pandas as pd
-
 from asapdiscovery.cli.cli_args import output_dir, pdb_file
 from asapdiscovery.spectrum.blast import PDBEntry, get_blast_seqs
 from asapdiscovery.spectrum.calculate_rmsd import (

@@ -1,12 +1,11 @@
+from asapdiscovery.alchemy.cli.utils import report_alchemize_clusters
+from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFMCS
 from rdkit.Chem.rdchem import Mol
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from rich.padding import Padding
 from tqdm import tqdm
-
-from asapdiscovery.alchemy.cli.utils import report_alchemize_clusters
-from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
 
 
 def compute_clusters(ligands: list[Ligand], outsider_number: int, console=None):

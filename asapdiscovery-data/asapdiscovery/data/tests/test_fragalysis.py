@@ -6,8 +6,6 @@ import shutil
 import traceback
 
 import pytest
-from click.testing import CliRunner
-
 from asapdiscovery.data.cli.cli import data as cli
 from asapdiscovery.data.schema.legacy import CrystalCompoundData
 from asapdiscovery.data.services.fragalysis.fragalysis_download import (
@@ -18,6 +16,7 @@ from asapdiscovery.data.services.fragalysis.fragalysis_download import (
     parse_fragalysis,
 )
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+from click.testing import CliRunner
 
 
 def click_success(result):

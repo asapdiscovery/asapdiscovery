@@ -8,6 +8,19 @@ from time import time
 import numpy as np
 import torch
 import wandb
+from asapdiscovery.data.services.aws.s3 import S3
+from asapdiscovery.data.services.services_config import S3Settings
+from asapdiscovery.data.util.logging import FileLogger
+from asapdiscovery.ml.config import (
+    DataAugConfig,
+    DatasetConfig,
+    DatasetSplitterConfig,
+    EarlyStoppingConfig,
+    LossFunctionConfig,
+    OptimizerConfig,
+)
+from asapdiscovery.ml.dataset import dataset_to_csv
+from asapdiscovery.ml.schema import TrainingPredictionTracker
 from mtenn.config import (
     E3NNModelConfig,
     GATModelConfig,
@@ -25,20 +38,6 @@ from pydantic import (
     root_validator,
     validator,
 )
-
-from asapdiscovery.data.services.aws.s3 import S3
-from asapdiscovery.data.services.services_config import S3Settings
-from asapdiscovery.data.util.logging import FileLogger
-from asapdiscovery.ml.config import (
-    DataAugConfig,
-    DatasetConfig,
-    DatasetSplitterConfig,
-    EarlyStoppingConfig,
-    LossFunctionConfig,
-    OptimizerConfig,
-)
-from asapdiscovery.ml.dataset import dataset_to_csv
-from asapdiscovery.ml.schema import TrainingPredictionTracker
 
 
 class Trainer(BaseModel):

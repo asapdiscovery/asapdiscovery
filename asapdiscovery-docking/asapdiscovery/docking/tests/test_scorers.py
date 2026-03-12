@@ -1,5 +1,4 @@
 import pytest
-
 from asapdiscovery.docking.scorer import (
     ChemGauss4Scorer,
     E3NNScorer,

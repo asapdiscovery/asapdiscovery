@@ -4,16 +4,15 @@ from uuid import uuid4
 import pandas
 import pytest
 from alchemiscale import Scope, ScopedKey
-from gufe.protocols import ProtocolDAGResult, ProtocolUnitResult
-from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
-from openff.units import unit as OFFUnit
-
 from asapdiscovery.alchemy.cli.utils import get_cdd_molecules, upload_to_postera
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
     FreeEnergyCalculationNetwork,
 )
 from asapdiscovery.alchemy.utils import extract_custom_ligand_network
+from gufe.protocols import ProtocolDAGResult, ProtocolUnitResult
+from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
+from openff.units import unit as OFFUnit
 
 
 def test_create_network(monkeypatch, tyk2_fec_network, alchemiscale_helper):

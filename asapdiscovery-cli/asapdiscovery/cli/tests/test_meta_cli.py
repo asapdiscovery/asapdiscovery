@@ -1,9 +1,8 @@
 import traceback
 
 import pytest
-from click.testing import CliRunner
-
 from asapdiscovery.cli.cli import cli
+from click.testing import CliRunner
 
 
 def click_success(result):

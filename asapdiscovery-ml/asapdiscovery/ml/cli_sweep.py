@@ -4,8 +4,6 @@ from pathlib import Path
 import click
 import pydantic
 import torch
-from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
-
 from asapdiscovery.data.util.utils import MOONSHOT_CDD_ID_REGEX, MPRO_ID_REGEX
 from asapdiscovery.ml.cli_args import (
     ds_split_args,
@@ -42,6 +40,7 @@ from asapdiscovery.ml.config import (
 )
 from asapdiscovery.ml.sweep import Sweeper
 from asapdiscovery.ml.trainer import Trainer
+from mtenn.config import CombinationConfig, ModelType, ReadoutConfig, StrategyConfig
 
 
 @click.group()

@@ -2,8 +2,6 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from alchemiscale import Scope, ScopedKey
-from openmm.app import ForceField, Modeller, PDBFile
-
 from asapdiscovery.alchemy.interfaces import AlchemiscaleSettings
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleFailure,
@@ -12,13 +10,13 @@ from asapdiscovery.alchemy.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.alchemy.schema.forcefield import ForceFieldParams
+from openmm.app import ForceField, Modeller, PDBFile
 
 if TYPE_CHECKING:
-    from openff.bespokefit.workflows import BespokeWorkflowFactory
-
     from asapdiscovery.data.schema.complex import PreppedComplex
     from asapdiscovery.data.schema.ligand import Ligand
     from asapdiscovery.data.schema.target import PreppedTarget
+    from openff.bespokefit.workflows import BespokeWorkflowFactory
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):

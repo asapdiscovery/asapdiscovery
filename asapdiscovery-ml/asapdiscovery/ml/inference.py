@@ -6,12 +6,6 @@ import dgl
 import mtenn
 import numpy as np
 import torch
-
-# static import of models from base yaml here
-from dgllife.utils import CanonicalAtomFeaturizer
-from mtenn.config import E3NNModelConfig, GATModelConfig, ModelType, SchNetModelConfig
-from pydantic import BaseModel, Field
-
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
@@ -25,6 +19,11 @@ from asapdiscovery.ml.models import (
     MLModelSpec,
     MLModelSpecBase,
 )
+
+# static import of models from base yaml here
+from dgllife.utils import CanonicalAtomFeaturizer
+from mtenn.config import E3NNModelConfig, GATModelConfig, ModelType, SchNetModelConfig
+from pydantic import BaseModel, Field
 
 """
 TODO
