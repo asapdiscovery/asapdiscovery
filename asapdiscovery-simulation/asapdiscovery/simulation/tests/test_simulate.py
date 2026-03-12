@@ -3,12 +3,13 @@ import traceback
 from unittest import mock
 
 import pytest
+from click.testing import CliRunner
+from openmm import unit
+
 from asapdiscovery.docking.docking import DockingResult
 from asapdiscovery.docking.openeye import POSITDockingResults
 from asapdiscovery.simulation.cli import simulation as cli
 from asapdiscovery.simulation.simulate import SimulationResult, VanillaMDSimulator
-from click.testing import CliRunner
-from openmm import unit
 
 
 def click_success(result):

@@ -1,8 +1,9 @@
 import traceback
 
 import pytest
-from asapdiscovery.dataviz.cli import visualization
 from click.testing import CliRunner
+
+from asapdiscovery.dataviz.cli import visualization
 
 
 def click_success(result):

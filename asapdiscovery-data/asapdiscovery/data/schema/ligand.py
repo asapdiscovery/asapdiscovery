@@ -14,6 +14,8 @@ from typing import (  # noqa: F401
 )
 
 import numpy as np
+from pydantic import Field, root_validator, validator
+
 from asapdiscovery.data.backend.openeye import (
     clear_SD_data,
     load_openeye_mol2,
@@ -37,7 +39,6 @@ from asapdiscovery.data.schema.identifiers import (
     LigandProvenance,
 )
 from asapdiscovery.data.schema.schema_base import DataStorageType
-from pydantic import Field, root_validator, validator
 
 from .experimental import ExperimentalCompoundData
 from .schema_base import (
@@ -347,8 +348,9 @@ class Ligand(DataModelAbstractBase):
         """
         Convert the current molecule state to an RDKit molecule including all fields as SD tags.
         """
-        from asapdiscovery.data.backend.rdkit import sdf_str_to_rdkit_mol, set_SD_data
         from rdkit import Chem
+
+        from asapdiscovery.data.backend.rdkit import sdf_str_to_rdkit_mol, set_SD_data
 
         rdkit_mol: Chem.Mol = sdf_str_to_rdkit_mol(self.data)
         data = {}
@@ -851,6 +853,7 @@ class Ligand(DataModelAbstractBase):
             If 'by' tag not found in ligand tags or if unable to sort the conformers
         """
         import numpy as np
+
         from asapdiscovery.data.backend.openeye import get_SD_data
 
         if self.num_poses == 1:

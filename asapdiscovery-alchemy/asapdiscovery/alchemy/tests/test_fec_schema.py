@@ -3,6 +3,9 @@ import functools
 import openfe
 import pytest
 from alchemiscale import Scope, ScopedKey
+from openff.toolkit import ForceField
+from openff.units import unit as OFFUnit
+
 from asapdiscovery.alchemy.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
@@ -25,8 +28,6 @@ from asapdiscovery.alchemy.schema.network import (
 )
 from asapdiscovery.alchemy.utils import extract_custom_ligand_network
 from asapdiscovery.data.schema.identifiers import BespokeParameter, BespokeParameters
-from openff.toolkit import ForceField
-from openff.units import unit as OFFUnit
 
 
 @pytest.mark.parametrize(

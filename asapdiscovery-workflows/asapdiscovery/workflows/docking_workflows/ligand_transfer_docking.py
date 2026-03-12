@@ -14,6 +14,8 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
+from pydantic import Field, PositiveInt, root_validator
+
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
 from asapdiscovery.data.util.dask_utils import (
@@ -35,7 +37,6 @@ from asapdiscovery.simulation.simulate import OpenMMPlatform, VanillaMDSimulator
 from asapdiscovery.workflows.docking_workflows.workflows import (
     DockingWorkflowInputsBase,
 )
-from pydantic import Field, PositiveInt, root_validator
 
 
 class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):

@@ -1,6 +1,8 @@
 from pathlib import Path
 from shutil import rmtree
 
+from pydantic import Field, PositiveInt
+
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.operators.deduplicator import LigandDeDuplicator
 from asapdiscovery.data.operators.selectors.mcs_selector import RascalMCESSelector
@@ -50,7 +52,6 @@ from asapdiscovery.spectrum.fitness import target_has_fitness_data
 from asapdiscovery.workflows.docking_workflows.workflows import (
     PosteraDockingWorkflowInputs,
 )
-from pydantic import Field, PositiveInt
 
 
 class SmallScaleDockingInputs(PosteraDockingWorkflowInputs):

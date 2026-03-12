@@ -1,8 +1,9 @@
 import pytest
+from openmm import System
+
 from asapdiscovery.alchemy.schema.forcefield import DefaultForceFieldParams
 from asapdiscovery.alchemy.utils import create_protein_only_system
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from openmm import System
 
 
 @pytest.mark.parametrize(

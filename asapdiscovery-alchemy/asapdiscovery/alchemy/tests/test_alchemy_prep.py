@@ -1,4 +1,5 @@
 import pytest
+
 from asapdiscovery.alchemy.schema.prep_workflow import (
     AlchemyPrepWorkflow,
     OpenEyeConstrainedPoseGenerator,

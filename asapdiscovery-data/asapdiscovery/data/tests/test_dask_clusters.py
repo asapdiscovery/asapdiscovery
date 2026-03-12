@@ -1,8 +1,9 @@
 import time
 
 import pytest
-from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 from dask.distributed import Client
+
+from asapdiscovery.data.util.dask_utils import DaskType, make_dask_client_meta
 
 
 @pytest.mark.parametrize("loglevel", ["DEBUG", 10])

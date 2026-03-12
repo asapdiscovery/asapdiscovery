@@ -3,6 +3,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import requests
+
 from asapdiscovery.data.schema.legacy import CrystalCompoundData
 from asapdiscovery.data.util.stringenum import StringEnum
 

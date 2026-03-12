@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
+
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TagEnumBase,
@@ -125,6 +126,7 @@ def plan(
     import pathlib
 
     import openfe
+
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationFactory
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyDataSet
     from asapdiscovery.data.readers.molfile import MolFileFactory
@@ -303,10 +305,11 @@ def submit(
     """
     import rich
     from alchemiscale import Scope
+    from rich import pretty
+
     from asapdiscovery.alchemy.cli.utils import print_header, print_message
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
-    from rich import pretty
 
     pretty.install()
     console = rich.get_console()
@@ -518,11 +521,12 @@ def status(
 
     """
     import rich
+    from rich import pretty
+    from rich.table import Table
+
     from asapdiscovery.alchemy.cli.utils import print_header
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
-    from rich import pretty
-    from rich.table import Table
 
     pretty.install()
     console = rich.get_console()
@@ -679,6 +683,7 @@ def restart(network: str, verbose: bool, tasks):
 
     """
     from alchemiscale import ScopedKey
+
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
@@ -717,10 +722,11 @@ def restart(network: str, verbose: bool, tasks):
 def prioritize(network_key: str, weight: float):
     """Adjust a network's weight to influence how often its tasks will be actioned compared to other networks."""
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header
-    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
     from rich import pretty
     from rich.padding import Padding
+
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
     pretty.install()
     console = rich.get_console()
@@ -769,10 +775,11 @@ def prioritize(network_key: str, weight: float):
 def stop(network_key: str, hard: bool = False):
     """Stop (i.e. set to 'error') a network's running and waiting tasks."""
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header
-    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
     from rich import pretty
     from rich.padding import Padding
+
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
     pretty.install()
     console = rich.get_console()
@@ -894,6 +901,9 @@ def predict(
     """
     import numpy as np
     import rich
+    from rich import pretty
+    from rich.padding import Padding
+
     from asapdiscovery.alchemy.cli.utils import (
         cinnabar_femap_get_largest_subnetwork,
         cinnabar_femap_is_connected,
@@ -908,8 +918,6 @@ def predict(
         get_top_n_poses,
     )
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
-    from rich import pretty
-    from rich.padding import Padding
 
     pretty.install()
     console = rich.get_console()
