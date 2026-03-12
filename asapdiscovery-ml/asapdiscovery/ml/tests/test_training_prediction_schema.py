@@ -450,11 +450,19 @@ def test_training_pred_tracker_get_losses_no_agg(identifiers, loss_configs):
         loss_configs[0].model_dump_json(),
         loss_configs[1].model_dump_json(),
     }
-    assert set(loss_dict["val"][tp2.compound_id].keys()) == {loss_configs[1].model_dump_json()}
+    assert set(loss_dict["val"][tp2.compound_id].keys()) == {
+        loss_configs[1].model_dump_json()
+    }
 
-    assert (loss_dict["train"][tp1.compound_id][loss_configs[0].model_dump_json()] == [5.0]).all()
-    assert (loss_dict["train"][tp1.compound_id][loss_configs[1].model_dump_json()] == [20.0]).all()
-    assert (loss_dict["val"][tp2.compound_id][loss_configs[1].model_dump_json()] == [10.0]).all()
+    assert (
+        loss_dict["train"][tp1.compound_id][loss_configs[0].model_dump_json()] == [5.0]
+    ).all()
+    assert (
+        loss_dict["train"][tp1.compound_id][loss_configs[1].model_dump_json()] == [20.0]
+    ).all()
+    assert (
+        loss_dict["val"][tp2.compound_id][loss_configs[1].model_dump_json()] == [10.0]
+    ).all()
 
 
 def test_training_pred_tracker_get_losses_agg_losses(identifiers, loss_configs):
@@ -552,8 +560,12 @@ def test_training_pred_tracker_get_losses_agg_compounds(identifiers, loss_config
     }
 
     # Dividing by 2 now bc we're taking mean across multiple compounds
-    assert (loss_dict["train"][loss_configs[0].model_dump_json()] == [5 / 2 + 30 / 2]).all()
-    assert (loss_dict["train"][loss_configs[1].model_dump_json()] == [20 / 2 + 10 / 2]).all()
+    assert (
+        loss_dict["train"][loss_configs[0].model_dump_json()] == [5 / 2 + 30 / 2]
+    ).all()
+    assert (
+        loss_dict["train"][loss_configs[1].model_dump_json()] == [20 / 2 + 10 / 2]
+    ).all()
 
 
 def test_training_pred_tracker_get_losses_agg_both(identifiers, loss_configs):

@@ -577,7 +577,9 @@ def test_to_rdkit(smiles):
     props = rdkit_mol.GetPropsAsDict(includePrivate=True)
     # we only check the none default properties as these are what are saved
     assert molecule.compound_name == props["compound_name"]
-    assert molecule.provenance == LigandProvenance.model_validate_json(props["provenance"])
+    assert molecule.provenance == LigandProvenance.model_validate_json(
+        props["provenance"]
+    )
     assert molecule.data_format.value == props["data_format"]
     # make sure the name was set when provided.
     assert molecule.compound_name == props["_Name"]

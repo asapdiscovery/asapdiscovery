@@ -54,4 +54,3 @@ class ExperimentalCompoundData(BaseModel):
         data = {str(k): str(v) for k, v in data.items() if v is not None}
         exp_data = {str(k): float(v) for k, v in exp_data.items() if v is not None}
         return data, exp_data
-

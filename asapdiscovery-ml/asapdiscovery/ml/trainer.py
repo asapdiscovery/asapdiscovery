@@ -1231,7 +1231,9 @@ class Trainer(BaseModel):
                 torch.save(
                     self.optimizer.state_dict(), self.output_dir / "optimizer.th"
                 )
-            (self.output_dir / "pred_tracker.json").write_text(self.pred_tracker.model_dump_json())
+            (self.output_dir / "pred_tracker.json").write_text(
+                self.pred_tracker.model_dump_json()
+            )
 
             # Stop if loss has gone to infinity or is NaN
             if (
@@ -1319,7 +1321,9 @@ class Trainer(BaseModel):
 
         final_model_path = self.output_dir / "final.th"
         torch.save(self.model.state_dict(), final_model_path)
-        (self.output_dir / "pred_tracker.json").write_text(self.pred_tracker.model_dump_json())
+        (self.output_dir / "pred_tracker.json").write_text(
+            self.pred_tracker.model_dump_json()
+        )
 
         # write to json
         model_config_path = self.output_dir / "model_config.json"

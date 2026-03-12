@@ -131,7 +131,9 @@ class HTMLVisualizer(VisualizerBase):
 
     @model_validator(mode="after")
     def must_have_fitness_data(self):
-        if self.color_method == ColorMethod.fitness and not target_has_fitness_data(self.target):
+        if self.color_method == ColorMethod.fitness and not target_has_fitness_data(
+            self.target
+        ):
             raise ValueError(
                 f"Attempting to color by fitness and {self.target} does not have fitness data, use `subpockets` instead."
             )

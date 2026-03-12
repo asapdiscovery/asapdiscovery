@@ -33,7 +33,9 @@ class TrainingPrediction(BaseModel):
     )
 
     # Prediction info
-    predictions: list[float] = Field(default_factory=list, description="Model prediction.")
+    predictions: list[float] = Field(
+        default_factory=list, description="Model prediction."
+    )
     pose_predictions: list[list[float]] = Field(
         default_factory=list,
         description="Single-pose model prediction for each pose in input.",
@@ -43,7 +45,9 @@ class TrainingPrediction(BaseModel):
     loss_config: LossFunctionConfig = Field(
         ..., description="Config describing loss function."
     )
-    loss_vals: list[float] = Field(default_factory=list, description="Loss value of model prediction.")
+    loss_vals: list[float] = Field(
+        default_factory=list, description="Loss value of model prediction."
+    )
     loss_weight: float = Field(
         1.0, description="Contribution of this loss function to the full loss."
     )
@@ -429,9 +433,13 @@ class TrainingPredictionTracker(BaseModel):
                 cur_loss_configs = {}
                 for tp in split_list:
                     try:
-                        cur_loss_configs[tp.compound_id].update([tp.loss_config.model_dump_json()])
+                        cur_loss_configs[tp.compound_id].update(
+                            [tp.loss_config.model_dump_json()]
+                        )
                     except KeyError:
-                        cur_loss_configs[tp.compound_id] = {tp.loss_config.model_dump_json()}
+                        cur_loss_configs[tp.compound_id] = {
+                            tp.loss_config.model_dump_json()
+                        }
 
                 cur_loss_configs = {tuple(s) for s in cur_loss_configs.values()}
                 if len(cur_loss_configs) > 1:
