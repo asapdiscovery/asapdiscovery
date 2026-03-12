@@ -32,6 +32,7 @@ dependencies:
   - multimethod
 
   # Data services
+  - pooch
   - requests
   - boto3
   - moto
