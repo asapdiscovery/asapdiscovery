@@ -8,10 +8,9 @@ import dask
 import yaml
 from pydantic import BaseModel, Field
 
-from asapdiscovery.data.backend.openeye import oechem
+from asapdiscovery.data.backend.openeye import oechem, split_openeye_design_unit
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.schema.target import PreppedTarget
 from asapdiscovery.data.util.dask_utils import (
     FailureMode,
     actualise_dask_delayed_iterable,
@@ -21,10 +20,10 @@ from asapdiscovery.data.util.utils import seqres_to_res_list
 from asapdiscovery.modeling.modeling import (
     make_design_unit,
     mutate_residues,
-    split_openeye_design_unit,
     spruce_protein,
     superpose_molecule,
 )
+from asapdiscovery.modeling.schema import PreppedTarget
 
 if TYPE_CHECKING:
     from distributed import Client

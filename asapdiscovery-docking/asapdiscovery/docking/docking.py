@@ -15,6 +15,7 @@ from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     oechem,
     save_openeye_pdb,
+    split_openeye_design_unit,
 )
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
@@ -22,7 +23,6 @@ from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
 from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
-from asapdiscovery.modeling.modeling import split_openeye_design_unit
 
 logger = logging.getLogger(__name__)
 
