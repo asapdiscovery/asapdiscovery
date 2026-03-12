@@ -44,31 +44,36 @@ class DataModelAbstractBase(BaseModel):
     and other behaviour
     """
 
+    # can't use extra="forbid" because of the way we use
+    # kwargs to skip root_validator on some fields
+    model_config = ConfigDict(validate_assignment=True)
+
     def __hash__(self) -> int:
-        return self.json().__hash__()
+        return self.model_dump_json().__hash__()
 
     @classmethod
     def from_dict(cls, dict):
-        return cls.parse_obj(dict)
+        return cls.model_validate(dict)
 
     @classmethod
     def from_json(cls, json_str):
-        return cls.parse_obj(json.loads(json_str))
+        return cls.model_validate(json.loads(json_str))
 
     @classmethod
     def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
+        with open(str(file)) as f:
+            return cls.model_validate_json(f.read())
 
     def to_json_file(self, file: str | Path):
-        write_file_directly(file, self.json())
+        write_file_directly(file, self.model_dump_json())
 
     @property
     def size(self) -> ByteSize:
         """Size of the resulting JSON object for this class"""
-        return ByteSize(utf8len(self.json())).human_readable()
+        return ByteSize(utf8len(self.model_dump_json())).human_readable()
 
     def full_equal(self, other: DataModelAbstractBase) -> bool:
-        return self.dict() == other.dict()
+        return self.model_dump() == other.model_dump()
 
     def data_equal(self, other: DataModelAbstractBase) -> bool:
         return self.data == other.data
@@ -88,11 +93,6 @@ class DataModelAbstractBase(BaseModel):
     def __ne__(self, other: DataModelAbstractBase) -> bool:
         return not self.__eq__(other)
 
-    class Config:
-        validate_assignment = True
-        # can't use extra="forbid" because of the way we use
-        # kwargs to skip root_validator on some fields
-
 
 def schema_dict_get_val_overload(obj: dict | BaseModel):
     """
@@ -110,7 +110,7 @@ def schema_dict_get_val_overload(obj: dict | BaseModel):
     if isinstance(obj, dict):
         return obj.values()
     elif isinstance(obj, BaseModel):
-        return obj.dict().values()
+        return obj.model_dump().values()
     else:
         raise TypeError(f"Unsupported type {type(obj)}")
 

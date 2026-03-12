@@ -93,6 +93,6 @@ def mol_with_constrained_confs() -> oechem.OEMol:
 
 @pytest.fixture()
 def mac1_complex():
-    return PreppedComplex.parse_file(
+    return PreppedComplex.from_json_file(
         fetch_test_file("constrained_conformer/complex.json")
     )

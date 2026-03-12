@@ -89,7 +89,7 @@ def test_complex_dict_roundtrip(complex_pdb):
         target_kwargs={"target_name": "test"},
         ligand_kwargs={"compound_name": "test"},
     )
-    c2 = Complex.from_dict(c1.dict())
+    c2 = Complex.from_dict(c1.model_dump())
 
     assert c1 == c2
 
@@ -100,7 +100,7 @@ def test_complex_json_roundtrip(complex_pdb):
         target_kwargs={"target_name": "test"},
         ligand_kwargs={"compound_name": "test"},
     )
-    c2 = Complex.from_json(c1.json())
+    c2 = Complex.from_json(c1.model_dump_json())
 
     assert c1 == c2
 

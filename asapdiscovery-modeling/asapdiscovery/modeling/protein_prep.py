@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import dask
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from asapdiscovery.data.backend.openeye import oechem, split_openeye_design_unit
 from asapdiscovery.data.schema.complex import Complex, PreppedComplex
@@ -49,8 +49,7 @@ class ProteinPrepperBase(BaseModel):
         "ProteinPrepperBase", description="The type of prepper to use"
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abc.abstractmethod
     def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]: ...

@@ -194,12 +194,12 @@ class DockingResult(BaseModel):
 
     def to_json_file(self, file: str | Path):
         with open(file, "w") as f:
-            f.write(self.json(indent=2))
+            f.write(self.model_dump_json(indent=2))
 
     @classmethod
     def from_json_file(cls, file: str | Path) -> "DockingResult":
         with open(file) as f:
-            return cls.parse_raw(f.read())
+            return cls.model_validate_json(f.read())
 
     @abc.abstractmethod
     def _get_single_pose_results(self) -> list["DockingResult"]: ...
@@ -211,7 +211,7 @@ class DockingResult(BaseModel):
         """
         return a dictionary of some of the fields of the DockingResult
         """
-        dct = self.dict()
+        dct = self.model_dump()
         dct.pop("input_pair")
         dct.pop("posed_ligand")
         dct.pop("type")
@@ -219,7 +219,7 @@ class DockingResult(BaseModel):
 
     @classmethod
     def from_json(cls, json_str):
-        return cls.parse_obj(json.loads(json_str))
+        return cls.model_validate(json.loads(json_str))
 
     def to_posed_oemol(self) -> oechem.OEMol:
         """
@@ -263,7 +263,7 @@ class DockingResult(BaseModel):
             target_name=self.input_pair.complex.target.target_name,
             ids=self.input_pair.complex.target.ids,
         )
-        lig = Ligand.from_oemol(lig, **self.input_pair.ligand.dict())
+        lig = Ligand.from_oemol(lig, **self.input_pair.ligand.model_dump())
         return Complex(target=tar, ligand=lig)
 
     @property

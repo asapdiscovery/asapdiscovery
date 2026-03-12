@@ -35,7 +35,7 @@ class PairwiseSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict()}
+        return {"selector": self.model_dump()}
 
 
 class LeaveOneOutSelector(SelectorBase):
@@ -65,7 +65,7 @@ class LeaveOneOutSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict()}
+        return {"selector": self.model_dump()}
 
 
 class LeaveSimilarOutSelector(SelectorBase):
@@ -102,7 +102,7 @@ class LeaveSimilarOutSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict()}
+        return {"selector": self.model_dump()}
 
 
 class SelfDockingSelector(SelectorBase):
@@ -132,4 +132,4 @@ class SelfDockingSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict()}
+        return {"selector": self.model_dump()}

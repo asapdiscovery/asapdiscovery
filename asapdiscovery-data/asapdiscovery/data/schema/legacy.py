@@ -1,11 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 
 
 class CrystalCompoundData(BaseModel):
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
     compound_id: str = Field(
         None, description="The unique compound identifier of the ligand."

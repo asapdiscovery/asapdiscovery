@@ -1,7 +1,7 @@
 import numpy as np
 import pandas
 import torch
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from scipy.stats import bootstrap, kendalltau, spearmanr
 
 from asapdiscovery.ml.config import LossFunctionConfig
@@ -33,9 +33,9 @@ class TrainingPrediction(BaseModel):
     )
 
     # Prediction info
-    predictions: list[float] = Field([], description="Model prediction.")
+    predictions: list[float] = Field(default_factory=list, description="Model prediction.")
     pose_predictions: list[list[float]] = Field(
-        [],
+        default_factory=list,
         description="Single-pose model prediction for each pose in input.",
     )
 
@@ -43,24 +43,15 @@ class TrainingPrediction(BaseModel):
     loss_config: LossFunctionConfig = Field(
         ..., description="Config describing loss function."
     )
-    loss_vals: list[float] = Field([], description="Loss value of model prediction.")
+    loss_vals: list[float] = Field(default_factory=list, description="Loss value of model prediction.")
     loss_weight: float = Field(
         1.0, description="Contribution of this loss function to the full loss."
     )
 
-    class Config:
-        # Allow things to be added to the object after initialization/validation
-        extra = Extra.allow
+    model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
-        # Allow torch types
-        arbitrary_types_allowed = True
-
-        # Custom encoder to cast device to str before trying to serialize
-        json_encoders = {
-            torch.Tensor: lambda t: t.tolist(),
-        }
-
-    @validator("target_val", pre=True, always=True)
+    @field_validator("target_val", mode="before")
+    @classmethod
     def cast_target_val(cls, v):
         if isinstance(v, float):
             return v
@@ -81,7 +72,7 @@ class TrainingPrediction(BaseModel):
         """
 
         # Make a copy
-        d = self.dict()
+        d = self.model_dump()
 
         # Get rid of tracked values
         del d["predictions"]
@@ -100,16 +91,10 @@ class TrainingPredictionTracker(BaseModel):
         None, description="Internal dict storing all TrainingPredictions."
     )
 
-    class Config:
-        # Allow things to be added to the object after initialization/validation
-        extra = Extra.allow
+    model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
-        # Custom encoder to cast device to str before trying to serialize
-        json_encoders = {
-            torch.Tensor: lambda t: t.tolist(),
-        }
-
-    @validator("split_dict", always=True)
+    @field_validator("split_dict", mode="before")
+    @classmethod
     def init_split_dict(cls, split_dict):
         # If nothing was passed, just init an empty dict
         if not split_dict:
@@ -444,9 +429,9 @@ class TrainingPredictionTracker(BaseModel):
                 cur_loss_configs = {}
                 for tp in split_list:
                     try:
-                        cur_loss_configs[tp.compound_id].update([tp.loss_config.json()])
+                        cur_loss_configs[tp.compound_id].update([tp.loss_config.model_dump_json()])
                     except KeyError:
-                        cur_loss_configs[tp.compound_id] = {tp.loss_config.json()}
+                        cur_loss_configs[tp.compound_id] = {tp.loss_config.model_dump_json()}
 
                 cur_loss_configs = {tuple(s) for s in cur_loss_configs.values()}
                 if len(cur_loss_configs) > 1:
@@ -462,7 +447,7 @@ class TrainingPredictionTracker(BaseModel):
         for sp, split_list in self.split_dict.items():
             for tp in split_list:
                 # Indexes into full_loss_dict
-                idx = [sp, tp.compound_id, tp.loss_config.json()]
+                idx = [sp, tp.compound_id, tp.loss_config.model_dump_json()]
 
                 # Keep going into the dict until we reach the bottom level
                 cur_d = full_loss_dict
@@ -483,7 +468,7 @@ class TrainingPredictionTracker(BaseModel):
                     print(
                         "Multiple TrainingPrediction values found for "
                         f'compound_id="{tp.compound_id}" and '
-                        f'loss_config="{tp.loss_config.json()}"'
+                        f'loss_config="{tp.loss_config.model_dump_json()}"'
                     )
                 except KeyError:
                     cur_d[idx[-1]] = [loss_vals]

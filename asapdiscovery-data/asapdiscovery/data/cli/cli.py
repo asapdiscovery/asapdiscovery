@@ -303,4 +303,4 @@ def run_cdd_to_schema(
 
         n_added = sum(["xtal_ligand" in c.experimental_data for c in compounds])
         print(f"Added {n_added} Ligands", flush=True)
-        out_json.write_text("[" + ", ".join([c.json() for c in compounds]) + "]")
+        out_json.write_text("[" + ", ".join([c.model_dump_json() for c in compounds]) + "]")

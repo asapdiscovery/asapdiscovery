@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union  # noqa: F401
 
-from pydantic import Field, root_validator
+from pydantic import Field, model_validator
 
 from asapdiscovery.data.backend.openeye import (
     load_openeye_pdb,
@@ -48,10 +48,9 @@ class Target(DataModelAbstractBase):
     data_format: DataStorageType = Field(
         DataStorageType.pdb,
         description="Enum describing the data storage method",
-        allow_mutation=False,
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def _validate_at_least_one_id(cls, v):
         # check if skip validation
@@ -127,7 +126,3 @@ class Target(DataModelAbstractBase):
         Get the crystal symmetry of the target
         """
         return oechem.OEGetCrystalSymmetry(self.to_oemol())
-
-
-# Re-export PreppedTarget for backward compatibility
-from asapdiscovery.modeling.schema import PreppedTarget  # noqa: E402, F401

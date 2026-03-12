@@ -1164,6 +1164,6 @@ def _build_sweeper(
     if sweep_config_cache and (
         (not sweep_config_cache.exists()) or overwrite_sweep_config_cache
     ):
-        sweep_config_cache.write_text(sweeper.json())
+        sweep_config_cache.write_text(sweeper.model_dump_json())
 
     return sweeper

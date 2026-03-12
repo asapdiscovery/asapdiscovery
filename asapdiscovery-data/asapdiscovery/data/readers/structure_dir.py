@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List  # noqa: F401
 
 import dask
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.util.dask_utils import (
@@ -32,7 +32,8 @@ class StructureDirFactory(BaseModel):
         description="Regex pattern for matching PDB files in the directory.",
     )
 
-    @validator("parent_dir")
+    @field_validator("parent_dir")
+    @classmethod
     def parent_dir_exists(cls, v):
         if not v.exists():
             raise ValueError("parent_dir does not exist.")

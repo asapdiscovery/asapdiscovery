@@ -14,7 +14,7 @@ from typing import (  # noqa: F401
 )
 
 import numpy as np
-from pydantic import Field, root_validator, validator
+from pydantic import Field, field_validator, model_validator
 
 from asapdiscovery.data.backend.openeye import (
     clear_SD_data,
@@ -110,7 +110,6 @@ class Ligand(DataModelAbstractBase):
     provenance: LigandProvenance = Field(
         ...,
         description="Identifiers for the input state of the ligand used to ensure the sdf data is correct.",
-        allow_mutation=False,
     )
     experimental_data: Optional[ExperimentalCompoundData] = Field(
         None,
@@ -132,13 +131,13 @@ class Ligand(DataModelAbstractBase):
     )
 
     tags: dict[str, str] = Field(
-        {},
+        default_factory=dict,
         description="Dictionary of SD tags. "
         "If multiple conformers are present, these tags represent the first conformer.",
     )
 
     conf_tags: Optional[dict[str, list]] = Field(
-        {}, description="Dictionary of SD tags for each conformer."
+        default_factory=dict, description="Dictionary of SD tags for each conformer."
     )
 
     data: str = Field(
@@ -151,7 +150,7 @@ class Ligand(DataModelAbstractBase):
         description="Enum describing the data storage method",
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def _validate_at_least_one_id(cls, v):
         ids = v.get("ids")
@@ -167,18 +166,18 @@ class Ligand(DataModelAbstractBase):
                 )
         return v
 
-    @validator("tags")
+    @field_validator("tags")
     @classmethod
     def _validate_tags(cls, v):
         # check that tags are not reserved attribute names and format partial charges
-        reser_attr_names = cls.__fields__.keys()
+        reser_attr_names = cls.model_fields.keys()
         for k in v.keys():
             if k in reser_attr_names:
                 raise ValueError(f"Tag name {k} is a reserved attribute name")
         return v
 
     def __hash__(self):
-        return self.json().__hash__()
+        return self.model_dump_json().__hash__()
 
     def __eq__(self, other: "Ligand") -> bool:
         return self.data_equal(other)
@@ -220,7 +219,7 @@ class Ligand(DataModelAbstractBase):
 
         # extract all passed kwargs as a tag if it has no field in the model
         keys_to_save = [
-            key for key in kwargs.keys() if key not in cls.__fields__.keys()
+            key for key in kwargs.keys() if key not in cls.model_fields.keys()
         ]
 
         tags = set()
@@ -270,11 +269,11 @@ class Ligand(DataModelAbstractBase):
         """
         mol = sdf_string_to_oemol(self.data)
         data = {}
-        for key in self.__fields__.keys():
+        for key in self.model_fields.keys():
             if key not in ["data", "tags", "conf_tags", "data_format"]:
                 field = getattr(self, key)
                 try:
-                    data[key] = field.json()
+                    data[key] = field.model_dump_json()
                 except AttributeError:
                     if field is not None:
                         data[key] = str(getattr(self, key))
@@ -329,7 +328,7 @@ class Ligand(DataModelAbstractBase):
 
         # Filter out the keys that are a model attribute
         conf_tags = {
-            k: v for k, v in conf_tags.items() if k not in cls.__fields__.keys()
+            k: v for k, v in conf_tags.items() if k not in cls.model_fields.keys()
         }
 
         # create a new Ligand object with the data from the first conformer
@@ -354,11 +353,11 @@ class Ligand(DataModelAbstractBase):
 
         rdkit_mol: Chem.Mol = sdf_str_to_rdkit_mol(self.data)
         data = {}
-        for key in self.__fields__.keys():
+        for key in self.model_fields.keys():
             if key not in ["data", "tags", "data_format", "conf_tags"]:
                 field = getattr(self, key)
                 try:
-                    data[key] = field.json()
+                    data[key] = field.model_dump_json()
                 except AttributeError:
                     if field is not None:
                         data[key] = str(getattr(self, key))
@@ -553,7 +552,7 @@ class Ligand(DataModelAbstractBase):
         # and ensure that the length of the data matches the number of conformers
         new_data = {}
         for k, v in data.items():
-            if k in self.__fields__.keys():
+            if k in self.model_fields.keys():
                 warnings.warn(f"Tag name {k} is a reserved attribute name, skipping")
             else:
                 # if list is len 1, generate a list of len N, where N is the number of conformers

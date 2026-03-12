@@ -18,11 +18,12 @@ from openmmforcefields.generators import SystemGenerator
 from openmmtools.utils import get_fastest_platform
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     PositiveFloat,
     PositiveInt,
-    root_validator,
-    validator,
+    field_validator,
+    model_validator,
 )
 from rdkit import Chem
 from tqdm import tqdm
@@ -184,14 +185,14 @@ class VanillaMDSimulator(SimulatorBase):
         description="Whether to carry out a single minimization step.",
     )
 
-    @validator("rmsd_restraint_type")
+    @field_validator("rmsd_restraint_type")
     @classmethod
     def check_restraint_type(cls, v):
         if v not in ["CA", "heavy", None]:
             raise ValueError("RMSD restraint type must be 'CA' or 'heavy'")
         return v
 
-    @validator("rmsd_restraint_atom_indices")
+    @field_validator("rmsd_restraint_atom_indices")
     @classmethod
     def check_restraint_atom_indices(cls, v):
         if len(v) == 0:
@@ -202,15 +203,16 @@ class VanillaMDSimulator(SimulatorBase):
             raise ValueError("RMSD restraint atom indices must be a list of ints")
         return v
 
-    @root_validator
-    @classmethod
-    def check_restraint_setup(cls, values):
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
+
+    @model_validator(mode="after")
+    def check_restraint_setup(self):
         """
         Validate RMSD restraint setup
         """
-        rmsd_restraint = values.get("rmsd_restraint")
-        rmsd_restraint_indices = values.get("rmsd_restraint_indices")
-        rmsd_restraint_type = values.get("rmsd_restraint_type")
+        rmsd_restraint = self.rmsd_restraint
+        rmsd_restraint_indices = self.rmsd_restraint_atom_indices
+        rmsd_restraint_type = self.rmsd_restraint_type
         if rmsd_restraint_type and rmsd_restraint_indices:
             raise ValueError(
                 "If RMSD restraint type is provided, rmsd_restraint_indices must be empty"
@@ -224,39 +226,27 @@ class VanillaMDSimulator(SimulatorBase):
             raise ValueError(
                 "If RMSD restraint is enabled, and rmsd_restraint_type is not provided rmsd_restraint_indices must be provided"
             )
-        return values
+        return self
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"
-
-    @root_validator
-    @classmethod
-    def check_and_apply_truncation(cls, values):
+    @model_validator(mode="after")
+    def check_and_apply_truncation(self):
         """
         Validate num_steps and reporting_interval along with truncate_steps
         """
-        step_truncation = values.get("truncate_steps")
-        num_steps = values.get("num_steps")
-        reporting_interval = values.get("reporting_interval")
-        if step_truncation:
-            values["num_steps"] = truncate_num_steps(num_steps, reporting_interval)
-        return values
+        if self.truncate_steps:
+            self.num_steps = truncate_num_steps(self.num_steps, self.reporting_interval)
+        return self
 
-    @root_validator
-    @classmethod
-    def check_steps(cls, values):
+    @model_validator(mode="after")
+    def check_steps(self):
         """
         Validate num_steps and reporting_interval
         """
-        num_steps = values.get("num_steps")
-        reporting_interval = values.get("reporting_interval")
-        truncate_steps = values.get("truncate_steps")
-        if (num_steps % reporting_interval != 0) and truncate_steps:
+        if (self.num_steps % self.reporting_interval != 0) and self.truncate_steps:
             raise ValueError(
-                f"num_steps ({num_steps}) must be a multiple of reporting_interval ({reporting_interval})"
+                f"num_steps ({self.num_steps}) must be a multiple of reporting_interval ({self.reporting_interval})"
             )
-        return values
+        return self
 
     @property
     def n_frames(self) -> int:

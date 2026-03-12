@@ -137,7 +137,7 @@ def convert_graph_to_struct(
     if grouped is not None:
         config_kwargs["grouped"] = grouped
     ds_config = DatasetConfig(**config_kwargs)
-    out_file.write_text(ds_config.json())
+    out_file.write_text(ds_config.model_dump_json())
 
 
 def convert_struct_to_graph(
@@ -156,4 +156,4 @@ def convert_struct_to_graph(
         "for_e3nn": False,
     }
     ds_config = DatasetConfig(**config_kwargs)
-    out_file.write_text(ds_config.json())
+    out_file.write_text(ds_config.model_dump_json())

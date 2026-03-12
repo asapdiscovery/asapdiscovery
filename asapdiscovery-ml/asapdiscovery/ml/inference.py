@@ -10,7 +10,7 @@ import torch
 # static import of models from base yaml here
 from dgllife.utils import CanonicalAtomFeaturizer
 from mtenn.config import E3NNModelConfig, GATModelConfig, ModelType, SchNetModelConfig
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.complex import Complex
@@ -35,11 +35,12 @@ each model and store in S3 to use during testing.
 
 
 class InferenceBase(BaseModel):
-    class Config:
-        validate_assignment = True
-        allow_mutation = False
-        arbitrary_types_allowed = True
-        allow_extra = False
+    model_config = ConfigDict(
+        validate_assignment=True,
+        frozen=True,
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     targets: Optional[Any] = Field(
         None,

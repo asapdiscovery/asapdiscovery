@@ -42,7 +42,7 @@ class ProtomerExpander(StateExpanderBase):
                 fmol = oechem.OEMol(protomer)
                 # copy the ligand properties over to the new molecule, we may want to have more fine grained control over this
                 # down the track.
-                protomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.dict())
+                protomer_ligand = Ligand.from_oemol(fmol, **parent_ligand.model_dump())
                 if protomer_ligand.fixed_inchikey != parent_ligand.fixed_inchikey:
                     # only add tags to new microstates of the input molecule
                     protomer_ligand.set_expansion(

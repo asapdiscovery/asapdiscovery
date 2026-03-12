@@ -84,7 +84,7 @@ def test_target_dict_roundtrip(
             target_type=ttype, fragalysis_id=fragalysis_id, pdb_code=pdb_code
         ),
     )
-    t2 = Target.from_dict(t1.dict())
+    t2 = Target.from_dict(t1.model_dump())
     assert t1 == t2
 
 
@@ -104,7 +104,7 @@ def test_target_json_roundtrip(
             target_type=ttype, fragalysis_id=fragalysis_id, pdb_code=pdb_code
         ),
     )
-    t2 = Target.from_json(t1.json())
+    t2 = Target.from_json(t1.model_dump_json())
     assert t1 == t2
 
 
@@ -255,7 +255,7 @@ def test_prepped_target_json_roundtrip(oedu_file):
     pt = PreppedTarget.from_oedu_file(
         oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
     )
-    js = pt.json()
+    js = pt.model_dump_json()
     pt2 = PreppedTarget.from_json(js)
     # these two comparisons should be the same
     assert pt == pt2

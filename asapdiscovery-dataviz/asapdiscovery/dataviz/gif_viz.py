@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 from multimethod import multimethod
-from pydantic import Field, PositiveInt
+from pydantic import ConfigDict, Field, PositiveInt
 
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.schema.complex import Complex
@@ -94,8 +94,7 @@ class GIFVisualizer(VisualizerBase):
     interval: PositiveInt = Field(1, description="Interval between frames")
     debug: bool = Field(False, description="Whether to run in debug mode")
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @dask_vmap(["inputs"], has_failure_mode=True)
     @backend_wrapper("inputs")

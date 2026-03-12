@@ -253,7 +253,7 @@ class MCSSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict(), "oechem": oechem.OEChemGetVersion()}
+        return {"selector": self.model_dump(), "oechem": oechem.OEChemGetVersion()}
 
 
 class RascalMCESSelector(SelectorBase):
@@ -398,4 +398,4 @@ class RascalMCESSelector(SelectorBase):
         return similarity
 
     def provenance(self):
-        return {"selector": self.dict(), "rdkit": rdBase.rdkitVersion}
+        return {"selector": self.model_dump(), "rdkit": rdBase.rdkitVersion}

@@ -5,7 +5,7 @@ from typing import Optional
 
 import pandas as pd
 from openmm import unit
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from asapdiscovery.data.backend.openeye import oechem, oeszybki
 from asapdiscovery.data.util.logging import FileLogger
@@ -22,9 +22,7 @@ class SzybkiFreeformResult(BaseModel):
     szybki_conformer_strain: float
     units = unit.kilocalories_per_mole
 
-    class Config:
-        allow_mutation = False
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
     def as_result_cols(self):
         dict = {

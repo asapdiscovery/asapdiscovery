@@ -11,7 +11,7 @@ import pooch
 import requests
 import yaml
 from mtenn.config import ModelType
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from semver import Version
 
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
@@ -23,13 +23,7 @@ class MLModelBase(BaseModel):
     Base model class for ML models
     """
 
-    class Config:
-
-        # Add custom encoders for semver Versions
-        json_encoders = {Version: lambda v: str(v)}
-
-        # Allow arbitrary types so that pydantic will accept Versions
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = Field(..., description="Model name")
     endpoint: Any = Field(
@@ -47,7 +41,8 @@ class MLModelBase(BaseModel):
         None, description="Upper bound on compatible mtenn versions (exclusive)."
     )
 
-    @validator("mtenn_lower_pin", "mtenn_upper_pin", pre=True)
+    @field_validator("mtenn_lower_pin", "mtenn_upper_pin", mode="before")
+    @classmethod
     def cast_versions(cls, v):
         """
         Cast SemVer version strings to Version objects.
@@ -171,7 +166,7 @@ class EnsembleMLModelSpec(MLModelSpecBase):
     )
     ensemble: bool = True
 
-    @validator("models")
+    @field_validator("models")
     @classmethod
     def check_all_types(cls, models):
         """
@@ -181,7 +176,7 @@ class EnsembleMLModelSpec(MLModelSpecBase):
             raise ValueError("All models in an ensemble must be of the same type")
         return models
 
-    @validator("models")
+    @field_validator("models")
     @classmethod
     def check_all_mtenn_versions(cls, models):
         """
@@ -213,7 +208,7 @@ class EnsembleMLModelSpec(MLModelSpecBase):
         """
         return LocalEnsembleMLModelSpec(
             models=[model.pull(local_dir) for model in self.models],
-            **self.dict(exclude={"models"}),
+            **self.model_dump(exclude={"models"}),
         )
 
     def pull_plot(

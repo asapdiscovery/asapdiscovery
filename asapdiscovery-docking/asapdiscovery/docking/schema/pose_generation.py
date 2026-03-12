@@ -3,7 +3,7 @@ import warnings
 from enum import Enum
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt
 from rdkit import Chem, RDLogger
 
 from asapdiscovery.data.backend.openeye import (
@@ -66,9 +66,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         description="If the main scoring function fails to descriminate between conformers the backup score will be used based on the internal energy of the molecule.",
     )
 
-    class Config:
-        allow_mutation = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abc.abstractmethod
     def provenance(self) -> dict[str, Any]:

@@ -96,7 +96,7 @@ def test_ligand_ids_json_roundtrip():
         moonshot_compound_id="test_moonshot_compound_id",
         compchem_id=uuid4(),
     )
-    ids2 = LigandIdentifiers.from_json(ids.json())
+    ids2 = LigandIdentifiers.from_json(ids.model_dump_json())
     assert ids == ids2
     assert isinstance(ids2.manifold_api_id, str)
 
@@ -346,7 +346,7 @@ def test_ligand_dict_roundtrip(
         ),
         experimental_data=exp_data,
     )
-    l2 = Ligand.from_dict(l1.dict())
+    l2 = Ligand.from_dict(l1.model_dump())
     assert l1 == l2
 
 
@@ -375,7 +375,7 @@ def test_ligand_json_roundtrip(
         ),
         experimental_data=exp_data,
     )
-    l2 = Ligand.from_json(l1.json())
+    l2 = Ligand.from_json(l1.model_dump_json())
     assert l1 == l2
 
 
@@ -465,7 +465,7 @@ def test_ligand_oemol_roundtrip(moonshot_sdf):
     l2 = Ligand.from_oemol(mol_res, compound_name="blahblah")
     assert l2 == l1
     # check all internal fields as well
-    assert l2.dict() == l1.dict()
+    assert l2.model_dump() == l1.model_dump()
 
 
 def test_ligand_oemol_roundtrip_data_only(moonshot_sdf):
@@ -577,7 +577,7 @@ def test_to_rdkit(smiles):
     props = rdkit_mol.GetPropsAsDict(includePrivate=True)
     # we only check the none default properties as these are what are saved
     assert molecule.compound_name == props["compound_name"]
-    assert molecule.provenance == LigandProvenance.parse_raw(props["provenance"])
+    assert molecule.provenance == LigandProvenance.model_validate_json(props["provenance"])
     assert molecule.data_format.value == props["data_format"]
     # make sure the name was set when provided.
     assert molecule.compound_name == props["_Name"]

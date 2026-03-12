@@ -1,10 +1,12 @@
 from datetime import date
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExperimentalCompoundData(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     compound_id: str = Field(
         None,
         description="The unique compound identifier (PostEra or enumerated ID)",
@@ -38,7 +40,7 @@ class ExperimentalCompoundData(BaseModel):
     date_created: date = Field(None, description="Date the molecule was created.")
 
     experimental_data: dict[str, float | Any] = Field(
-        dict(),
+        default_factory=dict,
         description='Experimental data fields, including "pIC50" and uncertainty (either "pIC50_stderr" or  "pIC50_{lower|upper}"',
     )
 
@@ -46,13 +48,10 @@ class ExperimentalCompoundData(BaseModel):
         """
         Convert to a dictionary of SD tags
         """
-        data = self.dict()
+        data = self.model_dump()
         exp_data = data.pop("experimental_data")
         # cannot use a nested dict in SD tags, so flatten to two tags
         data = {str(k): str(v) for k, v in data.items() if v is not None}
         exp_data = {str(k): float(v) for k, v in exp_data.items() if v is not None}
         return data, exp_data
 
-    class Config:
-        allow_mutation = False
-        extra = "forbid"

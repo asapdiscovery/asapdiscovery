@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from airium import Airium
 from multimethod import multimethod
-from pydantic import Field, root_validator
+from pydantic import Field, model_validator
 
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
@@ -107,7 +107,8 @@ class HTMLVisualizer(VisualizerBase):
     fitness_data_logoplots: Optional[Any]
     reference_protein: Optional[Any]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def check_and_set_chains(cls, values):
         active_site_chain = values.get("active_site_chain")
         ref_chain = values.get("ref_chain")
@@ -128,16 +129,13 @@ class HTMLVisualizer(VisualizerBase):
             )
         self.reference_protein = load_openeye_pdb(master_structures[self.target])
 
-    @root_validator
-    @classmethod
-    def must_have_fitness_data(cls, values):
-        target = values.get("target")
-        color_method = values.get("color_method")
-        if color_method == ColorMethod.fitness and not target_has_fitness_data(target):
+    @model_validator(mode="after")
+    def must_have_fitness_data(self):
+        if self.color_method == ColorMethod.fitness and not target_has_fitness_data(self.target):
             raise ValueError(
-                f"Attempting to color by fitness and {target} does not have fitness data, use `subpockets` instead."
+                f"Attempting to color by fitness and {self.target} does not have fitness data, use `subpockets` instead."
             )
-        return values
+        return self
 
     def get_tag_for_color_method(self):
         """

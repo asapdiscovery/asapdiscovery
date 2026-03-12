@@ -330,7 +330,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
 
     if out_json:
         with open(out_json, "w") as fp:
-            fp.write("[" + ", ".join([c.json() for c in compounds]) + "]")
+            fp.write("[" + ", ".join([c.model_dump_json() for c in compounds]) + "]")
         print(f"Wrote {out_json}", flush=True)
     if out_csv:
         out_cols = [
@@ -455,15 +455,15 @@ def cdd_to_schema_v2(
             raise e
 
     # needs to be this way for compatibility #TODO: change this
-    # should be json.dumps([c.json() for c in compounds])
+    # should be json.dumps([c.model_dump_json() for c in compounds])
     if out_json:
         with open(out_json, "w") as fp:
-            fp.write("[" + ", ".join([c.json() for c in compounds]) + "]")
+            fp.write("[" + ", ".join([c.model_dump_json() for c in compounds]) + "]")
         print(f"Wrote {out_json}", flush=True)
 
     if out_csv:
         # read schema into dataframe
-        schema_df = pandas.DataFrame([c.dict() for c in compounds])
+        schema_df = pandas.DataFrame([c.model_dump() for c in compounds])
         # write to csv
         schema_df.to_csv(out_csv)
 
@@ -605,7 +605,7 @@ def cdd_to_schema_pair(cdd_csv, out_json=None, out_csv=None):
 
     if out_json:
         with open(out_json, "w") as fp:
-            fp.write(ep_list.json())
+            fp.write(ep_list.model_dump_json())
         print(f"Wrote {out_json}", flush=True)
     if out_csv:
         out_cols = [

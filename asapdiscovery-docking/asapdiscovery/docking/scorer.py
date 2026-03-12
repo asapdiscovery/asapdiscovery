@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from mtenn.config import ModelType
 from multimethod import multimethod
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from asapdiscovery.data.backend.openeye import oedocking, oemol_to_pdb_string
 from asapdiscovery.data.backend.plip import compute_fint_score
@@ -237,7 +237,7 @@ class Score(BaseModel):
                 made_json = False  # already a string
             else:  # cast to JSON
                 dtype = type(df["input"].iloc[0])
-                df["input"] = df["input"].apply(lambda x: x.json())
+                df["input"] = df["input"].apply(lambda x: x.model_dump_json())
                 made_json = True
         indices = set(df.columns) - {"score_type", "score", "units"}
         df = df.pivot(
@@ -343,7 +343,7 @@ class ScorerBase(BaseModel):
         # flatten the list of scores
         scores = np.ravel(scores)
         for score in scores:
-            dct = score.dict()
+            dct = score.model_dump()
             dct["score_type"] = score.score_type.value  # convert to string
             # we don't want the unpacked version of the input
             dct.pop("input")
@@ -464,7 +464,7 @@ class FINTScorer(ScorerBase):
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
     target: TargetTags = Field(..., description="Which target to use for scoring")
 
-    @validator("target")
+    @field_validator("target")
     @classmethod
     def validate_target(cls, v):
         if not target_has_fitness_data(v):

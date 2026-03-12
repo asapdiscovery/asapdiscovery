@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from pydantic import Field, root_validator
+from pydantic import Field, model_validator
 
 from asapdiscovery.data.backend.openeye import (
     bytes64_to_oedu,
@@ -50,12 +50,10 @@ class PreppedTarget(DataModelAbstractBase):
     data_format: DataStorageType = Field(
         DataStorageType.b64oedu,
         description="Enum describing the data storage method",
-        allow_mutation=False,
     )
     target_hash: str = Field(
         ...,
         description="A unique reproducible hash based on the contents of the pdb file which created the target.",
-        allow_mutation=False,
     )
 
     crystal_symmetry: Optional[Any] = Field(
@@ -63,7 +61,7 @@ class PreppedTarget(DataModelAbstractBase):
         description="bounding box of the target, lost in oedu conversion so can be saved as attribute.",
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def _validate_at_least_one_id(cls, v):
         # simpler as we never need to pop attrs off the serialised representation.

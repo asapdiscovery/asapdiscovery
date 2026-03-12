@@ -200,6 +200,6 @@ def test_ff_dict_roundtrip(mpro_frag_dir):
     parent_dir, _ = mpro_frag_dir
 
     ff1 = FragalysisFactory.from_dir(parent_dir)
-    ff2 = FragalysisFactory.parse_obj(ff1.dict())
+    ff2 = FragalysisFactory.model_validate(ff1.model_dump())
 
     assert ff1 == ff2

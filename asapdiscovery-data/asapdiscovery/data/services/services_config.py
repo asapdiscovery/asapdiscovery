@@ -2,7 +2,8 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,8 @@ class CloudfrontSettings(BaseSettings):
     )
 
     # validate cloudfront_private_key_pem exists
-    @validator("CLOUDFRONT_PRIVATE_KEY_PEM")
+    @field_validator("CLOUDFRONT_PRIVATE_KEY_PEM")
+    @classmethod
     def validate_cloudfront_private_key_pem_path(cls, v):
         if not Path(v).exists():
             raise ValueError(f"Cloudfront private key file does not exist: {v}")
