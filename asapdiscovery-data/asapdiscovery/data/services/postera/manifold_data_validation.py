@@ -8,8 +8,9 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union  # noqa: F401
 
 import pandas as pd
-import pkg_resources
 import yaml
+from importlib import resources
+
 from asapdiscovery.data.util.stringenum import StringEnum
 
 logger = logging.getLogger(__name__)
@@ -225,8 +226,8 @@ def make_static_tags(yaml_path) -> tuple[Enum, set]:
 # OK finally we can actually make the enums
 
 # static path to the spec
-manifold_data_spec = pkg_resources.resource_filename(
-    __name__, "manifold_data_tags.yaml"
+manifold_data_spec = str(
+    resources.files("asapdiscovery.data.services.postera") / "manifold_data_tags.yaml"
 )
 
 # make target enum and set
