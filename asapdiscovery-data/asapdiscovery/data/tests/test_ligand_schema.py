@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from asapdiscovery.data.backend.openeye import (
     get_SD_data,
     load_openeye_sdf,

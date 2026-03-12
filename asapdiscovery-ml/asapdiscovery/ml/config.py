@@ -10,6 +10,8 @@ from typing import Any
 
 import numpy as np
 import torch
+from pydantic import BaseModel, Field, root_validator
+
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 from asapdiscovery.data.schema.ligand import Ligand
@@ -21,7 +23,6 @@ from asapdiscovery.ml.es import (
     ConvergedEarlyStopping,
     PatientConvergedEarlyStopping,
 )
-from pydantic import BaseModel, Field, root_validator
 
 
 class ConfigBase(BaseModel):

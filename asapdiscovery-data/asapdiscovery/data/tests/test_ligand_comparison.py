@@ -1,4 +1,5 @@
 import pytest
+
 from asapdiscovery.data.schema.ligand import ChemicalRelationship, Ligand
 
 

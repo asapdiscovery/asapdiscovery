@@ -1,4 +1,5 @@
 import pytest
+
 from asapdiscovery.dataviz.gif_viz import GIFVisualizer
 
 

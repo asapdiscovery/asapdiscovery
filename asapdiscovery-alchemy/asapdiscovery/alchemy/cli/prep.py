@@ -3,6 +3,7 @@ from typing import Optional
 from warnings import warn
 
 import click
+
 from asapdiscovery.alchemy.cli.utils import SpecialHelpOrder
 
 
@@ -36,10 +37,11 @@ def create(filename: str, core_smarts: str):
     Create a new AlchemyPrepWorkflow with default settings and save it to JSON file.
     """
     import rich
-    from asapdiscovery.alchemy.cli.utils import print_header
-    from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from rich import pretty
     from rich.padding import Padding
+
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 
     pretty.install()
     console = rich.get_console()
@@ -131,6 +133,9 @@ def alchemize(
     from multiprocessing import cpu_count
 
     import rich
+    from rich import pretty
+    from rich.padding import Padding
+
     from asapdiscovery.alchemy.alchemize import (
         compute_clusters,
         rescue_outsiders,
@@ -142,8 +147,6 @@ def alchemize(
         report_alchemize_clusters,
     )
     from asapdiscovery.data.readers.molfile import MolFileFactory
-    from rich import pretty
-    from rich.padding import Padding
 
     pretty.install()
     console = rich.get_console()
@@ -309,6 +312,9 @@ def run(
 
     import pandas
     import rich
+    from rich import pretty
+    from rich.padding import Padding
+
     from asapdiscovery.alchemy.cli.utils import (
         get_cpus,
         print_header,
@@ -317,8 +323,6 @@ def run(
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from asapdiscovery.data.readers.molfile import MolFileFactory
     from asapdiscovery.data.schema.complex import PreppedComplex
-    from rich import pretty
-    from rich.padding import Padding
 
     pretty.install()
     console = rich.get_console()

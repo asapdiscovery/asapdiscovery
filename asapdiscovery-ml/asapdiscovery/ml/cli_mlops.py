@@ -17,6 +17,10 @@ import seaborn as sns
 import torch
 import wandb
 import yaml
+from mtenn.config import GATModelConfig
+from openff.toolkit import Molecule
+from openff.toolkit.utils.exceptions import RadicalsNotSupportedError
+
 from asapdiscovery.alchemy.cli.utils import has_warhead
 from asapdiscovery.cli.cli_args import loglevel
 from asapdiscovery.data.schema.ligand import Ligand
@@ -41,9 +45,6 @@ from asapdiscovery.ml.inference import GATInference
 from asapdiscovery.ml.models import RemoteEnsembleHelper
 from asapdiscovery.ml.pretrained_models import cdd_protocols_yaml
 from asapdiscovery.ml.trainer import Trainer
-from mtenn.config import GATModelConfig
-from openff.toolkit import Molecule
-from openff.toolkit.utils.exceptions import RadicalsNotSupportedError
 
 # logging
 logger = logging.getLogger(__name__)

@@ -5,9 +5,10 @@ import pandas as pd
 import rich
 
 if TYPE_CHECKING:
+    from cinnabar import FEMap
+
     from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
     from asapdiscovery.data.schema.ligand import Ligand
-    from cinnabar import FEMap
 
 
 def print_header(console: "rich.Console"):
@@ -120,14 +121,15 @@ def get_cdd_molecules(
     Returns:
         A list of molecules with experimental data.
     """
-    from asapdiscovery.alchemy.predict import download_cdd_data
-    from asapdiscovery.data.schema.ligand import Ligand
     from openff.toolkit import Molecule
     from openff.toolkit.utils.exceptions import (
         RadicalsNotSupportedError,
         UndefinedStereochemistryError,
     )
     from rdkit import Chem
+
+    from asapdiscovery.alchemy.predict import download_cdd_data
+    from asapdiscovery.data.schema.ligand import Ligand
 
     # get all molecules with data for the protocol
     cdd_data = download_cdd_data(protocol_name=protocol_name)
@@ -295,11 +297,12 @@ def cinnabar_femap_get_largest_subnetwork(
     import itertools
 
     import networkx as nx
+    from rich.padding import Padding
+
     from asapdiscovery.alchemy.schema.fec import (
         AlchemiscaleResults,
         FreeEnergyCalculationNetwork,
     )
-    from rich.padding import Padding
 
     fe_map_nx = fe_map.graph
     subnetworks_nodenames = sorted(  # split the network into subnetworks

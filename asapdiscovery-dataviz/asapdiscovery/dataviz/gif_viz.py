@@ -3,6 +3,9 @@ import shutil
 from pathlib import Path
 from typing import Any, Optional, Union
 
+from multimethod import multimethod
+from pydantic import Field, PositiveInt
+
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
@@ -17,8 +20,6 @@ from asapdiscovery.dataviz.show_contacts import show_contacts
 from asapdiscovery.dataviz.visualizer import VisualizerBase
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.simulation.simulate import SimulationResult
-from multimethod import multimethod
-from pydantic import Field, PositiveInt
 
 logger = logging.getLogger(__name__)
 

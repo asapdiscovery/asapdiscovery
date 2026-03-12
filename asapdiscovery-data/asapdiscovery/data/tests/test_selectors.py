@@ -1,4 +1,5 @@
 import pytest
+
 from asapdiscovery.data.operators.selectors.mcs_selector import (
     MCSSelector,
     RascalMCESSelector,

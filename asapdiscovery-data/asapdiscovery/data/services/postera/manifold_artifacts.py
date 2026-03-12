@@ -5,6 +5,8 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel, Field, root_validator
+
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
 from asapdiscovery.data.services.postera.manifold_data_validation import (
@@ -18,7 +20,6 @@ from asapdiscovery.data.services.services_config import (
     S3Settings,
 )
 from asapdiscovery.docking.docking_data_validation import DockingResultCols
-from pydantic import BaseModel, Field, root_validator
 
 
 class ArtifactType(Enum):

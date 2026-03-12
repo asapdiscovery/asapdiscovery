@@ -2,9 +2,10 @@ import json
 
 import pandas
 import pytest
+from click.testing import CliRunner
+
 from asapdiscovery.data.cli.cli import data as cli
 from asapdiscovery.data.testing.test_resources import fetch_test_file
-from click.testing import CliRunner
 
 
 @pytest.fixture(scope="session")

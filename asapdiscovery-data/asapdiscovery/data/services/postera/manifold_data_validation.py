@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple, Union  # noqa: F401
 import pandas as pd
 import pkg_resources
 import yaml
+
 from asapdiscovery.data.util.stringenum import StringEnum
 
 logger = logging.getLogger(__name__)
