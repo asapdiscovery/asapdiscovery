@@ -1272,7 +1272,7 @@ def trainer_args(func):
         start_epoch,
         n_epochs,
         batch_size,
-        target_prop,
+        target_props,
         cont,
         loss_dict,
         device,
@@ -1309,9 +1309,12 @@ def batch_size(func):
     )(func)
 
 
-def target_prop(func):
+def target_props(func):
     return click.option(
-        "--target-prop", type=str, help="Target property to train against."
+        "--target-prop",
+        type=str,
+        multiple=True,
+        help="Target property to train against.",
     )(func)
 
 
