@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from pydantic import Field, model_validator
 
@@ -15,7 +17,9 @@ from asapdiscovery.data.backend.openeye import (
     split_openeye_design_unit,
 )
 from asapdiscovery.data.schema.identifiers import TargetIdentifiers
+from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.schema_base import (
+    ComplexBase,
     DataModelAbstractBase,
     DataStorageType,
     MoleculeComponent,
@@ -23,8 +27,17 @@ from asapdiscovery.data.schema.schema_base import (
     schema_dict_get_val_overload,
 )
 
+if TYPE_CHECKING:
+    from asapdiscovery.data.schema.complex import Complex
+
 # Re-export for backward compatibility
-__all__ = ["MoleculeComponent", "MoleculeFilter", "PreppedTarget"]
+__all__ = [
+    "ComplexBase",
+    "MoleculeComponent",
+    "MoleculeFilter",
+    "PreppedComplex",
+    "PreppedTarget",
+]
 
 
 logger = logging.getLogger(__name__)
@@ -113,3 +126,68 @@ class PreppedTarget(DataModelAbstractBase):
         import hashlib
 
         return hashlib.sha256(self.data).hexdigest()
+
+
+class PreppedComplex(ComplexBase):
+    """
+    Schema for a Complex, containing both a PreppedTarget and Ligand
+    In this case the PreppedTarget contains the protein and ligand.
+    """
+
+    target: PreppedTarget = Field(description="PreppedTarget schema object")
+    ligand: Ligand = Field(description="Ligand schema object")
+
+    # Overload from base class to check target and ligand individually
+    def data_equal(self, other: PreppedComplex):
+        return self.target.data_equal(other.target) and self.ligand.data_equal(
+            other.ligand
+        )
+
+    @classmethod
+    def from_oedu(
+        cls, oedu: oechem.OEDesignUnit, target_kwargs={}, ligand_kwargs={}
+    ) -> PreppedComplex:
+        prepped_target = PreppedTarget.from_oedu(oedu, **target_kwargs)
+        lig_oemol = oechem.OEMol()
+        oedu.GetLigand(lig_oemol)
+        return cls(
+            target=prepped_target,
+            ligand=Ligand.from_oemol(lig_oemol, **ligand_kwargs),
+        )
+
+    @classmethod
+    def from_oedu_file(cls, oedu_file: str | Path, **kwargs) -> PreppedComplex:
+        oedu = load_openeye_design_unit(oedu_file)
+        return cls.from_oedu(oedu=oedu, **kwargs)
+
+    @classmethod
+    def from_complex(cls, complex: Complex, prep_kwargs={}) -> PreppedComplex:
+        """
+        Create a PreppedComplex from a Complex by running ProteinPrepper
+        on the combined oemol of the complex
+
+        Parameters
+        ----------
+        complex : Complex
+            Complex to create PreppedComplex from
+        prep_kwargs : dict
+            Keyword arguments to pass to ProteinPrepper
+
+        Returns
+        -------
+        PreppedComplex
+            PreppedComplex object
+        """
+        # use local import here to avoid circular imports
+        from asapdiscovery.modeling.protein_prep import ProteinPrepper
+
+        # overwrite ligand_chain with ligand_chain from complex if it exists
+        prep_kwargs.pop("ligand_chain", None)
+        prep_kwargs["ligand_chain"] = complex.ligand_chain
+        prepped_complexs = ProteinPrepper(**prep_kwargs).prep(inputs=[complex])
+        return prepped_complexs[0]
+
+    @property
+    def hash(self):
+        # Using the target_hash instead hashing the OEDU bytes because prepping is stochastic
+        return f"{self.target.target_hash}+{self.ligand.fixed_inchikey}"

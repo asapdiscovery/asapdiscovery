@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, ByteSize, ConfigDict, Field
 
@@ -113,6 +114,27 @@ def schema_dict_get_val_overload(obj: dict | BaseModel):
         return obj.model_dump().values()
     else:
         raise TypeError(f"Unsupported type {type(obj)}")
+
+
+class ComplexBase(DataModelAbstractBase):
+    """
+    Base class for complexes
+    """
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, ComplexBase):
+            return NotImplemented
+
+        # Just check that both Targets and Ligands are the same
+        return (self.target == other.target) and (self.ligand == other.ligand)
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    @property
+    def unique_name(self) -> str:
+        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
+        return f"{self.target.target_name}-{self.hash}"
 
 
 class MoleculeComponent(str, Enum):
