@@ -93,7 +93,3 @@ class Complex(ComplexBase):
     @property
     def hash(self):
         return f"{self.target.hash}+{self.ligand.fixed_inchikey}"
-
-
-# Re-export for backward compatibility
-from asapdiscovery.modeling.schema import PreppedComplex  # noqa: E402, F401

@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import abc
-from typing import Literal, Union
+from typing import TYPE_CHECKING, Literal, Union
 
 import dask
 from pydantic import BaseModel
 
-from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.data.schema.schema_base import ComplexBase
+
+if TYPE_CHECKING:
+    from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.util.dask_utils import (
     FailureMode,
@@ -76,7 +82,7 @@ class SelectorBase(abc.ABC, BaseModel):
         """
         if isinstance(complex, Complex):
             return CompoundStructurePair
-        elif isinstance(complex, PreppedComplex):
+        elif isinstance(complex, ComplexBase):
             return DockingInputPair
         else:
             raise ValueError(f"Unknown complex type: {type(complex)}")

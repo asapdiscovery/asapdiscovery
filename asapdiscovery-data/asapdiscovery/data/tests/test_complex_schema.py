@@ -2,7 +2,8 @@ import pytest
 from pydantic import ValidationError
 
 from asapdiscovery.data.backend.openeye import load_openeye_pdb
-from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 

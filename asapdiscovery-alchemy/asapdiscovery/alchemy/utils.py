@@ -16,9 +16,8 @@ from asapdiscovery.alchemy.schema.forcefield import ForceFieldParams
 if TYPE_CHECKING:
     from openff.bespokefit.workflows import BespokeWorkflowFactory
 
-    from asapdiscovery.data.schema.complex import PreppedComplex
     from asapdiscovery.data.schema.ligand import Ligand
-    from asapdiscovery.data.schema.target import PreppedTarget
+    from asapdiscovery.modeling.schema import PreppedComplex, PreppedTarget
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):

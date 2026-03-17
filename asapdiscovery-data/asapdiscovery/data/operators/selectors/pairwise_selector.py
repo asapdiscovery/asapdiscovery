@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import logging
 from itertools import product
-from typing import ClassVar, Union
+from typing import TYPE_CHECKING, ClassVar, Union
 
 from asapdiscovery.data.operators.selectors.selector import SelectorBase
-from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.schema_base import ComplexBase
+
+if TYPE_CHECKING:
+    from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import ChemicalRelationship, Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 

@@ -1,6 +1,7 @@
 import pytest
 
-from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
 from asapdiscovery.data.services.services_config import CDDSettings

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 import warnings
-from typing import ClassVar, Union
+from typing import TYPE_CHECKING, ClassVar, Union
 
 import numpy as np
 from dask import delayed
@@ -10,7 +12,11 @@ from rdkit.Chem import rdRascalMCES
 
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.operators.selectors.selector import SelectorBase
-from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.schema_base import ComplexBase
+
+if TYPE_CHECKING:
+    from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.util.dask_utils import (

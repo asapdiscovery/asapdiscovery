@@ -314,7 +314,7 @@ def run(
     )
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from asapdiscovery.data.readers.molfile import MolFileFactory
-    from asapdiscovery.data.schema.complex import PreppedComplex
+    from asapdiscovery.modeling.schema import PreppedComplex
 
     pretty.install()
     console = rich.get_console()

@@ -9,7 +9,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from asapdiscovery.data.backend.openeye import oechem, split_openeye_design_unit
-from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.util.dask_utils import (
     FailureMode,
@@ -23,7 +23,7 @@ from asapdiscovery.modeling.modeling import (
     spruce_protein,
     superpose_molecule,
 )
-from asapdiscovery.modeling.schema import PreppedTarget
+from asapdiscovery.modeling.schema import PreppedComplex, PreppedTarget
 
 if TYPE_CHECKING:
     from distributed import Client

@@ -17,7 +17,8 @@ from asapdiscovery.data.backend.openeye import (
     save_openeye_pdb,
     split_openeye_design_unit,
 )
-from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase

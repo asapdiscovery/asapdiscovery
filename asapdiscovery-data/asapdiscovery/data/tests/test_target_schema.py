@@ -4,7 +4,8 @@ import pytest
 from pydantic import ValidationError
 
 from asapdiscovery.data.backend.openeye import load_openeye_design_unit, oechem
-from asapdiscovery.data.schema.target import PreppedTarget, Target, TargetIdentifiers
+from asapdiscovery.data.schema.target import Target, TargetIdentifiers
+from asapdiscovery.modeling.schema import PreppedTarget
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
