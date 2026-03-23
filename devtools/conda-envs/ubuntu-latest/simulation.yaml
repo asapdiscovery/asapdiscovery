@@ -16,6 +16,7 @@ dependencies:
   - codecov
   - requests-mock
   - mock
+  - pooch
 
   # Core
   - click

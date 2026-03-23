@@ -19,39 +19,39 @@ dependencies:
 
   # Core
   - click
-  - appdirs
-  - pydantic >2
+  - appdirs   # remove?
+  - pydantic >=2  # change everywhere to >=2 to be safe
   - pydantic-settings
   - numpy
   - pandas
-  - pebble
+  - pebble    # remove?
   - rdkit
   - openff-toolkit
   - openff-fragmenter
   - openff-forcefields >=2024.04.0
   - openeye-toolkits
   - multimethod
-  - scipy >=1.13.1
+  - scipy >=1.13.1 # remove pin?
 
   # Data services
   - requests
   - boto3
   - moto
-  - flask
-  - flask-cors
-  - typing-extensions
+  - flask      # remove
+  - flask-cors # remove
+  - typing-extensions # remove
   - biopython
-  - validators
+  - validators # remove
   - pyyaml
-  - ase
-  - sigfig
+  - ase        # remove
+  - sigfig     # consider replacing; see usage
 
   # Execution
   - dask
-  - distributed
-  - dask-jobqueue
-  - dask-cuda
-  - netifaces
+  - distributed   # remove
+  - dask-jobqueue # remove
+  - dask-cuda     # remove
+  - netifaces     # remove
 
   # Sequence alignment
   - mafft
@@ -59,15 +59,15 @@ dependencies:
   # ML
   - pytorch
   - pytorch_geometric >=2.5.0
-  - pytorch_cluster
-  - pytorch_scatter
-  - pytorch_sparse
+  - pytorch_cluster # remove?
+  - pytorch_scatter # remove?
+  - pytorch_sparse  # remove?
   - h5py
   - e3nn
-  - dgl <=2.0.0
+  - dgl <=2.0.0     # try to remove pin?
   - dgllife
   - pooch
-  - mtenn =0.6.2
+  - mtenn =0.6.3   # remove pin?
   - wandb
 
   # Simulation / MD
@@ -98,8 +98,8 @@ dependencies:
   - pymol-open-source
   - gifsicle
   - plip
-  - plotly
-  - dash
+  - plotly  # remove
+  - dash    # remove
   - pygifsicle
   - airium
   - logomaker
