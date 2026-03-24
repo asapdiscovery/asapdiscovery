@@ -14,7 +14,7 @@ from multimethod import multimethod
 from pydantic import BaseModel, Field, field_validator
 
 from asapdiscovery.data.backend.openeye import oedocking, oemol_to_pdb_string
-from asapdiscovery.data.backend.plip import compute_fint_score
+from asapdiscovery.spectrum.plip import compute_fint_score
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.schema.target import TargetIdentifiers

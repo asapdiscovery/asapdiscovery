@@ -22,7 +22,7 @@ from asapdiscovery.data.backend.openeye import (
     oemol_to_sdf_string,
     openeye_perceive_residues,
 )
-from asapdiscovery.data.backend.plip import (
+from asapdiscovery.spectrum.plip import (
     get_interactions_plip,
     make_color_res_fitness,
     make_color_res_subpockets,

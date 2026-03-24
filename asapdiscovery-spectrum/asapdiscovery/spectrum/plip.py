@@ -16,6 +16,10 @@ from asapdiscovery.data.backend.openeye import (
 )
 from asapdiscovery.data.metadata.resources import FINTSCORE_PARAMETERS
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
+from asapdiscovery.spectrum.fitness import (
+    parse_fitness_json,
+    target_has_fitness_data,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +65,6 @@ def make_color_res_fitness(protein, target) -> dict[str, str]:
     """
     Based on fitness coloring, creates a dict where keys are colors, values are residue numbers.
     """
-    from asapdiscovery.spectrum.fitness import parse_fitness_json
-
     # get a list of all residue numbers of the protein.
     protein_residues = [
         oechem.OEAtomGetResidue(atom).GetResidueNumber() for atom in protein.GetAtoms()
@@ -309,8 +311,6 @@ def compute_fint_score(
     fint_score: float
         FINTscore which is computed as the `intn_score` with penalties applied
     """
-    from asapdiscovery.spectrum.fitness import target_has_fitness_data
-
     if not target_has_fitness_data(target):
         raise ValueError(
             f"Target {target} does not have fitness data, cannot compute FINTscore."
