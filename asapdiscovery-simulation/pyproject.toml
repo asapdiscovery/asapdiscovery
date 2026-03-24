@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "asapdiscovery-data",
     "asapdiscovery-docking",
+    "asapdiscovery-cli",
 ]
 
 [project.urls]

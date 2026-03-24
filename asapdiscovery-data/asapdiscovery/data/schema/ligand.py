@@ -389,9 +389,9 @@ class Ligand(DataModelAbstractBase):
         """
         Convert to an openfe SmallMoleculeComponent via the rdkit interface.
         """
-        import openfe
+        import gufe
 
-        return openfe.SmallMoleculeComponent.from_rdkit(self.to_rdkit())
+        return gufe.SmallMoleculeComponent.from_rdkit(self.to_rdkit())
 
     @classmethod
     def from_openfe(cls, mol: "openfe.SmallMoleculeComponent", **kwargs) -> "Ligand":

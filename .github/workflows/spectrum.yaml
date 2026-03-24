@@ -78,6 +78,7 @@ jobs:
       run: |
         python -m pip install -e ./asapdiscovery-data --no-deps
         python -m pip install -e ./asapdiscovery-modeling --no-deps
+        python -m pip install -e ./asapdiscovery-ml --no-deps
         python -m pip install -e ./asapdiscovery-spectrum --no-deps
         python -m pip install -e ./asapdiscovery-cli --no-deps
         micromamba list
