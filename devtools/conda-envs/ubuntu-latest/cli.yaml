@@ -48,10 +48,10 @@ dependencies:
 
   # Execution
   - dask
-  - distributed
-  - dask-jobqueue
-  - dask-cuda
-  - netifaces
+#  - distributed
+#  - dask-jobqueue
+#  - dask-cuda
+#  - netifaces
 
   # Sequence alignment
   - mafft
