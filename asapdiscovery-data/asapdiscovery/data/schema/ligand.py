@@ -166,9 +166,11 @@ class Ligand(DataModelAbstractBase):
                 )
         return v
 
-    @field_validator("tags")
+    @field_validator("tags", mode="before")
     @classmethod
     def _validate_tags(cls, v):
+        # coerce non-string tag values to strings (legacy data may contain floats/ints)
+        v = {k: str(val) if not isinstance(val, str) else val for k, val in v.items()}
         # check that tags are not reserved attribute names and format partial charges
         reser_attr_names = cls.model_fields.keys()
         for k in v.keys():

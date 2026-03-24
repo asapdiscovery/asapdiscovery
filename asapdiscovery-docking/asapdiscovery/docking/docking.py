@@ -187,9 +187,11 @@ class DockingResult(BaseModel):
     probability: Optional[PositiveFloat] = Field(
         description="Probability"
     )  # not easy to get the probability from rescoring
-    pose_id: Optional[int] = Field(description="Nth returned pose from docking")
+    pose_id: Optional[int] = Field(
+        default=None, description="Nth returned pose from docking"
+    )
     num_poses: Optional[int] = Field(
-        description="Total number of poses returned from docking"
+        default=None, description="Total number of poses returned from docking"
     )
     provenance: dict[str, str] = Field(description="Provenance")
 

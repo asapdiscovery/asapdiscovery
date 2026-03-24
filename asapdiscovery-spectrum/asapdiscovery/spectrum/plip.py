@@ -1,3 +1,4 @@
+import glob
 import logging  # noqa: F401
 import os
 import subprocess
@@ -236,8 +237,15 @@ def get_interactions_plip(protein, pose, color_method, target) -> dict:
         subprocess.run(["plip", "-f", tmp_pdb, "-x", "-o", tmpdirname])
 
         # load the XML produced by PLIP that contains all the interaction data.
+        # PLIP >=3.0 names the report "{input_stem}_report.xml" instead of "report.xml".
+        xml_candidates = glob.glob(os.path.join(tmpdirname, "*report*.xml"))
+        if not xml_candidates:
+            raise FileNotFoundError(
+                f"No PLIP XML report found in {tmpdirname}. "
+                "Check that plip ran successfully."
+            )
         intn_dict_xml = xmltodict.parse(
-            ET.tostring(ET.parse(os.path.join(tmpdirname, "report.xml")).getroot())
+            ET.tostring(ET.parse(xml_candidates[0]).getroot())
         )
 
     intn_dict = {}
