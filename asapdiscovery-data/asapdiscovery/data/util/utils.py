@@ -320,7 +320,7 @@ def cdd_to_schema(cdd_csv, out_json=None, out_csv=None):
                     experimental_data=experimental_data,
                 )
             )
-        except pydantic.error_wrappers.ValidationError as e:
+        except pydantic.ValidationError as e:
             print(
                 "Error converting this row to ExperimentalCompoundData object:",
                 c,
@@ -446,7 +446,7 @@ def cdd_to_schema_v2(
                     experimental_data=experimental_data,
                 )
             )
-        except pydantic.error_wrappers.ValidationError as e:
+        except pydantic.ValidationError as e:
             print(
                 "Error converting this row to ExperimentalCompoundData object:",
                 c,

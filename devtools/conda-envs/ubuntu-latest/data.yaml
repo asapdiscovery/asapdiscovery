@@ -32,6 +32,7 @@ dependencies:
   - openeye-toolkits
   - multimethod
   - scipy >=1.13.1
+  - gufe >=1.7.2
 
   # Data services
   - pooch
@@ -49,9 +50,9 @@ dependencies:
 
   # Execution
   - dask
-#  - distributed
+  - distributed
 #  - dask-jobqueue
-#  - netifaces
+  - netifaces
 
   # Sequence alignment
   - mafft
