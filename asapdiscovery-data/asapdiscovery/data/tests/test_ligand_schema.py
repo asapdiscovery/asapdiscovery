@@ -599,7 +599,7 @@ def test_partial_charge_conversion(tmpdir):
         )
         molecule.charge_provenance = {
             "protocol": {"type": "OpenFF", "charge_method": "am1bcc"},
-            "provenance": {"openff": 1},
+            "provenance": {"openff": "1"},
         }
         # make sure the charges are set converting to rdkit on the atoms and molecule level
         rdkit_mol = molecule.to_rdkit()
@@ -652,7 +652,7 @@ def test_openfe_roundtrip_charges():
     )
     molecule.charge_provenance = {
         "protocol": {"type": "OpenFF", "charge_method": "am1bcc"},
-        "provenance": {"openff": 1},
+        "provenance": {"openff": "1"},
     }
 
     charge_warn = "Partial charges have been provided, these will preferentially be used instead of generating new partial charges"
