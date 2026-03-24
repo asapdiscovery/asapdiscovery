@@ -1,8 +1,13 @@
 import pytest
 
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector
-from asapdiscovery.data.operators.selectors.pairwise_selector import PairwiseSelector
-from asapdiscovery.data.schema.ligand import Ligand
+# The selectors transitively import asapdiscovery.docking at module load time,
+# so skip the entire module when docking is not installed.
+pytest.importorskip("asapdiscovery.docking", reason="asapdiscovery-docking not installed")
+
+from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector  # noqa: E402
+from asapdiscovery.data.operators.selectors.pairwise_selector import PairwiseSelector  # noqa: E402
+from asapdiscovery.data.schema.ligand import Ligand  # noqa: E402
+from asapdiscovery.docking.docking import DockingInputPair  # noqa: E402
 
 
 @pytest.mark.parametrize("use_dask", [True, False])
@@ -15,11 +20,6 @@ def test_pairwise_selector_prepped(ligands_from_complexes, prepped_complexes, us
 
 
 def test_mcs_select_prepped(ligands_from_complexes, prepped_complexes):
-    DockingInputPair = pytest.importorskip(
-        "asapdiscovery.docking.docking",
-        reason="asapdiscovery-docking not installed",
-    ).DockingInputPair
-
     selector = MCSSelector()
     pairs = selector.select(ligands_from_complexes, prepped_complexes, n_select=1)
     # should be 4 pairs
