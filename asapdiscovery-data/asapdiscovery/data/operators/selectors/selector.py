@@ -11,13 +11,13 @@ from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.schema_base import ComplexBase
 
 if TYPE_CHECKING:
+    from asapdiscovery.docking.docking import DockingInputPair
     from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.util.dask_utils import (
     FailureMode,
     actualise_dask_delayed_iterable,
 )
-from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
 
 
 class SelectorBase(abc.ABC, BaseModel):
@@ -83,6 +83,8 @@ class SelectorBase(abc.ABC, BaseModel):
         if isinstance(complex, Complex):
             return CompoundStructurePair
         elif isinstance(complex, ComplexBase):
+            from asapdiscovery.docking.docking import DockingInputPair
+
             return DockingInputPair
         else:
             raise ValueError(f"Unknown complex type: {type(complex)}")
