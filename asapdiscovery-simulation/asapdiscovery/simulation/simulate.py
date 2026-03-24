@@ -203,7 +203,11 @@ class VanillaMDSimulator(SimulatorBase):
             raise ValueError("RMSD restraint atom indices must be a list of ints")
         return v
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+        ignored_types=(multimethod,),
+    )
 
     @model_validator(mode="after")
     def check_restraint_setup(self):

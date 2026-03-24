@@ -94,7 +94,9 @@ class GIFVisualizer(VisualizerBase):
     interval: PositiveInt = Field(1, description="Interval between frames")
     debug: bool = Field(False, description="Whether to run in debug mode")
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True, ignored_types=(multimethod,)
+    )
 
     @dask_vmap(["inputs"], has_failure_mode=True)
     @backend_wrapper("inputs")

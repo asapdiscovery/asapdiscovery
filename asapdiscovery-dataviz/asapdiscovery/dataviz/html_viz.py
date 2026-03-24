@@ -103,9 +103,9 @@ class HTMLVisualizer(VisualizerBase):
     active_site_chain: Optional[str] = Field(
         None, description="Mobile chain ID to align."
     )
-    fitness_data: Optional[Any]
-    fitness_data_logoplots: Optional[Any]
-    reference_protein: Optional[Any]
+    fitness_data: Optional[Any] = None
+    fitness_data_logoplots: Optional[Any] = None
+    reference_protein: Optional[Any] = None
 
     @model_validator(mode="before")
     @classmethod

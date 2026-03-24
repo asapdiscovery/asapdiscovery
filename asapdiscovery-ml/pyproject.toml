@@ -20,6 +20,8 @@ classifiers = [
 ]
 dependencies = [
     "asapdiscovery-data",
+    "asapdiscovery-alchemy",
+    "asapdiscovery-cli",
 ]
 
 [project.urls]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 from pydantic import Field
 
@@ -28,7 +29,9 @@ class Complex(ComplexBase):
 
     target: Target = Field(description="Target schema object")
     ligand: Ligand = Field(description="Ligand schema object")
-    ligand_chain: str = Field(None, description="Chain ID of ligand in complex")
+    ligand_chain: Optional[str] = Field(
+        default=None, description="Chain ID of ligand in complex"
+    )
 
     # Overload from base class to check target and ligand individually
     def data_equal(self, other: Complex):

@@ -505,8 +505,8 @@ class MLModelRegistry(BaseModel):
     models: dict[str, MLModelSpecBase] = Field(
         ..., description="Models in the model registry, keyed by name"
     )
-    source_yaml: Optional[str] = Field(
-        None, description="Source yaml file for model registry"
+    source_yaml: Optional[Union[str, Path]] = Field(
+        default=None, description="Source yaml file for model registry"
     )
     time_updated: datetime = Field(datetime.utcnow(), description="Time last updated")
 

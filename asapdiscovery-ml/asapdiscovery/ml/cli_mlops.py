@@ -21,7 +21,6 @@ from mtenn.config import GATModelConfig
 from openff.toolkit import Molecule
 from openff.toolkit.utils.exceptions import RadicalsNotSupportedError
 
-from asapdiscovery.alchemy.cli.utils import has_warhead
 from asapdiscovery.cli.cli_args import loglevel
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.aws.s3 import S3
@@ -434,6 +433,7 @@ def _gather_and_clean_data(
         DataFrame containing the cleaned data
     """
 
+    from asapdiscovery.alchemy.cli.utils import has_warhead
     from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
     from asapdiscovery.data.services.services_config import CDDSettings
     from asapdiscovery.data.util.utils import parse_fluorescence_data_cdd
