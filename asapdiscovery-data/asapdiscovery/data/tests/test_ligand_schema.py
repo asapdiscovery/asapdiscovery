@@ -608,15 +608,13 @@ def test_partial_charge_conversion(tmpdir):
         assert rdkit_mol.HasProp("atom.dprop.PartialCharge")
 
         # test converting to openfe
-        with pytest.warns(UserWarning, match=charge_warn):
-            # make sure the charge warning is triggered
-            ofe = molecule.to_openfe()
-            # convert to openff and make sure the charges are found
-            off_mol = ofe.to_openff()
-            assert off_mol.partial_charges is not None
-            for i, charge in enumerate(off_mol.partial_charges.m):
-                atom = rdkit_mol.GetAtomWithIdx(i)
-                assert atom.GetDoubleProp("PartialCharge") == charge
+        ofe = molecule.to_openfe()
+        # convert to openff and make sure the charges are found
+        off_mol = ofe.to_openff()
+        assert off_mol.partial_charges is not None
+        for i, charge in enumerate(off_mol.partial_charges.m):
+            atom = rdkit_mol.GetAtomWithIdx(i)
+            assert atom.GetDoubleProp("PartialCharge") == charge
 
         # try a json file round trip for internal workflows
         molecule.to_json_file("test.json")

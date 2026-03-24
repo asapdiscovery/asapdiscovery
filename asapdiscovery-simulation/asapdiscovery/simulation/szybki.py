@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import ClassVar, Optional
 
 import pandas as pd
 from openmm import unit
@@ -20,7 +20,7 @@ class SzybkiFreeformResult(BaseModel):
     szybki_global_strain: float
     szybki_local_strain: float
     szybki_conformer_strain: float
-    units = unit.kilocalories_per_mole
+    units: ClassVar = unit.kilocalories_per_mole
 
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
