@@ -59,3 +59,4 @@ dependencies:
 
   # Spectrum
   - bokeh
+  - plip

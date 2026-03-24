@@ -37,7 +37,9 @@ class ExperimentalCompoundData(BaseModel):
         description="If True, the compound was enantiopure, but unknown if stereochemistry recorded in SMILES is correct",
     )
 
-    date_created: Optional[date] = Field(None, description="Date the molecule was created.")
+    date_created: Optional[date] = Field(
+        None, description="Date the molecule was created."
+    )
 
     experimental_data: dict[str, float | Any] = Field(
         default_factory=dict,

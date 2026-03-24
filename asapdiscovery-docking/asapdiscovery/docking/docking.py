@@ -18,12 +18,12 @@ from asapdiscovery.data.backend.openeye import (
     split_openeye_design_unit,
 )
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
 from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
+from asapdiscovery.modeling.schema import PreppedComplex
 
 logger = logging.getLogger(__name__)
 

@@ -55,3 +55,4 @@ dependencies:
   # Spectrum
   # Note: bokeh is a transitive dep of panel; included here for spectrum's plotting
   - bokeh
+  - plip

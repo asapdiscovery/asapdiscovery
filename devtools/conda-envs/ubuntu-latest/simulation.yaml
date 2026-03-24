@@ -57,6 +57,9 @@ dependencies:
   # Sequence alignment
   - mafft
 
+  # Spectrum (transitive dep via docking -> spectrum.plip)
+  - plip
+
   # Simulation / MD
   - openmm
   - openmmforcefields >= 0.13.0

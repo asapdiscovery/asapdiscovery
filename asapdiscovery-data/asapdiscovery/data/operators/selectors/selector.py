@@ -30,17 +30,17 @@ class SelectorBase(abc.ABC, BaseModel):
     def selector_type(self) -> str: ...
 
     @abc.abstractmethod
-    def _select(self) -> list[Union[CompoundStructurePair, DockingInputPair]]: ...
+    def _select(self) -> list[CompoundStructurePair | DockingInputPair]: ...
 
     def select(
         self,
         ligands: list[Ligand],
-        complexes: list[Union[Complex, PreppedComplex]],
+        complexes: list[Complex | PreppedComplex],
         use_dask: bool = False,
         dask_client=None,
         failure_mode=FailureMode.SKIP,
         **kwargs,
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair | DockingInputPair]:
         if use_dask:
             delayed_outputs = []
             for lig in ligands:
@@ -65,7 +65,7 @@ class SelectorBase(abc.ABC, BaseModel):
 
     @staticmethod
     def _pair_type_from_complex(
-        complex: Union[Complex, PreppedComplex]
+        complex: Complex | PreppedComplex
     ) -> Literal["CompoundStructurePair", "DockingInputPair"]:
         """
         Returns the pair type that matches a given Complex type.

@@ -50,7 +50,7 @@ class PreppedTarget(DataModelAbstractBase):
 
     target_name: str = Field(None, description="The name of the target")
 
-    ids: Optional[TargetIdentifiers] = Field(
+    ids: TargetIdentifiers | None = Field(
         None,
         description="TargetIdentifiers Schema for identifiers associated with this target",
     )
@@ -69,7 +69,7 @@ class PreppedTarget(DataModelAbstractBase):
         description="A unique reproducible hash based on the contents of the pdb file which created the target.",
     )
 
-    crystal_symmetry: Optional[Any] = Field(
+    crystal_symmetry: Any | None = Field(
         None,
         description="bounding box of the target, lost in oedu conversion so can be saved as attribute.",
     )
@@ -89,7 +89,7 @@ class PreppedTarget(DataModelAbstractBase):
         return v
 
     @classmethod
-    def from_oedu(cls, oedu: oechem.OEDesignUnit, **kwargs) -> "PreppedTarget":
+    def from_oedu(cls, oedu: oechem.OEDesignUnit, **kwargs) -> PreppedTarget:
         kwargs.pop("data", None)
         oedu_bytes = oedu_to_bytes64(oedu)
         return cls(data=oedu_bytes, **kwargs)
@@ -98,12 +98,12 @@ class PreppedTarget(DataModelAbstractBase):
         return bytes64_to_oedu(self.data)
 
     @classmethod
-    def from_oedu_file(cls, oedu_file: Union[str, Path], **kwargs) -> "PreppedTarget":
+    def from_oedu_file(cls, oedu_file: str | Path, **kwargs) -> PreppedTarget:
         kwargs.pop("data", None)
         oedu = load_openeye_design_unit(oedu_file)
         return cls.from_oedu(oedu=oedu, **kwargs)
 
-    def to_oedu_file(self, filename: Union[str, Path]) -> None:
+    def to_oedu_file(self, filename: str | Path) -> None:
         oedu = self.to_oedu()
         save_openeye_design_unit(oedu, filename)
 

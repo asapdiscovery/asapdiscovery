@@ -15,8 +15,8 @@ from asapdiscovery.data.backend.openeye import (
     set_SD_data,
     smiles_to_oemol,
 )
-from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
+from asapdiscovery.modeling.schema import PreppedComplex
 
 RDLogger.DisableLog(
     "rdApp.*"

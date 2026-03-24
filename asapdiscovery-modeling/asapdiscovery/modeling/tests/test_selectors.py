@@ -2,10 +2,16 @@ import pytest
 
 # The selectors transitively import asapdiscovery.docking at module load time,
 # so skip the entire module when docking is not installed.
-pytest.importorskip("asapdiscovery.docking", reason="asapdiscovery-docking not installed")
+pytest.importorskip(
+    "asapdiscovery.docking", reason="asapdiscovery-docking not installed"
+)
 
-from asapdiscovery.data.operators.selectors.mcs_selector import MCSSelector  # noqa: E402
-from asapdiscovery.data.operators.selectors.pairwise_selector import PairwiseSelector  # noqa: E402
+from asapdiscovery.data.operators.selectors.mcs_selector import (  # noqa: E402
+    MCSSelector,
+)
+from asapdiscovery.data.operators.selectors.pairwise_selector import (  # noqa: E402
+    PairwiseSelector,
+)
 from asapdiscovery.data.schema.ligand import Ligand  # noqa: E402
 from asapdiscovery.docking.docking import DockingInputPair  # noqa: E402
 

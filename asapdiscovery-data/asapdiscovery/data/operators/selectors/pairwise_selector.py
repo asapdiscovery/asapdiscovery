@@ -24,7 +24,7 @@ class PairwiseSelector(SelectorBase):
     selector_type: ClassVar[str] = "PairwiseSelector"
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
+        self, ligands: list[Ligand], complexes: list[Complex | PreppedComplex]
     ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
@@ -52,7 +52,7 @@ class LeaveOneOutSelector(SelectorBase):
     selector_type: ClassVar[str] = "LeaveOneOutSelector"
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
+        self, ligands: list[Ligand], complexes: list[Complex | PreppedComplex]
     ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
@@ -83,7 +83,7 @@ class LeaveSimilarOutSelector(SelectorBase):
     selector_type: ClassVar[str] = "LeaveSimilarOutSelector"
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
+        self, ligands: list[Ligand], complexes: list[Complex | PreppedComplex]
     ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
@@ -119,7 +119,7 @@ class SelfDockingSelector(SelectorBase):
     selector_type: ClassVar[str] = "SelfDockingSelector"
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
+        self, ligands: list[Ligand], complexes: list[Complex | PreppedComplex]
     ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")

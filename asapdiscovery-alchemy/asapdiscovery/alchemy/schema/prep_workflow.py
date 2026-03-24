@@ -16,12 +16,12 @@ from asapdiscovery.data.operators.state_expanders.stereo_expander import StereoE
 from asapdiscovery.data.operators.state_expanders.tautomer_expander import (
     TautomerExpander,
 )
-from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
     RDKitConstrainedPoseGenerator,
 )
+from asapdiscovery.modeling.schema import PreppedComplex
 
 
 class _AlchemyPrepBase(_SchemaBase):

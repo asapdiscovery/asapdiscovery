@@ -22,11 +22,6 @@ from asapdiscovery.data.backend.openeye import (
     oemol_to_sdf_string,
     openeye_perceive_residues,
 )
-from asapdiscovery.spectrum.plip import (
-    get_interactions_plip,
-    make_color_res_fitness,
-    make_color_res_subpockets,
-)
 from asapdiscovery.data.metadata.resources import active_site_chains, master_structures
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
@@ -46,6 +41,11 @@ from asapdiscovery.spectrum.fitness import (
     get_fitness_scores_bloom_by_target,
     parse_fitness_json,
     target_has_fitness_data,
+)
+from asapdiscovery.spectrum.plip import (
+    get_interactions_plip,
+    make_color_res_fitness,
+    make_color_res_subpockets,
 )
 
 logger = logging.getLogger(__name__)

@@ -53,6 +53,7 @@ dependencies:
 
   # Simulation (dataviz imports simulation.simulate)
   - openmm
+  - openmmtools
   - openmmforcefields >= 0.13.0
   - mdtraj
 

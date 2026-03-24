@@ -123,6 +123,7 @@ def input_json(func):
 
 def ml_scorers(func):
     from asapdiscovery.ml.models import ASAPMLModelRegistry
+
     return click.option(
         "--ml-scorer",
         type=click.Choice(
@@ -217,6 +218,7 @@ def md_steps(func):
 
 def md_openmm_platform(func):
     from asapdiscovery.simulation.simulate import OpenMMPlatform
+
     return click.option(
         "--md-openmm-platform",
         type=click.Choice(OpenMMPlatform.get_values(), case_sensitive=False),

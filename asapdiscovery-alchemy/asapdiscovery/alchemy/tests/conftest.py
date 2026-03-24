@@ -9,10 +9,10 @@ from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
+from asapdiscovery.modeling.schema import PreppedComplex
 
 
 @pytest.fixture(scope="session")

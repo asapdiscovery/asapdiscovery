@@ -130,18 +130,18 @@ class MCSSelector(SelectorBase):
     def select(
         self,
         ligands: list[Ligand],
-        complexes: list[Union[Complex, PreppedComplex]],
+        complexes: list[Complex | PreppedComplex],
         **kwargs,
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair | DockingInputPair]:
         outputs = self._select(ligands=ligands, complexes=complexes, **kwargs)
         return outputs
 
     def _select(
         self,
         ligands: list[Ligand],
-        complexes: list[Union[Complex, PreppedComplex]],
+        complexes: list[Complex | PreppedComplex],
         n_select: int = 1,
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair | DockingInputPair]:
         """
         Selects ligand and complex pairs based on maximum common substructure
         (MCS) search.
@@ -286,12 +286,12 @@ class RascalMCESSelector(SelectorBase):
     def select(
         self,
         ligands: list[Ligand],
-        complexes: list[Union[Complex, PreppedComplex]],
+        complexes: list[Complex | PreppedComplex],
         use_dask: bool = False,
         dask_client=None,
         failure_mode: str = FailureMode.SKIP,
         **kwargs,
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair | DockingInputPair]:
         outputs = self._select(
             ligands=ligands,
             complexes=complexes,
@@ -305,12 +305,12 @@ class RascalMCESSelector(SelectorBase):
     def _select(
         self,
         ligands: list[Ligand],
-        complexes: list[Union[Complex, PreppedComplex]],
+        complexes: list[Complex | PreppedComplex],
         n_select: int = 1,
         use_dask: bool = False,
         dask_client=None,
         failure_mode: str = FailureMode.SKIP,
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair | DockingInputPair]:
 
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
