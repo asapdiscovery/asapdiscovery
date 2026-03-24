@@ -233,7 +233,7 @@ class Ligand(DataModelAbstractBase):
                         f"Tag {key} with value {value} is not hashable and will not be saved"
                     )
 
-        kwargs["tags"] = dict(tags)
+        kwargs["tags"] = {k: str(v) for k, v in tags}
 
         # Do the same thing for the conformer tags, only keeping the ones in 'tags'
         conf_tags_list = []

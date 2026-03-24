@@ -60,5 +60,6 @@ dependencies:
   # Simulation / MD
   - openmm
   - openmmforcefields >= 0.13.0
+  - openmmtools
   - mdtraj
   - cudatoolkit

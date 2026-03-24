@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -7,12 +7,12 @@ from pydantic import BaseModel, ConfigDict, Field
 class ExperimentalCompoundData(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    compound_id: str = Field(
+    compound_id: Optional[str] = Field(
         None,
         description="The unique compound identifier (PostEra or enumerated ID)",
     )
 
-    smiles: str = Field(
+    smiles: Optional[str] = Field(
         None,
         description="OpenEye canonical isomeric SMILES string defining suspected SMILES of racemic mixture (with unspecified stereochemistry) or specific enantiopure compound (if racemic=False); may differ from what is registered under compound_id.",
     )
@@ -37,7 +37,7 @@ class ExperimentalCompoundData(BaseModel):
         description="If True, the compound was enantiopure, but unknown if stereochemistry recorded in SMILES is correct",
     )
 
-    date_created: date = Field(None, description="Date the molecule was created.")
+    date_created: Optional[date] = Field(None, description="Date the molecule was created.")
 
     experimental_data: dict[str, float | Any] = Field(
         default_factory=dict,
