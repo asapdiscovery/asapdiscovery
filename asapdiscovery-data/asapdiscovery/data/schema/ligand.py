@@ -233,7 +233,7 @@ class Ligand(DataModelAbstractBase):
                         f"Tag {key} with value {value} is not hashable and will not be saved"
                     )
 
-        kwargs["tags"] = tags
+        kwargs["tags"] = dict(tags)
 
         # Do the same thing for the conformer tags, only keeping the ones in 'tags'
         conf_tags_list = []
@@ -241,7 +241,7 @@ class Ligand(DataModelAbstractBase):
             if key in keys_to_save:
                 conf_tags_list.append((key, value))
 
-        kwargs["conf_tags"] = conf_tags_list
+        kwargs["conf_tags"] = dict(conf_tags_list)
 
         # clean the sdf data for the internal model
         sdf_str = oemol_to_sdf_string(clear_SD_data(input_mol))
