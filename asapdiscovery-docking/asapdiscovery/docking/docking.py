@@ -185,7 +185,7 @@ class DockingResult(BaseModel):
     input_pair: DockingInputPair = Field(description="Input pair")
     posed_ligand: Ligand = Field(description="Posed ligand")
     probability: Optional[PositiveFloat] = Field(
-        description="Probability"
+        default=None, description="Probability"
     )  # not easy to get the probability from rescoring
     pose_id: Optional[int] = Field(
         default=None, description="Nth returned pose from docking"

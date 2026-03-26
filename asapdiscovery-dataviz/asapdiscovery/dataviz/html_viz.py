@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from airium import Airium
 from multimethod import multimethod
-from pydantic import Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
@@ -106,6 +106,8 @@ class HTMLVisualizer(VisualizerBase):
     fitness_data: Optional[Any] = None
     fitness_data_logoplots: Optional[Any] = None
     reference_protein: Optional[Any] = None
+
+    model_config = ConfigDict(ignored_types=(multimethod,))
 
     @model_validator(mode="before")
     @classmethod

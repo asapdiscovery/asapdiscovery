@@ -395,7 +395,13 @@ class POSITDocker(DockingBase):
                                 docking_results.append(docking_result)
 
             except Exception as e:
-                error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name} with error: {e}"
+                if isinstance(set, DockingInputMultiStructure):
+                    target_name = ", ".join(
+                        c.target.target_name for c in set.complexes
+                    )
+                else:
+                    target_name = set.complex.target.target_name
+                error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {target_name} with error: {e}"
                 if failure_mode == "skip":
                     logger.error(error_msg)
                 elif failure_mode == "raise":
