@@ -792,25 +792,39 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
             experimental_uncertainty=plotting_df["uncertainty (pIC50) (EXPT)"],
         )
         # calculate the bootstrapped stats using cinnabar
+        # Monkey-patch np.random.normal to return scalars when size=1,
+        # working around cinnabar/numpy 2.x incompatibility
+        _orig_normal = np.random.normal
+
+        def _normal_scalar_compat(*args, **kwargs):
+            result = _orig_normal(*args, **kwargs)
+            if isinstance(result, np.ndarray) and result.size == 1:
+                return result.item()
+            return result
+
+        np.random.normal = _normal_scalar_compat
         stats_data = []
-        for statistic in ["RMSE", "MUE", "R2", "rho"]:
-            s = stats.bootstrap_statistic(
-                plotting_df["pIC50 (EXPT)"],
-                plotting_df["pIC50 (FECS)"],
-                plotting_df["uncertainty (pIC50) (EXPT)"],
-                plotting_df["uncertainty (pIC50) (FECS)"],
-                statistic=statistic,
-                include_true_uncertainty=False,
-                include_pred_uncertainty=False,
-            )
-            stats_data.append(
-                {
-                    "Statistic": statistic,
-                    "value": s["mle"],
-                    "lower bound": s["low"],
-                    "upper bound": s["high"],
-                }
-            )
+        try:
+            for statistic in ["RMSE", "MUE", "R2", "rho"]:
+                s = stats.bootstrap_statistic(
+                    plotting_df["pIC50 (EXPT)"].to_numpy(),
+                    plotting_df["pIC50 (FECS)"].to_numpy(),
+                    plotting_df["uncertainty (pIC50) (EXPT)"].to_numpy(),
+                    plotting_df["uncertainty (pIC50) (FECS)"].to_numpy(),
+                    statistic=statistic,
+                    include_true_uncertainty=False,
+                    include_pred_uncertainty=False,
+                )
+                stats_data.append(
+                        {
+                        "Statistic": statistic,
+                        "value": s["mle"],
+                        "lower bound": s["low"],
+                        "upper bound": s["high"],
+                    }
+                )
+        finally:
+            np.random.normal = _orig_normal
         stats_df = pd.DataFrame(stats_data)
         # create a format for numerical data in the tables
         stats_format = {col: number_format for col in stats_df.columns}

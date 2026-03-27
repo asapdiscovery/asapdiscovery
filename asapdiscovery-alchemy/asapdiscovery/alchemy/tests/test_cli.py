@@ -1049,7 +1049,8 @@ def test_predict_wrong_units(tyk2_result_network, tyk2_reference_data, tmpdir):
             )
     # make sure to clean the console when an error is raised
     console = rich.get_console()
-    console.clear_live()
+    if console._live_stack:
+        console.clear_live()
 
 
 def test_prioritize_weight_not_set(monkeypatch):
@@ -1094,7 +1095,8 @@ def test_prioritize_weight_not_set(monkeypatch):
         )
 
     console = rich.get_console()
-    console.clear_live()
+    if console._live_stack:
+        console.clear_live()
 
 
 @pytest.mark.skipif(
@@ -1107,7 +1109,8 @@ def test_alchemy_predict_disconnected_fail(tyk2_result_network_disconnected, tmp
 
     runner = CliRunner()
     console = rich.get_console()
-    console.clear_live()
+    if console._live_stack:
+        console.clear_live()
     with tmpdir.as_cwd():
         # write the results file to local
         tyk2_result_network_disconnected.to_file("result_network_disconnected.json")
@@ -1134,7 +1137,8 @@ def test_alchemy_predict_disconnected_success(tyk2_result_network_disconnected, 
 
     runner = CliRunner()
     console = rich.get_console()
-    console.clear_live()
+    if console._live_stack:
+        console.clear_live()
     with tmpdir.as_cwd():
         # write the results file to local
         tyk2_result_network_disconnected.to_file("result_network_disconnected.json")
@@ -1162,7 +1166,8 @@ def test_alchemy_predict_clean_fail(tyk2_result_network_ddg0s, tmpdir):
 
     runner = CliRunner()
     console = rich.get_console()
-    console.clear_live()
+    if console._live_stack:
+        console.clear_live()
     with tmpdir.as_cwd():
         # run predict as normal while keeping largest subnetwork - should return an error
         with pytest.raises(
@@ -1185,7 +1190,8 @@ def test_alchemy_predict_clean_success(tyk2_result_network_ddg0s, tmpdir):
 
     runner = CliRunner()
     console = rich.get_console()
-    console.clear_live()
+    if console._live_stack:
+        console.clear_live()
     with tmpdir.as_cwd():
         # run predict as normal while keeping largest subnetwork and clean - should not return an error
         result = runner.invoke(
@@ -1442,7 +1448,8 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
             )
     # reset the console after an error
     console = rich.get_console()
-    console.clear_live()
+    if console._live_stack:
+        console.clear_live()
 
 
 def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
