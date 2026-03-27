@@ -20,7 +20,7 @@ dependencies:
   # Core
   - click
   - appdirs   # remove?
-  - pydantic >=2  # change everywhere to >=2 to be safe
+  - pydantic >2
   - pydantic-settings
   - numpy
   - pandas
