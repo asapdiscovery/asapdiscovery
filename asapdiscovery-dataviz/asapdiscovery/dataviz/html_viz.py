@@ -653,9 +653,14 @@ class HTMLVisualizer(VisualizerBase):
                     for resi, _ in self.fitness_data.items():
                         resnum, chain = resi.split("_")
                         # get the base64 for this residue in this chain.
-                        for fit_type, base64_bj in self.make_logoplot_input(
-                            resi
-                        ).items():
+                        try:
+                            logoplot_data = self.make_logoplot_input(resi)
+                        except Exception as e:
+                            logger.warning(
+                                f"Could not generate logoplot for residue {resi}: {e}"
+                            )
+                            continue
+                        for fit_type, base64_bj in logoplot_data.items():
                             with a.div(
                                 klass=f"logoplotbox_{fit_type}",
                                 id=f"{fit_type}DIV_{resnum}_{chain}",
@@ -844,12 +849,14 @@ class HTMLVisualizer(VisualizerBase):
                 f"Warning: no unfit residues found for residue {resi} in chain {chain}."
             )
             # make a dataframe with a fake unfit mutant instead.
+            # Use "A" (alanine) as a safe placeholder compatible with
+            # logomaker's dmslogo_funcgroup color scheme.
             site_df_unfit = pd.DataFrame(
                 [
                     {
                         "gene": site_df_fit["gene"].values[0],
                         "site": resi,
-                        "mutant": "X",
+                        "mutant": "A",
                         "fitness": -0.00001,
                         "expected_count": 0,
                         "wildtype": site_df_fit["wildtype"].values[0],
