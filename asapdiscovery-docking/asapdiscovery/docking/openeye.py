@@ -413,7 +413,7 @@ class POSITDocker(DockingBase):
 
     def provenance(self) -> dict[str, str]:
         return {
-            "oechem": oechem.OEChemGetVersion(),
-            "oeomega": oeomega.OEOmegaGetVersion(),
-            "oedocking": oedocking.OEDockingGetVersion(),
+            "oechem": str(oechem.OEChemGetVersion()),
+            "oeomega": str(oeomega.OEOmegaGetVersion()),
+            "oedocking": str(oedocking.OEDockingGetVersion()),
         }

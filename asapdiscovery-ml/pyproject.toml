@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "asapdiscovery-data",
     "asapdiscovery-alchemy",
+    "asapdiscovery-docking",
     "asapdiscovery-cli",
 ]
 

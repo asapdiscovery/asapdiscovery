@@ -116,7 +116,7 @@ class MLModelSpec(MLModelSpecBase):
             Local model spec
         """
 
-        weights_url = urljoin(self.base_url, self.weights_resource)
+        weights_url = urljoin(str(self.base_url), self.weights_resource)
         try:
             weights_file = Path(
                 pooch.retrieve(
@@ -132,7 +132,7 @@ class MLModelSpec(MLModelSpecBase):
 
         # fetch config
         if self.config_resource:
-            config_url = urljoin(self.base_url, self.config_resource)
+            config_url = urljoin(str(self.base_url), self.config_resource)
             try:
                 config_file = Path(
                     pooch.retrieve(
@@ -236,7 +236,7 @@ class EnsembleMLModelSpec(MLModelSpecBase):
         if not all([model.base_url == base_url for model in self.models]):
             raise ValueError("All models in an ensemble must have the same base url")
         # get plot at baseurl/plotname
-        plot_url = urljoin(base_url, plotname)
+        plot_url = urljoin(str(base_url), plotname)
 
         # pull using requests to in memory
         try:

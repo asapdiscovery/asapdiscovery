@@ -825,6 +825,12 @@ class HTMLVisualizer(VisualizerBase):
             _FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[self.target]]
         )
 
+        # filter to standard amino acid single-letter codes supported by
+        # logomaker's dmslogo_funcgroup color scheme (stops, gaps, and
+        # unknowns like '*', '-', 'X' cause a TypeError in logomaker 0.8)
+        _STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")
+        site_df = site_df[site_df["mutant"].isin(_STANDARD_AA)]
+
         # split the mutant data into fit/unfit.
         site_df_fit = site_df[site_df["fitness"] > 0]
         site_df_unfit = site_df[site_df["fitness"] < 0]
