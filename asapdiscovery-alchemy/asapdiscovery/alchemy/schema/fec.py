@@ -437,7 +437,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
     model_config = ConfigDict(frozen=True, from_attributes=True)
 
     def to_openfe_receptor(self) -> openfe.ProteinComponent:
-        return openfe.ProteinComponent.from_json(self.receptor)
+        return openfe.ProteinComponent.from_json(content=self.receptor)
 
     def to_alchemical_network(self) -> openfe.AlchemicalNetwork:
         """

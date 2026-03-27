@@ -1039,12 +1039,18 @@ def clean_result_network(network, console=None, ddg_outlier_threshold=15):
         if len(results) > 1:
             # take the arithmetic mean of DG and dDG and add the replaced first result,
             # all provenance data is constant between these repeats anyway
-            mean_DG = np.mean([result.estimate.magnitude for result in results])
-            mean_dDG = np.mean([result.uncertainty.magnitude for result in results])
+            mean_DG = float(
+                np.mean([result.estimate.magnitude for result in results])
+            )
+            mean_dDG = float(
+                np.mean([result.uncertainty.magnitude for result in results])
+            )
             result_data = results[0].model_dump(exclude={"estimate", "uncertainty"})
 
             tf_res = TransformationResult(
-                estimate=mean_DG, uncertainty=mean_dDG, **result_data
+                estimate=mean_DG * unit.kilocalories_per_mole,
+                uncertainty=mean_dDG * unit.kilocalories_per_mole,
+                **result_data,
             )
 
         else:

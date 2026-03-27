@@ -1224,6 +1224,7 @@ def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):
     """
     Test submitting calculations to the bespokefit server and make sure that the ids are saved into the network
     """
+    pytest.importorskip("openff.bespokefit")
     from openff.bespokefit.executor.client import BespokeFitClient
 
     def submit_optimization(self, input_schema) -> str:
@@ -1258,6 +1259,7 @@ def test_bespoke_submit(tyk2_fec_network, monkeypatch, tmpdir):
 
 def test_bespoke_gather_missing(tyk2_fec_network, tmpdir):
     """Make sure we inform when no bespoke optimisations are found."""
+    pytest.importorskip("openff.bespokefit")
 
     runner = CliRunner()
     with tmpdir.as_cwd():
@@ -1278,6 +1280,7 @@ def test_bespoke_gather_missing(tyk2_fec_network, tmpdir):
 
 def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
     """Test gathering the parameters for molecules from a bespokefit server"""
+    pytest.importorskip("openff.bespokefit")
     from openff.bespokefit.executor.client import (
         BespokeExecutorOutput,
         BespokeExecutorStageOutput,
@@ -1374,6 +1377,7 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
 
 def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
     """Make sure an error is raised if only some results can be gathered"""
+    pytest.importorskip("openff.bespokefit")
 
     from openff.bespokefit.executor.client import (
         BespokeExecutorOutput,
@@ -1443,6 +1447,7 @@ def test_bespoke_gather_partial(tyk2_fec_network, monkeypatch, tmpdir):
 
 def test_bespoke_status(monkeypatch, tyk2_fec_network, tmpdir):
     """Test getting the status of some ligands in bespokefit"""
+    pytest.importorskip("openff.bespokefit")
     from openff.bespokefit.executor.client import (
         BespokeExecutorOutput,
         BespokeExecutorStageOutput,
