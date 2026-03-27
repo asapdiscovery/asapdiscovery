@@ -71,8 +71,8 @@ class CDDAPI(_BaseWebAPI):
             mol_data["molecules"] = compound_ids
             mol_data["async"] = "true"
         result = json.loads(
-            self._session.get(
-                url=self.api_url + "molecules/", json=mol_data
+            self._session.post(
+                url=self.api_url + "molecules/query", json=mol_data
             ).content.decode()
         )
         # handle missing molecules, originally found when searching moonshot data
@@ -87,8 +87,8 @@ class CDDAPI(_BaseWebAPI):
             mol_data["molecules"] = to_find
             # run the search again
             result = json.loads(
-                self._session.get(
-                    url=self.api_url + "molecules/", json=mol_data
+                self._session.post(
+                    url=self.api_url + "molecules/query", json=mol_data
                 ).content.decode()
             )
         if "async" in mol_data:
@@ -114,7 +114,7 @@ class CDDAPI(_BaseWebAPI):
         protocol_data = {}
         if protocol_names is not None:
             protocol_data["names"] = protocol_names
-        result = self._session.get(url=self.api_url + "protocols", json=protocol_data)
+        result = self._session.post(url=self.api_url + "protocols/query", json=protocol_data)
         result_data = json.loads(result.content.decode())
         return result_data["objects"]
 
@@ -143,7 +143,7 @@ class CDDAPI(_BaseWebAPI):
             readout_data["type"] = types
         if molecule_ids is not None:
             readout_data["molecules"] = molecule_ids
-        result = self._session.get(url=self.api_url + "readout_rows", json=readout_data)
+        result = self._session.post(url=self.api_url + "readout_rows/query", json=readout_data)
         request_id = json.loads(result.content.decode())["id"]
         result_data = self.get_async_export(job_id=request_id)
         if result_data["count"] == 0:

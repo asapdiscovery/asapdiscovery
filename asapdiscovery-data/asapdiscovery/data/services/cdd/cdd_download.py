@@ -88,7 +88,7 @@ def download_url(search_url, header, vault=None, timeout=5000, retry_delay=10):
         )
         sys.exit("Export failed")
 
-    # Send GET request for final export
+    # Send GET request for final export (no body, so GET is correct)
     result_url = f"{CDD_URL}/{vault}/exports/{export_id}"
     response = requests.get(result_url, headers=header)
 

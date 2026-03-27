@@ -424,7 +424,7 @@ def test_cdd_api_get_molecules(mocked_cdd_api, search, expected_result):
             return {"id": "1"}
 
     with requests_mock.Mocker() as m:
-        m.get(mocked_cdd_api.api_url + "molecules/", json=get_mols)
+        m.post(mocked_cdd_api.api_url + "molecules/query", json=get_mols)
         m.get(
             mocked_cdd_api.api_url + "exports/1",
             json={
@@ -448,7 +448,7 @@ def test_cdd_api_get_molecules_missing(mocked_cdd_api):
             return {"id": "1"}
 
     with requests_mock.Mocker() as m:
-        m.get(mocked_cdd_api.api_url + "molecules/", json=get_mols)
+        m.post(mocked_cdd_api.api_url + "molecules/query", json=get_mols)
         m.get(
             mocked_cdd_api.api_url + "exports/1",
             json={
@@ -468,7 +468,7 @@ def test_cdd_api_get_protocol(mocked_cdd_api, protocol_names):
     """Test pulling down protocol data."""
 
     with requests_mock.Mocker() as m:
-        m.get(mocked_cdd_api.api_url + "protocols", json={"objects": [{"id": 1}]})
+        m.post(mocked_cdd_api.api_url + "protocols/query", json={"objects": [{"id": 1}]})
         result = mocked_cdd_api.get_protocols(protocol_names=protocol_names)
         assert result == [{"id": 1}]
 
@@ -477,7 +477,7 @@ def test_cdd_api_readout_rows(mocked_cdd_api):
     """Test pulling down readout data using the api"""
 
     with requests_mock.Mocker() as m:
-        m.get(mocked_cdd_api.api_url + "readout_rows", json={"id": 2})
+        m.post(mocked_cdd_api.api_url + "readout_rows/query", json={"id": 2})
         m.get(
             mocked_cdd_api.api_url + "exports/2",
             json={"count": 2, "objects": [{"id": 2}, {"id": 3}]},
@@ -538,13 +538,13 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
     }
     with requests_mock.Mocker() as m:
         # mock the required protocols
-        m.get(mocked_cdd_api.api_url + "protocols", json=mock_protocol_response)
+        m.post(mocked_cdd_api.api_url + "protocols/query", json=mock_protocol_response)
         # mock the return of the async request
-        m.get(mocked_cdd_api.api_url + "readout_rows", json={"id": 100})
+        m.post(mocked_cdd_api.api_url + "readout_rows/query", json={"id": 100})
         # mock the export request for the readout rows
         m.get(mocked_cdd_api.api_url + "exports/100", json=mock_readout_response)
         # mock the molecule async request
-        m.get(mocked_cdd_api.api_url + "molecules/", json={"id": 101})
+        m.post(mocked_cdd_api.api_url + "molecules/query", json={"id": 101})
         m.get(mocked_cdd_api.api_url + "exports/101", json=mock_molecule_response)
         ic50_df = mocked_cdd_api.get_ic50_data(protocol_name=assay_name)
         # check the values were collected correctly
