@@ -51,7 +51,7 @@ class Trainer(BaseModel):
     optimizer_config: OptimizerConfig = Field(
         ..., description="Config describing the optimizer to use in training."
     )
-    model_config: ModelConfigBase = Field(
+    ml_model_config: ModelConfigBase = Field(
         ..., description="Config describing the model to train."
     )
     es_config: EarlyStoppingConfig = Field(
@@ -195,7 +195,7 @@ class Trainer(BaseModel):
 
     @field_validator(
         "optimizer_config",
-        "model_config",
+        "ml_model_config",
         "es_config",
         "ds_splitter_config",
         mode="before",
@@ -737,7 +737,7 @@ class Trainer(BaseModel):
                 # First build a dict mapping compound_id: idx in ds
                 compound_idx_dict = {}
                 for i, (compound, _) in enumerate(self.ds):
-                    if self.model_config.grouped:
+                    if self.ml_model_config.grouped:
                         compound_id = compound
                     else:
                         compound_id = compound[1]
@@ -771,7 +771,7 @@ class Trainer(BaseModel):
                 weights_path = self.output_dir / f"{self.start_epoch - 1}.th"
                 if not weights_path.exists():
                     weights_path = self.output_dir / "weights.th"
-                self.model_config = self.model_config.update(
+                self.ml_model_config = self.ml_model_config.update(
                     {
                         "model_weights": torch.load(
                             weights_path, map_location=self.device
@@ -801,7 +801,7 @@ class Trainer(BaseModel):
             dataset_to_csv(self.ds_test, self.output_dir / "ds_test.csv")
 
         # Build the Model
-        self.model = self.model_config.build().to(self.device)
+        self.model = self.ml_model_config.build().to(self.device)
 
         # Build the Optimizer
         self.optimizer = self.optimizer_config.build(self.model.parameters())
@@ -911,7 +911,7 @@ class Trainer(BaseModel):
                 )
 
                 # Get input poses for GroupedModel
-                if self.model_config.grouped:
+                if self.ml_model_config.grouped:
                     model_inp = []
                     for single_pose in pose["poses"]:
                         # Apply all data augmentations
@@ -1066,7 +1066,7 @@ class Trainer(BaseModel):
                 )
 
                 # Get input poses for GroupedModel
-                if self.model_config.grouped:
+                if self.ml_model_config.grouped:
                     model_inp = pose["poses"]
                 else:
                     model_inp = pose
@@ -1157,7 +1157,7 @@ class Trainer(BaseModel):
                 )
 
                 # Get input poses for GroupedModel
-                if self.model_config.grouped:
+                if self.ml_model_config.grouped:
                     model_inp = pose["poses"]
                 else:
                     model_inp = pose
@@ -1327,7 +1327,7 @@ class Trainer(BaseModel):
 
         # write to json
         model_config_path = self.output_dir / "model_config.json"
-        model_config_path.write_text(self.model_config.model_dump_json())
+        model_config_path.write_text(self.ml_model_config.model_dump_json())
 
         # copy over the final to tagged model if present
         import shutil

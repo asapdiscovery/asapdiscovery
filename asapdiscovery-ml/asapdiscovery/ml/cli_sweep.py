@@ -239,7 +239,7 @@ def sweep_gat(
 
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -479,7 +479,7 @@ def sweep_schnet(
 
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -721,7 +721,7 @@ def sweep_e3nn(
 
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -973,7 +973,7 @@ def sweep_visnet(
 
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,

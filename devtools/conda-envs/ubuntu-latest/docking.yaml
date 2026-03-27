@@ -59,6 +59,9 @@ dependencies:
   # Docking
   - mdanalysis
 
+  # Spectrum (required: docking.scorer imports spectrum.plip, spectrum.fitness)
+  - plip
+
   # ML (required: docking.scorer imports ml.inference, ml.models at top level)
   - pytorch
   - pytorch_geometric >=2.5.0

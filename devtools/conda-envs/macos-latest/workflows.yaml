@@ -67,6 +67,7 @@ dependencies:
 
   # Simulation / MD
   - openmm
+  - openmmtools
   - openmmforcefields >= 0.13.0
   - mdtraj
 

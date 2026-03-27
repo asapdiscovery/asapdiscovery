@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import pandas
 import torch
@@ -21,14 +23,14 @@ class TrainingPrediction(BaseModel):
     target_val: float | torch.Tensor = Field(
         ..., description="Target value to predict."
     )
-    in_range: int = Field(
+    in_range: Optional[int] = Field(
         None,
         description=(
             "Whether target is below (-1), within (0), or above (1) the assay range. "
             "Not always applicable."
         ),
     )
-    uncertainty: float = Field(
+    uncertainty: Optional[float] = Field(
         None, description="Uncertainty in experimental measurement."
     )
 
@@ -114,6 +116,13 @@ class TrainingPredictionTracker(BaseModel):
                 "All dict values must be lists, got "
                 f"{[type(v) for v in split_dict.values()]}"
             )
+
+        # Convert any dicts to TrainingPrediction objects (pydantic v2 mode="before")
+        for key in split_dict:
+            split_dict[key] = [
+                TrainingPrediction(**v) if isinstance(v, dict) else v
+                for v in split_dict[key]
+            ]
 
         # Make sure all the lists have the right types in them
         if not all(

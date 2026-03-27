@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from copy import deepcopy
 from glob import glob
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import torch
@@ -944,7 +944,7 @@ class LossFunctionConfig(ConfigBase):
     )
 
     # Value to fill in for semiquant uncertainty values in gaussian_sq loss
-    semiquant_fill: float = Field(
+    semiquant_fill: Optional[float] = Field(
         None,
         description=(
             "Value to fill in for semiquant uncertainty values in gaussian_sq loss."
@@ -952,10 +952,10 @@ class LossFunctionConfig(ConfigBase):
     )
 
     # Range values for RangeLoss
-    range_lower_lim: float = Field(
+    range_lower_lim: Optional[float] = Field(
         None, description="Lower range of acceptable prediction values."
     )
-    range_upper_lim: float = Field(
+    range_upper_lim: Optional[float] = Field(
         None, description="Upper range of acceptable prediction values."
     )
 

@@ -240,7 +240,6 @@ class InferenceBase(BaseModel):
 
         return cls(
             targets=local_model_spec.targets,
-            model_type=local_model_spec.type,
             model_name=local_model_spec.name,
             model_spec=model_spec,
             local_model_spec=local_model_spec,

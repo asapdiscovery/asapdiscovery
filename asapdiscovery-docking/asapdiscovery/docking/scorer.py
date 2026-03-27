@@ -123,15 +123,15 @@ class Score(BaseModel):
 
     score_type: ScoreType
     score: float
-    compound_name: Optional[str]
-    smiles: Optional[str]
-    ligand_identifiers: Optional[LigandIdentifiers]
-    ligand_inchikey: Optional[str]
-    target_name: Optional[str]
-    target_identifiers: Optional[TargetIdentifiers]
-    complex_ligand_smiles: Optional[str]
-    probability: Optional[float]
-    pose_id: Optional[int]
+    compound_name: Optional[str] = None
+    smiles: Optional[str] = None
+    ligand_identifiers: Optional[LigandIdentifiers] = None
+    ligand_inchikey: Optional[str] = None
+    target_name: Optional[str] = None
+    target_identifiers: Optional[TargetIdentifiers] = None
+    complex_ligand_smiles: Optional[str] = None
+    probability: Optional[float] = None
+    pose_id: Optional[int] = None
     units: ScoreUnits
     input: Optional[Any] = None
 
