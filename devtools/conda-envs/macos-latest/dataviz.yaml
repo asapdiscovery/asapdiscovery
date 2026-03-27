@@ -48,7 +48,7 @@ dependencies:
   # Execution
   - dask
   - distributed
-  - dask-jobqueue
+#  - dask-jobqueue
   - netifaces
 
   # Simulation (dataviz imports simulation.simulate)

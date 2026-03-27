@@ -27,6 +27,7 @@ dependencies:
   - pebble
   - rdkit
   - openff-toolkit
+  - openff-fragmenter
   - openff-forcefields >=2024.04.0
   - openeye-toolkits
   - multimethod
@@ -48,7 +49,7 @@ dependencies:
   # Execution
   - dask
   - distributed
-  - dask-jobqueue
+#  - dask-jobqueue
   - netifaces
 
   # Docking

@@ -6,20 +6,20 @@ from asapdiscovery.data.schema.experimental import ExperimentalCompoundData
 class CrystalCompoundData(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    compound_id: str = Field(
+    compound_id: str | None = Field(
         None, description="The unique compound identifier of the ligand."
     )
 
-    dataset: str = Field(
+    dataset: str | None = Field(
         None, description="Dataset name from Fragalysis (name of structure)."
     )
-    smiles: str = Field(
+    smiles: str | None = Field(
         None,
         description="OpenEye canonical isomeric SMILES string defining suspected SMILES of racemic mixture (with unspecified stereochemistry) or specific enantiopure compound (if racemic=False); may differ from what is registered under compound_id.",
     )
-    str_fn: str = Field(None, description="Filename of the PDB structure.")
+    str_fn: str | None = Field(None, description="Filename of the PDB structure.")
 
-    sdf_fn: str = Field(None, description="Filename of the SDF file")
+    sdf_fn: str | None = Field(None, description="Filename of the SDF file")
 
 
 class EnantiomerPair(BaseModel):

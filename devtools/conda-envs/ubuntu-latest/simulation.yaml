@@ -31,7 +31,7 @@ dependencies:
   - openff-fragmenter
   - openff-forcefields >=2024.04.0
   - openeye-toolkits
-  - multimethod <2
+  - multimethod
   - scipy >=1.13.1
   - gufe >=1.7.2
 

@@ -49,7 +49,7 @@ dependencies:
   # Execution
   - dask
   - distributed
-  - dask-jobqueue
+#  - dask-jobqueue
   - netifaces
 
   # Spectrum

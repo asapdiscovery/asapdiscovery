@@ -33,7 +33,7 @@ class Target(DataModelAbstractBase):
     Schema for a Target, wrapper around a PDB file
     """
 
-    target_name: str = Field(None, description="The name of the target")
+    target_name: str | None = Field(None, description="The name of the target")
 
     ids: Optional[TargetIdentifiers] = Field(
         None,
