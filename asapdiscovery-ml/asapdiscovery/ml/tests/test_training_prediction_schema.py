@@ -70,8 +70,7 @@ def test_training_pred_json_roundtrip(identifiers, loss_configs):
     json_str = tp.model_dump_json()
     tp_roundtrip = TrainingPrediction(**json.loads(json_str))
 
-    for k, v in tp.model_dump().items():
-        assert getattr(tp_roundtrip, k) == v
+    assert tp_roundtrip.model_dump() == tp.model_dump()
 
 
 def test_training_pred_tracker_constructor_no_dict():
@@ -114,8 +113,7 @@ def test_training_pred_tracker_json_roundtrip(identifiers, loss_configs):
     json_str = tp_tracker.model_dump_json()
     tp_roundtrip = TrainingPredictionTracker(**json.loads(json_str))
 
-    for k, v in tp_tracker.model_dump().items():
-        assert getattr(tp_roundtrip, k) == v
+    assert tp_roundtrip.model_dump() == tp_tracker.model_dump()
 
 
 def test_training_pred_tracker_len(identifiers, loss_configs):

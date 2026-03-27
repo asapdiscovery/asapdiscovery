@@ -23,6 +23,7 @@ from pydantic import (
     ValidationError,
     ValidationInfo,
     conlist,
+    field_serializer,
     field_validator,
     model_validator,
 )
@@ -73,6 +74,7 @@ class Trainer(BaseModel):
     )
     loss_weights: torch.Tensor = Field(
         default_factory=list,
+        validate_default=True,
         description=(
             "Weight for each loss function. Values will be normalized to add up to 1. "
             "If no values are passed, each loss function will be weighted equally. If "
@@ -81,6 +83,7 @@ class Trainer(BaseModel):
     )
     eval_loss_weights: torch.Tensor = Field(
         default_factory=list,
+        validate_default=True,
         description=(
             "Weight for each loss function when calculating val and test losses. "
             "Values will be normalized to add up to 1. If no values are passed, the "
@@ -127,6 +130,7 @@ class Trainer(BaseModel):
     )
     pred_tracker: TrainingPredictionTracker = Field(
         None,
+        validate_default=True,
         description=(
             "TrainingPredictionTracker to keep track of predictions and losses over "
             "training."
@@ -181,6 +185,18 @@ class Trainer(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True, extra="allow", protected_namespaces=()
     )
+
+    @field_serializer("device")
+    @classmethod
+    def serialize_device(cls, v):
+        return str(v)
+
+    @field_serializer("loss_weights", "eval_loss_weights")
+    @classmethod
+    def serialize_tensors(cls, v):
+        if isinstance(v, torch.Tensor):
+            return v.tolist()
+        return v
 
     # Validator to make sure that if output_dir exists, it is a directory
     @field_validator("output_dir")

@@ -94,7 +94,8 @@ class TrainingPredictionTracker(BaseModel):
     """
 
     split_dict: dict[str, list[TrainingPrediction]] = Field(
-        None, description="Internal dict storing all TrainingPredictions."
+        default_factory=lambda: {"train": [], "val": [], "test": []},
+        description="Internal dict storing all TrainingPredictions.",
     )
 
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)

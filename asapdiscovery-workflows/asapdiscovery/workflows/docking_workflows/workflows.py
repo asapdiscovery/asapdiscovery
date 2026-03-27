@@ -94,7 +94,7 @@ class DockingWorkflowInputsBase(BaseModel):
 
     def to_json_file(self, file: str | Path):
         with open(file, "w") as f:
-            f.write(self.json(indent=2))
+            f.write(self.model_dump_json(indent=2))
 
     @model_validator(mode="after")
     def check_inputs(self):
