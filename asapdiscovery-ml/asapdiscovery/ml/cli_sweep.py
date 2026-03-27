@@ -1148,7 +1148,7 @@ def _build_sweeper(
     except pydantic.ValidationError as exc:
         # Only want to handle missing values, so if anything else went wrong just raise
         #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+        if any([err["type"] != "missing" for err in exc.errors()]):
             raise exc
 
         # Gather all missing values

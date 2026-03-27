@@ -198,6 +198,17 @@ class Trainer(BaseModel):
             return v.tolist()
         return v
 
+    @field_serializer("ml_model_config")
+    @classmethod
+    def serialize_ml_model_config(cls, v):
+        """Serialize ml_model_config, handling torch types within mtenn configs."""
+        if hasattr(v, "model_dump"):
+            d = v.model_dump()
+            # Remove model_weights (torch tensors) — not needed for config cache
+            d.pop("model_weights", None)
+            return d
+        return v
+
     # Validator to make sure that if output_dir exists, it is a directory
     @field_validator("output_dir")
     @classmethod

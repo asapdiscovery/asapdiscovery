@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 import pandas
 import torch
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 from scipy.stats import bootstrap, kendalltau, spearmanr
 
 from asapdiscovery.ml.config import LossFunctionConfig
@@ -55,6 +55,13 @@ class TrainingPrediction(BaseModel):
     )
 
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
+
+    @field_serializer("target_val")
+    @classmethod
+    def serialize_target_val(cls, v):
+        if isinstance(v, torch.Tensor):
+            return v.item()
+        return v
 
     @field_validator("target_val", mode="before")
     @classmethod
