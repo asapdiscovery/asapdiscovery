@@ -458,7 +458,7 @@ class TrainingPredictionTracker(BaseModel):
                             tp.loss_config.model_dump_json()
                         }
 
-                cur_loss_configs = {tuple(s) for s in cur_loss_configs.values()}
+                cur_loss_configs = {frozenset(s) for s in cur_loss_configs.values()}
                 if len(cur_loss_configs) > 1:
                     raise ValueError(f"Mismatched loss_configs in split {sp}")
                 elif len(cur_loss_configs) == 0:
