@@ -23,7 +23,7 @@ def test_create_network(monkeypatch, tyk2_fec_network, alchemiscale_helper):
 
     # mock the client function
     def create_network(network, scope):
-        return ScopedKey(gufe_key=network.key, **scope.dict())
+        return ScopedKey(gufe_key=network.key, **scope.model_dump())
 
     # mock the network creation
     monkeypatch.setattr(client._client, "create_network", create_network)
@@ -35,7 +35,7 @@ def test_create_network(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     assert isinstance(result.results, AlchemiscaleResults)
     # make sure the network key has been saved
     assert result.results.network_key == ScopedKey(
-        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
+        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.model_dump()
     )
 
 
@@ -46,7 +46,7 @@ def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
 
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     network_key = ScopedKey(
-        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
+        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.model_dump()
     )
 
     def network_status(key: str):
@@ -58,7 +58,7 @@ def test_network_status(monkeypatch, tyk2_fec_network, alchemiscale_helper):
 
     # set the key and get the status
     result_network = FreeEnergyCalculationNetwork(
-        **tyk2_fec_network.dict(exclude={"results"}),
+        **tyk2_fec_network.model_dump(exclude={"results"}),
         results=AlchemiscaleResults(network_key=network_key),
     )
     status = client.network_status(network_key=result_network.results.network_key)
@@ -73,11 +73,11 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     # mock a key onto the network assuming it has already been created
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     network_key = ScopedKey(
-        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
+        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.model_dump()
     )
     alchem_network = tyk2_fec_network.to_alchemical_network()
     result_network = FreeEnergyCalculationNetwork(
-        **tyk2_fec_network.dict(exclude={"results"}),
+        **tyk2_fec_network.model_dump(exclude={"results"}),
         results=AlchemiscaleResults(network_key=network_key),
     )
 
@@ -87,13 +87,15 @@ def test_action_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
         assert key == network_key
         transforms = []
         for edge in alchem_network.edges:
-            transforms.append(ScopedKey(gufe_key=edge.key, **scope.dict()))
+            transforms.append(ScopedKey(gufe_key=edge.key, **scope.model_dump()))
         return transforms
 
     def create_tasks(transformation, count):
         "Mock creating tasks for a transform"
         return [
-            ScopedKey(gufe_key=f"blah-{uuid4().hex}", **transformation.scope.dict())
+            ScopedKey(
+                gufe_key=f"blah-{uuid4().hex}", **transformation.scope.model_dump()
+            )
             for _ in range(count)
         ]
 
@@ -122,16 +124,16 @@ def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     # mock a key onto the network assuming it has already been created
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     network_key = ScopedKey(
-        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
+        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.model_dump()
     )
     alchem_network = tyk2_fec_network.to_alchemical_network()
     result_network = FreeEnergyCalculationNetwork(
-        **tyk2_fec_network.dict(exclude={"results"}),
+        **tyk2_fec_network.model_dump(exclude={"results"}),
         results=AlchemiscaleResults(network_key=network_key),
     )
     # track the keys to the transforms
     keys_to_edges = {
-        ScopedKey(gufe_key=edge.key, **scope.dict()): edge
+        ScopedKey(gufe_key=edge.key, **scope.model_dump()): edge
         for edge in alchem_network.edges
     }
 
@@ -176,9 +178,9 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     alchemical_network = tyk2_fec_network.to_alchemical_network()
 
-    network_key = ScopedKey(gufe_key=alchemical_network.key, **scope.dict())
+    network_key = ScopedKey(gufe_key=alchemical_network.key, **scope.model_dump())
     task_keys = [
-        ScopedKey(gufe_key=f"blah-{uuid4().hex}", **network_key.scope.dict())
+        ScopedKey(gufe_key=f"blah-{uuid4().hex}", **network_key.scope.model_dump())
         for _ in range(7)
     ]
 
@@ -196,7 +198,7 @@ def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):
 
     # set the key and get the status
     result_network = FreeEnergyCalculationNetwork(
-        **tyk2_fec_network.dict(exclude={"results"}),
+        **tyk2_fec_network.model_dump(exclude={"results"}),
         results=AlchemiscaleResults(network_key=network_key),
     )
     restarted_tasks = client.restart_tasks(planned_network=result_network)
@@ -228,12 +230,12 @@ def test_get_failures(
 
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     network_key = ScopedKey(
-        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
+        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.model_dump()
     )
 
     alchem_network = tyk2_fec_network.to_alchemical_network()
     result_network = FreeEnergyCalculationNetwork(
-        **tyk2_fec_network.dict(exclude={"results"}),
+        **tyk2_fec_network.model_dump(exclude={"results"}),
         results=AlchemiscaleResults(network_key=network_key),
     )
 
@@ -246,7 +248,7 @@ def test_get_failures(
             tf_key = edge.key
             task_key = tf_key.replace("Transformation", "Task")
             # 1 task per edge -- 18 tasks in total
-            tasks.append(ScopedKey(gufe_key=task_key, **scope.dict()))
+            tasks.append(ScopedKey(gufe_key=task_key, **scope.model_dump()))
         return tasks
 
     def get_task_failures(key) -> list[ProtocolDAGResult]:
@@ -285,7 +287,7 @@ def test_get_actioned_weights(alchemiscale_helper, monkeypatch, tyk2_fec_network
 
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     network_key = ScopedKey(
-        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.dict()
+        gufe_key=tyk2_fec_network.to_alchemical_network().key, **scope.model_dump()
     )
 
     def query_networks(*args, **kwargs):

@@ -322,7 +322,7 @@ def run(
     )
     from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
     from asapdiscovery.data.readers.molfile import MolFileFactory
-    from asapdiscovery.data.schema.complex import PreppedComplex
+    from asapdiscovery.modeling.schema import PreppedComplex
 
     pretty.install()
     console = rich.get_console()
@@ -330,7 +330,7 @@ def run(
 
     # load the factory and set the core smarts if supplied
     if factory_file is not None:
-        factory = AlchemyPrepWorkflow.parse_file(factory_file)
+        factory = AlchemyPrepWorkflow.from_file(factory_file)
         if core_smarts is not None:
             factory.core_smarts = core_smarts
     else:
@@ -383,7 +383,7 @@ def run(
 
     else:
         # always expect the JSON file
-        ref_complex = PreppedComplex.parse_file(receptor_complex)
+        ref_complex = PreppedComplex.from_json_file(receptor_complex)
 
         message = Padding(
             f"Loaded a prepared complex from [repr.filename]{receptor_complex}[/repr.filename]",

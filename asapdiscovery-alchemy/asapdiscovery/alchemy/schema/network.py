@@ -3,7 +3,7 @@ from typing import Callable, Literal, Optional, Union
 
 import openfe
 from openfe.setup import LigandNetwork
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from asapdiscovery.data.schema.ligand import Ligand
 
@@ -148,11 +148,7 @@ class PlannedNetwork(_NetworkPlannerSettings):
         description="The GraphML string representation of the OpenFE LigandNetwork object. See to `to_ligand_network()`",
     )
 
-    class Config:
-        """Overwrite the class config to freeze the results model"""
-
-        allow_mutation = False
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
     def to_ligand_network(self) -> openfe.LigandNetwork:
         """
@@ -259,7 +255,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
         ligand_network = network_method(**planner_data)
 
         return PlannedNetwork(
-            **self.dict(exclude={"type"}),
+            **self.model_dump(exclude={"type"}),
             ligands=ligands,
             central_ligand=central_ligand,
             graphml=ligand_network.to_graphml(),

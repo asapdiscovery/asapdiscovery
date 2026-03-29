@@ -1,6 +1,6 @@
 import pytest
 
-from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.cdd.cdd_api import CDDAPI
 from asapdiscovery.data.services.services_config import CDDSettings
@@ -34,12 +34,6 @@ def complexes(all_mpro_fns):
         )
         for struct in all_pdbs
     ]
-
-
-@pytest.fixture(scope="session")
-def prepped_complexes(complexes):
-    # kinda expensive to make, so let's just do the first 2
-    return [PreppedComplex.from_complex(c) for c in complexes[:2]]
 
 
 @pytest.fixture(scope="module")

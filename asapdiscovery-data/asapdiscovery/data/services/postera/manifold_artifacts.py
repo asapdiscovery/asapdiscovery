@@ -5,7 +5,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from asapdiscovery.data.services.aws.cloudfront import CloudFront
 from asapdiscovery.data.services.aws.s3 import S3
@@ -78,37 +78,29 @@ class ManifoldArtifactUploader(BaseModel):
         description="The name of the column containing the manifold id",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @root_validator
-    @classmethod
-    def validate_artifact_columns_and_types(cls, values):
-        artifact_columns = values.get("artifact_columns")
-        artifact_types = values.get("artifact_types")
-        if len(artifact_columns) != len(artifact_types):
+    @model_validator(mode="after")
+    def validate_artifact_columns_and_types(self):
+        if len(self.artifact_columns) != len(self.artifact_types):
             raise ValueError(
                 "Number of artifact columns must match number of artifact types"
             )
-        if len(artifact_columns) == len(artifact_types) == 0:
+        if len(self.artifact_columns) == len(self.artifact_types) == 0:
             raise ValueError("Must have at least one artifact column")
 
-        return values
+        return self
 
-    @root_validator
-    @classmethod
-    def name_id_mutually_exclusive(cls, values):
-        molecule_set_id = values.get("molecule_set_id")
-        molecule_set_name = values.get("molecule_set_name")
-
-        if not molecule_set_id and not molecule_set_name:
+    @model_validator(mode="after")
+    def name_id_mutually_exclusive(self):
+        if not self.molecule_set_id and not self.molecule_set_name:
             raise ValueError("Must provide molecule_set_id or molecule_set_name")
 
-        if molecule_set_id and molecule_set_name:
+        if self.molecule_set_id and self.molecule_set_name:
             raise ValueError(
                 "molecule_set_id and molecule_set_name are mutually exclusive"
             )
-        return values
+        return self
 
     def generate_cloudfront_url(
         self, bucket_path, expires_delta: timedelta = timedelta(days=365 * 5)

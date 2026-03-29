@@ -234,6 +234,6 @@ def test_prep_with_charges(mac1_complex):
 
     # make sure the method was stamped on the molecule
     assert (
-        alchemy_dataset.posed_ligands[0].charge_provenance.dict(exclude={"type"})
+        alchemy_dataset.posed_ligands[0].charge_provenance.model_dump(exclude={"type"})
         == workflow.charge_method.provenance()
     )

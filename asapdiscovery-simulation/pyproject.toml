@@ -11,7 +11,7 @@ authors = [
 ]
 description = "API and scripts for running molecular dynamics simulations"
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.12,<3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -19,6 +19,10 @@ classifiers = [
     "Operating System :: MacOS",
 ]
 dependencies = [
+    "asapdiscovery-data",
+    "asapdiscovery-docking",
+    "asapdiscovery-ml",
+    "asapdiscovery-cli",
 ]
 
 [project.urls]

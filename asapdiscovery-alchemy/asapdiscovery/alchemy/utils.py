@@ -16,9 +16,8 @@ from asapdiscovery.alchemy.schema.forcefield import ForceFieldParams
 if TYPE_CHECKING:
     from openff.bespokefit.workflows import BespokeWorkflowFactory
 
-    from asapdiscovery.data.schema.complex import PreppedComplex
     from asapdiscovery.data.schema.ligand import Ligand
-    from asapdiscovery.data.schema.target import PreppedTarget
+    from asapdiscovery.modeling.schema import PreppedComplex, PreppedTarget
 
 
 def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams):
@@ -90,7 +89,7 @@ class AlchemiscaleHelper:
             A copy of the network submit with the results object updated.
         """
         # store a copy of the input data so we can add the results holder
-        network_data = planned_network.dict()
+        network_data = planned_network.model_dump()
 
         # build the network which we can submit
         fec_network = planned_network.to_alchemical_network()
@@ -304,7 +303,8 @@ class AlchemiscaleHelper:
 
         if planned_network:
             network_with_results = FreeEnergyCalculationNetwork(
-                **planned_network.dict(exclude={"results"}), results=alchem_results
+                **planned_network.model_dump(exclude={"results"}),
+                results=alchem_results,
             )
 
         return network_with_results

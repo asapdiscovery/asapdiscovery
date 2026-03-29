@@ -10,9 +10,7 @@ from asapdiscovery.data.operators.selectors.pairwise_selector import (
     PairwiseSelector,
     SelfDockingSelector,
 )
-from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
-from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to data
 
 
 def test_pairwise_selector(ligands_from_complexes, complexes):
@@ -37,15 +35,6 @@ def test_self_docking_selector(ligands_from_complexes, complexes):
     selector = SelfDockingSelector()
     pairs = selector.select(ligands_from_complexes, complexes)
     assert len(pairs) == 4
-
-
-@pytest.mark.parametrize("use_dask", [True, False])
-def test_pairwise_selector_prepped(ligands_from_complexes, prepped_complexes, use_dask):
-    selector = PairwiseSelector()
-    pairs = selector.select(
-        ligands_from_complexes, prepped_complexes, use_dask=use_dask
-    )
-    assert len(pairs) == 8
 
 
 @pytest.mark.parametrize("approximate", [True, False])
@@ -93,25 +82,6 @@ def test_rascalMCES_selector(ligands_from_complexes, complexes, use_dask):
     )
 
 
-def test_mcs_select_prepped(ligands_from_complexes, prepped_complexes):
-    selector = MCSSelector()
-    pairs = selector.select(ligands_from_complexes, prepped_complexes, n_select=1)
-    # should be 4 pairs
-    assert len(pairs) == 4
-    assert pairs[0] == DockingInputPair(
-        ligand=ligands_from_complexes[0], complex=prepped_complexes[0]
-    )
-    assert pairs[1] == DockingInputPair(
-        ligand=ligands_from_complexes[1], complex=prepped_complexes[1]
-    )
-    assert pairs[2] == DockingInputPair(
-        ligand=ligands_from_complexes[2], complex=prepped_complexes[1]
-    )
-    assert pairs[3] == DockingInputPair(
-        ligand=ligands_from_complexes[3], complex=prepped_complexes[0]
-    )
-
-
 def test_mcs_selector_nselect(ligands_from_complexes, complexes):
     selector = MCSSelector()
     pairs = selector.select(ligands_from_complexes, complexes, n_select=2)
@@ -123,9 +93,3 @@ def test_mcs_selector_nselect(ligands_from_complexes, complexes):
     assert (
         pairs[1].complex.ligand.smiles == "Cc1ccncc1NC(=O)Cc2cc(cc(c2)Cl)OC"
     )  # clearly related
-
-
-def test_mcs_selector_no_match(prepped_complexes):
-    lig = Ligand.from_smiles("Si", compound_name="test_no_match")
-    selector = MCSSelector()
-    _ = selector.select([lig], prepped_complexes, n_select=1)

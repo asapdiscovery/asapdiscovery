@@ -15,14 +15,15 @@ from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
     oechem,
     save_openeye_pdb,
+    split_openeye_design_unit,
 )
-from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.schema.sets import MultiStructureBase
 from asapdiscovery.data.schema.target import Target
 from asapdiscovery.data.util.dask_utils import BackendType, FailureMode
-from asapdiscovery.modeling.modeling import split_openeye_design_unit
+from asapdiscovery.modeling.schema import PreppedComplex
 
 logger = logging.getLogger(__name__)
 
@@ -184,22 +185,24 @@ class DockingResult(BaseModel):
     input_pair: DockingInputPair = Field(description="Input pair")
     posed_ligand: Ligand = Field(description="Posed ligand")
     probability: Optional[PositiveFloat] = Field(
-        description="Probability"
+        default=None, description="Probability"
     )  # not easy to get the probability from rescoring
-    pose_id: Optional[int] = Field(description="Nth returned pose from docking")
+    pose_id: Optional[int] = Field(
+        default=None, description="Nth returned pose from docking"
+    )
     num_poses: Optional[int] = Field(
-        description="Total number of poses returned from docking"
+        default=None, description="Total number of poses returned from docking"
     )
     provenance: dict[str, str] = Field(description="Provenance")
 
     def to_json_file(self, file: str | Path):
         with open(file, "w") as f:
-            f.write(self.json(indent=2))
+            f.write(self.model_dump_json(indent=2))
 
     @classmethod
     def from_json_file(cls, file: str | Path) -> "DockingResult":
         with open(file) as f:
-            return cls.parse_raw(f.read())
+            return cls.model_validate_json(f.read())
 
     @abc.abstractmethod
     def _get_single_pose_results(self) -> list["DockingResult"]: ...
@@ -211,7 +214,7 @@ class DockingResult(BaseModel):
         """
         return a dictionary of some of the fields of the DockingResult
         """
-        dct = self.dict()
+        dct = self.model_dump()
         dct.pop("input_pair")
         dct.pop("posed_ligand")
         dct.pop("type")
@@ -219,7 +222,7 @@ class DockingResult(BaseModel):
 
     @classmethod
     def from_json(cls, json_str):
-        return cls.parse_obj(json.loads(json_str))
+        return cls.model_validate(json.loads(json_str))
 
     def to_posed_oemol(self) -> oechem.OEMol:
         """
@@ -263,7 +266,7 @@ class DockingResult(BaseModel):
             target_name=self.input_pair.complex.target.target_name,
             ids=self.input_pair.complex.target.ids,
         )
-        lig = Ligand.from_oemol(lig, **self.input_pair.ligand.dict())
+        lig = Ligand.from_oemol(lig, **self.input_pair.ligand.model_dump())
         return Complex(target=tar, ligand=lig)
 
     @property

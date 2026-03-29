@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import ClassVar, Literal, Optional, Union
 
 import pandas as pd
-from pydantic import Field, PositiveInt, root_validator
+from pydantic import Field, PositiveInt, model_validator
 
 from asapdiscovery.data.backend.openeye import oechem, oedocking, oeomega
 from asapdiscovery.data.schema.ligand import Ligand
@@ -157,17 +157,14 @@ class POSITDocker(DockingBase):
         False, description="Use pure FRED docking as a last ditch effort"
     )
 
-    @root_validator
-    @classmethod
-    def omega_dense_check(cls, values):
+    @model_validator(mode="after")
+    def omega_dense_check(self):
         """
         Validate omega_dense
         """
-        omega_dense = values.get("omega_dense")
-        use_omega = values.get("use_omega")
-        if omega_dense and not use_omega:
+        if self.omega_dense and not self.use_omega:
             raise ValueError("Cannot use omega_dense without use_omega")
-        return values
+        return self
 
     @staticmethod
     def to_result_type():
@@ -345,7 +342,7 @@ class POSITDocker(DockingBase):
                             prob = result.GetProbability()
 
                             posed_ligand = Ligand.from_oemol(
-                                posed_mol, **set.ligand.dict()
+                                posed_mol, **set.ligand.model_dump()
                             )
                             # set SD tags
                             sd_data = {
@@ -398,7 +395,13 @@ class POSITDocker(DockingBase):
                                 docking_results.append(docking_result)
 
             except Exception as e:
-                error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {set.complex.target.target_name} with error: {e}"
+                if isinstance(set, DockingInputMultiStructure):
+                    target_name = ", ".join(
+                        c.target.target_name for c in set.complexes
+                    )
+                else:
+                    target_name = set.complex.target.target_name
+                error_msg = f"docking failed for input pair with compound name: {set.ligand.compound_name}, smiles: {set.ligand.smiles} and target name: {target_name} with error: {e}"
                 if failure_mode == "skip":
                     logger.error(error_msg)
                 elif failure_mode == "raise":
@@ -410,7 +413,7 @@ class POSITDocker(DockingBase):
 
     def provenance(self) -> dict[str, str]:
         return {
-            "oechem": oechem.OEChemGetVersion(),
-            "oeomega": oeomega.OEOmegaGetVersion(),
-            "oedocking": oedocking.OEDockingGetVersion(),
+            "oechem": str(oechem.OEChemGetVersion()),
+            "oeomega": str(oeomega.OEOmegaGetVersion()),
+            "oedocking": str(oedocking.OEDockingGetVersion()),
         }

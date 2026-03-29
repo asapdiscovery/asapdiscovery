@@ -9,10 +9,10 @@ from asapdiscovery.alchemy.schema.fec import FreeEnergyCalculationNetwork
 from asapdiscovery.alchemy.schema.prep_workflow import AlchemyPrepWorkflow
 from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 from asapdiscovery.data.readers.molfile import MolFileFactory
-from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand, write_ligands_to_multi_sdf
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.schema.pose_generation import OpenEyeConstrainedPoseGenerator
+from asapdiscovery.modeling.schema import PreppedComplex
 
 
 @pytest.fixture(scope="session")
@@ -127,7 +127,7 @@ def protocol_unit_failures(dummy_protocol_units) -> list[list[ProtocolUnitFailur
 
 @pytest.fixture(scope="session")
 def mac1_complex():
-    return PreppedComplex.parse_file(
+    return PreppedComplex.from_json_file(
         fetch_test_file("constrained_conformer/complex.json")
     )
 

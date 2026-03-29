@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from asapdiscovery.data.schema.identifiers import LigandIdentifiers
 
@@ -32,11 +32,10 @@ class StateExpansionTag(BaseModel):
         description="Provenance of the software used during the expansion and the state expander.",
     )
 
-    class Config:
-        allow_mutation = False
+    model_config = ConfigDict(frozen=True)
 
     def __hash__(self) -> int:
-        return hash(self.json())
+        return hash(self.model_dump_json())
 
     @classmethod
     def from_parent(cls, parent: "Ligand", provenance: dict[str, str]):

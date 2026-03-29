@@ -357,7 +357,7 @@ def test_fec_dataset_duplicate_ligands(tyk2_ligands, tyk2_protein):
 
 def test_fec_dataset_missing_names(tyk2_ligands, tyk2_protein):
     """Make sure missing ligand names are caught"""
-    ligands = [ligand.copy(deep=True) for ligand in tyk2_ligands]
+    ligands = [ligand.model_copy(deep=True) for ligand in tyk2_ligands]
     ligands[0].compound_name = ""
 
     factory = FreeEnergyCalculationFactory()
@@ -449,7 +449,7 @@ def test_results_to_cinnabar_missing_phase(tyk2_fec_network):
     # mock a full result object
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     result_network = AlchemiscaleResults(
-        network_key=ScopedKey(gufe_key=alchem_network.key, **scope.dict()),
+        network_key=ScopedKey(gufe_key=alchem_network.key, **scope.model_dump()),
         results=results,
     )
     # make sure a specific error related to a missing solvent phase is raised.
@@ -488,7 +488,7 @@ def test_results_to_cinnabar_too_many_legs(tyk2_fec_network):
     # mock a full result object
     scope = Scope(org="asap", campaign="testing", project="tyk2")
     result_network = AlchemiscaleResults(
-        network_key=ScopedKey(gufe_key=alchem_network.key, **scope.dict()),
+        network_key=ScopedKey(gufe_key=alchem_network.key, **scope.model_dump()),
         results=results,
     )
     # make sure a specific error related to a missing solvent phase is raised.

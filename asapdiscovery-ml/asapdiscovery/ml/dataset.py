@@ -61,7 +61,7 @@ class DockedDataset(Dataset):
         def get_complex_id(c):
             # First build target id from target_name and all identifiers
             target_name = c.target.target_name
-            target_ids = {k: v for k, v in c.target.ids.dict() if v}
+            target_ids = {k: v for k, v in c.target.ids.model_dump() if v}
             target_id = []
             if target_name:
                 target_id += [target_name]
@@ -70,7 +70,7 @@ class DockedDataset(Dataset):
 
             # Build ligand_id from compound_name and all identifiers
             compound_name = c.ligand.compound_name
-            compound_ids = {k: v for k, v in c.ligand.ids.dict() if v}
+            compound_ids = {k: v for k, v in c.ligand.ids.model_dump() if v}
             compound_id = []
             if compound_name:
                 compound_id += [compound_name]

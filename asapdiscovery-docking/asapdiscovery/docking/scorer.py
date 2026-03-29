@@ -11,10 +11,9 @@ import numpy as np
 import pandas as pd
 from mtenn.config import ModelType
 from multimethod import multimethod
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from asapdiscovery.data.backend.openeye import oedocking, oemol_to_pdb_string
-from asapdiscovery.data.backend.plip import compute_fint_score
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand, LigandIdentifiers
 from asapdiscovery.data.schema.target import TargetIdentifiers
@@ -30,6 +29,7 @@ from asapdiscovery.docking.docking_data_validation import DockingResultCols
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models import MLModelSpecBase
 from asapdiscovery.spectrum.fitness import target_has_fitness_data
+from asapdiscovery.spectrum.plip import compute_fint_score
 
 logger = logging.getLogger(__name__)
 
@@ -119,17 +119,19 @@ class Score(BaseModel):
     instead we just store the input result ids.
     """
 
+    model_config = ConfigDict(ignored_types=(multimethod,))
+
     score_type: ScoreType
     score: float
-    compound_name: Optional[str]
-    smiles: Optional[str]
-    ligand_identifiers: Optional[LigandIdentifiers]
-    ligand_inchikey: Optional[str]
-    target_name: Optional[str]
-    target_identifiers: Optional[TargetIdentifiers]
-    complex_ligand_smiles: Optional[str]
-    probability: Optional[float]
-    pose_id: Optional[int]
+    compound_name: Optional[str] = None
+    smiles: Optional[str] = None
+    ligand_identifiers: Optional[LigandIdentifiers] = None
+    ligand_inchikey: Optional[str] = None
+    target_name: Optional[str] = None
+    target_identifiers: Optional[TargetIdentifiers] = None
+    complex_ligand_smiles: Optional[str] = None
+    probability: Optional[float] = None
+    pose_id: Optional[int] = None
     units: ScoreUnits
     input: Optional[Any] = None
 
@@ -147,9 +149,9 @@ class Score(BaseModel):
             compound_name=docking_result.posed_ligand.compound_name,
             smiles=docking_result.posed_ligand.smiles,
             ligand_inchikey=docking_result.posed_ligand.inchikey,
-            ligand_ids=docking_result.posed_ligand.ids,
+            ligand_identifiers=docking_result.posed_ligand.ids,
             target_name=docking_result.input_pair.complex.target.target_name,
-            target_ids=docking_result.input_pair.complex.target.ids,
+            target_identifiers=docking_result.input_pair.complex.target.ids,
             complex_ligand_smiles=docking_result.input_pair.complex.ligand.smiles,
             probability=docking_result.probability,
             pose_id=docking_result.pose_id,
@@ -171,9 +173,9 @@ class Score(BaseModel):
             compound_name=complex.ligand.compound_name,
             smiles=complex.ligand.smiles,
             ligand_inchikey=complex.ligand.inchikey,
-            ligand_ids=complex.ligand.ids,
+            ligand_identifiers=complex.ligand.ids,
             target_name=complex.target.target_name,
-            target_ids=complex.target.ids,
+            target_identifiers=complex.target.ids,
             complex_ligand_smiles=complex.ligand.smiles,
             probability=None,
             units=units,
@@ -194,9 +196,9 @@ class Score(BaseModel):
             compound_name=None,
             smiles=smiles,
             ligand_inchikey=None,
-            ligand_ids=None,
+            ligand_identifiers=None,
             target_name=None,
-            target_ids=None,
+            target_identifiers=None,
             complex_ligand_smiles=None,
             probability=None,
             units=units,
@@ -217,9 +219,9 @@ class Score(BaseModel):
             compound_name=ligand.compound_name,
             smiles=ligand.smiles,
             ligand_inchikey=ligand.inchikey,
-            ligand_ids=ligand.ids,
+            ligand_identifiers=ligand.ids,
             target_name=None,
-            target_ids=None,
+            target_identifiers=None,
             complex_ligand_smiles=None,
             probability=None,
             units=units,
@@ -237,7 +239,7 @@ class Score(BaseModel):
                 made_json = False  # already a string
             else:  # cast to JSON
                 dtype = type(df["input"].iloc[0])
-                df["input"] = df["input"].apply(lambda x: x.json())
+                df["input"] = df["input"].apply(lambda x: x.model_dump_json())
                 made_json = True
         indices = set(df.columns) - {"score_type", "score", "units"}
         df = df.pivot(
@@ -257,6 +259,8 @@ class ScorerBase(BaseModel):
     """
     Base class for scoring functions.
     """
+
+    model_config = ConfigDict(ignored_types=(multimethod,))
 
     score_type: ScoreType = Field(ScoreType.INVALID, description="Type of score")
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
@@ -343,7 +347,7 @@ class ScorerBase(BaseModel):
         # flatten the list of scores
         scores = np.ravel(scores)
         for score in scores:
-            dct = score.dict()
+            dct = score.model_dump()
             dct["score_type"] = score.score_type.value  # convert to string
             # we don't want the unpacked version of the input
             dct.pop("input")
@@ -464,7 +468,7 @@ class FINTScorer(ScorerBase):
     units: ClassVar[ScoreUnits.arbitrary] = ScoreUnits.arbitrary
     target: TargetTags = Field(..., description="Which target to use for scoring")
 
-    @validator("target")
+    @field_validator("target")
     @classmethod
     def validate_target(cls, v):
         if not target_has_fitness_data(v):
@@ -856,6 +860,8 @@ class MetaScorer(BaseModel):
     """
     Score from a combination of other scorers, the scorers must share an input type,
     """
+
+    model_config = ConfigDict(ignored_types=(multimethod,))
 
     scorers: list[ScorerBase] = Field(..., description="Scorers to score with")
 

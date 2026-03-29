@@ -1,0 +1,68 @@
+name: ml
+channels:
+  - openeye
+  - conda-forge
+dependencies:
+  # Base
+  - pip
+  - python >=3.12,<3.13
+
+  # Testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - pytest-timeout
+  - pytest-console-scripts
+  - codecov
+  - requests-mock
+  - mock
+
+  # Core
+  - click
+  - appdirs
+  - pydantic >2
+  - pydantic-settings
+  - numpy
+  - pandas
+  - pebble
+  - rdkit
+  - openff-toolkit
+  - openff-forcefields >=2024.04.0
+  - openeye-toolkits
+  - multimethod
+  - gufe >=1.7.2
+
+  # Data services
+  - requests
+  - boto3
+  - moto
+  - flask
+  - flask-cors
+  - typing-extensions
+  - biopython
+  - validators
+  - pyyaml
+  - ase
+  - sigfig
+
+  # Execution
+  - dask
+  - distributed
+#  - dask-jobqueue
+  - netifaces
+
+  # ML
+  - pytorch
+  - pytorch_geometric >=2.5.0
+  - pytorch_cluster
+  - pytorch_scatter
+  - pytorch_sparse
+  - h5py
+  - e3nn
+  - dgl <=2.0.0
+  - dgllife
+  - pooch
+  - mtenn =0.6.3
+  - wandb
+  - seaborn
+  - semver
