@@ -11,7 +11,6 @@ from asapdiscovery.data.services.postera.molecule_set import (
     MoleculeSetKeys,
 )
 from asapdiscovery.data.services.services_config import PosteraSettings
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +22,11 @@ class PosteraUploader(BaseModel):
         description="Name of the molecule set to push to Postera, if it doesn't exist it will be created",
     )
     id_field: str = Field(
-        DockingResultCols.LIGAND_ID.value,
+        "ligand_id",
         description="Name of the column in the dataframe to use as the ligand id",
     )
     smiles_field: str = Field(
-        DockingResultCols.SMILES.value,
+        "SMILES",
         description="Name of the column in the dataframe to use as the SMILES field",
     )
     overwrite: bool = Field(

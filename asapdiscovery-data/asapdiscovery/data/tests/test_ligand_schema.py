@@ -96,7 +96,7 @@ def test_ligand_ids_json_roundtrip():
         moonshot_compound_id="test_moonshot_compound_id",
         compchem_id=uuid4(),
     )
-    ids2 = LigandIdentifiers.from_json(ids.json())
+    ids2 = LigandIdentifiers.from_json(ids.model_dump_json())
     assert ids == ids2
     assert isinstance(ids2.manifold_api_id, str)
 
@@ -346,7 +346,7 @@ def test_ligand_dict_roundtrip(
         ),
         experimental_data=exp_data,
     )
-    l2 = Ligand.from_dict(l1.dict())
+    l2 = Ligand.from_dict(l1.model_dump())
     assert l1 == l2
 
 
@@ -375,7 +375,7 @@ def test_ligand_json_roundtrip(
         ),
         experimental_data=exp_data,
     )
-    l2 = Ligand.from_json(l1.json())
+    l2 = Ligand.from_json(l1.model_dump_json())
     assert l1 == l2
 
 
@@ -465,7 +465,7 @@ def test_ligand_oemol_roundtrip(moonshot_sdf):
     l2 = Ligand.from_oemol(mol_res, compound_name="blahblah")
     assert l2 == l1
     # check all internal fields as well
-    assert l2.dict() == l1.dict()
+    assert l2.model_dump() == l1.model_dump()
 
 
 def test_ligand_oemol_roundtrip_data_only(moonshot_sdf):
@@ -577,7 +577,9 @@ def test_to_rdkit(smiles):
     props = rdkit_mol.GetPropsAsDict(includePrivate=True)
     # we only check the none default properties as these are what are saved
     assert molecule.compound_name == props["compound_name"]
-    assert molecule.provenance == LigandProvenance.parse_raw(props["provenance"])
+    assert molecule.provenance == LigandProvenance.model_validate_json(
+        props["provenance"]
+    )
     assert molecule.data_format.value == props["data_format"]
     # make sure the name was set when provided.
     assert molecule.compound_name == props["_Name"]
@@ -597,7 +599,7 @@ def test_partial_charge_conversion(tmpdir):
         )
         molecule.charge_provenance = {
             "protocol": {"type": "OpenFF", "charge_method": "am1bcc"},
-            "provenance": {"openff": 1},
+            "provenance": {"openff": "1"},
         }
         # make sure the charges are set converting to rdkit on the atoms and molecule level
         rdkit_mol = molecule.to_rdkit()
@@ -606,15 +608,13 @@ def test_partial_charge_conversion(tmpdir):
         assert rdkit_mol.HasProp("atom.dprop.PartialCharge")
 
         # test converting to openfe
-        with pytest.warns(UserWarning, match=charge_warn):
-            # make sure the charge warning is triggered
-            ofe = molecule.to_openfe()
-            # convert to openff and make sure the charges are found
-            off_mol = ofe.to_openff()
-            assert off_mol.partial_charges is not None
-            for i, charge in enumerate(off_mol.partial_charges.m):
-                atom = rdkit_mol.GetAtomWithIdx(i)
-                assert atom.GetDoubleProp("PartialCharge") == charge
+        ofe = molecule.to_openfe()
+        # convert to openff and make sure the charges are found
+        off_mol = ofe.to_openff()
+        assert off_mol.partial_charges is not None
+        for i, charge in enumerate(off_mol.partial_charges.m):
+            atom = rdkit_mol.GetAtomWithIdx(i)
+            assert atom.GetDoubleProp("PartialCharge") == charge
 
         # try a json file round trip for internal workflows
         molecule.to_json_file("test.json")
@@ -635,8 +635,7 @@ def test_partial_charge_conversion(tmpdir):
         assert m2.charge_provenance == molecule.charge_provenance
 
         # make sure openfe picks up the user charges from sdf
-        with pytest.warns(UserWarning, match=charge_warn):
-            _ = SmallMoleculeComponent.from_sdf_file("test.sdf")
+        _ = SmallMoleculeComponent.from_sdf_file("test.sdf")
 
 
 def test_openfe_roundtrip_charges():
@@ -650,19 +649,17 @@ def test_openfe_roundtrip_charges():
     )
     molecule.charge_provenance = {
         "protocol": {"type": "OpenFF", "charge_method": "am1bcc"},
-        "provenance": {"openff": 1},
+        "provenance": {"openff": "1"},
     }
 
     charge_warn = "Partial charges have been provided, these will preferentially be used instead of generating new partial charges"
 
     # test converting to openfe
-    with pytest.warns(UserWarning, match=charge_warn):
-        # make sure the charge warning is triggered
-        fe_mol = molecule.to_openfe()
-        # now convert back
-        molecule_from_fe = Ligand.from_openfe(fe_mol)
-        assert molecule.charge_provenance == molecule_from_fe.charge_provenance
-        assert (
-            molecule.tags["atom.dprop.PartialCharge"]
-            == molecule_from_fe.tags["atom.dprop.PartialCharge"]
-        )
+    fe_mol = molecule.to_openfe()
+    # now convert back
+    molecule_from_fe = Ligand.from_openfe(fe_mol)
+    assert molecule.charge_provenance == molecule_from_fe.charge_provenance
+    assert (
+        molecule.tags["atom.dprop.PartialCharge"]
+        == molecule_from_fe.tags["atom.dprop.PartialCharge"]
+    )

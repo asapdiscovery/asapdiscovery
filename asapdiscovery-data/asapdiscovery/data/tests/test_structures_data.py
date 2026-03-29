@@ -5,8 +5,8 @@ That is downloading, processing and storing PDB/CIF or similar structure files.
 """
 
 import pathlib
+from importlib import resources
 
-import pkg_resources
 import pytest
 
 from asapdiscovery.data.services.rcsb.rcsb_download import download_pdb_structure
@@ -73,8 +73,8 @@ class TestLigands:
             if data.smiles
         }
 
-        smarts_queries_csv = pkg_resources.resource_filename(
-            "asapdiscovery.data", "data/smarts_queries.csv"
+        smarts_queries_csv = (
+            resources.files("asapdiscovery.data") / "data/smarts_queries.csv"
         )
 
         # Filter based on the smiles using this OpenEye function

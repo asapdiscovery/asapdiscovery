@@ -3,7 +3,7 @@ from pathlib import Path
 
 import wandb
 import yaml
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 
 from asapdiscovery.ml.trainer import Trainer
 
@@ -34,7 +34,8 @@ class Sweeper(Trainer):
         False, description="Start a new sweep even if an existing sweep_id is present."
     )
 
-    @validator("sweep_config", pre=True)
+    @field_validator("sweep_config", mode="before")
+    @classmethod
     def load_config(cls, v):
         """
         Support for loading sweep config YAML files.
@@ -88,7 +89,7 @@ class Sweeper(Trainer):
         """
 
         # Clone self into a dict so we can update stuff
-        new_trainer_dict = self.dict()
+        new_trainer_dict = self.model_dump()
 
         # Decompose parameter names into nested dict
         config_update_dict = {}
@@ -148,14 +149,14 @@ class Sweeper(Trainer):
 
         # Update W&B config to include everything from all the Trainer configs
         # Don't serialize input_data for confidentiality/size reasons
-        ds_config = sweeper.ds_config.dict()
+        ds_config = sweeper.ds_config.model_dump()
         del ds_config["input_data"]
-        config = sweeper.dict()
+        config = sweeper.model_dump()
         config["ds_config"] = ds_config
         wandb.config.update(config)
 
         # Get Trainer config dict (before initialization so we don't have extra stuff)
-        trainer_config_dict = sweeper.dict()
+        trainer_config_dict = sweeper.model_dump()
         # Get rid of Sweeper-specific args
         del trainer_config_dict["sweep_config"]
         del trainer_config_dict["force_new_sweep"]
@@ -169,7 +170,7 @@ class Sweeper(Trainer):
         # Update output directory to save in sweep run id dir
         trainer_config_dict["output_dir"] = sweeper.output_dir
         t = Trainer(**trainer_config_dict)
-        (sweeper.output_dir / "trainer.json").write_text(t.json())
+        (sweeper.output_dir / "trainer.json").write_text(t.model_dump_json())
 
         # Log dataset splits
         for split, table in zip(

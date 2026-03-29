@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-from pydantic import BaseModel, Field, PositiveInt, root_validator
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, model_validator
 
 from asapdiscovery.data.metadata.resources import master_structures
 from asapdiscovery.data.readers.structure_dir import StructureDirFactory
@@ -110,26 +110,25 @@ class ProteinPrepInputs(BaseModel):
         description="Output directory where newly prepped structures and log files will be saved to.",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @classmethod
     def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
+        with open(file) as f:
+            return cls.model_validate_json(f.read())
 
     def to_json_file(self, file: str | Path):
         with open(file, "w") as f:
-            f.write(self.json(indent=2))
+            f.write(self.model_dump_json(indent=2))
 
-    @root_validator
-    @classmethod
-    def check_inputs(cls, values):
+    @model_validator(mode="after")
+    def check_inputs(self):
         """
         Validate inputs
         """
-        fragalysis_dir = values.get("fragalysis_dir")
-        structure_dir = values.get("structure_dir")
-        pdb_file = values.get("pdb_file")
+        fragalysis_dir = self.fragalysis_dir
+        structure_dir = self.structure_dir
+        pdb_file = self.pdb_file
 
         # can only specify one of fragalysis dir, structure dir and PDB file
         if sum([bool(fragalysis_dir), bool(structure_dir), bool(pdb_file)]) != 1:
@@ -137,7 +136,7 @@ class ProteinPrepInputs(BaseModel):
                 "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
             )
 
-        return values
+        return self
 
 
 def protein_prep_workflow(inputs: ProteinPrepInputs):

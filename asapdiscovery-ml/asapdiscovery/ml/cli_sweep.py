@@ -239,7 +239,7 @@ def sweep_gat(
 
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -479,7 +479,7 @@ def sweep_schnet(
 
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -721,7 +721,7 @@ def sweep_e3nn(
 
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -973,7 +973,7 @@ def sweep_visnet(
 
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -1148,7 +1148,7 @@ def _build_sweeper(
     except pydantic.ValidationError as exc:
         # Only want to handle missing values, so if anything else went wrong just raise
         #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+        if any([err["type"] != "missing" for err in exc.errors()]):
             raise exc
 
         # Gather all missing values
@@ -1164,6 +1164,6 @@ def _build_sweeper(
     if sweep_config_cache and (
         (not sweep_config_cache.exists()) or overwrite_sweep_config_cache
     ):
-        sweep_config_cache.write_text(sweeper.json())
+        sweep_config_cache.write_text(sweeper.model_dump_json())
 
     return sweeper

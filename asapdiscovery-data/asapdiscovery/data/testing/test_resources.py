@@ -1,7 +1,7 @@
 import pathlib
+from importlib import resources
 from typing import List, Union  # noqa: F401
 
-import pkg_resources
 import pooch
 import yaml
 
@@ -11,7 +11,7 @@ test file repository. We instantiate a pooch repository for the test files on im
 that can then be used to fetch test files.
 """
 
-test_files = pkg_resources.resource_filename(__name__, "test_files.yaml")
+test_files = str(resources.files("asapdiscovery.data.testing") / "test_files.yaml")
 
 
 def make_test_file_pooch_repo(test_files: str) -> pooch.Pooch:

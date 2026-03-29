@@ -103,8 +103,8 @@ class SymmetryExpander(BaseModel):
                     f.write(string)
                     cnew = Complex.from_pdb(
                         temp.name,
-                        target_kwargs=complex.target.dict(),
-                        ligand_kwargs=complex.ligand.dict(),
+                        target_kwargs=complex.target.model_dump(),
+                        ligand_kwargs=complex.ligand.model_dump(),
                     )
 
                 new_complexs.append(cnew)

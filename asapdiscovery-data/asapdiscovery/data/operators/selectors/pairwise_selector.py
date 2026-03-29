@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import logging
 from itertools import product
-from typing import ClassVar, Union
+from typing import TYPE_CHECKING, ClassVar, Union
 
 from asapdiscovery.data.operators.selectors.selector import SelectorBase
-from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.schema_base import ComplexBase
+
+if TYPE_CHECKING:
+    from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import ChemicalRelationship, Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 
@@ -18,7 +24,7 @@ class PairwiseSelector(SelectorBase):
     selector_type: ClassVar[str] = "PairwiseSelector"
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
+        self, ligands: list[Ligand], complexes: list[Complex | PreppedComplex]
     ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
@@ -35,7 +41,7 @@ class PairwiseSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict()}
+        return {"selector": self.model_dump()}
 
 
 class LeaveOneOutSelector(SelectorBase):
@@ -46,7 +52,7 @@ class LeaveOneOutSelector(SelectorBase):
     selector_type: ClassVar[str] = "LeaveOneOutSelector"
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
+        self, ligands: list[Ligand], complexes: list[Complex | PreppedComplex]
     ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
@@ -65,7 +71,7 @@ class LeaveOneOutSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict()}
+        return {"selector": self.model_dump()}
 
 
 class LeaveSimilarOutSelector(SelectorBase):
@@ -77,7 +83,7 @@ class LeaveSimilarOutSelector(SelectorBase):
     selector_type: ClassVar[str] = "LeaveSimilarOutSelector"
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
+        self, ligands: list[Ligand], complexes: list[Complex | PreppedComplex]
     ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
@@ -102,7 +108,7 @@ class LeaveSimilarOutSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict()}
+        return {"selector": self.model_dump()}
 
 
 class SelfDockingSelector(SelectorBase):
@@ -113,7 +119,7 @@ class SelfDockingSelector(SelectorBase):
     selector_type: ClassVar[str] = "SelfDockingSelector"
 
     def _select(
-        self, ligands: list[Ligand], complexes: list[Union[Complex, PreppedComplex]]
+        self, ligands: list[Ligand], complexes: list[Complex | PreppedComplex]
     ) -> list[CompoundStructurePair]:
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
@@ -132,4 +138,4 @@ class SelfDockingSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict()}
+        return {"selector": self.model_dump()}

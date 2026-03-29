@@ -304,7 +304,7 @@ def cinnabar_femap_get_largest_subnetwork(
         FreeEnergyCalculationNetwork,
     )
 
-    fe_map_nx = fe_map.graph
+    fe_map_nx = fe_map.to_networkx()
     subnetworks_nodenames = sorted(  # split the network into subnetworks
         nx.strongly_connected_components(fe_map_nx), key=len, reverse=True
     )
@@ -334,7 +334,7 @@ def cinnabar_femap_get_largest_subnetwork(
     new_results = AlchemiscaleResults(
         network_key=result_network.results.network_key, results=filtered_network_results
     )
-    old_data = result_network.dict(exclude={"results"})
+    old_data = result_network.model_dump(exclude={"results"})
     new_result_network = FreeEnergyCalculationNetwork(**old_data, results=new_results)
 
     return new_result_network.results.to_fe_map()

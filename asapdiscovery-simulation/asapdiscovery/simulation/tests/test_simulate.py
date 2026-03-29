@@ -114,10 +114,10 @@ def test_rmsd_restraint_indices(tmp_path):
         output_dir=tmp_path,
         truncate_steps=False,
         rmsd_restraint=True,
-        rmsd_restraint_indices=[1, 2, 3],
+        rmsd_restraint_atom_indices=[1, 2, 3],
     )
     assert vs.num_steps == 1
-    assert vs.rmsd_restraint_indices == [1, 2, 3]
+    assert vs.rmsd_restraint_atom_indices == [1, 2, 3]
 
 
 def test_rmsd_restraint_indices_mutex_type(tmp_path):
@@ -128,7 +128,7 @@ def test_rmsd_restraint_indices_mutex_type(tmp_path):
             output_dir=tmp_path,
             truncate_steps=False,
             rmsd_restraint=True,
-            rmsd_restraint_indices=[1, 2, 3],
+            rmsd_restraint_atom_indices=[1, 2, 3],
             rmsd_restraint_type="CA",
         )
 

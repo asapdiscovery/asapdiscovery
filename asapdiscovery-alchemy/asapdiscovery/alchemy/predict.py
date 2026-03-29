@@ -1,4 +1,5 @@
 import base64
+import contextlib
 import warnings
 from typing import Literal, Optional
 
@@ -17,6 +18,29 @@ from rdkit import Chem
 from rdkit.Chem import Draw
 
 from asapdiscovery.data.schema.ligand import Ligand
+
+
+@contextlib.contextmanager
+def _patch_numpy_normal_for_cinnabar():
+    """Monkey-patch np.random.normal to return scalars when size=1.
+
+    Works around cinnabar bootstrap_statistic incompatibility with numpy 2.x
+    where np.random.normal(size=1) returns a 1-element array that can't be
+    assigned to a scalar array element.
+    """
+    _orig = np.random.normal
+
+    def _compat(*args, **kwargs):
+        result = _orig(*args, **kwargs)
+        if isinstance(result, np.ndarray) and result.size == 1:
+            return result.item()
+        return result
+
+    np.random.normal = _compat
+    try:
+        yield
+    finally:
+        np.random.normal = _orig
 
 # run to enable plotting with bokeh
 panel.extension()
@@ -793,24 +817,25 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
         )
         # calculate the bootstrapped stats using cinnabar
         stats_data = []
-        for statistic in ["RMSE", "MUE", "R2", "rho"]:
-            s = stats.bootstrap_statistic(
-                plotting_df["pIC50 (EXPT)"],
-                plotting_df["pIC50 (FECS)"],
-                plotting_df["uncertainty (pIC50) (EXPT)"],
-                plotting_df["uncertainty (pIC50) (FECS)"],
-                statistic=statistic,
-                include_true_uncertainty=False,
-                include_pred_uncertainty=False,
-            )
-            stats_data.append(
-                {
-                    "Statistic": statistic,
-                    "value": s["mle"],
-                    "lower bound": s["low"],
-                    "upper bound": s["high"],
-                }
-            )
+        with _patch_numpy_normal_for_cinnabar():
+            for statistic in ["RMSE", "MUE", "R2", "rho"]:
+                s = stats.bootstrap_statistic(
+                    plotting_df["pIC50 (EXPT)"].to_numpy(),
+                    plotting_df["pIC50 (FECS)"].to_numpy(),
+                    plotting_df["uncertainty (pIC50) (EXPT)"].to_numpy(),
+                    plotting_df["uncertainty (pIC50) (FECS)"].to_numpy(),
+                    statistic=statistic,
+                    include_true_uncertainty=False,
+                    include_pred_uncertainty=False,
+                )
+                stats_data.append(
+                    {
+                        "Statistic": statistic,
+                        "value": s["mle"],
+                        "lower bound": s["low"],
+                        "upper bound": s["high"],
+                    }
+                )
         stats_df = pd.DataFrame(stats_data)
         # create a format for numerical data in the tables
         stats_format = {col: number_format for col in stats_df.columns}
@@ -905,24 +930,25 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
         )
         # calculate the bootstrapped stats using cinnabar
         stats_data = []
-        for statistic in ["RMSE", "MUE", "R2", "rho"]:
-            s = stats.bootstrap_statistic(
-                plotting_df["DpIC50 (EXPT)"],
-                plotting_df["DpIC50 (FECS)"],
-                plotting_df["uncertainty (pIC50) (EXPT)"],
-                plotting_df["uncertainty (pIC50) (FECS)"],
-                statistic=statistic,
-                include_true_uncertainty=False,
-                include_pred_uncertainty=False,
-            )
-            stats_data.append(
-                {
-                    "Statistic": statistic,
-                    "value": s["mle"],
-                    "lower bound": s["low"],
-                    "upper bound": s["high"],
-                }
-            )
+        with _patch_numpy_normal_for_cinnabar():
+            for statistic in ["RMSE", "MUE", "R2", "rho"]:
+                s = stats.bootstrap_statistic(
+                    plotting_df["DpIC50 (EXPT)"].to_numpy(),
+                    plotting_df["DpIC50 (FECS)"].to_numpy(),
+                    plotting_df["uncertainty (pIC50) (EXPT)"].to_numpy(),
+                    plotting_df["uncertainty (pIC50) (FECS)"].to_numpy(),
+                    statistic=statistic,
+                    include_true_uncertainty=False,
+                    include_pred_uncertainty=False,
+                )
+                stats_data.append(
+                    {
+                        "Statistic": statistic,
+                        "value": s["mle"],
+                        "lower bound": s["low"],
+                        "upper bound": s["high"],
+                    }
+                )
         stats_df = pd.DataFrame(stats_data)
         # create a format for numerical data in the tables
         stats_format = {col: number_format for col in stats_df.columns}
@@ -1039,12 +1065,18 @@ def clean_result_network(network, console=None, ddg_outlier_threshold=15):
         if len(results) > 1:
             # take the arithmetic mean of DG and dDG and add the replaced first result,
             # all provenance data is constant between these repeats anyway
-            mean_DG = np.mean([result.estimate.magnitude for result in results])
-            mean_dDG = np.mean([result.uncertainty.magnitude for result in results])
-            result_data = results[0].dict(exclude={"estimate", "uncertainty"})
+            mean_DG = float(
+                np.mean([result.estimate.magnitude for result in results])
+            )
+            mean_dDG = float(
+                np.mean([result.uncertainty.magnitude for result in results])
+            )
+            result_data = results[0].model_dump(exclude={"estimate", "uncertainty"})
 
             tf_res = TransformationResult(
-                estimate=mean_DG, uncertainty=mean_dDG, **result_data
+                estimate=mean_DG * unit.kilocalories_per_mole,
+                uncertainty=mean_dDG * unit.kilocalories_per_mole,
+                **result_data,
             )
 
         else:
@@ -1100,14 +1132,14 @@ def clean_result_network(network, console=None, ddg_outlier_threshold=15):
             (1, 0, 1, 0),
         )
         console.print(message)
-    data = network_schema.dict(exclude={"results"})
+    data = network_schema.model_dump(exclude={"results"})
     # unpack the deduped results into dicts
     results = AlchemiscaleResults(
         results=results_not_overly_large, network_key=network_schema.results.network_key
-    ).dict()
+    ).model_dump()
     data["results"] = results
 
-    fec = FreeEnergyCalculationNetwork.parse_obj(data)
+    fec = FreeEnergyCalculationNetwork.model_validate(data)
 
     return fec
 

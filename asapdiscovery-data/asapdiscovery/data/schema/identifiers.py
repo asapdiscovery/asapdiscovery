@@ -1,6 +1,6 @@
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from asapdiscovery.data.schema.schema_base import DataModelAbstractBase
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
@@ -37,10 +37,10 @@ class LigandIdentifiers(DataModelAbstractBase):
         None, description="Unique ID for P5 compchem reference, unused for now"
     )
 
-    class Config:
-        allow_mutation = False
+    model_config = ConfigDict(frozen=True)
 
-    @validator("manifold_api_id", "compchem_id", pre=True)
+    @field_validator("manifold_api_id", "compchem_id", mode="before")
+    @classmethod
     def cast_uuids(cls, v):
         """
         Cast UUIDS to string
@@ -52,8 +52,7 @@ class LigandIdentifiers(DataModelAbstractBase):
 
 
 class LigandProvenance(DataModelAbstractBase):
-    class Config:
-        allow_mutation = False
+    model_config = ConfigDict(frozen=True)
 
     isomeric_smiles: str = Field(
         ..., description="The canonical isomeric smiles pattern for the molecule."
@@ -94,8 +93,7 @@ class TargetIdentifiers(DataModelAbstractBase):
 class ChargeProvenance(BaseModel):
     """A simple model to record the provenance of the local charging method."""
 
-    class Config:
-        allow_mutation = False
+    model_config = ConfigDict(frozen=True)
 
     type: Literal["ChargeProvenance"] = "ChargeProvenance"
 
@@ -123,7 +121,7 @@ class BespokeParameter(BaseModel):
     )
     smirks: str = Field(..., description="The smirks associated with this parameter.")
     values: dict[str, float] = Field(
-        {},
+        default_factory=dict,
         description="The bespoke force field parameters "
         "which should be added to the base force field.",
     )
@@ -140,7 +138,7 @@ class BespokeParameters(BaseModel):
     type: Literal["BespokeParameters"] = "BespokeParameters"
 
     parameters: list[BespokeParameter] = Field(
-        [], description="The list of bespoke parameters."
+        default_factory=list, description="The list of bespoke parameters."
     )
     base_force_field: str = Field(
         ...,

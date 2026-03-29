@@ -11,14 +11,19 @@ authors = [
 ]
 description = "API and scripts related to downloading and interacting with data from the Collaborative Drug Discovery Vault, Fragalysis, and the PDB"
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.12,<3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
 ]
-dependencies = []
+dependencies = [
+    "asapdiscovery-data",
+    "asapdiscovery-modeling",
+    "asapdiscovery-ml",
+    "asapdiscovery-cli",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/choderalab/asapdiscovery"

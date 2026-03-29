@@ -1,10 +1,7 @@
-import os
-
 import pytest
-from pydantic import ValidationError
 
-from asapdiscovery.data.backend.openeye import load_openeye_design_unit, oechem
-from asapdiscovery.data.schema.target import PreppedTarget, Target, TargetIdentifiers
+from asapdiscovery.data.backend.openeye import oechem
+from asapdiscovery.data.schema.target import Target, TargetIdentifiers
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 
 
@@ -26,12 +23,6 @@ def moonshot_pdb_processed():
 def sars2_spruced_pdb():
     pdb = fetch_test_file("sars_spruced.pdb")
     return pdb
-
-
-@pytest.fixture(scope="session")
-def oedu_file():
-    oedu = fetch_test_file("Mpro-P0008_0A_ERI-UCB-ce40166b-17_prepped_receptor_0.oedu")
-    return oedu
 
 
 def test_target_from_pdb_at_least_one_id(moonshot_pdb):
@@ -84,7 +75,7 @@ def test_target_dict_roundtrip(
             target_type=ttype, fragalysis_id=fragalysis_id, pdb_code=pdb_code
         ),
     )
-    t2 = Target.from_dict(t1.dict())
+    t2 = Target.from_dict(t1.model_dump())
     assert t1 == t2
 
 
@@ -104,7 +95,7 @@ def test_target_json_roundtrip(
             target_type=ttype, fragalysis_id=fragalysis_id, pdb_code=pdb_code
         ),
     )
-    t2 = Target.from_json(t1.json())
+    t2 = Target.from_json(t1.model_dump_json())
     assert t1 == t2
 
 
@@ -169,110 +160,3 @@ def test_target_moonshot_pdb_processed_no_ligand(moonshot_pdb):
     assert lig.NumAtoms() == 0
     assert prot.NumAtoms() != 0
     assert wat.NumAtoms() == 0
-
-
-# PreppedTarget tests
-
-
-def test_preppedtarget_from_oedu_file(oedu_file):
-    pt = PreppedTarget.from_oedu_file(
-        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
-    )
-    oedu = pt.to_oedu()
-    assert oedu.GetTitle() == "(AB) > LIG(A-403)"  # from one of the old files
-
-
-def test_preppedtarget_from_oedu_file_at_least_one_id(oedu_file):
-    with pytest.raises(ValidationError):
-        # neither id is set
-        PreppedTarget.from_oedu_file(oedu_file)
-
-
-def test_preppedtarget_to_pdb_file(oedu_file, tmpdir):
-    """Make sure a target can be saved to pdb file for vis"""
-
-    with tmpdir.as_cwd():
-        pt = PreppedTarget.from_oedu_file(
-            oedu_file, target_name="PreppedTargetTest", target_hash="mock-hash"
-        )
-        file_name = "test_protein.pdb"
-        pt.to_pdb_file(file_name)
-        assert os.path.exists(file_name) is True
-
-
-def test_preppedtarget_from_oedu_file_at_least_one_target_id(oedu_file):
-    with pytest.raises(ValidationError):
-        _ = PreppedTarget.from_oedu_file(oedu_file, ids=TargetIdentifiers())
-
-
-def test_prepped_target_from_oedu_file_bad_file():
-    with pytest.raises(FileNotFoundError):
-        # neither id is set
-        _ = PreppedTarget.from_oedu_file(
-            "bad_file", target_name="PreppedTargetTestName"
-        )
-
-
-def test_prepped_target_from_oedu(oedu_file):
-    loaded_oedu = load_openeye_design_unit(oedu_file)
-    loaded_oedu.SetTitle("PreppedTargetTestName")
-    pt = PreppedTarget.from_oedu(
-        loaded_oedu, target_name="PreppedTargetTestName", target_hash="mock-hash"
-    )
-    oedu = pt.to_oedu()
-    assert oedu.GetTitle() == "PreppedTargetTestName"
-
-
-def test_prepped_target_from_oedu_file_roundtrip(oedu_file, tmp_path):
-    pt = PreppedTarget.from_oedu_file(
-        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
-    )
-    pt.to_oedu_file(tmp_path / "test.oedu")
-    pt2 = PreppedTarget.from_oedu_file(
-        tmp_path / "test.oedu",
-        target_name="PreppedTargetTestName",
-        target_hash="mock-hash",
-    )
-    # these two comparisons should be the same
-    assert pt == pt2
-    assert pt.data_equal(pt2)
-
-
-def test_prepped_target_from_oedu_roundtrip(oedu_file):
-    pt = PreppedTarget.from_oedu_file(
-        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
-    )
-    du = pt.to_oedu()
-    pt2 = PreppedTarget.from_oedu(
-        du, target_name="PreppedTargetTestName", target_hash="mock-hash"
-    )
-    # these two comparisons should be the same
-    assert pt == pt2
-    assert pt.data_equal(pt2)
-
-
-def test_prepped_target_json_roundtrip(oedu_file):
-    pt = PreppedTarget.from_oedu_file(
-        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
-    )
-    js = pt.json()
-    pt2 = PreppedTarget.from_json(js)
-    # these two comparisons should be the same
-    assert pt == pt2
-    assert pt.data_equal(pt2)
-    du = pt2.to_oedu()
-    assert du.GetTitle() == "(AB) > LIG(A-403)"
-
-
-def test_prepped_target_json_file_roundtrip(oedu_file, tmp_path):
-    pt = PreppedTarget.from_oedu_file(
-        oedu_file, target_name="PreppedTargetTestName", target_hash="mock-hash"
-    )
-    path = tmp_path / "test.json"
-    pt.to_json_file(path)
-    pt2 = PreppedTarget.from_json_file(path)
-    # these two comparisons should be the same
-    assert pt == pt2
-    assert pt.data_equal(pt2)
-    du = pt2.to_oedu()
-    assert du.GetTitle() == "(AB) > LIG(A-403)"

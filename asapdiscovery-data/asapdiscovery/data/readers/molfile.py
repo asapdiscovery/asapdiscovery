@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.schema.ligand import Ligand
@@ -35,7 +35,7 @@ class MolFileFactory(BaseModel):
             ligands.append(ligand)
         return ligands
 
-    @validator("filename")
+    @field_validator("filename")
     @classmethod
     def check_file_exists(cls, v):
         if not Path(v).exists():

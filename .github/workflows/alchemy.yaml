@@ -31,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.11"]
+        python-version: ["3.12"]
 
     env:
       OE_LICENSE: ${{ github.workspace }}/oe_license.txt
@@ -58,12 +58,12 @@ jobs:
         # micromamba-version: latest
         # pin to latest 1.x release
         micromamba-version: '1.5.10-0'
-        environment-file: devtools/conda-envs/asapdiscovery-${{ matrix.os }}.yml
-        environment-name: asapdiscovery
+        environment-file: devtools/conda-envs/${{ matrix.os }}/alchemy.yaml
+        environment-name: alchemy
         cache-environment: true
         cache-downloads: true
-        cache-environment-key: environment-${{ steps.date.outputs.date }}
-        cache-downloads-key: downloads-${{ steps.date.outputs.date }}
+        cache-environment-key: environment-alchemy-${{ steps.date.outputs.date }}
+        cache-downloads-key: downloads-alchemy-${{ steps.date.outputs.date }}
         create-args: >-
           python==${{ matrix.python-version }}
 
@@ -76,15 +76,10 @@ jobs:
 
     - name: Install packages
       run: |
-        python -m pip install -e ./asapdiscovery-alchemy --no-deps
-        python -m pip install -e ./asapdiscovery-cli --no-deps
         python -m pip install -e ./asapdiscovery-data --no-deps
-        python -m pip install -e ./asapdiscovery-dataviz --no-deps
-        python -m pip install -e ./asapdiscovery-docking --no-deps
-        python -m pip install -e ./asapdiscovery-ml --no-deps
         python -m pip install -e ./asapdiscovery-modeling --no-deps
-        python -m pip install -e ./asapdiscovery-simulation --no-deps
-        python -m pip install -e ./asapdiscovery-spectrum --no-deps
+        python -m pip install -e ./asapdiscovery-docking --no-deps
+        python -m pip install -e ./asapdiscovery-alchemy --no-deps
         micromamba list
 
     - name: Run tests

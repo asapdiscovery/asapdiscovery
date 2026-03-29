@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from airium import Airium
 from multimethod import multimethod
-from pydantic import Field, root_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
@@ -21,11 +21,6 @@ from asapdiscovery.data.backend.openeye import (
     oemol_to_pdb_string,
     oemol_to_sdf_string,
     openeye_perceive_residues,
-)
-from asapdiscovery.data.backend.plip import (
-    get_interactions_plip,
-    make_color_res_fitness,
-    make_color_res_subpockets,
 )
 from asapdiscovery.data.metadata.resources import active_site_chains, master_structures
 from asapdiscovery.data.schema.complex import Complex
@@ -46,6 +41,11 @@ from asapdiscovery.spectrum.fitness import (
     get_fitness_scores_bloom_by_target,
     parse_fitness_json,
     target_has_fitness_data,
+)
+from asapdiscovery.spectrum.plip import (
+    get_interactions_plip,
+    make_color_res_fitness,
+    make_color_res_subpockets,
 )
 
 logger = logging.getLogger(__name__)
@@ -103,11 +103,14 @@ class HTMLVisualizer(VisualizerBase):
     active_site_chain: Optional[str] = Field(
         None, description="Mobile chain ID to align."
     )
-    fitness_data: Optional[Any]
-    fitness_data_logoplots: Optional[Any]
-    reference_protein: Optional[Any]
+    fitness_data: Optional[Any] = None
+    fitness_data_logoplots: Optional[Any] = None
+    reference_protein: Optional[Any] = None
 
-    @root_validator(pre=True)
+    model_config = ConfigDict(ignored_types=(multimethod,))
+
+    @model_validator(mode="before")
+    @classmethod
     def check_and_set_chains(cls, values):
         active_site_chain = values.get("active_site_chain")
         ref_chain = values.get("ref_chain")
@@ -128,16 +131,15 @@ class HTMLVisualizer(VisualizerBase):
             )
         self.reference_protein = load_openeye_pdb(master_structures[self.target])
 
-    @root_validator
-    @classmethod
-    def must_have_fitness_data(cls, values):
-        target = values.get("target")
-        color_method = values.get("color_method")
-        if color_method == ColorMethod.fitness and not target_has_fitness_data(target):
+    @model_validator(mode="after")
+    def must_have_fitness_data(self):
+        if self.color_method == ColorMethod.fitness and not target_has_fitness_data(
+            self.target
+        ):
             raise ValueError(
-                f"Attempting to color by fitness and {target} does not have fitness data, use `subpockets` instead."
+                f"Attempting to color by fitness and {self.target} does not have fitness data, use `subpockets` instead."
             )
-        return values
+        return self
 
     def get_tag_for_color_method(self):
         """
@@ -651,9 +653,14 @@ class HTMLVisualizer(VisualizerBase):
                     for resi, _ in self.fitness_data.items():
                         resnum, chain = resi.split("_")
                         # get the base64 for this residue in this chain.
-                        for fit_type, base64_bj in self.make_logoplot_input(
-                            resi
-                        ).items():
+                        try:
+                            logoplot_data = self.make_logoplot_input(resi)
+                        except Exception as e:
+                            logger.warning(
+                                f"Could not generate logoplot for residue {resi}: {e}"
+                            )
+                            continue
+                        for fit_type, base64_bj in logoplot_data.items():
                             with a.div(
                                 klass=f"logoplotbox_{fit_type}",
                                 id=f"{fit_type}DIV_{resnum}_{chain}",
@@ -823,6 +830,12 @@ class HTMLVisualizer(VisualizerBase):
             _FITNESS_DATA_FIT_THRESHOLD[TargetVirusMap[self.target]]
         )
 
+        # filter to standard amino acid single-letter codes supported by
+        # logomaker's dmslogo_funcgroup color scheme (stops, gaps, and
+        # unknowns like '*', '-', 'X' cause a TypeError in logomaker 0.8)
+        _STANDARD_AA = set("ACDEFGHIKLMNPQRSTVWY")
+        site_df = site_df[site_df["mutant"].isin(_STANDARD_AA)]
+
         # split the mutant data into fit/unfit.
         site_df_fit = site_df[site_df["fitness"] > 0]
         site_df_unfit = site_df[site_df["fitness"] < 0]
@@ -836,12 +849,14 @@ class HTMLVisualizer(VisualizerBase):
                 f"Warning: no unfit residues found for residue {resi} in chain {chain}."
             )
             # make a dataframe with a fake unfit mutant instead.
+            # Use "A" (alanine) as a safe placeholder compatible with
+            # logomaker's dmslogo_funcgroup color scheme.
             site_df_unfit = pd.DataFrame(
                 [
                     {
                         "gene": site_df_fit["gene"].values[0],
                         "site": resi,
-                        "mutant": "X",
+                        "mutant": "A",
                         "fitness": -0.00001,
                         "expected_count": 0,
                         "wildtype": site_df_fit["wildtype"].values[0],

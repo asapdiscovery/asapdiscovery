@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
-from pydantic import BaseModel, ByteSize
+from pydantic import BaseModel, ByteSize, ConfigDict, Field
 
 _SCHEMA_VERSION = "0.1.0"
 
@@ -44,31 +45,36 @@ class DataModelAbstractBase(BaseModel):
     and other behaviour
     """
 
+    # can't use extra="forbid" because of the way we use
+    # kwargs to skip root_validator on some fields
+    model_config = ConfigDict(validate_assignment=True)
+
     def __hash__(self) -> int:
-        return self.json().__hash__()
+        return self.model_dump_json().__hash__()
 
     @classmethod
     def from_dict(cls, dict):
-        return cls.parse_obj(dict)
+        return cls.model_validate(dict)
 
     @classmethod
     def from_json(cls, json_str):
-        return cls.parse_obj(json.loads(json_str))
+        return cls.model_validate(json.loads(json_str))
 
     @classmethod
     def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
+        with open(str(file)) as f:
+            return cls.model_validate_json(f.read())
 
     def to_json_file(self, file: str | Path):
-        write_file_directly(file, self.json())
+        write_file_directly(file, self.model_dump_json())
 
     @property
     def size(self) -> ByteSize:
         """Size of the resulting JSON object for this class"""
-        return ByteSize(utf8len(self.json())).human_readable()
+        return ByteSize(utf8len(self.model_dump_json())).human_readable()
 
     def full_equal(self, other: DataModelAbstractBase) -> bool:
-        return self.dict() == other.dict()
+        return self.model_dump() == other.model_dump()
 
     def data_equal(self, other: DataModelAbstractBase) -> bool:
         return self.data == other.data
@@ -88,11 +94,6 @@ class DataModelAbstractBase(BaseModel):
     def __ne__(self, other: DataModelAbstractBase) -> bool:
         return not self.__eq__(other)
 
-    class Config:
-        validate_assignment = True
-        # can't use extra="forbid" because of the way we use
-        # kwargs to skip root_validator on some fields
-
 
 def schema_dict_get_val_overload(obj: dict | BaseModel):
     """
@@ -110,6 +111,61 @@ def schema_dict_get_val_overload(obj: dict | BaseModel):
     if isinstance(obj, dict):
         return obj.values()
     elif isinstance(obj, BaseModel):
-        return obj.dict().values()
+        return obj.model_dump().values()
     else:
         raise TypeError(f"Unsupported type {type(obj)}")
+
+
+class ComplexBase(DataModelAbstractBase):
+    """
+    Base class for complexes
+    """
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, ComplexBase):
+            return NotImplemented
+
+        # Just check that both Targets and Ligands are the same
+        return (self.target == other.target) and (self.ligand == other.ligand)
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    @property
+    def unique_name(self) -> str:
+        """Create a unique name for the Complex, this is used in prep when generating folders to store results."""
+        return f"{self.target.target_name}-{self.hash}"
+
+
+class MoleculeComponent(str, Enum):
+    PROTEIN = "protein"
+    LIGAND = "ligand"
+    WATER = "water"
+    OTHER = "other"
+
+
+class MoleculeFilter(BaseModel):
+    """Filter for selecting components of a molecule."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    protein_chains: list = Field(
+        default_factory=list,
+        description="List of chains containing the desired protein. An empty list will return all chains.",
+    )
+    ligand_chain: str | None = Field(
+        None,
+        description="Chain containing the desired ligand. An empty list will return all chains.",
+    )
+    water_chains: list = Field(
+        default_factory=list,
+        description="List of chains containing the desired water. An empty list will return all chains.",
+    )
+    other_chains: list = Field(
+        default_factory=list,
+        description="List of chains containing other items. An empty list will return all chains.",
+    )
+    components_to_keep: list[MoleculeComponent] = Field(
+        default_factory=lambda: ["protein", "ligand", "water", "other"],
+        description="List of components to keep. An empty list will return all components.",
+    )

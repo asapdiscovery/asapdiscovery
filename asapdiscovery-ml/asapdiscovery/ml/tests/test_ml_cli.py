@@ -368,7 +368,7 @@ def test_build_trainer_e3nn(exp_file, docked_files, tmp_path):
 
     assert t.ds_config.for_e3nn
 
-    assert t.model_config.irreps_hidden == "5x0o+5x0e"
+    assert t.ml_model_config.irreps_hidden == "5x0o+5x0e"
 
 
 def test_build_trainer_visnet(exp_file, docked_files, tmp_path):

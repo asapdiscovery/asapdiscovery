@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-from pydantic import BaseModel, Field, PositiveInt, root_validator
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, model_validator
 
 from asapdiscovery.data.metadata.resources import active_site_chains
 from asapdiscovery.data.services.postera.manifold_data_validation import TargetTags
@@ -85,28 +85,27 @@ class DockingWorkflowInputsBase(BaseModel):
         description="Active site chain ID to align to ref_chain in reference structure",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @classmethod
     def from_json_file(cls, file: str | Path):
-        return cls.parse_file(str(file))
+        with open(file) as f:
+            return cls.model_validate_json(f.read())
 
     def to_json_file(self, file: str | Path):
         with open(file, "w") as f:
-            f.write(self.json(indent=2))
+            f.write(self.model_dump_json(indent=2))
 
-    @root_validator
-    @classmethod
-    def check_inputs(cls, values):
+    @model_validator(mode="after")
+    def check_inputs(self):
         """
         Validate inputs
         """
-        ligands = values.get("ligands")
-        fragalysis_dir = values.get("fragalysis_dir")
-        structure_dir = values.get("structure_dir")
-        postera = values.get("postera")
-        pdb_file = values.get("pdb_file")
+        ligands = self.ligands
+        fragalysis_dir = self.fragalysis_dir
+        structure_dir = self.structure_dir
+        postera = getattr(self, "postera", None)
+        pdb_file = self.pdb_file
 
         if postera and ligands:
             raise ValueError("Cannot specify both ligands and postera.")
@@ -120,9 +119,10 @@ class DockingWorkflowInputsBase(BaseModel):
                 "Must specify exactly one of fragalysis_dir, structure_dir or pdb_file"
             )
 
-        return values
+        return self
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def check_and_set_chains(cls, values):
         active_site_chain = values.get("active_site_chain")
         ref_chain = values.get("ref_chain")

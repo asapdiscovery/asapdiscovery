@@ -1,11 +1,12 @@
 import pytest
 
 from asapdiscovery.data.backend.openeye import oechem
-from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.testing.test_resources import fetch_test_file
 from asapdiscovery.docking.docking import DockingInputMultiStructure, DockingInputPair
 from asapdiscovery.docking.openeye import POSITDockingResults
+from asapdiscovery.modeling.schema import PreppedComplex
 
 
 @pytest.fixture()
@@ -117,6 +118,6 @@ def mol_with_constrained_confs() -> oechem.OEMol:
 
 @pytest.fixture()
 def mac1_complex():
-    return PreppedComplex.parse_file(
+    return PreppedComplex.from_json_file(
         fetch_test_file("constrained_conformer/complex.json")
     )

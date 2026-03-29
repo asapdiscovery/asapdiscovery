@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 import warnings
-from typing import ClassVar, Union
+from typing import TYPE_CHECKING, ClassVar, Union
 
 import numpy as np
 from dask import delayed
@@ -10,14 +12,18 @@ from rdkit.Chem import rdRascalMCES
 
 from asapdiscovery.data.backend.openeye import oechem
 from asapdiscovery.data.operators.selectors.selector import SelectorBase
-from asapdiscovery.data.schema.complex import Complex, ComplexBase, PreppedComplex
+from asapdiscovery.data.schema.complex import Complex
+from asapdiscovery.data.schema.schema_base import ComplexBase
+
+if TYPE_CHECKING:
+    from asapdiscovery.docking.docking import DockingInputPair
+    from asapdiscovery.modeling.schema import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.schema.pairs import CompoundStructurePair
 from asapdiscovery.data.util.dask_utils import (
     FailureMode,
     actualise_dask_delayed_iterable,
 )
-from asapdiscovery.docking.docking import DockingInputPair  # TODO: move to backend
 
 logger = logging.getLogger(__name__)
 
@@ -124,18 +130,18 @@ class MCSSelector(SelectorBase):
     def select(
         self,
         ligands: list[Ligand],
-        complexes: list[Union[Complex, PreppedComplex]],
+        complexes: list[Complex | PreppedComplex],
         **kwargs,
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair | DockingInputPair]:
         outputs = self._select(ligands=ligands, complexes=complexes, **kwargs)
         return outputs
 
     def _select(
         self,
         ligands: list[Ligand],
-        complexes: list[Union[Complex, PreppedComplex]],
+        complexes: list[Complex | PreppedComplex],
         n_select: int = 1,
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair | DockingInputPair]:
         """
         Selects ligand and complex pairs based on maximum common substructure
         (MCS) search.
@@ -253,7 +259,7 @@ class MCSSelector(SelectorBase):
         return pairs
 
     def provenance(self):
-        return {"selector": self.dict(), "oechem": oechem.OEChemGetVersion()}
+        return {"selector": self.model_dump(), "oechem": oechem.OEChemGetVersion()}
 
 
 class RascalMCESSelector(SelectorBase):
@@ -280,12 +286,12 @@ class RascalMCESSelector(SelectorBase):
     def select(
         self,
         ligands: list[Ligand],
-        complexes: list[Union[Complex, PreppedComplex]],
+        complexes: list[Complex | PreppedComplex],
         use_dask: bool = False,
         dask_client=None,
         failure_mode: str = FailureMode.SKIP,
         **kwargs,
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair | DockingInputPair]:
         outputs = self._select(
             ligands=ligands,
             complexes=complexes,
@@ -299,12 +305,12 @@ class RascalMCESSelector(SelectorBase):
     def _select(
         self,
         ligands: list[Ligand],
-        complexes: list[Union[Complex, PreppedComplex]],
+        complexes: list[Complex | PreppedComplex],
         n_select: int = 1,
         use_dask: bool = False,
         dask_client=None,
         failure_mode: str = FailureMode.SKIP,
-    ) -> list[Union[CompoundStructurePair, DockingInputPair]]:
+    ) -> list[CompoundStructurePair | DockingInputPair]:
 
         if not all(isinstance(c, ComplexBase) for c in complexes):
             raise ValueError("All complexes must be of type Complex, or PreppedComplex")
@@ -398,4 +404,4 @@ class RascalMCESSelector(SelectorBase):
         return similarity
 
     def provenance(self):
-        return {"selector": self.dict(), "rdkit": rdBase.rdkitVersion}
+        return {"selector": self.model_dump(), "rdkit": rdBase.rdkitVersion}

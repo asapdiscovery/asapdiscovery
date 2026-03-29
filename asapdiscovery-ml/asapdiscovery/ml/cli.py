@@ -269,7 +269,7 @@ def build_gat(
     # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -491,7 +491,7 @@ def build_schnet(
     # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -715,7 +715,7 @@ def build_e3nn(
     # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -949,7 +949,7 @@ def build_visnet(
     # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -1164,7 +1164,7 @@ def build_and_train_gat(
     # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -1391,7 +1391,7 @@ def build_and_train_schnet(
     # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -1620,7 +1620,7 @@ def build_and_train_e3nn(
     # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -1856,7 +1856,7 @@ def build_and_train_visnet(
     # Gather all the configs
     trainer_kwargs = {
         "optimizer_config": optim_config,
-        "model_config": model_config,
+        "ml_model_config": model_config,
         "es_config": es_config,
         "ds_config": ds_config,
         "ds_splitter_config": ds_splitter_config,
@@ -2160,7 +2160,7 @@ def _build_ds_config(
 
     # Save file if desired
     if ds_config_cache:
-        ds_config_cache.write_text(ds_config.json())
+        ds_config_cache.write_text(ds_config.model_dump_json())
 
     return ds_config
 
@@ -2231,7 +2231,7 @@ def _build_trainer(
     except pydantic.ValidationError as exc:
         # Only want to handle missing values, so if anything else went wrong just raise
         #  the pydantic error
-        if any([err["type"] != "value_error.missing" for err in exc.errors()]):
+        if any([err["type"] != "missing" for err in exc.errors()]):
             raise exc
 
         # Gather all missing values
@@ -2247,6 +2247,6 @@ def _build_trainer(
     if trainer_config_cache and (
         (not trainer_config_cache.exists()) or overwrite_trainer_config_cache
     ):
-        trainer_config_cache.write_text(t.json())
+        trainer_config_cache.write_text(t.model_dump_json())
 
     return t

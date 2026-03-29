@@ -16,12 +16,12 @@ from asapdiscovery.data.operators.state_expanders.stereo_expander import StereoE
 from asapdiscovery.data.operators.state_expanders.tautomer_expander import (
     TautomerExpander,
 )
-from asapdiscovery.data.schema.complex import PreppedComplex
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
     RDKitConstrainedPoseGenerator,
 )
+from asapdiscovery.modeling.schema import PreppedComplex
 
 
 class _AlchemyPrepBase(_SchemaBase):
@@ -488,7 +488,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
 
         # gather the results
         return AlchemyDataSet(
-            **self.dict(exclude={"type"}),
+            **self.model_dump(exclude={"type"}),
             dataset_name=dataset_name,
             reference_complex=reference_complex,
             input_ligands=input_ligands,

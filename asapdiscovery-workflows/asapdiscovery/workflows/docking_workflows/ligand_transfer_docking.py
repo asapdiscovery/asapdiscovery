@@ -14,7 +14,7 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
-from pydantic import Field, PositiveInt, root_validator
+from pydantic import Field, PositiveInt, model_validator
 
 from asapdiscovery.data.operators.selectors.selector_list import StructureSelector
 from asapdiscovery.data.readers.meta_structure_factory import MetaStructureFactory
@@ -140,9 +140,8 @@ class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):
         OpenMMPlatform.Fastest, description="OpenMM platform to use for MD"
     )
 
-    @root_validator
-    @classmethod
-    def check_inputs(cls, values):
+    @model_validator(mode="after")
+    def check_inputs(self):
         """
         Validate inputs
         """
@@ -150,7 +149,7 @@ class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):
             total = sum(
                 [
                     bool(
-                        values.get(f"{_type}_{_dir}")
+                        getattr(self, f"{_type}_{_dir}", None)
                         for _dir in ["fragalysis_dir", "structure_dir", "pdb_file"]
                     )
                 ]
@@ -162,7 +161,7 @@ class LigandTransferDockingWorkflowInputs(DockingWorkflowInputsBase):
                     f"Must specify exactly one of {_type}_fragalysis_dir, {_type}_structure_dir or {_type}_pdb_file"
                 )
 
-            return values
+            return self
 
 
 def ligand_transfer_docking_workflow(inputs: LigandTransferDockingWorkflowInputs):

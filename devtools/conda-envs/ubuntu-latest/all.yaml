@@ -1,0 +1,105 @@
+name: asapdiscovery
+channels:
+  - openeye
+  - conda-forge
+dependencies:
+  # Base
+  - pip
+  - python >=3.12,<3.13
+
+  # Testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - pytest-timeout
+  - pytest-console-scripts
+  - codecov
+  - requests-mock
+  - mock
+
+  # Core
+  - click
+  - appdirs   # remove?
+  - pydantic >2
+  - pydantic-settings
+  - numpy
+  - pandas
+  - pebble    # remove?
+  - rdkit
+  - openff-toolkit
+  - openff-fragmenter
+  - openff-forcefields >=2024.04.0
+  - openeye-toolkits
+  - multimethod
+  - scipy >=1.13.1 # remove pin?
+
+  # Data services
+  - requests
+  - boto3
+  - moto
+  - flask      # remove
+  - flask-cors # remove
+  - typing-extensions # remove
+  - biopython
+  - validators # remove
+  - pyyaml
+  - ase        # remove
+  - sigfig     # consider replacing; see usage
+
+  # Execution
+  - dask
+  - distributed   # remove
+#  - dask-jobqueue # remove
+#  - dask-cuda     # remove
+  - netifaces     # remove
+
+  # Sequence alignment
+  - mafft
+
+  # ML
+  - pytorch
+  - pytorch_geometric >=2.5.0
+  - pytorch_cluster # remove?
+  - pytorch_scatter # remove?
+  - pytorch_sparse  # remove?
+  - h5py
+  - e3nn
+  - dgl <=2.0.0     # try to remove pin?
+  - dgllife
+  - pooch
+  - mtenn =0.6.3   # remove pin?
+  - wandb
+
+  # Simulation / MD
+  - openmm
+  - openmmforcefields >= 0.13.0
+  - mdtraj
+  - cudatoolkit
+
+  # Docking
+  - mdanalysis
+
+  # Alchemy / Free energy
+  - openfe >=1.8.0
+  - gufe >=1.7.2
+  - httpx
+  - perses >=0.10.2
+  - kartograf
+  - rich
+  - alchemiscale-client >=0.7.2
+  - cinnabar >=0.4.1
+
+  # Visualization
+  - seaborn
+  - panel
+  - plotmol
+  - semver
+  - imageio
+  - pymol-open-source
+  - gifsicle
+  - plip
+  - plotly  # remove
+  - dash    # remove
+  - pygifsicle
+  - airium
+  - logomaker

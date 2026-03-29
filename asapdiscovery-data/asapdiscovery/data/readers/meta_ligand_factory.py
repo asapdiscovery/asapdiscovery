@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from asapdiscovery.data.readers.molfile import MolFileFactory
 from asapdiscovery.data.schema.ligand import Ligand
@@ -32,23 +32,17 @@ class MetaLigandFactory(BaseModel):
     )
     ligand_file: Optional[str | Path] = Field(..., description="Ligand file to read")
 
-    @root_validator
-    @classmethod
-    def options_mutex(cls, values):
-        postera = values.get("postera")
-        ligand_file = values.get("ligand_file")
-        if postera and ligand_file:
+    @model_validator(mode="after")
+    def options_mutex(self):
+        if self.postera and self.ligand_file:
             raise ValueError("cannot specify postera and ligand_file")
-        return values
+        return self
 
-    @root_validator
-    @classmethod
-    def postera_molset_and_name(cls, values):
-        postera_molset_name = values.get("postera_molset_name")
-        postera = values.get("postera")
-        if postera and not postera_molset_name:
+    @model_validator(mode="after")
+    def postera_molset_and_name(self):
+        if self.postera and not self.postera_molset_name:
             raise ValueError("must specify postera_molset_name if postera is specified")
-        return values
+        return self
 
     def load(self) -> list[Ligand]:
         if self.postera:

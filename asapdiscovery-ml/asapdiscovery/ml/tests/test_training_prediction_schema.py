@@ -67,11 +67,10 @@ def test_training_pred_constructor(identifiers, loss_configs):
 def test_training_pred_json_roundtrip(identifiers, loss_configs):
     tp = TrainingPrediction(**identifiers[0], loss_config=loss_configs[0])
 
-    json_str = tp.json()
+    json_str = tp.model_dump_json()
     tp_roundtrip = TrainingPrediction(**json.loads(json_str))
 
-    for k, v in tp.dict().items():
-        assert getattr(tp_roundtrip, k) == v
+    assert tp_roundtrip.model_dump() == tp.model_dump()
 
 
 def test_training_pred_tracker_constructor_no_dict():
@@ -99,7 +98,7 @@ def test_training_pred_tracker_constructor_bad_dict(identifiers, loss_configs):
     tp1 = TrainingPrediction(**identifiers[0], loss_config=loss_configs[0])
     tp2 = TrainingPrediction(**identifiers[1], loss_config=loss_configs[1])
 
-    with pytest.raises(pydantic.error_wrappers.ValidationError):
+    with pytest.raises(pydantic.ValidationError):
         _ = TrainingPredictionTracker(split_dict={"train": [tp1], "val": [tp2]})
 
 
@@ -111,11 +110,10 @@ def test_training_pred_tracker_json_roundtrip(identifiers, loss_configs):
         split_dict={"train": [tp1], "val": [tp2], "test": []}
     )
 
-    json_str = tp_tracker.json()
+    json_str = tp_tracker.model_dump_json()
     tp_roundtrip = TrainingPredictionTracker(**json.loads(json_str))
 
-    for k, v in tp_tracker.dict().items():
-        assert getattr(tp_roundtrip, k) == v
+    assert tp_roundtrip.model_dump() == tp_tracker.model_dump()
 
 
 def test_training_pred_tracker_len(identifiers, loss_configs):
@@ -447,14 +445,22 @@ def test_training_pred_tracker_get_losses_no_agg(identifiers, loss_configs):
     assert set(loss_dict["val"].keys()) == {tp2.compound_id}
 
     assert set(loss_dict["train"][tp1.compound_id].keys()) == {
-        loss_configs[0].json(),
-        loss_configs[1].json(),
+        loss_configs[0].model_dump_json(),
+        loss_configs[1].model_dump_json(),
     }
-    assert set(loss_dict["val"][tp2.compound_id].keys()) == {loss_configs[1].json()}
+    assert set(loss_dict["val"][tp2.compound_id].keys()) == {
+        loss_configs[1].model_dump_json()
+    }
 
-    assert (loss_dict["train"][tp1.compound_id][loss_configs[0].json()] == [5.0]).all()
-    assert (loss_dict["train"][tp1.compound_id][loss_configs[1].json()] == [20.0]).all()
-    assert (loss_dict["val"][tp2.compound_id][loss_configs[1].json()] == [10.0]).all()
+    assert (
+        loss_dict["train"][tp1.compound_id][loss_configs[0].model_dump_json()] == [5.0]
+    ).all()
+    assert (
+        loss_dict["train"][tp1.compound_id][loss_configs[1].model_dump_json()] == [20.0]
+    ).all()
+    assert (
+        loss_dict["val"][tp2.compound_id][loss_configs[1].model_dump_json()] == [10.0]
+    ).all()
 
 
 def test_training_pred_tracker_get_losses_agg_losses(identifiers, loss_configs):
@@ -547,13 +553,17 @@ def test_training_pred_tracker_get_losses_agg_compounds(identifiers, loss_config
     assert set(loss_dict.keys()) == {"train"}
 
     assert set(loss_dict["train"].keys()) == {
-        loss_configs[0].json(),
-        loss_configs[1].json(),
+        loss_configs[0].model_dump_json(),
+        loss_configs[1].model_dump_json(),
     }
 
     # Dividing by 2 now bc we're taking mean across multiple compounds
-    assert (loss_dict["train"][loss_configs[0].json()] == [5 / 2 + 30 / 2]).all()
-    assert (loss_dict["train"][loss_configs[1].json()] == [20 / 2 + 10 / 2]).all()
+    assert (
+        loss_dict["train"][loss_configs[0].model_dump_json()] == [5 / 2 + 30 / 2]
+    ).all()
+    assert (
+        loss_dict["train"][loss_configs[1].model_dump_json()] == [20 / 2 + 10 / 2]
+    ).all()
 
 
 def test_training_pred_tracker_get_losses_agg_both(identifiers, loss_configs):

@@ -6,12 +6,11 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import dask
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from asapdiscovery.data.backend.openeye import oechem
-from asapdiscovery.data.schema.complex import Complex, PreppedComplex
+from asapdiscovery.data.backend.openeye import oechem, split_openeye_design_unit
+from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.schema.ligand import Ligand
-from asapdiscovery.data.schema.target import PreppedTarget
 from asapdiscovery.data.util.dask_utils import (
     FailureMode,
     actualise_dask_delayed_iterable,
@@ -21,10 +20,10 @@ from asapdiscovery.data.util.utils import seqres_to_res_list
 from asapdiscovery.modeling.modeling import (
     make_design_unit,
     mutate_residues,
-    split_openeye_design_unit,
     spruce_protein,
     superpose_molecule,
 )
+from asapdiscovery.modeling.schema import PreppedComplex, PreppedTarget
 
 if TYPE_CHECKING:
     from distributed import Client
@@ -50,8 +49,7 @@ class ProteinPrepperBase(BaseModel):
         "ProteinPrepperBase", description="The type of prepper to use"
     )
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abc.abstractmethod
     def _prep(self, inputs: list[Complex]) -> list[PreppedComplex]: ...

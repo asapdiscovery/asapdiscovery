@@ -1,4 +1,5 @@
 import json
+import math
 
 import pandas
 import pytest
@@ -6,6 +7,17 @@ from click.testing import CliRunner
 
 from asapdiscovery.data.cli.cli import data as cli
 from asapdiscovery.data.testing.test_resources import fetch_test_file
+
+
+def _normalize_nan(obj):
+    """Recursively replace NaN with None to handle pydantic v1/v2 serialization differences."""
+    if isinstance(obj, float) and math.isnan(obj):
+        return None
+    if isinstance(obj, dict):
+        return {k: _normalize_nan(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_normalize_nan(v) for v in obj]
+    return obj
 
 
 @pytest.fixture(scope="session")
@@ -47,8 +59,8 @@ def test_cdd_to_schema(cdd_to_schema_files, tmp_path):
     df_test = pandas.read_csv(test_out_csv_fn, index_col=0)
     assert df_test.equals(df_check)
 
-    json_check = json.loads(out_json_fn.read_text())
-    json_test = json.loads(test_out_json_fn.read_text())
+    json_check = _normalize_nan(json.loads(out_json_fn.read_text()))
+    json_test = _normalize_nan(json.loads(test_out_json_fn.read_text()))
 
     json_check = sorted(json_check, key=lambda d: d.get("compound_id"))
     json_test = sorted(json_test, key=lambda d: d.get("compound_id"))

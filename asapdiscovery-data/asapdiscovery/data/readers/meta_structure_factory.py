@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from asapdiscovery.data.readers.structure_dir import StructureDirFactory
 from asapdiscovery.data.schema.complex import Complex
@@ -40,17 +40,14 @@ class MetaStructureFactory(BaseModel):
         ..., description="Path to pdb file containing structure"
     )
 
-    @root_validator
-    def options_mutex(cls, values):
-        fragalysis = values.get("fragalysis_dir")
-        pdb_file = values.get("pdb_file")
-        structure_dir = values.get("structure_dir")
-        vals = [fragalysis, pdb_file, structure_dir]
+    @model_validator(mode="after")
+    def options_mutex(self):
+        vals = [self.fragalysis_dir, self.pdb_file, self.structure_dir]
         if sum(bool(v) for v in vals) != 1:
             raise ValueError(
                 "Must specify exactly one of structure_dir, fragalysis_dir or pdb_file"
             )
-        return values
+        return self
 
     def load(
         self,

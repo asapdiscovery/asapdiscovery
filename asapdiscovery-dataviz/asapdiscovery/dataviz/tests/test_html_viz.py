@@ -11,7 +11,7 @@ from asapdiscovery.docking.openeye import POSITDockingResults
 @pytest.mark.parametrize("target", sorted(TargetTags.get_values()))
 def test_html_viz_subpockets_disk(target, docking_results_file, use_dask, tmp_path):
     html_viz = HTMLVisualizer(
-        target=target, output_dir=tmp_path, colour_method="subpockets"
+        target=target, output_dir=tmp_path, color_method="subpockets"
     )
     vizs = html_viz.visualize(
         inputs=docking_results_file,
@@ -28,7 +28,7 @@ def test_html_viz_subpockets_in_mem(
     target, docking_results_in_memory, use_dask, tmp_path
 ):
     html_viz = HTMLVisualizer(
-        target=target, output_dir=tmp_path, colour_method="subpockets"
+        target=target, output_dir=tmp_path, color_method="subpockets"
     )
     vizs = html_viz.visualize(
         inputs=docking_results_in_memory, use_dask=use_dask, backend="in-memory"
@@ -45,7 +45,7 @@ def test_html_viz_fitness_in_mem(
     html_viz = HTMLVisualizer(
         target="SARS-CoV-2-Mpro",
         output_dir=tmp_path,
-        colour_method="fitness",
+        color_method="fitness",
         align=align,
         write_to_disk=write_to_disk,
     )

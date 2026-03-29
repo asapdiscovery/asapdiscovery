@@ -7,7 +7,7 @@ from typing import List  # noqa: F401
 
 import dask
 import pandas
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from asapdiscovery.data.schema.complex import Complex
 from asapdiscovery.data.util.dask_utils import (
@@ -39,7 +39,7 @@ class FragalysisFactory(BaseModel):
         "metadata.csv", description="Name of the metadata file."
     )
 
-    @validator("parent_dir")
+    @field_validator("parent_dir")
     @classmethod
     def _validate_parent_dir(cls, v):
         if not v.exists():
@@ -50,24 +50,19 @@ class FragalysisFactory(BaseModel):
 
         return v
 
-    @root_validator
-    @classmethod
-    def _validate_metadata_csv_name(cls, values):
-        parent_dir = values.get("parent_dir")
-        metadata_csv_name = values.get("metadata_csv_name")
-        csv_path = parent_dir / metadata_csv_name
+    @model_validator(mode="after")
+    def _validate_metadata_csv_name(self):
+        csv_path = self.parent_dir / self.metadata_csv_name
         if not csv_path.exists():
             raise FileNotFoundError(f"No {csv_path.name} file found in parent_dir.")
-        return values
+        return self
 
-    @root_validator
-    @classmethod
-    def _validate_aligned_dir(cls, values):
-        parent_dir = values.get("parent_dir")
-        aligned_dir = parent_dir / "aligned"
+    @model_validator(mode="after")
+    def _validate_aligned_dir(self):
+        aligned_dir = self.parent_dir / "aligned"
         if not aligned_dir.exists():
             raise FileNotFoundError("No aligned/ directory found in parent_dir.")
-        return values
+        return self
 
     def load(
         self, use_dask=False, dask_client=None, failure_mode=FailureMode.SKIP

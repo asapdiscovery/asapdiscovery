@@ -218,7 +218,7 @@ def large_scale(
 @click.option(
     "--structure-selector",
     type=click.Choice(StructureSelector.get_values(), case_sensitive=False),
-    default=StructureSelector.LEAVE_SIMILAR_OUT,
+    default=StructureSelector.LEAVE_SIMILAR_OUT.value,
     help="The type of structure selector to use.",
 )
 @click.option("--num-poses", type=int, default=1, help="Number of poses to generate")
