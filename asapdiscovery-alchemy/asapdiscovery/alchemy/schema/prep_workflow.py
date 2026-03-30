@@ -115,15 +115,32 @@ class AlchemyDataSet(_AlchemyPrepBase):
         """
         Append posed ligands to an SDF file incrementally.
 
+        This appends to an existing file rather than overwriting it, so it can
+        be called repeatedly as batches of ligands are posed.
+
         Parameters
         ----------
         ligands: The list of ligands to append to the SDF file.
         filename: The name of the SDF file to append to.
         """
+        import tempfile
+
         from asapdiscovery.data.backend.openeye import save_openeye_sdfs
 
+        # Write the batch to a temp file, then append its contents.
+        # This avoids depending on oemolostream.openappend and ensures
+        # SDF formatting is consistent with the rest of the codebase.
         oemols = [ligand.to_oemol() for ligand in ligands]
-        save_openeye_sdfs(oemols, filename)
+        with tempfile.NamedTemporaryFile(suffix=".sdf", delete=False) as tmp:
+            tmp_path = tmp.name
+        save_openeye_sdfs(oemols, tmp_path)
+
+        with open(tmp_path, "r") as src, open(filename, "a") as dst:
+            dst.write(src.read())
+
+        import os
+
+        os.unlink(tmp_path)
 
     @staticmethod
     def load_posed_ligands(filename: str) -> list[Ligand]:
@@ -452,29 +469,47 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             )
             console.line()
 
+        newly_posed_ligands = []
+        all_pose_fails = []
         if ligands_to_pose:
-            pose_result = self.pose_generator.generate_poses(
-                prepared_complex=reference_complex,
-                ligands=ligands_to_pose,
-                core_smarts=self.core_smarts,
-                processors=processors,
-            )
-            newly_posed_ligands = pose_result.posed_ligands
-            provenance[self.pose_generator.type] = self.pose_generator.provenance()
-            # save any failed ligands
-            if pose_result.failed_ligands:
-                failed_ligands[self.pose_generator.type] = pose_result.failed_ligands
+            # When output_sdf is set, process ligands in batches so that results
+            # are written incrementally. If the process is killed mid-run, all
+            # previously completed batches will already be on disk and can be
+            # resumed. Without output_sdf, process all at once as before.
+            batch_size = max(100, processors * 4) if output_sdf is not None else len(ligands_to_pose)
+            for batch_start in range(0, len(ligands_to_pose), batch_size):
+                batch = ligands_to_pose[batch_start : batch_start + batch_size]
+                batch_num = batch_start // batch_size + 1
+                total_batches = (len(ligands_to_pose) + batch_size - 1) // batch_size
+                if total_batches > 1:
+                    console.print(
+                        f"Processing batch {batch_num}/{total_batches} ({len(batch)} ligands)..."
+                    )
 
-            # write newly posed ligands incrementally if output_sdf is set
-            if output_sdf is not None and newly_posed_ligands:
-                AlchemyDataSet.save_ligands_incremental(
-                    ligands=newly_posed_ligands, filename=output_sdf
+                pose_result = self.pose_generator.generate_poses(
+                    prepared_complex=reference_complex,
+                    ligands=batch,
+                    core_smarts=self.core_smarts,
+                    processors=processors,
                 )
-                console.print(
-                    f"Incrementally saved {len(newly_posed_ligands)} newly posed ligands to [repr.filename]{output_sdf}[/repr.filename]."
-                )
-        else:
-            newly_posed_ligands = []
+                newly_posed_ligands.extend(pose_result.posed_ligands)
+                if pose_result.failed_ligands:
+                    all_pose_fails.extend(pose_result.failed_ligands)
+
+                # write this batch's results immediately so they survive a crash
+                if output_sdf is not None and pose_result.posed_ligands:
+                    AlchemyDataSet.save_ligands_incremental(
+                        ligands=pose_result.posed_ligands, filename=output_sdf
+                    )
+                    console.print(
+                        f"Saved {len(pose_result.posed_ligands)} posed ligands to "
+                        f"[repr.filename]{output_sdf}[/repr.filename] "
+                        f"({len(newly_posed_ligands)} total new so far)."
+                    )
+
+            provenance[self.pose_generator.type] = self.pose_generator.provenance()
+            if all_pose_fails:
+                failed_ligands[self.pose_generator.type] = all_pose_fails
 
         # combine resumed and newly posed ligands
         posed_ligands = resumed_ligands + newly_posed_ligands
