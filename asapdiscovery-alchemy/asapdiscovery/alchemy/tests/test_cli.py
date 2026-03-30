@@ -261,7 +261,7 @@ def test_alchemy_prep_run_with_fails_and_charges(
             in result.stdout
         )
         # check all molecules have poses made
-        assert "[✓] Pose generation successful for 5/5." in result.stdout
+        assert "Pose generation successful for 5/5" in result.stdout
         # 2 molecules should be removed due to inconsistent stereo
         assert (
             "[✓] Stereochemistry filtering complete 2 molecules removed."
@@ -340,7 +340,7 @@ def test_alchemy_prep_run_all_pass(tmpdir, mac1_complex, openeye_prep_workflow):
             in result.stdout
         )
         # check all molecules have poses made
-        assert "[✓] Pose generation successful for 5/5." in result.stdout
+        assert "Pose generation successful for 5/5" in result.stdout
         # make sure stereo filtering is not run
         assert "[✓] Stereochemistry filtering complete" not in result.stdout
         # check the failure warning is not printed
@@ -476,7 +476,7 @@ def test_alchemy_prep_receptor_pick(tmpdir, mac1_complex, openeye_prep_workflow)
             in result.stdout
         )
         # check all molecules have poses made
-        assert "[✓] Pose generation successful for 5/5." in result.stdout
+        assert "Pose generation successful for 5/5" in result.stdout
         # make sure stereo filtering is not run
         assert "[✓] Stereochemistry filtering complete" in result.stdout
         # check we can load the result
