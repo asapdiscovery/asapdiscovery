@@ -407,21 +407,30 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         pretty.install()
         console = rich.get_console()
 
-        # Check for previously posed ligands to resume from
+        # Check for previously posed ligands to resume from.
+        # We look at both the final SDF and any partial progress file from a
+        # previous interrupted run.
         resumed_ligands = []
         resumed_inchikeys = set()
-        if output_sdf is not None and pathlib.Path(output_sdf).exists():
-            console.print(
-                f"Found existing posed ligands file [repr.filename]{output_sdf}[/repr.filename], loading for resume..."
-            )
-            resumed_ligands = AlchemyDataSet.load_posed_ligands(output_sdf)
-            resumed_inchikeys = {
-                lig.provenance.fixed_inchikey for lig in resumed_ligands
-            }
-            console.print(
-                f"[[green]✓[/green]] Loaded {len(resumed_ligands)} previously posed ligands. These will be skipped."
-            )
-            console.line()
+        if output_sdf is not None:
+            sdf_path = pathlib.Path(output_sdf)
+            partial_path = sdf_path.with_suffix(".partial.sdf")
+            resume_files = [
+                f for f in [sdf_path, partial_path] if f.exists() and f.stat().st_size > 0
+            ]
+            for resume_file in resume_files:
+                loaded = AlchemyDataSet.load_posed_ligands(str(resume_file))
+                for lig in loaded:
+                    key = lig.provenance.fixed_inchikey
+                    if key not in resumed_inchikeys:
+                        resumed_ligands.append(lig)
+                        resumed_inchikeys.add(key)
+
+            if resumed_ligands:
+                console.print(
+                    f"[[green]✓[/green]] Loaded {len(resumed_ligands)} previously posed ligands for resume. These will be skipped."
+                )
+                console.line()
 
         # deduplicate ligands first important for FEC networks?
         input_ligands = copy.deepcopy(ligands)
@@ -476,18 +485,16 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
 
         newly_posed_ligands = []
         if ligands_to_pose:
-            # When output_sdf is set, open a persistent SDF stream and build a
-            # callback that writes each posed ligand immediately. The stream stays
-            # open for the entire run so we pay the file-open cost only once.
-            # We re-write any resumed ligands first so the file always contains the
-            # complete set of successfully posed ligands.
+            # When output_sdf is set, open a persistent SDF stream writing to a
+            # .partial.sdf file. Only newly posed ligands go here — resumed ones
+            # are already on disk. The final complete SDF is written by the CLI
+            # after the workflow finishes via save_posed_ligands().
             if output_sdf is not None:
-                sdf_ctx = AlchemyDataSet.open_incremental_sdf(output_sdf)
+                partial_file = str(
+                    pathlib.Path(output_sdf).with_suffix(".partial.sdf")
+                )
+                sdf_ctx = AlchemyDataSet.open_incremental_sdf(partial_file)
                 write_ligand = sdf_ctx.__enter__()
-
-                # Re-write previously resumed ligands so the file is self-consistent
-                for lig in resumed_ligands:
-                    write_ligand(lig)
 
                 def pose_callback(ligand):
                     write_ligand(ligand)
