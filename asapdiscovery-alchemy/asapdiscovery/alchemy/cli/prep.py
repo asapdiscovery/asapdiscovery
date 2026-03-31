@@ -460,19 +460,6 @@ def run(
         (1, 0, 1, 0),
     )
     console.print(message)
-
-    # Write the final posed ligands SDF (the complete set including any charged ligands)
-    alchemy_dataset.save_posed_ligands(posed_ligand_file)
-
-    # Clean up the partial progress file now that the final SDF is written
-    partial_file = posed_ligand_file.with_suffix(".partial.sdf")
-    if partial_file.exists():
-        partial_file.unlink()
-    message = Padding(
-        f"Saved posed ligands to [repr.filename]{posed_ligand_file}[/repr.filename]",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
     receptor_file = output_folder.joinpath(
         f"{alchemy_dataset.reference_complex.target.target_name}.pdb"
     )

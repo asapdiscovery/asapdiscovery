@@ -600,7 +600,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             console.print(message)
 
         # gather the results
-        return AlchemyDataSet(
+        alchemy_dataset = AlchemyDataSet(
             **self.model_dump(exclude={"type"}),
             dataset_name=dataset_name,
             reference_complex=reference_complex,
@@ -609,3 +609,15 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             failed_ligands=failed_ligands if failed_ligands else None,
             provenance=provenance,
         )
+
+        # Write the final posed ligands SDF and clean up the partial file
+        if output_sdf is not None:
+            alchemy_dataset.save_posed_ligands(output_sdf)
+            console.print(
+                f"Saved posed ligands to [repr.filename]{output_sdf}[/repr.filename]."
+            )
+            partial_path = pathlib.Path(output_sdf).with_suffix(".partial.sdf")
+            if partial_path.exists():
+                partial_path.unlink()
+
+        return alchemy_dataset
