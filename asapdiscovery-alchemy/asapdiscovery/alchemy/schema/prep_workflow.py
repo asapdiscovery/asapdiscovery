@@ -16,6 +16,7 @@ from asapdiscovery.data.operators.state_expanders.stereo_expander import StereoE
 from asapdiscovery.data.operators.state_expanders.tautomer_expander import (
     TautomerExpander,
 )
+from asapdiscovery.data.backend.openeye import save_openeye_sdfs
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
@@ -105,24 +106,7 @@ class AlchemyDataSet(_AlchemyPrepBase):
         ----------
         filename: The name of the SDF the ligands should be saved to.
         """
-        from asapdiscovery.data.backend.openeye import save_openeye_sdfs
-
         oemols = [ligand.to_oemol() for ligand in self.posed_ligands]
-        save_openeye_sdfs(oemols, filename)
-
-    @staticmethod
-    def save_ligands_incremental(ligands: list[Ligand], filename: str):
-        """
-        Save a batch of posed ligands to an SDF file, overwriting any existing file.
-
-        Parameters
-        ----------
-        ligands: The list of ligands to write to the SDF file.
-        filename: The path to the SDF file to write.
-        """
-        from asapdiscovery.data.backend.openeye import save_openeye_sdfs
-
-        oemols = [ligand.to_oemol() for ligand in ligands]
         save_openeye_sdfs(oemols, filename)
 
     @staticmethod
@@ -478,21 +462,15 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             # Process ligands in batches so that results are written to disk
             # incrementally. If the process is killed, only the current batch
             # is lost — all previously completed batches are already saved.
-            # Without output_sdf, process all at once as before.
-            effective_batch_size = (
-                batch_size if output_sdf is not None else len(ligands_to_pose)
-            )
             partial_file = (
                 str(pathlib.Path(output_sdf).with_suffix(".partial.sdf"))
                 if output_sdf is not None
                 else None
             )
-            for batch_start in range(0, len(ligands_to_pose), effective_batch_size):
-                batch = ligands_to_pose[batch_start : batch_start + effective_batch_size]
-                batch_num = batch_start // effective_batch_size + 1
-                total_batches = (
-                    len(ligands_to_pose) + effective_batch_size - 1
-                ) // effective_batch_size
+            total_batches = (len(ligands_to_pose) + batch_size - 1) // batch_size
+            for batch_start in range(0, len(ligands_to_pose), batch_size):
+                batch = ligands_to_pose[batch_start : batch_start + batch_size]
+                batch_num = batch_start // batch_size + 1
                 if total_batches > 1:
                     console.print(
                         f"Processing batch {batch_num}/{total_batches} "
@@ -509,12 +487,15 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                 if pose_result.failed_ligands:
                     all_pose_fails.extend(pose_result.failed_ligands)
 
-                # Save all newly posed ligands so far to the partial file.
-                # This overwrites each time so the file is always complete
-                # and never has append/truncation issues.
+                # Overwrite the partial file with ALL newly posed ligands so
+                # far (not just this batch). This is intentional: a full
+                # rewrite ensures the file is always in a consistent state,
+                # whereas appending could leave a truncated record if a crash
+                # occurs mid-write.
                 if partial_file is not None and newly_posed_ligands:
-                    AlchemyDataSet.save_ligands_incremental(
-                        ligands=newly_posed_ligands, filename=partial_file
+                    save_openeye_sdfs(
+                        [lig.to_oemol() for lig in newly_posed_ligands],
+                        partial_file,
                     )
 
             provenance[self.pose_generator.type] = self.pose_generator.provenance()
