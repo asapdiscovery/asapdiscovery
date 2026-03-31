@@ -279,6 +279,14 @@ def alchemize(
     show_default=True,
     help="Skip local charge generation. Useful when charges will be generated later or are not needed.",
 )
+@click.option(
+    "--batch-size",
+    type=click.INT,
+    default=100,
+    show_default=True,
+    help="Number of ligands to process per batch during pose generation. Results are saved after each batch, "
+    "so only one batch of work is lost if the process is interrupted.",
+)
 def run(
     dataset_name: str,
     ligands: Optional[str] = None,
@@ -290,6 +298,7 @@ def run(
     postera_molset_name: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
     skip_charges: bool = False,
+    batch_size: int = 100,
 ):
     """
     Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate
@@ -451,6 +460,7 @@ def run(
         processors=processors,
         reference_ligands=ref_ligands,
         output_sdf=str(posed_ligand_file),
+        batch_size=batch_size,
     )
 
     dataset_file = output_folder.joinpath("prepared_alchemy_dataset.json")
