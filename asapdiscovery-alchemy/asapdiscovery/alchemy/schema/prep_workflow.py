@@ -111,65 +111,19 @@ class AlchemyDataSet(_AlchemyPrepBase):
         save_openeye_sdfs(oemols, filename)
 
     @staticmethod
-    def open_incremental_sdf(filename: str):
+    def save_ligands_incremental(ligands: list[Ligand], filename: str):
         """
-        Create a context manager for incrementally appending ligands to an SDF file.
-
-        Each ligand is written by opening a temporary oemolostream, writing the
-        molecule, and closing the stream. This ensures the data is fully flushed
-        to disk after every ligand — so even a SIGKILL only loses the ligand
-        that was mid-write. The open/close overhead is negligible compared to
-        the seconds spent on conformer generation per ligand.
-
-        The SDF records are appended to the file using Python's append mode.
+        Save a batch of posed ligands to an SDF file, overwriting any existing file.
 
         Parameters
         ----------
-        filename: The path to the SDF file to write to (created if missing).
-
-        Example
-        -------
-        >>> with AlchemyDataSet.open_incremental_sdf("out.sdf") as write_ligand:
-        ...     write_ligand(ligand)
+        ligands: The list of ligands to write to the SDF file.
+        filename: The path to the SDF file to write.
         """
-        import tempfile
-        from contextlib import contextmanager
+        from asapdiscovery.data.backend.openeye import save_openeye_sdfs
 
-        from asapdiscovery.data.backend.openeye import oechem
-
-        @contextmanager
-        def _writer():
-            def write_ligand(ligand: Ligand):
-                # Write a single molecule to a temp file via oemolostream (which
-                # guarantees correct SDF formatting), then append the text to the
-                # target file and flush. This ensures each record is on disk before
-                # the next ligand starts.
-                with tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".sdf", delete=False
-                ) as tmp:
-                    tmp_path = tmp.name
-
-                ofs = oechem.oemolostream()
-                ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
-                if not ofs.open(tmp_path):
-                    raise IOError(f"Unable to open temp file {tmp_path}")
-                oechem.OEWriteMolecule(ofs, ligand.to_oemol())
-                ofs.close()
-
-                import os
-
-                with open(tmp_path, "r") as src:
-                    sdf_text = src.read()
-                os.unlink(tmp_path)
-
-                with open(filename, "a") as dst:
-                    dst.write(sdf_text)
-                    dst.flush()
-                    os.fsync(dst.fileno())
-
-            yield write_ligand
-
-        return _writer()
+        oemols = [ligand.to_oemol() for ligand in ligands]
+        save_openeye_sdfs(oemols, filename)
 
     @staticmethod
     def load_posed_ligands(filename: str) -> list[Ligand]:
@@ -516,42 +470,55 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             console.line()
 
         newly_posed_ligands = []
+        all_pose_fails = []
         if ligands_to_pose:
-            # When output_sdf is set, open a persistent SDF stream writing to a
-            # .partial.sdf file. Only newly posed ligands go here — resumed ones
-            # are already on disk. The final complete SDF is written by the CLI
-            # after the workflow finishes via save_posed_ligands().
-            if output_sdf is not None:
-                partial_file = str(
-                    pathlib.Path(output_sdf).with_suffix(".partial.sdf")
-                )
-                sdf_ctx = AlchemyDataSet.open_incremental_sdf(partial_file)
-                write_ligand = sdf_ctx.__enter__()
+            # Process ligands in batches so that results are written to disk
+            # incrementally. If the process is killed, only the current batch
+            # is lost — all previously completed batches are already saved.
+            # Without output_sdf, process all at once as before.
+            batch_size = (
+                max(100, processors * 4)
+                if output_sdf is not None
+                else len(ligands_to_pose)
+            )
+            partial_file = (
+                str(pathlib.Path(output_sdf).with_suffix(".partial.sdf"))
+                if output_sdf is not None
+                else None
+            )
+            for batch_start in range(0, len(ligands_to_pose), batch_size):
+                batch = ligands_to_pose[batch_start : batch_start + batch_size]
+                batch_num = batch_start // batch_size + 1
+                total_batches = (
+                    len(ligands_to_pose) + batch_size - 1
+                ) // batch_size
+                if total_batches > 1:
+                    console.print(
+                        f"Processing batch {batch_num}/{total_batches} "
+                        f"({len(batch)} ligands)..."
+                    )
 
-                def pose_callback(ligand):
-                    write_ligand(ligand)
-
-            else:
-                sdf_ctx = None
-                pose_callback = None
-
-            try:
                 pose_result = self.pose_generator.generate_poses(
                     prepared_complex=reference_complex,
-                    ligands=ligands_to_pose,
+                    ligands=batch,
                     core_smarts=self.core_smarts,
                     processors=processors,
-                    on_pose_complete=pose_callback,
                 )
-            finally:
-                if sdf_ctx is not None:
-                    sdf_ctx.__exit__(None, None, None)
+                newly_posed_ligands.extend(pose_result.posed_ligands)
+                if pose_result.failed_ligands:
+                    all_pose_fails.extend(pose_result.failed_ligands)
 
-            newly_posed_ligands = pose_result.posed_ligands
+                # Save all newly posed ligands so far to the partial file.
+                # This overwrites each time so the file is always complete
+                # and never has append/truncation issues.
+                if partial_file is not None and newly_posed_ligands:
+                    AlchemyDataSet.save_ligands_incremental(
+                        ligands=newly_posed_ligands, filename=partial_file
+                    )
+
             provenance[self.pose_generator.type] = self.pose_generator.provenance()
-            # save any failed ligands
-            if pose_result.failed_ligands:
-                failed_ligands[self.pose_generator.type] = pose_result.failed_ligands
+            if all_pose_fails:
+                failed_ligands[self.pose_generator.type] = all_pose_fails
 
         # combine resumed and newly posed ligands
         posed_ligands = resumed_ligands + newly_posed_ligands
