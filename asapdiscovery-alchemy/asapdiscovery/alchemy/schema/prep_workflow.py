@@ -350,6 +350,7 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         processors: int = 1,
         reference_ligands: Optional[list[Ligand]] = None,
         output_sdf: Optional[str] = None,
+        batch_size: int = 100,
     ) -> AlchemyDataSet:
         """
         Run the set of input ligands through the state enumeration and pose generation workflow to create a set of posed
@@ -374,6 +375,8 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                 poses for if `self.n_references` > 0.
             output_sdf: Optional path to an SDF file for incremental writing of posed ligands. If the file
                 already exists, previously posed ligands will be loaded and their posing will be skipped.
+            batch_size: Number of ligands to process per batch during pose generation. Results
+                are saved after each batch so only one batch is lost on interruption.
 
         Returns:
             A prepared AlchemyDataset with state expanded ligands posed in the receptor ready for FEC, along with the
@@ -476,22 +479,20 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             # incrementally. If the process is killed, only the current batch
             # is lost — all previously completed batches are already saved.
             # Without output_sdf, process all at once as before.
-            batch_size = (
-                max(100, processors * 4)
-                if output_sdf is not None
-                else len(ligands_to_pose)
+            effective_batch_size = (
+                batch_size if output_sdf is not None else len(ligands_to_pose)
             )
             partial_file = (
                 str(pathlib.Path(output_sdf).with_suffix(".partial.sdf"))
                 if output_sdf is not None
                 else None
             )
-            for batch_start in range(0, len(ligands_to_pose), batch_size):
-                batch = ligands_to_pose[batch_start : batch_start + batch_size]
-                batch_num = batch_start // batch_size + 1
+            for batch_start in range(0, len(ligands_to_pose), effective_batch_size):
+                batch = ligands_to_pose[batch_start : batch_start + effective_batch_size]
+                batch_num = batch_start // effective_batch_size + 1
                 total_batches = (
-                    len(ligands_to_pose) + batch_size - 1
-                ) // batch_size
+                    len(ligands_to_pose) + effective_batch_size - 1
+                ) // effective_batch_size
                 if total_batches > 1:
                     console.print(
                         f"Processing batch {batch_num}/{total_batches} "
