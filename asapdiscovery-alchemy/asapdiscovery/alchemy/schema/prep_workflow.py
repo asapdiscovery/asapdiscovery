@@ -113,37 +113,61 @@ class AlchemyDataSet(_AlchemyPrepBase):
     @staticmethod
     def open_incremental_sdf(filename: str):
         """
-        Open an SDF file for incremental writing using openeye's oemolostream.
+        Create a context manager for incrementally appending ligands to an SDF file.
 
-        Returns a context manager. Use the returned ``write`` method to append
-        individual Ligand objects without re-opening the file each time.
+        Each ligand is written by opening a temporary oemolostream, writing the
+        molecule, and closing the stream. This ensures the data is fully flushed
+        to disk after every ligand — so even a SIGKILL only loses the ligand
+        that was mid-write. The open/close overhead is negligible compared to
+        the seconds spent on conformer generation per ligand.
+
+        The SDF records are appended to the file using Python's append mode.
 
         Parameters
         ----------
-        filename: The path to the SDF file to append to (created if missing).
+        filename: The path to the SDF file to write to (created if missing).
 
         Example
         -------
         >>> with AlchemyDataSet.open_incremental_sdf("out.sdf") as write_ligand:
         ...     write_ligand(ligand)
         """
+        import tempfile
         from contextlib import contextmanager
 
         from asapdiscovery.data.backend.openeye import oechem
 
         @contextmanager
         def _writer():
-            ofs = oechem.oemolostream()
-            ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
-            if not ofs.open(str(filename)):
-                raise IOError(f"Unable to open {filename} for writing")
-            try:
-                def write_ligand(ligand: Ligand):
-                    oechem.OEWriteMolecule(ofs, ligand.to_oemol())
+            def write_ligand(ligand: Ligand):
+                # Write a single molecule to a temp file via oemolostream (which
+                # guarantees correct SDF formatting), then append the text to the
+                # target file and flush. This ensures each record is on disk before
+                # the next ligand starts.
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".sdf", delete=False
+                ) as tmp:
+                    tmp_path = tmp.name
 
-                yield write_ligand
-            finally:
+                ofs = oechem.oemolostream()
+                ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
+                if not ofs.open(tmp_path):
+                    raise IOError(f"Unable to open temp file {tmp_path}")
+                oechem.OEWriteMolecule(ofs, ligand.to_oemol())
                 ofs.close()
+
+                import os
+
+                with open(tmp_path, "r") as src:
+                    sdf_text = src.read()
+                os.unlink(tmp_path)
+
+                with open(filename, "a") as dst:
+                    dst.write(sdf_text)
+                    dst.flush()
+                    os.fsync(dst.fileno())
+
+            yield write_ligand
 
         return _writer()
 
@@ -419,7 +443,15 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                 f for f in [sdf_path, partial_path] if f.exists() and f.stat().st_size > 0
             ]
             for resume_file in resume_files:
-                loaded = AlchemyDataSet.load_posed_ligands(str(resume_file))
+                try:
+                    loaded = AlchemyDataSet.load_posed_ligands(str(resume_file))
+                except Exception as e:
+                    console.print(
+                        f"[yellow]Warning: could not fully load {resume_file} "
+                        f"(possibly truncated from a crash): {e}. "
+                        f"Successfully loaded ligands will still be used.[/yellow]"
+                    )
+                    continue
                 for lig in loaded:
                     key = lig.provenance.fixed_inchikey
                     if key not in resumed_inchikeys:
