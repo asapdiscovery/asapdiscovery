@@ -8,6 +8,7 @@ from rich.padding import Padding
 
 from asapdiscovery.alchemy.schema.base import _SchemaBase
 from asapdiscovery.alchemy.schema.charge import OpenFFCharges
+from asapdiscovery.data.backend.openeye import save_openeye_sdfs
 from asapdiscovery.data.operators.state_expanders.protomer_expander import (
     EpikExpander,
     ProtomerExpander,
@@ -16,7 +17,6 @@ from asapdiscovery.data.operators.state_expanders.stereo_expander import StereoE
 from asapdiscovery.data.operators.state_expanders.tautomer_expander import (
     TautomerExpander,
 )
-from asapdiscovery.data.backend.openeye import save_openeye_sdfs
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
     OpenEyeConstrainedPoseGenerator,
