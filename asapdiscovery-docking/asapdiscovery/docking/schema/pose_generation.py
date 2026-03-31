@@ -146,21 +146,33 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             )
         return result
 
-    def _prune_clashes(self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]):
+    def _build_near_nbr(self, receptor: oechem.OEMol) -> oechem.OENearestNbrs:
+        """Build a spatial index for clash detection against the receptor."""
+        return oechem.OENearestNbrs(receptor, self.clash_cutoff)
+
+    def _prune_clashes(
+        self,
+        receptor: oechem.OEMol,
+        ligands: list[oechem.OEMol],
+        near_nbr: Optional[oechem.OENearestNbrs] = None,
+    ):
         """
         Edit the conformers on the molecules in place to remove clashes with the receptor.
 
         Args:
             receptor: The receptor with which we should check for clashes.
             ligands: The list of ligands with conformers to prune.
+            near_nbr: A pre-built spatial index for the receptor. If not provided,
+                one will be created. Pass this when calling repeatedly to avoid
+                rebuilding the index each time.
 
         Returns:
             The ligands with clashed conformers removed.
         """
         import numpy as np
 
-        # setup the function to check for close neighbours
-        near_nbr = oechem.OENearestNbrs(receptor, self.clash_cutoff)
+        if near_nbr is None:
+            near_nbr = self._build_near_nbr(receptor)
 
         for ligand in ligands:
             if ligand.NumConfs() < 10:
@@ -185,8 +197,23 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             for _, conformer in poses[int(0.5 * len(poses)) :]:
                 ligand.DeleteConf(conformer)
 
+    def _build_scorer(
+        self, receptor: oechem.OEDesignUnit
+    ) -> oedocking.OEScore:
+        """Build and initialize a scoring function for pose selection."""
+        scorers = {
+            PoseSelectionMethod.Chemgauss4: oedocking.OEScoreType_Chemgauss4,
+            PoseSelectionMethod.Chemgauss3: oedocking.OEScoreType_Chemgauss3,
+        }
+        score = oedocking.OEScore(scorers[self.selector])
+        score.Initialize(receptor)
+        return score
+
     def _select_best_pose(
-        self, receptor: oechem.OEDesignUnit, ligands: list[oechem.OEMol]
+        self,
+        receptor: oechem.OEDesignUnit,
+        ligands: list[oechem.OEMol],
+        score: Optional[oedocking.OEScore] = None,
     ) -> list[oechem.OEMol]:
         """
         Select the best pose for each ligand in place using the selected criteria.
@@ -196,16 +223,15 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         Args:
             receptor: The receptor oedu of the receptor with the binding site defined
             ligands: The list of multi-conformer ligands for which we want to select the best pose.
+            score: A pre-built and initialized scorer. If not provided, one will be
+                created. Pass this when calling repeatedly to avoid re-initializing.
 
         Returns:
             A list of single conformer oe molecules with the optimal pose
         """
-        scorers = {
-            PoseSelectionMethod.Chemgauss4: oedocking.OEScoreType_Chemgauss4,
-            PoseSelectionMethod.Chemgauss3: oedocking.OEScoreType_Chemgauss3,
-        }
-        score = oedocking.OEScore(scorers[self.selector])
-        score.Initialize(receptor)
+        if score is None:
+            score = self._build_scorer(receptor)
+
         posed_ligands = []
         for ligand in ligands:
             poses = [
@@ -460,10 +486,13 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         # grab the reference ligand
         reference_ligand = prepared_complex.ligand.to_oemol()
 
-        # Prepare receptor objects upfront so we can prune/select per-ligand
+        # Prepare receptor objects and scoring upfront so we can prune/select
+        # per-ligand without rebuilding these expensive structures each time
         oedu_receptor = prepared_complex.target.to_oedu()
         oe_receptor = oechem.OEGraphMol()
         oedu_receptor.GetProtein(oe_receptor)
+        near_nbr = self._build_near_nbr(oe_receptor)
+        scorer = self._build_scorer(oedu_receptor)
 
         # process the ligands
         posed_ligands = []
@@ -471,9 +500,15 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         def _finalize_ligand(multi_conf_ligand):
             """Prune clashes, select best pose, fire callback for a single ligand."""
-            self._prune_clashes(receptor=oe_receptor, ligands=[multi_conf_ligand])
+            self._prune_clashes(
+                receptor=oe_receptor,
+                ligands=[multi_conf_ligand],
+                near_nbr=near_nbr,
+            )
             selected = self._select_best_pose(
-                receptor=oedu_receptor, ligands=[multi_conf_ligand]
+                receptor=oedu_receptor,
+                ligands=[multi_conf_ligand],
+                score=scorer,
             )
             final_pose = selected[0]
             posed_ligands.append(final_pose)
@@ -797,10 +832,13 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         # setup the rdkit pickle properties to save all molecule properties
         Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)
 
-        # Prepare receptor objects upfront so we can prune/select per-ligand
+        # Prepare receptor objects and scoring upfront so we can prune/select
+        # per-ligand without rebuilding these expensive structures each time
         oedu_receptor = prepared_complex.target.to_oedu()
         oe_receptor = oechem.OEGraphMol()
         oedu_receptor.GetProtein(oe_receptor)
+        near_nbr = self._build_near_nbr(oe_receptor)
+        scorer = self._build_scorer(oedu_receptor)
 
         # process the ligands
         posed_ligands = []
@@ -808,9 +846,15 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
         def _finalize_ligand(multi_conf_ligand):
             """Prune clashes, select best pose, fire callback for a single ligand."""
-            self._prune_clashes(receptor=oe_receptor, ligands=[multi_conf_ligand])
+            self._prune_clashes(
+                receptor=oe_receptor,
+                ligands=[multi_conf_ligand],
+                near_nbr=near_nbr,
+            )
             selected = self._select_best_pose(
-                receptor=oedu_receptor, ligands=[multi_conf_ligand]
+                receptor=oedu_receptor,
+                ligands=[multi_conf_ligand],
+                score=scorer,
             )
             final_pose = selected[0]
             posed_ligands.append(final_pose)

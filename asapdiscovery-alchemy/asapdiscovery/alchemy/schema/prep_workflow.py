@@ -111,36 +111,41 @@ class AlchemyDataSet(_AlchemyPrepBase):
         save_openeye_sdfs(oemols, filename)
 
     @staticmethod
-    def save_ligands_incremental(ligands: list[Ligand], filename: str):
+    def open_incremental_sdf(filename: str):
         """
-        Append posed ligands to an SDF file incrementally.
+        Open an SDF file for incremental writing using openeye's oemolostream.
 
-        This appends to an existing file rather than overwriting it, so it can
-        be called repeatedly as batches of ligands are posed.
+        Returns a context manager. Use the returned ``write`` method to append
+        individual Ligand objects without re-opening the file each time.
 
         Parameters
         ----------
-        ligands: The list of ligands to append to the SDF file.
-        filename: The name of the SDF file to append to.
+        filename: The path to the SDF file to append to (created if missing).
+
+        Example
+        -------
+        >>> with AlchemyDataSet.open_incremental_sdf("out.sdf") as write_ligand:
+        ...     write_ligand(ligand)
         """
-        import tempfile
+        from contextlib import contextmanager
 
-        from asapdiscovery.data.backend.openeye import save_openeye_sdfs
+        from asapdiscovery.data.backend.openeye import oechem
 
-        # Write the batch to a temp file, then append its contents.
-        # This avoids depending on oemolostream.openappend and ensures
-        # SDF formatting is consistent with the rest of the codebase.
-        oemols = [ligand.to_oemol() for ligand in ligands]
-        with tempfile.NamedTemporaryFile(suffix=".sdf", delete=False) as tmp:
-            tmp_path = tmp.name
-        save_openeye_sdfs(oemols, tmp_path)
+        @contextmanager
+        def _writer():
+            ofs = oechem.oemolostream()
+            ofs.SetFlavor(oechem.OEFormat_SDF, oechem.OEOFlavor_SDF_Default)
+            if not ofs.open(str(filename)):
+                raise IOError(f"Unable to open {filename} for writing")
+            try:
+                def write_ligand(ligand: Ligand):
+                    oechem.OEWriteMolecule(ofs, ligand.to_oemol())
 
-        with open(tmp_path, "r") as src, open(filename, "a") as dst:
-            dst.write(src.read())
+                yield write_ligand
+            finally:
+                ofs.close()
 
-        import os
-
-        os.unlink(tmp_path)
+        return _writer()
 
     @staticmethod
     def load_posed_ligands(filename: str) -> list[Ligand]:
@@ -471,23 +476,38 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
 
         newly_posed_ligands = []
         if ligands_to_pose:
-            # Build a callback that writes each posed ligand to the SDF immediately
-            # so that progress survives a crash and can be resumed.
-            pose_callback = None
+            # When output_sdf is set, open a persistent SDF stream and build a
+            # callback that writes each posed ligand immediately. The stream stays
+            # open for the entire run so we pay the file-open cost only once.
+            # We re-write any resumed ligands first so the file always contains the
+            # complete set of successfully posed ligands.
             if output_sdf is not None:
+                sdf_ctx = AlchemyDataSet.open_incremental_sdf(output_sdf)
+                write_ligand = sdf_ctx.__enter__()
+
+                # Re-write previously resumed ligands so the file is self-consistent
+                for lig in resumed_ligands:
+                    write_ligand(lig)
 
                 def pose_callback(ligand):
-                    AlchemyDataSet.save_ligands_incremental(
-                        ligands=[ligand], filename=output_sdf
-                    )
+                    write_ligand(ligand)
 
-            pose_result = self.pose_generator.generate_poses(
-                prepared_complex=reference_complex,
-                ligands=ligands_to_pose,
-                core_smarts=self.core_smarts,
-                processors=processors,
-                on_pose_complete=pose_callback,
-            )
+            else:
+                sdf_ctx = None
+                pose_callback = None
+
+            try:
+                pose_result = self.pose_generator.generate_poses(
+                    prepared_complex=reference_complex,
+                    ligands=ligands_to_pose,
+                    core_smarts=self.core_smarts,
+                    processors=processors,
+                    on_pose_complete=pose_callback,
+                )
+            finally:
+                if sdf_ctx is not None:
+                    sdf_ctx.__exit__(None, None, None)
+
             newly_posed_ligands = pose_result.posed_ligands
             provenance[self.pose_generator.type] = self.pose_generator.provenance()
             # save any failed ligands
