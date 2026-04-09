@@ -410,9 +410,9 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
                     loaded = AlchemyDataSet.load_posed_ligands(str(resume_file))
                 except Exception as e:
                     console.print(
-                        f"[yellow]Warning: could not fully load {resume_file} "
+                        f"[yellow]Warning: could not load {resume_file} "
                         f"(possibly truncated from a crash): {e}. "
-                        f"Successfully loaded ligands will still be used.[/yellow]"
+                        f"Skipping this file.[/yellow]"
                     )
                     continue
                 for lig in loaded:
