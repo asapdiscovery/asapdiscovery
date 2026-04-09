@@ -146,10 +146,15 @@ class AlchemiscaleHelper:
         Returns:
             A list of actioned tasks for this network.
         """
+        from tqdm import tqdm
+
         network_key = planned_network.results.network_key
 
+        transformations = self._client.get_network_transformations(network_key)
         tasks = []
-        for tf_sk in self._client.get_network_transformations(network_key):
+        for tf_sk in tqdm(
+            transformations, desc="Creating tasks", unit="transformation"
+        ):
             tasks.extend(self._client.create_tasks(tf_sk, count=repeats))
 
         # now action the tasks to ensure they are picked up by compute.

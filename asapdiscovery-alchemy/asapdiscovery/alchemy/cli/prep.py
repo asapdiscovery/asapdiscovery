@@ -272,6 +272,13 @@ def alchemize(
     default=None,
     show_default=True,
 )
+@click.option(
+    "--skip-charges",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Skip local charge generation. Useful when charges will be generated later or are not needed.",
+)
 def run(
     dataset_name: str,
     ligands: Optional[str] = None,
@@ -282,6 +289,7 @@ def run(
     processors: str | int = 1,
     postera_molset_name: Optional[str] = None,
     experimental_protocol: Optional[str] = None,
+    skip_charges: bool = False,
 ):
     """
     Create an AlchemyDataset by running the given AlchemyPrepWorkflow which will expand the ligand states and generate
@@ -416,10 +424,25 @@ def run(
     else:
         ref_ligands = None
 
+    if skip_charges:
+        factory.charge_method = None
+        message = Padding(
+            "[yellow]Skipping local charge generation as requested (--skip-charges)[/yellow]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+
     message = Padding(
         f"Starting Alchemy-Prep workflow with {processors} processors", (1, 0, 1, 0)
     )
     console.print(message)
+
+    output_folder = pathlib.Path(dataset_name)
+    output_folder.mkdir(parents=True, exist_ok=True)
+
+    # Use incremental SDF output so posed ligands are saved as they are generated
+    # and the workflow can resume if interrupted.
+    posed_ligand_file = output_folder.joinpath("posed_ligands.sdf")
 
     alchemy_dataset = factory.create_alchemy_dataset(
         dataset_name=dataset_name,
@@ -427,22 +450,13 @@ def run(
         reference_complex=ref_complex,
         processors=processors,
         reference_ligands=ref_ligands,
+        output_sdf=str(posed_ligand_file),
     )
-    output_folder = pathlib.Path(dataset_name)
-    output_folder.mkdir(parents=True, exist_ok=True)
 
     dataset_file = output_folder.joinpath("prepared_alchemy_dataset.json")
     alchemy_dataset.to_file(dataset_file)
     message = Padding(
         f"Saved AlchemyDataset to [repr.filename]{dataset_file}[/repr.filename]",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
-
-    posed_ligand_file = output_folder.joinpath("posed_ligands.sdf")
-    alchemy_dataset.save_posed_ligands(posed_ligand_file)
-    message = Padding(
-        f"Saved posed ligands to [repr.filename]{posed_ligand_file}[/repr.filename]",
         (1, 0, 1, 0),
     )
     console.print(message)

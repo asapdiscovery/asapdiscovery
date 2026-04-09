@@ -1,4 +1,7 @@
 import abc
+import os
+import pathlib
+import tempfile
 import warnings
 from enum import Enum
 from typing import Any, Literal, Optional
@@ -12,6 +15,7 @@ from asapdiscovery.data.backend.openeye import (
     oedocking,
     oeff,
     oeomega,
+    save_openeye_sdfs,
     set_SD_data,
     smiles_to_oemol,
 )
@@ -79,9 +83,76 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         ligands: list[Ligand],
         core_smarts: Optional[str] = None,
         processors: int = 1,
+        per_ligand_cache_dir: Optional[pathlib.Path] = None,
     ) -> tuple[list[oechem.OEMol], list[oechem.OEMol]]:
         """The main worker method which should generate ligand poses in the receptor using the reference ligand where required."""
         ...
+
+    def _prepare_receptor_objects(
+        self, prepared_complex: PreppedComplex
+    ) -> tuple[
+        oechem.OEDesignUnit, oechem.OEGraphMol, oechem.OENearestNbrs, oedocking.OEScore
+    ]:
+        """Build the receptor objects needed for clash pruning and pose scoring.
+
+        Returns:
+            A tuple of (oedu_receptor, oe_receptor, near_nbr, scorer).
+        """
+        oedu_receptor = prepared_complex.target.to_oedu()
+        oe_receptor = oechem.OEGraphMol()
+        oedu_receptor.GetProtein(oe_receptor)
+        near_nbr = self._build_near_nbr(oe_receptor)
+        scorer = self._build_scorer(oedu_receptor)
+        return oedu_receptor, oe_receptor, near_nbr, scorer
+
+    def _process_and_cache_ligand(
+        self,
+        oemol: oechem.OEMol,
+        oe_receptor: oechem.OEGraphMol,
+        oedu_receptor: oechem.OEDesignUnit,
+        near_nbr: oechem.OENearestNbrs,
+        scorer: oedocking.OEScore,
+        cache_dir: Optional[pathlib.Path] = None,
+    ) -> Optional[oechem.OEMol]:
+        """Prune clashes, select best pose, and optionally cache a single ligand.
+
+        Args:
+            oemol: A multi-conformer OEMol from pose generation.
+            oe_receptor: The receptor protein for clash detection.
+            oedu_receptor: The receptor design unit for scoring.
+            near_nbr: Pre-built spatial index for clash detection.
+            scorer: Pre-built scoring function for pose selection.
+            cache_dir: If provided, write the posed ligand to an individual
+                SDF file in this directory, named by its fixed_inchikey.
+
+        Returns:
+            The single-conformer best-pose OEGraphMol, or None if all
+            conformers were pruned away.
+        """
+        self._prune_clashes(receptor=oe_receptor, ligands=[oemol], near_nbr=near_nbr)
+        posed = self._select_best_pose(
+            receptor=oedu_receptor, ligands=[oemol], score=scorer
+        )
+        if not posed:
+            return None
+
+        best = posed[0]
+        if cache_dir is not None:
+            ligand = Ligand.from_oemol(best)
+            key = ligand.provenance.fixed_inchikey
+            target = cache_dir / f"{key}.sdf"
+            # Atomic write: write to a temp file then rename to avoid
+            # corrupt files if the process is killed mid-write.
+            tmp_fd, tmp_path = tempfile.mkstemp(suffix=".sdf", dir=str(cache_dir))
+            try:
+                os.close(tmp_fd)
+                save_openeye_sdfs([best], tmp_path)
+                pathlib.Path(tmp_path).rename(target)
+            except Exception:
+                # Clean up on failure
+                pathlib.Path(tmp_path).unlink(missing_ok=True)
+                raise
+        return best
 
     def generate_poses(
         self,
@@ -89,6 +160,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         ligands: list[Ligand],
         core_smarts: Optional[str] = None,
         processors: int = 1,
+        per_ligand_cache_dir: Optional[pathlib.Path] = None,
     ) -> PosedLigands:
         """
         Generate poses for the given list of molecules in the target receptor.
@@ -102,6 +174,9 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             core_smarts: An optional smarts string which should be used to identify the MCS between the ligand and the reference, if not
                 provided the MCS will be found using RDKit to preserve chiral centers.
             processors: The number of parallel process to use when generating the conformations.
+            per_ligand_cache_dir: If provided, each successfully posed ligand will be written
+                to an individual SDF file in this directory as it completes. This enables
+                fine-grained resume on interruption.
 
         Returns:
             A list of ligands with new poses generated and list of ligands for which we could not generate a pose.
@@ -112,6 +187,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             ligands=ligands,
             core_smarts=core_smarts,
             processors=processors,
+            per_ligand_cache_dir=per_ligand_cache_dir,
         )
         # store the results, unpacking each posed conformer to a separate molecule
         result = PosedLigands()
@@ -124,21 +200,33 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             )
         return result
 
-    def _prune_clashes(self, receptor: oechem.OEMol, ligands: list[oechem.OEMol]):
+    def _build_near_nbr(self, receptor: oechem.OEMol) -> oechem.OENearestNbrs:
+        """Build a spatial index for clash detection against the receptor."""
+        return oechem.OENearestNbrs(receptor, self.clash_cutoff)
+
+    def _prune_clashes(
+        self,
+        receptor: oechem.OEMol,
+        ligands: list[oechem.OEMol],
+        near_nbr: Optional[oechem.OENearestNbrs] = None,
+    ):
         """
         Edit the conformers on the molecules in place to remove clashes with the receptor.
 
         Args:
             receptor: The receptor with which we should check for clashes.
             ligands: The list of ligands with conformers to prune.
+            near_nbr: A pre-built spatial index for the receptor. If not provided,
+                one will be created. Pass this when calling repeatedly to avoid
+                rebuilding the index each time.
 
         Returns:
             The ligands with clashed conformers removed.
         """
         import numpy as np
 
-        # setup the function to check for close neighbours
-        near_nbr = oechem.OENearestNbrs(receptor, self.clash_cutoff)
+        if near_nbr is None:
+            near_nbr = self._build_near_nbr(receptor)
 
         for ligand in ligands:
             if ligand.NumConfs() < 10:
@@ -163,8 +251,21 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
             for _, conformer in poses[int(0.5 * len(poses)) :]:
                 ligand.DeleteConf(conformer)
 
+    def _build_scorer(self, receptor: oechem.OEDesignUnit) -> oedocking.OEScore:
+        """Build and initialize a scoring function for pose selection."""
+        scorers = {
+            PoseSelectionMethod.Chemgauss4: oedocking.OEScoreType_Chemgauss4,
+            PoseSelectionMethod.Chemgauss3: oedocking.OEScoreType_Chemgauss3,
+        }
+        score = oedocking.OEScore(scorers[self.selector])
+        score.Initialize(receptor)
+        return score
+
     def _select_best_pose(
-        self, receptor: oechem.OEDesignUnit, ligands: list[oechem.OEMol]
+        self,
+        receptor: oechem.OEDesignUnit,
+        ligands: list[oechem.OEMol],
+        score: Optional[oedocking.OEScore] = None,
     ) -> list[oechem.OEMol]:
         """
         Select the best pose for each ligand in place using the selected criteria.
@@ -174,16 +275,15 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         Args:
             receptor: The receptor oedu of the receptor with the binding site defined
             ligands: The list of multi-conformer ligands for which we want to select the best pose.
+            score: A pre-built and initialized scorer. If not provided, one will be
+                created. Pass this when calling repeatedly to avoid re-initializing.
 
         Returns:
             A list of single conformer oe molecules with the optimal pose
         """
-        scorers = {
-            PoseSelectionMethod.Chemgauss4: oedocking.OEScoreType_Chemgauss4,
-            PoseSelectionMethod.Chemgauss3: oedocking.OEScoreType_Chemgauss3,
-        }
-        score = oedocking.OEScore(scorers[self.selector])
-        score.Initialize(receptor)
+        if score is None:
+            score = self._build_scorer(receptor)
+
         posed_ligands = []
         for ligand in ligands:
             poses = [
@@ -422,6 +522,7 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         ligands: list[Ligand],
         core_smarts: Optional[str] = None,
         processors: int = 1,
+        per_ligand_cache_dir: Optional[pathlib.Path] = None,
     ) -> tuple[list[oechem.OEMol], list[oechem.OEMol]]:
         """
         Use openeye oeomega to generate constrained poses for the input ligands. The core smarts is used to decide
@@ -437,8 +538,13 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         # grab the reference ligand
         reference_ligand = prepared_complex.ligand.to_oemol()
 
+        # Build receptor objects once for per-ligand pruning and scoring
+        oedu_receptor, oe_receptor, near_nbr, scorer = self._prepare_receptor_objects(
+            prepared_complex
+        )
+
         # process the ligands
-        result_ligands = []
+        posed_ligands = []
         failed_ligands = []
 
         if processors > 1:
@@ -461,7 +567,18 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     if "omega_return_code" in get_SD_data(target_ligand):
                         failed_ligands.append(target_ligand)
                     else:
-                        result_ligands.append(target_ligand)
+                        best = self._process_and_cache_ligand(
+                            oemol=target_ligand,
+                            oe_receptor=oe_receptor,
+                            oedu_receptor=oedu_receptor,
+                            near_nbr=near_nbr,
+                            scorer=scorer,
+                            cache_dir=per_ligand_cache_dir,
+                        )
+                        if best is not None:
+                            posed_ligands.append(best)
+                        else:
+                            failed_ligands.append(target_ligand)
                     progressbar.update(1)
         else:
             for mol in tqdm(ligands, total=len(ligands)):
@@ -474,18 +591,19 @@ class OpenEyeConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                 if "omega_return_code" in get_SD_data(posed_ligand):
                     failed_ligands.append(posed_ligand)
                 else:
-                    result_ligands.append(posed_ligand)
+                    best = self._process_and_cache_ligand(
+                        oemol=posed_ligand,
+                        oe_receptor=oe_receptor,
+                        oedu_receptor=oedu_receptor,
+                        near_nbr=near_nbr,
+                        scorer=scorer,
+                        cache_dir=per_ligand_cache_dir,
+                    )
+                    if best is not None:
+                        posed_ligands.append(best)
+                    else:
+                        failed_ligands.append(posed_ligand)
 
-        # prue down the conformers
-        oedu_receptor = prepared_complex.target.to_oedu()
-        oe_receptor = oechem.OEGraphMol()
-        oedu_receptor.GetProtein(oe_receptor)
-
-        self._prune_clashes(receptor=oe_receptor, ligands=result_ligands)
-        # select the best pose to be kept
-        posed_ligands = self._select_best_pose(
-            receptor=oedu_receptor, ligands=result_ligands
-        )
         return posed_ligands, failed_ligands
 
 
@@ -741,6 +859,7 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         ligands: list[Ligand],
         core_smarts: Optional[str] = None,
         processors: int = 1,
+        per_ligand_cache_dir: Optional[pathlib.Path] = None,
     ) -> tuple[list[oechem.OEMol], list[oechem.OEMol]]:
         """
         Use RDKit to embed multiple conformers which are constrained to the template molecule.
@@ -750,6 +869,8 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             ligands: The list of ligands to generate poses for.
             core_smarts: The core smarts which should be used to define the core molecule.
             processors: The number of processes to use when generating the conformations.
+            per_ligand_cache_dir: If provided, each posed ligand is written to an
+                individual SDF file in this directory as it completes.
 
         Returns:
             Two lists the first of the successfully posed ligands and ligands which failed.
@@ -765,9 +886,44 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
         # setup the rdkit pickle properties to save all molecule properties
         Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)
 
+        # Build receptor objects once for per-ligand pruning and scoring
+        oedu_receptor, oe_receptor, near_nbr, scorer = self._prepare_receptor_objects(
+            prepared_complex
+        )
+
         # process the ligands
-        result_ligands = []
+        posed_ligands = []
         failed_ligands = []
+
+        def _convert_and_process(rdkit_mol, fail_oemol_fn):
+            """Convert an RDKit mol to OEMol, prune, score, and cache."""
+            try:
+                off_mol = Molecule.from_rdkit(rdkit_mol, allow_undefined_stereo=True)
+                openeye_mol = off_mol.to_openeye()
+
+                sd_tags = get_SD_data(openeye_mol)
+                set_SD_data(openeye_mol, sd_tags)
+
+                if rdkit_mol.GetNumConformers() > 0:
+                    best = self._process_and_cache_ligand(
+                        oemol=openeye_mol,
+                        oe_receptor=oe_receptor,
+                        oedu_receptor=oedu_receptor,
+                        near_nbr=near_nbr,
+                        scorer=scorer,
+                        cache_dir=per_ligand_cache_dir,
+                    )
+                    if best is not None:
+                        posed_ligands.append(best)
+                    else:
+                        failed_ligands.append(openeye_mol)
+                else:
+                    failed_ligands.append(openeye_mol)
+            except Exception as e:
+                warnings.warn(
+                    f"Ligand posing failed for ligand {Chem.MolToSmiles(rdkit_mol)} with exception: {e}"
+                )
+                failed_ligands.append(fail_oemol_fn())
 
         if processors > 1:
             progressbar = tqdm(total=len(ligands))
@@ -787,29 +943,12 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
 
                     succ, target_ligand, err_code = work.result()
                     if succ:
-                        try:
-                            off_mol = Molecule.from_rdkit(
-                                target_ligand, allow_undefined_stereo=True
-                            )
-                            # we need to transfer the properties which would be lost
-                            openeye_mol = off_mol.to_openeye()
-
-                            # make sure properties at the top level get added to the conformers
-                            sd_tags = get_SD_data(openeye_mol)
-                            set_SD_data(openeye_mol, sd_tags)
-
-                            if target_ligand.GetNumConformers() > 0:
-                                # save the mol with all conformers
-                                result_ligands.append(openeye_mol)
-                            else:
-                                failed_ligands.append(openeye_mol)
-                        except Exception as e:
-                            warnings.warn(
-                                f"Ligand posing failed for ligand {Chem.MolToSmiles(target_ligand)} with exception: {e}"
-                            )
-                            failed_ligands.append(
-                                smiles_to_oemol(Chem.MolToSmiles(target_ligand))
-                            )
+                        _convert_and_process(
+                            target_ligand,
+                            lambda tl=target_ligand: smiles_to_oemol(
+                                Chem.MolToSmiles(tl)
+                            ),
+                        )
                     else:
                         warnings.warn(
                             f"Ligand posing failed for ligand {target_ligand.smiles} with exception: {err_code}"
@@ -830,21 +969,10 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                         failed_ligands.append(mol.to_oemol())
                         continue
 
-                    off_mol = Molecule.from_rdkit(
-                        posed_ligand, allow_undefined_stereo=True
+                    _convert_and_process(
+                        posed_ligand,
+                        lambda m=mol: m.to_oemol(),
                     )
-                    # we need to transfer the properties which would be lost
-                    openeye_mol = off_mol.to_openeye()
-
-                    # make sure properties at the top level get added to the conformers
-                    sd_tags = get_SD_data(openeye_mol)
-                    set_SD_data(openeye_mol, sd_tags)
-
-                    if posed_ligand.GetNumConformers() > 0:
-                        # save the mol with all conformers
-                        result_ligands.append(openeye_mol)
-                    else:
-                        failed_ligands.append(openeye_mol)
 
                 except Exception as e:
                     warnings.warn(
@@ -852,14 +980,4 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     )
                     failed_ligands.append(mol.to_oemol())
 
-        # prue down the conformers
-        oedu_receptor = prepared_complex.target.to_oedu()
-        oe_receptor = oechem.OEGraphMol()
-        oedu_receptor.GetProtein(oe_receptor)
-
-        self._prune_clashes(receptor=oe_receptor, ligands=result_ligands)
-        # select the best pose to be kept
-        posed_ligands = self._select_best_pose(
-            receptor=oedu_receptor, ligands=result_ligands
-        )
         return posed_ligands, failed_ligands
