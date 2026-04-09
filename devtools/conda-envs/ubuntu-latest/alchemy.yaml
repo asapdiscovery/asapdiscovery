@@ -57,9 +57,9 @@ dependencies:
   - mafft
 
   # Alchemy / Free energy
-  - openfe >=1.8.0
-  - gufe >=1.7.2
-  - openmm
+  - openfe =1.8.0
+  - gufe =1.7.1
+  - openmm =8.2.0
   - openmmforcefields >= 0.13.0
   - mdtraj
   - httpx
