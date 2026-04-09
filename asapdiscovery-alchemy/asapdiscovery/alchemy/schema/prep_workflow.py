@@ -334,7 +334,6 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         processors: int = 1,
         reference_ligands: Optional[list[Ligand]] = None,
         output_sdf: Optional[str] = None,
-        batch_size: int = 100,
     ) -> AlchemyDataSet:
         """
         Run the set of input ligands through the state enumeration and pose generation workflow to create a set of posed
@@ -345,9 +344,10 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             until `self.n_references` have been successfully added. The ligands will be sorted by their MCS overlap with
             the crystal reference ligand to ensure a pose can be generated.
 
-            If `output_sdf` is provided, posed ligands will be written incrementally to this file as they
-            are generated. If the file already exists, previously posed ligands will be loaded and skipped,
-            allowing the workflow to resume from where it left off.
+            If `output_sdf` is provided, each successfully posed ligand will be written to an
+            individual cache file in a ``posed_ligands_cache/`` directory next to the output
+            SDF as it completes.  On resume, these cache files (and any legacy partial/final
+            SDF from older runs) are loaded so already-posed ligands are skipped.
 
         Args:
             dataset_name: The name which should be given to this dataset.
@@ -357,10 +357,10 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             processors: The number of parallel processors that should be used to run the workflow.
             reference_ligands: The list of reference ligands with experimental data which we should also generate
                 poses for if `self.n_references` > 0.
-            output_sdf: Optional path to an SDF file for incremental writing of posed ligands. If the file
-                already exists, previously posed ligands will be loaded and their posing will be skipped.
-            batch_size: Number of ligands to process per batch during pose generation. Results
-                are saved after each batch so only one batch is lost on interruption.
+            output_sdf: Optional path to an SDF file for the final consolidated posed ligands.
+                A ``posed_ligands_cache/`` directory will be created alongside it for per-ligand
+                checkpoint files.  If cache files already exist, their ligands will be loaded
+                and skipped.
 
         Returns:
             A prepared AlchemyDataset with state expanded ligands posed in the receptor ready for FEC, along with the
@@ -373,17 +373,39 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         console = rich.get_console()
 
         # Check for previously posed ligands to resume from.
-        # We look at both the final SDF and any partial progress file from a
-        # previous interrupted run.
+        # We look at per-ligand cache files, legacy partial/final SDFs from
+        # older runs, or a completed final SDF.
         resumed_ligands = []
         resumed_inchikeys = set()
+        cache_dir = None
         if output_sdf is not None:
             sdf_path = pathlib.Path(output_sdf)
+            cache_dir = sdf_path.parent / "posed_ligands_cache"
+            cache_dir.mkdir(exist_ok=True)
+
+            # 1. Check the per-ligand cache directory (current approach)
+            for sdf_file in sorted(cache_dir.glob("*.sdf")):
+                try:
+                    loaded = AlchemyDataSet.load_posed_ligands(str(sdf_file))
+                    for lig in loaded:
+                        key = lig.provenance.fixed_inchikey
+                        if key not in resumed_inchikeys:
+                            resumed_ligands.append(lig)
+                            resumed_inchikeys.add(key)
+                except Exception as e:
+                    console.print(
+                        f"[yellow]Warning: could not load {sdf_file}: {e}[/yellow]"
+                    )
+
+            # 2. Also check legacy files (final SDF and .partial.sdf) for
+            #    backward compatibility with runs started before per-ligand caching.
             partial_path = sdf_path.with_suffix(".partial.sdf")
-            resume_files = [
-                f for f in [sdf_path, partial_path] if f.exists() and f.stat().st_size > 0
+            legacy_files = [
+                f
+                for f in [sdf_path, partial_path]
+                if f.exists() and f.stat().st_size > 0
             ]
-            for resume_file in resume_files:
+            for resume_file in legacy_files:
                 try:
                     loaded = AlchemyDataSet.load_posed_ligands(str(resume_file))
                 except Exception as e:
@@ -459,44 +481,20 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
         newly_posed_ligands = []
         all_pose_fails = []
         if ligands_to_pose:
-            # Process ligands in batches so that results are written to disk
-            # incrementally. If the process is killed, only the current batch
-            # is lost — all previously completed batches are already saved.
-            partial_file = (
-                str(pathlib.Path(output_sdf).with_suffix(".partial.sdf"))
-                if output_sdf is not None
-                else None
+            # Submit all ligands at once — each ligand is pruned, scored, and
+            # written to its own cache file as soon as it finishes.  There is
+            # no batch synchronization barrier: if the process is killed, only
+            # the single ligand being processed at that instant is lost.
+            pose_result = self.pose_generator.generate_poses(
+                prepared_complex=reference_complex,
+                ligands=ligands_to_pose,
+                core_smarts=self.core_smarts,
+                processors=processors,
+                per_ligand_cache_dir=cache_dir,
             )
-            total_batches = (len(ligands_to_pose) + batch_size - 1) // batch_size
-            for batch_start in range(0, len(ligands_to_pose), batch_size):
-                batch = ligands_to_pose[batch_start : batch_start + batch_size]
-                batch_num = batch_start // batch_size + 1
-                if total_batches > 1:
-                    console.print(
-                        f"Processing batch {batch_num}/{total_batches} "
-                        f"({len(batch)} ligands)..."
-                    )
-
-                pose_result = self.pose_generator.generate_poses(
-                    prepared_complex=reference_complex,
-                    ligands=batch,
-                    core_smarts=self.core_smarts,
-                    processors=processors,
-                )
-                newly_posed_ligands.extend(pose_result.posed_ligands)
-                if pose_result.failed_ligands:
-                    all_pose_fails.extend(pose_result.failed_ligands)
-
-                # Overwrite the partial file with ALL newly posed ligands so
-                # far (not just this batch). This is intentional: a full
-                # rewrite ensures the file is always in a consistent state,
-                # whereas appending could leave a truncated record if a crash
-                # occurs mid-write.
-                if partial_file is not None and newly_posed_ligands:
-                    save_openeye_sdfs(
-                        [lig.to_oemol() for lig in newly_posed_ligands],
-                        partial_file,
-                    )
+            newly_posed_ligands.extend(pose_result.posed_ligands)
+            if pose_result.failed_ligands:
+                all_pose_fails.extend(pose_result.failed_ligands)
 
             provenance[self.pose_generator.type] = self.pose_generator.provenance()
             if all_pose_fails:
@@ -610,12 +608,18 @@ class AlchemyPrepWorkflow(_AlchemyPrepBase):
             provenance=provenance,
         )
 
-        # Write the final posed ligands SDF and clean up the partial file
+        # Write the final posed ligands SDF and clean up cache artifacts
         if output_sdf is not None:
+            import shutil
+
             alchemy_dataset.save_posed_ligands(output_sdf)
             console.print(
                 f"Saved posed ligands to [repr.filename]{output_sdf}[/repr.filename]."
             )
+            # Clean up per-ligand cache directory
+            if cache_dir is not None and cache_dir.exists():
+                shutil.rmtree(cache_dir)
+            # Clean up legacy partial file from older runs
             partial_path = pathlib.Path(output_sdf).with_suffix(".partial.sdf")
             if partial_path.exists():
                 partial_path.unlink()
