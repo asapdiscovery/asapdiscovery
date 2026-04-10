@@ -65,7 +65,7 @@ dependencies:
   - wandb
 
   # Simulation / MD
-  - openmm
+  - openmm =8.2.0
   - openmmtools
   - openmmforcefields >= 0.13.0
   - mdtraj
@@ -74,8 +74,8 @@ dependencies:
   - mdanalysis
 
   # Alchemy / Free energy
-  - openfe >=1.8.0
-  - gufe >=1.7.2
+  - openfe =1.8.0
+  - gufe =1.7.1
   - httpx
   - perses >=0.10.2
   - kartograf
