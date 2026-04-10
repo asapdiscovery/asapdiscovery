@@ -26,7 +26,8 @@ dependencies:
   - pandas
   - pebble
   - rdkit
-  - openff-toolkit
+  - openff-toolkit =0.18.0
+  - openff-interchange =0.4.11
   - openff-fragmenter
   - openff-forcefields >=2024.04.0
   - openeye-toolkits
@@ -69,7 +70,7 @@ dependencies:
   # Simulation / MD
   - openmm =8.2.0
   - openmmtools
-  - openmmforcefields >= 0.13.0
+  - openmmforcefields =0.15.1
   - mdtraj
 
   # Docking

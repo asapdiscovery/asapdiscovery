@@ -27,7 +27,8 @@ dependencies:
   - pandas
   - pebble
   - rdkit
-  - openff-toolkit
+  - openff-toolkit =0.18.0
+  - openff-interchange =0.4.11
   - openff-forcefields >=2024.04.0
   - openeye-toolkits
   - multimethod
@@ -55,7 +56,7 @@ dependencies:
   - openfe =1.8.0
   - gufe =1.7.1
   - openmm =8.2.0
-  - openmmforcefields >= 0.13.0
+  - openmmforcefields =0.15.1
   - mdtraj
   - httpx
   - perses >=0.10.2
