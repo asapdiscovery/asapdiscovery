@@ -238,6 +238,13 @@ class NetworkPlanner(_NetworkPlannerSettings):
                 "The radial type network requires a ligand to act as the central node."
             )
 
+        # Ensure RDKit preserves mol properties (e.g. ofe-name) through
+        # pickling, which is needed when konnektor parallelizes atom mapping
+        # via multiprocessing.
+        from rdkit import Chem
+
+        Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)
+
         # build the network planner
         planner_data = {
             "ligands": [
