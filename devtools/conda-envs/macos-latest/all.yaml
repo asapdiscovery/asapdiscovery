@@ -26,7 +26,8 @@ dependencies:
   - pandas
   - pebble
   - rdkit
-  - openff-toolkit
+  - openff-toolkit =0.18.0
+  - openff-interchange =0.4.11
   - openff-fragmenter
   - openff-forcefields >=2024.04.0
   - openeye-toolkits
@@ -67,22 +68,23 @@ dependencies:
   - wandb
 
   # Simulation / MD
-  - openmm
+  - openmm =8.2.0
   - openmmtools
-  - openmmforcefields >= 0.13.0
+  - openmmforcefields =0.15.1
   - mdtraj
 
   # Docking
   - mdanalysis
 
   # Alchemy / Free energy
-  - openfe >=1.8.0
-  - gufe >=1.7.2
+  - openfe =1.8.0
+  - gufe =1.7.1
   - httpx
   - perses >=0.10.2
   - kartograf
   - rich
   - alchemiscale-client >=0.7.2
+  - feflow =0.2.0
   - cinnabar >=0.4.1
 
   # Visualization
@@ -99,3 +101,9 @@ dependencies:
   - pygifsicle
   - airium
   - logomaker
+
+  # alchemiscale-fah dependencies
+  - cryptography
+  - plyvel
+  - pip:
+    - git+https://github.com/OpenFreeEnergy/alchemiscale-fah.git@v0.3.1

@@ -238,6 +238,13 @@ class NetworkPlanner(_NetworkPlannerSettings):
                 "The radial type network requires a ligand to act as the central node."
             )
 
+        # Ensure RDKit preserves mol properties (e.g. ofe-name) through
+        # pickling, which is needed when konnektor parallelizes atom mapping
+        # via multiprocessing.
+        from rdkit import Chem
+
+        Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)
+
         # build the network planner
         planner_data = {
             "ligands": [
@@ -253,6 +260,14 @@ class NetworkPlanner(_NetworkPlannerSettings):
 
         network_method = self.network_planning_method.get_planning_function()
         ligand_network = network_method(**planner_data)
+
+        # After parallel mapping, re-sync the ofe-name mol property from the
+        # _name attribute on each component.  The _name Python attribute always
+        # survives pickling, but the RDKit mol property can be lost when child
+        # processes (especially on macOS with spawn) serialize results back
+        # without the AllProps pickle setting.
+        for node in ligand_network.nodes:
+            node._rdkit.SetProp("ofe-name", node.name)
 
         return PlannedNetwork(
             **self.model_dump(exclude={"type"}),

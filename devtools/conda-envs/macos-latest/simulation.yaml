@@ -31,7 +31,7 @@ dependencies:
   - openff-forcefields >=2024.04.0
   - openeye-toolkits
   - multimethod
-  - gufe >=1.7.2
+  - gufe =1.7.1
 
   # Data services
   - requests
@@ -53,7 +53,7 @@ dependencies:
   - netifaces
 
   # Simulation / MD
-  - openmm
+  - openmm =8.2.0
   - openmmforcefields >= 0.13.0
   - openmmtools
   - mdtraj

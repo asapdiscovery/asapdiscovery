@@ -32,7 +32,7 @@ dependencies:
   - openeye-toolkits
   - multimethod
   - scipy >=1.13.1
-  - gufe >=1.7.2
+  - gufe =1.7.1
 
   # Data services
   - pooch
