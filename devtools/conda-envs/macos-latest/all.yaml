@@ -102,5 +102,8 @@ dependencies:
   - airium
   - logomaker
 
+  # alchemiscale-fah dependencies
+  - cryptography
+  - plyvel
   - pip:
     - git+https://github.com/OpenFreeEnergy/alchemiscale-fah.git@v0.3.1
