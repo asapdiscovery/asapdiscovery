@@ -73,3 +73,6 @@ dependencies:
   - panel
   - plotmol
   - semver
+
+  - pip:
+    - git+https://github.com/OpenFreeEnergy/alchemiscale-fah.git@v0.3.1
