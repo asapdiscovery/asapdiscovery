@@ -95,7 +95,7 @@ jobs:
     - name: Upload Code Coverage to Codecov
       uses: codecov/codecov-action@v6
       # Don't upload coverage scheduled or on fork
-      if: ${{ github.repository == 'choderalab/asapdiscovery'
+      if: ${{ github.repository == 'asapdiscovery/asapdiscovery'
               && github.event != 'schedule' }}
       with:
         files: ./coverage.xml
