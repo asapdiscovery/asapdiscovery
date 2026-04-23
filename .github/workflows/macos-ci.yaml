@@ -38,7 +38,7 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v6
 
     - name: Get Info About Runner
       run: |
@@ -52,7 +52,7 @@ jobs:
 
     # More info on options: https://github.com/mamba-org/provision-with-micromamba
     - name: Setup Conda Environment
-      uses: mamba-org/setup-micromamba@v1
+      uses: mamba-org/setup-micromamba@v3
       with:
         # default - will pull down 2.0 which we don't want!
         # micromamba-version: latest
@@ -114,12 +114,12 @@ jobs:
                        asapdiscovery-spectrum/asapdiscovery/spectrum/tests
 
     - name: Upload Code Coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v6
       # Don't upload coverage scheduled or on fork
-      if: ${{ github.repository == 'choderalab/asapdiscovery'
+      if: ${{ github.repository == 'asapdiscovery/asapdiscovery'
               && github.event != 'schedule' }}
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
         flags: unittests
         name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
         fail_ci_if_error: false
