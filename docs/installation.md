@@ -3,11 +3,10 @@ Installation
 
 This page details how to get started with `asapdiscovery` and how to install it on your system.
 
-There are three ways to install `asapdiscovery`:
+There are two ways to install `asapdiscovery`:
 
 1. From conda-forge (recommended)
-2. Use the provided Docker image
-3. Developer installation from source
+2. Developer installation from source
 
 Installation from conda-forge
 ----------------------------
@@ -24,31 +23,13 @@ mamba install -c openeye openeye-toolkits
 
 ```
 
-Installation from Docker
-------------------------
-
-A Docker image is available for `asapdiscovery` on the Github container registry [ghcr.io](https://github.com/choderalab/asapdiscovery/pkgs/container/asapdiscovery) You can pull the image using the following command:
-
-```bash
- docker pull ghcr.io/choderalab/asapdiscovery:main
-```
-
-Now you can run the image using the following command:
-
-```bash
-docker run -it ghcr.io/choderalab/asapdiscovery:main
-```
-
-Note that the Docker image assumes that your OpenEye license is located at `~/.OpenEye/oe_license.txt`. If your license is located elsewhere, you can mount it to the container using the `-v` flag and the relevant environment variables.
-
-
 Developer installation from source
 ----------------------------------
 
 To install `asapdiscovery` from source, you will need to clone the repository, setup a compatible environment with mamba (or conda) and install the package using `pip`. You can do this using the following commands:
 
 ```bash
-git clone git@github.com:choderalab/asapdiscovery.git
+git clone git@github.com:asapdiscovery/asapdiscovery.git
 cd asapdiscovery
 mamba env create -f devtools/conda-envs/asapdiscovery-ubuntu-latest.yml # chose relevant file for your platform
 mamba activate asapdiscovery

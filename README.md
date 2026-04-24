@@ -1,8 +1,8 @@
 asapdiscovery
 =============
 [//]: # (Badges)
-[![codecov](https://codecov.io/gh/choderalab/asapdiscovery/branch/main/graph/badge.svg)](https://codecov.io/gh/choderalab/asapdiscovery/branch/main)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/choderalab/asapdiscovery/main.svg)](https://results.pre-commit.ci/latest/github/choderalab/asapdiscovery/main)
+[![codecov](https://codecov.io/gh/asapdiscovery/asapdiscovery/branch/main/graph/badge.svg)](https://codecov.io/gh/asapdiscovery/asapdiscovery/branch/main)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/asapdiscovery/asapdiscovery/main.svg)](https://results.pre-commit.ci/latest/github/asapdiscovery/asapdiscovery/main)
 [![Documentation Status](https://readthedocs.org/projects/asapdiscovery/badge/?version=latest)](https://asapdiscovery.readthedocs.io/en/latest/?badge=latest)
 
 
@@ -69,7 +69,7 @@ To install an `asapdiscovery` package hosted in this repository, we recommend th
 1. Clone the repository, then enter the source tree:
 
     ```
-    git clone https://github.com/choderalab/asapdiscovery.git
+    git clone https://github.com/asapdiscovery/asapdiscovery.git
     cd asapdiscovery
     ```
 

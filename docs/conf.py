@@ -221,7 +221,7 @@ nbsphinx_prolog = (
     .. nbinfo::
         This page was generated from `{{ docpath }}`__.
 
-    __ https://github.com/choderalab/asapdiscovery/tree/main/
+    __ https://github.com/asapdiscovery/asapdiscovery/tree/main/
         """
     + r"{{ docpath }}"
 )
