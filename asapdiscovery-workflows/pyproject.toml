@@ -8,6 +8,7 @@ name = "asapdiscovery-workflows"
 dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
+  { name="David Dotson", email="david.dotson@choderalab.org" },
 ]
 description = "API and scripts related to running docking and preparing the input structures"
 readme = "README.md"
