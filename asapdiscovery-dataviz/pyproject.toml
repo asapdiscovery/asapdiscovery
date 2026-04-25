@@ -9,6 +9,9 @@ dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
   { name="David Dotson", email="david.dotson@choderalab.org" },
+  { name="Hugo MacDermott-Opeskin", email="hugo.macdermott@choderalab.org" },
+  { name="Jenke Scheen", email="jenke.scheen@choderalab.org" },
+  { name="Alex Payne", email="alex.payne@choderalab.org" },
 ]
 description = "API and scripts related to visualizing docking results"
 readme = "README.md"
