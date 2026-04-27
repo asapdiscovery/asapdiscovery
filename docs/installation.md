@@ -26,7 +26,9 @@ mamba install -c openeye openeye-toolkits
 Developer installation from source
 ----------------------------------
 
-`asapdiscovery` is a namespace package split across 11 subpackages, each independently installable with its own conda environment. Development uses [`just`](https://github.com/casey/just) as a task runner over this layout. Install it first if you don't have it (e.g. `mamba install -c conda-forge just`).
+`asapdiscovery` is a namespace package split across 11 subpackages, each independently installable with its own conda environment.
+Development uses [`just`](https://github.com/casey/just) as a task runner over this layout.
+Install it first if you don't have it (e.g. `mamba install -c conda-forge just`).
 
 Clone the repository:
 
@@ -35,16 +37,18 @@ git clone git@github.com:asapdiscovery/asapdiscovery.git
 cd asapdiscovery
 ```
 
-Create a conda environment for the subpackage(s) you want to work on. Per-subpackage environment files live under `devtools/conda-envs/<platform>/`, plus an `all` environment that covers everything. The `just create-env` recipe picks the right platform automatically:
+Create a conda environment for the subpackage(s) you want to work on.
+Per-subpackage environment files live under `devtools/conda-envs/<platform>/`, plus an `all` environment that covers everything.
+The `just create-env` recipe picks the right platform automatically:
 
 ```bash
 # Environment with every subpackage's dependencies
-just create-env all asapdiscovery
+just create-env all <env-name>
 
 # Or for a single subpackage (e.g. data)
-just create-env data asapdiscovery-data
+just create-env data <env-name>
 
-mamba activate asapdiscovery   # or your chosen env name
+mamba activate <env-name> # or your chosen env name
 ```
 
 Install the subpackages in editable mode. To install everything:
@@ -65,4 +69,6 @@ To inspect the internal dependency graph:
 just deps
 ```
 
-Run tests for a single subpackage with `just test <pkg>`, or run them all sequentially with `just test-all`. Apply pre-commit linters across the repo with `just lint`. Run `just` with no arguments to list every available recipe.
+Run tests for a single subpackage with `just test <pkg>`, or run them all sequentially with `just test-all`.
+Apply pre-commit linters across the repo with `just lint`.
+Run `just` with no arguments to list every available recipe.
