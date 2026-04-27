@@ -116,7 +116,7 @@ class PreppedTarget(DataModelAbstractBase):
         """
         oedu = self.to_oedu()
         _, oe_receptor, _ = split_openeye_design_unit(du=oedu)
-        # As advised by Alex <https://github.com/choderalab/asapdiscovery/pull/608#discussion_r1388067468>
+        # As advised by Alex <https://github.com/asapdiscovery/asapdiscovery/pull/608#discussion_r1388067468>
         openeye_perceive_residues(oe_receptor)
         save_openeye_pdb(oe_receptor, pdb_fn=filename)
 

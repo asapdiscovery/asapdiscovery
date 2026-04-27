@@ -162,7 +162,7 @@ make-docked-complexes \
 
 # Machine Learning
 Finally we can get into the ML. As of PR
-[#601](https://github.com/choderalab/asapdiscovery/pull/601/), the ML part of this
+[#601](https://github.com/asapdiscovery/asapdiscovery/pull/601/), the ML part of this
 pipeline has drastically changed to be (hopefully) way easier to use. In this guide
 I'll try to show how things can be done both with the new CLI and with the API.
 

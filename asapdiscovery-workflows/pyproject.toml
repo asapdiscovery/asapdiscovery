@@ -8,6 +8,10 @@ name = "asapdiscovery-workflows"
 dynamic = ["version"]
 authors = [
   { name="ASAP Discovery", email="benjamin.kaminow@choderalab.org" },
+  { name="David Dotson", email="david.dotson@choderalab.org" },
+  { name="Hugo MacDermott-Opeskin", email="hugo.macdermott@choderalab.org" },
+  { name="Jenke Scheen", email="jenke.scheen@choderalab.org" },
+  { name="Alex Payne", email="alex.payne@choderalab.org" },
 ]
 description = "API and scripts related to running docking and preparing the input structures"
 readme = "README.md"
@@ -30,8 +34,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/choderalab/asapdiscovery"
-"Bug Tracker" = "https://github.com/choderalab/asapdiscovery/issues"
+"Homepage" = "https://github.com/asapdiscovery/asapdiscovery"
+"Bug Tracker" = "https://github.com/asapdiscovery/asapdiscovery/issues"
 
 [project.scripts]
 asap-docking = "asapdiscovery.workflows.docking_workflows.cli:docking"

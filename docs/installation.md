@@ -3,11 +3,10 @@ Installation
 
 This page details how to get started with `asapdiscovery` and how to install it on your system.
 
-There are three ways to install `asapdiscovery`:
+There are two ways to install `asapdiscovery`:
 
 1. From conda-forge (recommended)
-2. Use the provided Docker image
-3. Developer installation from source
+2. Developer installation from source
 
 Installation from conda-forge
 ----------------------------
@@ -24,35 +23,52 @@ mamba install -c openeye openeye-toolkits
 
 ```
 
-Installation from Docker
-------------------------
-
-A Docker image is available for `asapdiscovery` on the Github container registry [ghcr.io](https://github.com/choderalab/asapdiscovery/pkgs/container/asapdiscovery) You can pull the image using the following command:
-
-```bash
- docker pull ghcr.io/choderalab/asapdiscovery:main
-```
-
-Now you can run the image using the following command:
-
-```bash
-docker run -it ghcr.io/choderalab/asapdiscovery:main
-```
-
-Note that the Docker image assumes that your OpenEye license is located at `~/.OpenEye/oe_license.txt`. If your license is located elsewhere, you can mount it to the container using the `-v` flag and the relevant environment variables.
-
-
 Developer installation from source
 ----------------------------------
 
-To install `asapdiscovery` from source, you will need to clone the repository, setup a compatible environment with mamba (or conda) and install the package using `pip`. You can do this using the following commands:
+`asapdiscovery` is a namespace package split across 11 subpackages, each independently installable with its own conda environment.
+Development uses [`just`](https://github.com/casey/just) as a task runner over this layout.
+Install it first if you don't have it (e.g. `mamba install -c conda-forge just`).
+
+Clone the repository:
 
 ```bash
-git clone git@github.com:choderalab/asapdiscovery.git
+git clone git@github.com:asapdiscovery/asapdiscovery.git
 cd asapdiscovery
-mamba env create -f devtools/conda-envs/asapdiscovery-ubuntu-latest.yml # chose relevant file for your platform
-mamba activate asapdiscovery
-cp devtools/repo_installer.sh . && chmod +x repo_installer.sh && ./repo_installer.sh
 ```
 
-This will install the package in editable mode, so you can make changes to the code and see the changes reflected in the package. You can also run the tests using the following command:
+Create a conda environment for the subpackage(s) you want to work on.
+Per-subpackage environment files live under `devtools/conda-envs/<platform>/`, plus an `all` environment that covers everything.
+The `just create-env` recipe picks the right platform automatically:
+
+```bash
+# Environment with every subpackage's dependencies
+just create-env all <env-name>
+
+# Or for a single subpackage (e.g. data)
+just create-env data <env-name>
+
+mamba activate <env-name> # or your chosen env name
+```
+
+Install the subpackages in editable mode. To install everything:
+
+```bash
+just install-all
+```
+
+To install a single subpackage along with its internal dependencies in topological order:
+
+```bash
+just install-with-deps alchemy
+```
+
+To inspect the internal dependency graph:
+
+```bash
+just deps
+```
+
+Run tests for a single subpackage with `just test <pkg>`, or run them all sequentially with `just test-all`.
+Apply pre-commit linters across the repo with `just lint`.
+Run `just` with no arguments to list every available recipe.
