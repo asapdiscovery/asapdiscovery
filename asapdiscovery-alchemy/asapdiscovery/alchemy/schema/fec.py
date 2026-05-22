@@ -26,7 +26,7 @@ from openfe.protocols.openmm_utils.omm_settings import (
 )
 from openfe.setup.atom_mapping import lomap_scorers, perses_scorers
 from openff.units import unit as OFFUnit
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from ._util import check_ligand_series_uniqueness_and_names
 from .base import _SchemaBase, _SchemaBaseFrozen
@@ -674,3 +674,22 @@ class AlchemiscaleFailure(_BaseFailure):
     dag_result_key: GufeKey = Field(
         ..., description="Protocol DAG result key associated to the errored task."
     )
+
+    @field_validator("unit_key", "dag_result_key", mode="before")
+    @classmethod
+    def _coerce_gufe_key(cls, value):
+        """Coerce plain strings into ``GufeKey``.
+
+        ``GufeKey`` is a ``str`` subclass, so under pydantic v2 the field is
+        validated with an ``is_instance_of`` check. Keys embedded directly in
+        a ``GufeTokenizable`` (e.g. ``ProtocolUnitFailure.source_key``) lose
+        their type on round-trip and come back from alchemiscale as plain
+        ``str``, which would otherwise fail that check.
+
+        Workaround for upstream gufe bug:
+        https://github.com/OpenFreeEnergy/gufe/issues/713
+        Once that is fixed, this validator can be removed.
+        """
+        if isinstance(value, str) and not isinstance(value, GufeKey):
+            return GufeKey(value)
+        return value
