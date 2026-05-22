@@ -1,10 +1,12 @@
+import datetime
 import itertools
 from uuid import uuid4
 
 import pandas
 import pytest
 from alchemiscale import Scope, ScopedKey
-from gufe.protocols import ProtocolDAGResult, ProtocolUnitResult
+from gufe.protocols import ProtocolDAGResult, ProtocolUnitFailure, ProtocolUnitResult
+from gufe.tokenization import GufeKey
 from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolResult
 from openff.units import unit as OFFUnit
 
@@ -278,6 +280,88 @@ def test_get_failures(
     assert all(
         "foo" == data.traceback for data in errors
     ), "'foo' string expected in `traceback` attribute."
+
+
+def test_get_failures_str_source_key(
+    monkeypatch,
+    tyk2_fec_network,
+    alchemiscale_helper,
+    dummy_protocol_units,
+):
+    """Regression test for gufe #713.
+
+    Keys embedded directly in a ``ProtocolUnitFailure`` (e.g. ``source_key``)
+    lose their type on a serialization round-trip and come back from
+    alchemiscale as plain ``str`` rather than ``GufeKey``. ``collect_errors``
+    must still build ``AlchemiscaleFailure`` objects (coercing the keys back to
+    ``GufeKey``) instead of raising a pydantic ``ValidationError``.
+    """
+    client = alchemiscale_helper
+
+    scope = Scope(org="asap", campaign="testing", project="tyk2")
+    alchem_network = tyk2_fec_network.to_alchemical_network()
+    network_key = ScopedKey(gufe_key=alchem_network.key, **scope.model_dump())
+
+    result_network = FreeEnergyCalculationNetwork(
+        **tyk2_fec_network.model_dump(exclude={"results"}),
+        results=AlchemiscaleResults(network_key=network_key),
+    )
+
+    # build failures whose source_key is a *plain str* (NOT a GufeKey), as
+    # happens after a round-trip through alchemiscale; see gufe #713
+    now = datetime.datetime.now()
+    str_keyed_failures = [
+        ProtocolUnitFailure(
+            source_key=str(u.key),
+            inputs=u.inputs,
+            outputs=dict(),
+            exception=("ValueError", ("Didn't feel like it",)),
+            traceback="foo",
+            start_time=now,
+            end_time=now,
+        )
+        for u in dummy_protocol_units
+    ]
+    # sanity check: the failures really do expose plain str source_keys
+    assert all(
+        not isinstance(f.source_key, GufeKey) for f in str_keyed_failures
+    ), "fixture precondition: source_key should be a plain str, not a GufeKey"
+
+    def get_network_tasks(key, status=None) -> list[ScopedKey]:
+        return [
+            ScopedKey(
+                gufe_key=edge.key.replace("Transformation", "Task"),
+                **scope.model_dump(),
+            )
+            for edge in alchem_network.edges
+        ]
+
+    def get_task_failures(key) -> list[ProtocolDAGResult]:
+        return [
+            ProtocolDAGResult(
+                protocol_units=dummy_protocol_units,
+                protocol_unit_results=str_keyed_failures,
+                transformation_key=None,
+            )
+        ]
+
+    monkeypatch.setattr(client._client, "get_network_tasks", get_network_tasks)
+    monkeypatch.setattr(client._client, "get_task_failures", get_task_failures)
+
+    # this previously raised pydantic.ValidationError (is_instance_of GufeKey)
+    errors = client.collect_errors(network_key=result_network.results.network_key)
+
+    n_expected_errors = len(alchem_network.edges) * len(str_keyed_failures)
+    assert (
+        len(errors) == n_expected_errors
+    ), f"Expected {n_expected_errors} errors, received {len(errors)} errors."
+    # the plain-str keys must be coerced back to GufeKey on the schema
+    assert all(
+        isinstance(failure.unit_key, GufeKey) for failure in errors
+    ), "`unit_key` should be coerced to a GufeKey instance."
+    assert all(
+        isinstance(failure.dag_result_key, GufeKey) for failure in errors
+    ), "`dag_result_key` should be coerced to a GufeKey instance."
 
 
 def test_get_actioned_weights(alchemiscale_helper, monkeypatch, tyk2_fec_network):
