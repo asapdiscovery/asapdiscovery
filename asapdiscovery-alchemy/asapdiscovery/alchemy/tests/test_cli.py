@@ -740,7 +740,11 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
             "predictions-absolute-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
         )
 
-        mol_data = absolute_dataframe.iloc[0]
+        # select by label rather than position; cinnabar (>=0.6.0) sorts the
+        # prediction dataframe rows deterministically
+        mol_data = absolute_dataframe[absolute_dataframe["label"] == "lig_ejm_31"].iloc[
+            0
+        ]
         assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
         assert mol_data["label"] == "lig_ejm_31"
@@ -752,7 +756,10 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
         relative_dataframe = pd.read_csv(
             "predictions-relative-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
         )
-        relative_mol_data = relative_dataframe.iloc[0]
+        relative_mol_data = relative_dataframe[
+            (relative_dataframe["labelA"] == "lig_ejm_31")
+            & (relative_dataframe["labelB"] == "lig_ejm_47")
+        ].iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
             relative_mol_data["SMILES_B"]
@@ -804,7 +811,11 @@ def test_alchemy_predict_experimental_data(
         absolute_dataframe = pd.read_csv(
             "predictions-absolute-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
         )
-        mol_data = absolute_dataframe.iloc[0]
+        # select by label rather than position; cinnabar (>=0.6.0) sorts the
+        # prediction dataframe rows deterministically
+        mol_data = absolute_dataframe[absolute_dataframe["label"] == "lig_ejm_31"].iloc[
+            0
+        ]
         assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
         assert mol_data["label"] == "lig_ejm_31"
@@ -823,7 +834,10 @@ def test_alchemy_predict_experimental_data(
         relative_dataframe = pd.read_csv(
             "predictions-relative-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
         )
-        relative_mol_data = relative_dataframe.iloc[0]
+        relative_mol_data = relative_dataframe[
+            (relative_dataframe["labelA"] == "lig_ejm_31")
+            & (relative_dataframe["labelB"] == "lig_ejm_47")
+        ].iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
             relative_mol_data["SMILES_B"]
@@ -923,7 +937,11 @@ def test_alchemy_predict_ccd_data(
         )
         # make sure all results are present
         assert len(absolute_dataframe) == 10
-        mol_data = absolute_dataframe.iloc[0]
+        # select by label rather than position; cinnabar (>=0.6.0) sorts the
+        # prediction dataframe rows deterministically
+        mol_data = absolute_dataframe[absolute_dataframe["label"] == "lig_ejm_31"].iloc[
+            0
+        ]
         assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
         assert mol_data["label"] == "lig_ejm_31"
@@ -944,7 +962,10 @@ def test_alchemy_predict_ccd_data(
         )
         # make sure all results are present
         assert len(relative_dataframe) == 9
-        relative_mol_data = relative_dataframe.iloc[0]
+        relative_mol_data = relative_dataframe[
+            (relative_dataframe["labelA"] == "lig_ejm_31")
+            & (relative_dataframe["labelB"] == "lig_ejm_47")
+        ].iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
             relative_mol_data["SMILES_B"]
@@ -1028,7 +1049,11 @@ def test_predict_missing_all_exp_data(
         )
         # make sure all results are present
         assert len(absolute_dataframe) == 10
-        mol_data = absolute_dataframe.iloc[0]
+        # select by label rather than position; cinnabar (>=0.6.0) sorts the
+        # prediction dataframe rows deterministically
+        mol_data = absolute_dataframe[absolute_dataframe["label"] == "lig_ejm_31"].iloc[
+            0
+        ]
         assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
         assert mol_data["label"] == "lig_ejm_31"
@@ -1043,7 +1068,10 @@ def test_predict_missing_all_exp_data(
         )
         # make sure all results are present
         assert len(relative_dataframe) == 9
-        relative_mol_data = relative_dataframe.iloc[0]
+        relative_mol_data = relative_dataframe[
+            (relative_dataframe["labelA"] == "lig_ejm_31")
+            & (relative_dataframe["labelB"] == "lig_ejm_47")
+        ].iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
             relative_mol_data["SMILES_B"]
