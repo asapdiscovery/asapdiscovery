@@ -1,9 +1,10 @@
-import pytest
+ import pytest
 from rdkit import Chem
 
 from asapdiscovery.data.backend.openeye import get_SD_data, oechem, oemol_to_inchikey
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
+    OpenConfConstrainedPoseGenerator,
     OpenEyeConstrainedPoseGenerator,
     RDKitConstrainedPoseGenerator,
 )
@@ -30,6 +31,19 @@ def test_rdkit_prov():
     assert "oedocking" in provenance
     assert "rdkit" in provenance
     assert "openff.toolkit" in provenance
+
+
+def test_openconf_prov():
+    """Make sure the software versions are correctly captured."""
+
+    pose_gen = OpenConfConstrainedPoseGenerator()
+    provenance = pose_gen.provenance()
+    assert "oechem" in provenance
+    assert "oeff" in provenance
+    assert "oedocking" in provenance
+    assert "rdkit" in provenance
+    assert "openff.toolkit" in provenance
+    assert "openconf" in provenance
 
 
 def test_openeye_generate_core_fragment():
@@ -163,6 +177,7 @@ def test_omega_fail_codes(mac1_complex):
     [
         pytest.param(OpenEyeConstrainedPoseGenerator, id="Openeye"),
         pytest.param(RDKitConstrainedPoseGenerator, id="RDKit"),
+        pytest.param(OpenConfConstrainedPoseGenerator, id="OpenConf"),
     ],
 )
 @pytest.mark.parametrize(
@@ -198,3 +213,33 @@ def test_coord_transfer_fail():
         pose_generator._transfer_coordinates(
             reference_ligand=asprin, template_ligand=biphenyl
         )
+
+
+def test_openconf_coord_transfer_fail():
+    """Make sure the inherited error is raised if we try and transfer the coords with no matching substructure."""
+    asprin = Chem.MolFromSmiles("O=C(C)Oc1ccccc1C(=O)O")
+    biphenyl = Chem.MolFromSmiles("c1ccccc1-c2ccccc2")  # look for biphenyl substructure
+
+    pose_generator = OpenConfConstrainedPoseGenerator()
+    with pytest.raises(RuntimeError):
+        pose_generator._transfer_coordinates(
+            reference_ligand=asprin, template_ligand=biphenyl
+        )
+
+
+def test_openconf_generate_seed_pose():
+    """Make sure a single MCS-restrained seed conformer is generated with the core atoms identified."""
+    core_smarts = "OC(=O)C"
+    reference = Ligand.from_smiles(
+        "O=C(C)Oc1ccccc1C(=O)O", compound_name="aspirin"
+    ).to_rdkit()
+    target = Ligand.from_smiles(
+        "O=C(C)Oc1ccc(Cl)cc1C(=O)O", compound_name="chloro-aspirin"
+    ).to_rdkit()
+
+    pose_generator = OpenConfConstrainedPoseGenerator()
+    seed_ligand, constrained_atoms = pose_generator._generate_seed_pose(
+        target_ligand=target, core_ligand=reference, core_smarts=core_smarts
+    )
+    assert seed_ligand.GetNumConformers() == 1
+    assert len(constrained_atoms) > 0

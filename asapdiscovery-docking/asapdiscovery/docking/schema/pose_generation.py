@@ -981,3 +981,209 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
                     failed_ligands.append(mol.to_oemol())
 
         return posed_ligands, failed_ligands
+
+
+class OpenConfConstrainedPoseGenerator(RDKitConstrainedPoseGenerator):
+    """
+    Use RDKit to build an MCS-restrained seed pose, then use openconf's
+    pose-constrained conformer search to explore the free terminal rotors
+    around the fixed core, keeping the bound core geometry intact.
+
+    Note:
+        Reuses the MCS-matching, coordinate transfer and clash pruning/scoring
+        machinery from :class:`RDKitConstrainedPoseGenerator`; only the
+        conformer sampling step that follows the initial seed embedding differs.
+    """
+
+    type: Literal["OpenConfConstrainedPoseGenerator"] = "OpenConfConstrainedPoseGenerator"
+
+    max_confs: PositiveInt = Field(
+        50,
+        description="The maximum number of conformers openconf should keep in the final ensemble.",
+    )
+    energy_window: PositiveFloat = Field(
+        10,
+        description="The energy window in kcal/mol used by openconf to decide which conformers to keep.",
+    )
+    rms_thresh: PositiveFloat = Field(
+        1.0,
+        description="The RMSD threshold in Angstroms used by openconf to prune similar seed conformers, computed on the heavy atoms.",
+    )
+    random_seed: PositiveInt = Field(
+        42,
+        description="The random seed used for the initial seed embedding and openconf's stochastic conformer search.",
+    )
+    mcs_timeout: PositiveInt = Field(
+        60,
+        description="The timeout in seconds to run the mcs search in RDKit. Analogue series with larger,"
+        " ring-rich cores need more time than the 1 second default used by the plain RDKit generator,"
+        " otherwise the search can time out and return an incomplete core match.",
+    )
+
+    def provenance(self) -> dict[str, Any]:
+        from importlib.metadata import version
+
+        import openff.toolkit
+        import rdkit
+
+        return {
+            "oechem": oechem.OEChemGetVersion(),
+            "oeff": oeff.OEFFGetVersion(),
+            "oedocking": oedocking.OEDockingGetVersion(),
+            "rdkit": rdkit.__version__,
+            "openff.toolkit": openff.toolkit.__version__,
+            "openconf": version("openconf"),
+        }
+
+    def _generate_mcs_core(
+        self, target_ligand: Chem.Mol, reference_ligand: Chem.Mol
+    ) -> Chem.Mol:
+        """
+        Find the MCS core using exact element and bond-order matching.
+
+        Note:
+            Unlike the parent class's permissive CompareAnyHeavyAtom/CompareAny
+            matching, this uses element- and bond-order-exact comparison. For
+            analogue series sharing a heteroatom-rich, symmetric core (e.g. a
+            morpholine), permissive matching can map the core onto the reference
+            in a mirrored orientation and invert a stereocentre.
+        """
+        from rdkit import Chem
+        from rdkit.Chem import rdFMCS
+
+        mcs = rdFMCS.FindMCS(
+            [target_ligand, reference_ligand],
+            ringMatchesRingOnly=True,
+            completeRingsOnly=True,
+            atomCompare=rdFMCS.AtomCompare.CompareElements,
+            bondCompare=rdFMCS.BondCompare.CompareOrderExact,
+            maximizeBonds=True,
+            timeout=self.mcs_timeout,
+        )
+        if mcs.canceled or mcs.numAtoms == 0:
+            raise RuntimeError("MCS search found no common core with the reference")
+        return Chem.MolFromSmarts(mcs.smartsString)
+
+    def _generate_seed_pose(
+        self,
+        target_ligand: Chem.Mol,
+        core_ligand: Chem.Mol,
+        core_smarts: Optional[str] = None,
+    ) -> tuple[Chem.Mol, list[int]]:
+        """
+        Embed a single conformer of the target ligand with its MCS core restrained
+        onto the reference ligand's bound coordinates. This seed pose is handed to
+        openconf, which only explores the free terminal rotors around the fixed core.
+
+        Args:
+            target_ligand: The ligand we want to generate a seed pose for.
+            core_ligand: The reference ligand whose bound coordinates the core should match.
+            core_smarts: The smarts pattern which should be used to define the mcs between the target and the core ligand.
+
+        Returns:
+            The target ligand with a single embedded conformer and the indices of the
+            atoms which make up the restrained core.
+        """
+        from rdkit.Chem import AllChem
+
+        if core_smarts is not None:
+            template_mol = self._generate_mcs_core(
+                target_ligand=Chem.MolFromSmiles(core_smarts),
+                reference_ligand=core_ligand,
+            )
+        else:
+            template_mol = self._generate_mcs_core(
+                target_ligand=target_ligand, reference_ligand=core_ligand
+            )
+        template_mol = self._transfer_coordinates(
+            reference_ligand=core_ligand, template_ligand=template_mol
+        )
+        coord_map, index_map = self._generate_coordinate_map(
+            target_ligand=target_ligand, template_ligand=template_mol
+        )
+
+        params = AllChem.ETKDGv3()
+        params.randomSeed = self.random_seed
+        params.SetCoordMap(coord_map)
+        if AllChem.EmbedMolecule(target_ligand, params) != 0:
+            # fall back to an unconstrained embed if the coordMap embed fails
+            if AllChem.EmbedMolecule(target_ligand, randomSeed=self.random_seed) != 0:
+                raise RuntimeError(
+                    f"Could not embed a 3D conformer for ligand {Chem.MolToSmiles(target_ligand)}"
+                )
+
+        _ = AllChem.AlignMol(target_ligand, template_mol, atomMap=index_map)
+
+        # ETKDG's coordMap is only a soft distance-geometry hint, pull the core atoms
+        # exactly onto the bound coordinates with a restrained minimization before
+        # handing the pose to openconf, leaving the terminal R-groups free to relax.
+        ff = AllChem.UFFGetMoleculeForceField(target_ligand)
+        template_conformer = template_mol.GetConformer()
+        for matched_index, core_index in index_map:
+            coord = template_conformer.GetAtomPosition(core_index)
+            coord_index = ff.AddExtraPoint(coord.x, coord.y, coord.z, fixed=True) - 1
+            ff.AddDistanceConstraint(coord_index, matched_index, 0, 0, 100.0 * 100)
+
+        ff.Initialize()
+        n = 4
+        more = ff.Minimize(energyTol=1e-4, forceTol=1e-3)
+        while more and n:
+            more = ff.Minimize(energyTol=1e-4, forceTol=1e-3)
+            n -= 1
+
+        _ = AllChem.AlignMol(target_ligand, template_mol, atomMap=index_map)
+
+        constrained_atoms = [matched_index for matched_index, _ in index_map]
+        return target_ligand, constrained_atoms
+
+    def _generate_pose(
+        self,
+        target_ligand: Chem.Mol,
+        core_ligand: Chem.Mol,
+        core_smarts: Optional[str] = None,
+    ) -> Chem.Mol:
+        """
+        Build an MCS-restrained seed pose then use openconf to explore the free
+        terminal rotors around the fixed core, producing a multi-conformer ensemble.
+
+        Args:
+            target_ligand: The ligand we wish to generate the MCS restrained poses for.
+            core_ligand: The reference ligand whose coordinates we should match.
+            core_smarts: The smarts pattern which should be used to define the mcs between the target and the core ligand.
+
+        Returns:
+            An rdkit molecule with the generated poses to be filtered.
+
+        Note:
+            This function always returns a molecule even if generation fails it will just have no conformations.
+        """
+        import dataclasses
+
+        from openconf import generate_conformers_from_pose, preset_config
+
+        # run to make sure we don't lose molecule properties when using pickle
+        Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)
+
+        seed_ligand, constrained_atoms = self._generate_seed_pose(
+            target_ligand=target_ligand, core_ligand=core_ligand, core_smarts=core_smarts
+        )
+
+        config = dataclasses.replace(
+            preset_config("analogue"),
+            max_out=self.max_confs,
+            energy_window_kcal=self.energy_window,
+            seed_prune_rms_thresh=self.rms_thresh,
+            random_seed=self.random_seed,
+        )
+        ensemble = generate_conformers_from_pose(
+            seed_ligand, constrained_atoms=constrained_atoms, config=config
+        )
+
+        # only keep the conformers openconf selected for the final ensemble, removing
+        # the rest in place so mol-level properties (e.g. the ligand name) are kept
+        posed_ligand = ensemble.mol
+        keep_ids = set(ensemble.conf_ids)
+        for conformer in list(posed_ligand.GetConformers()):
+            if conformer.GetId() not in keep_ids:
+                posed_ligand.RemoveConformer(conformer.GetId())
+        return posed_ligand

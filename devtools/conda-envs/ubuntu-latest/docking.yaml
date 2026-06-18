@@ -79,3 +79,7 @@ dependencies:
   - semver
   - cudatoolkit
 #  - dask-cuda
+
+  # Constrained pose generation
+  - pip:
+    - openconf

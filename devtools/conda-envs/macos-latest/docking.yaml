@@ -73,3 +73,7 @@ dependencies:
   - wandb
   - seaborn
   - semver
+
+  # Constrained pose generation
+  - pip:
+    - openconf
