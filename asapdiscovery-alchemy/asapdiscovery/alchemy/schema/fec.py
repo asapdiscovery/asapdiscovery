@@ -97,13 +97,13 @@ class AdaptiveSettings(_SchemaBase):
         description="The solvent padding (in nm) to use for the solvated phase of each edge.",
     )
 
-    def get_adapted_sampling_protocol(
+    def get_adapted_sampling_settings(
         self,
         scorer_method: str,
         mapping: "LigandAtomMapping",
-        protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+        settings: "gufe.settings.Settings",
         base_sampling_length: OFFUnit.Quantity,
-    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
+    ) -> "gufe.settings.Settings":
         """
         It's advisable to increase simulation time on edges that are expected to be less reliable. There
         Aren't many good estimators for this, but the network planner edge scoring is a decent approximation.
@@ -112,7 +112,7 @@ class AdaptiveSettings(_SchemaBase):
         simulation time is multiplied by `adaptive_sampling_multiplier`. Just to be sure, we use the base
         protocol's sampling time and not the provided edge protocol sampling time as a base value.
 
-        Returns the adjusted OpenFE Protocol.
+        Mutates and returns the (editable) protocol settings.
         """
         if scorer_method == "default_lomap":
             scorer = lomap_scorers.default_lomap_score
@@ -123,87 +123,83 @@ class AdaptiveSettings(_SchemaBase):
                 f"Atom mapping scorer {scorer_method} not recognized; use one of `default_lomap`, `default_perses`."
             )
         if scorer(mapping) < self.adaptive_sampling_threshold:
-            protocol._settings.simulation_settings.production_length = (
+            settings.simulation_settings.production_length = (
                 base_sampling_length * self.adaptive_sampling_multiplier
             )
-        return protocol
+        return settings
 
-    def get_adapted_solvent_protocol(
+    def get_adapted_solvent_settings(
         self,
         leg: str,
-        protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
-    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
+        settings: "gufe.settings.Settings",
+    ) -> "gufe.settings.Settings":
         """
         Certain water box shapes (such as dodecahedron) are able to handle slightly smaller padding size
         in the complex phase compared to the solvated phase. Given the leg (either "solvent" or "complex")
         this method applies the specified padding per phase (`solvent_padding_solvated` or
         `solvent_padding_complex`, resp.).
 
-        Returns the adjusted OpenFE Protocol.
+        Mutates and returns the (editable) protocol settings.
         """
         if leg == "solvent":
-            protocol._settings.solvation_settings.solvent_padding = (
-                self.solvent_padding_solvated
-            )
+            settings.solvation_settings.solvent_padding = self.solvent_padding_solvated
         else:
-            protocol._settings.solvation_settings.solvent_padding = (
-                self.solvent_padding_complex
-            )
-        return protocol
+            settings.solvation_settings.solvent_padding = self.solvent_padding_complex
+        return settings
 
     def apply_settings(
         self,
-        edge_protocol: "gufe.Protocol",
+        edge_settings: "gufe.settings.Settings",
         network_scorer: str,
         mapping: "LigandAtomMapping",
         leg: str,
-        base_protocol: "gufe.Protocol",
-    ) -> "gufe.Protocol":
+        base_settings: "gufe.settings.Settings",
+    ) -> "gufe.settings.Settings":
         """
-        Applies a set of adaptive settings to an alchemical Protocol if requested.
+        Applies a set of adaptive settings to a protocol's settings if requested.
 
-        Adaptive settings are only applied where the protocol's settings expose the
-        relevant fields. Protocols such as ``RelativeHybridTopologyProtocol`` carry
+        Operates on (and returns) the protocol ``Settings`` directly so the caller
+        can build a fresh ``Protocol`` from them, rather than deep-copying a
+        ``Protocol`` object. ``edge_settings`` is expected to be an editable
+        (``unfrozen_copy``) settings object which is mutated in place.
+
+        Adaptive settings are only applied where the settings expose the relevant
+        fields. ``RelativeHybridTopologyProtocol`` settings carry
         ``simulation_settings`` (sampling length) and ``solvation_settings``
         (solvent padding); non-equilibrium protocols (e.g. feflow's
-        ``NonEquilibriumCyclingProtocol``) do not have ``simulation_settings`` so
+        ``NonEquilibriumCyclingProtocol``) have no ``simulation_settings`` so
         adaptive sampling is skipped for them with a warning.
         """
-        import copy
-
-        # create a copy of the edge_protocol to make it editable - we're returning the copy
-        edge_protocol = copy.deepcopy(edge_protocol)
-
         # double the simulation time if requested (RFE-style protocols only)
         if self.adaptive_sampling:
-            if hasattr(edge_protocol.settings, "simulation_settings") and hasattr(
-                base_protocol.settings, "simulation_settings"
+            if hasattr(edge_settings, "simulation_settings") and hasattr(
+                base_settings, "simulation_settings"
             ):
                 base_sampling_length = (
-                    base_protocol.settings.simulation_settings.production_length
+                    base_settings.simulation_settings.production_length
                 )
-                edge_protocol = self.get_adapted_sampling_protocol(
-                    network_scorer, mapping, edge_protocol, base_sampling_length
+                edge_settings = self.get_adapted_sampling_settings(
+                    network_scorer, mapping, edge_settings, base_sampling_length
                 )
             else:
                 warnings.warn(
-                    f"adaptive_sampling requested but protocol "
-                    f"{type(edge_protocol).__name__} has no `simulation_settings`; "
+                    "adaptive_sampling requested but protocol settings "
+                    f"{type(edge_settings).__name__} have no `simulation_settings`; "
                     "skipping adaptive sampling for this protocol."
                 )
 
         # adjust solvent padding per phase if requested
         if self.adaptive_solvent_padding:
-            if hasattr(edge_protocol.settings, "solvation_settings"):
-                edge_protocol = self.get_adapted_solvent_protocol(leg, edge_protocol)
+            if hasattr(edge_settings, "solvation_settings"):
+                edge_settings = self.get_adapted_solvent_settings(leg, edge_settings)
             else:
                 warnings.warn(
-                    f"adaptive_solvent_padding requested but protocol "
-                    f"{type(edge_protocol).__name__} has no `solvation_settings`; "
+                    "adaptive_solvent_padding requested but protocol settings "
+                    f"{type(edge_settings).__name__} have no `solvation_settings`; "
                     "skipping adaptive solvent padding for this protocol."
                 )
 
-        return edge_protocol
+        return edge_settings
 
 
 # TODO make base class with abstract methods to collect results.
@@ -597,36 +593,24 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         Returns:
             An openfe.AlchemicalNetwork created from the schema.
         """
-        import copy
-
         transformations = []
         # do all openfe conversions
         ligand_network = self.network.to_ligand_network()
         solvent = self.solvent_settings.to_solvent_component()
         receptor = self.to_openfe_receptor()
-        # build one base protocol per configured protocol name
-        protocols = self.to_openfe_protocols()
 
         # build the network; `protocol_strategy` decides which protocols apply to
         # each edge (the "all" strategy uses every configured protocol per edge)
         for mapping in ligand_network.edges:
             for protocol_name in self._protocols_for_edge(mapping):
-                protocol = protocols[protocol_name]
-                # make a copy of the protocol and add the bespoke force field
-                edge_protocol = copy.deepcopy(protocol)
-                # make the settings editable
-                edge_protocol._settings = edge_protocol._settings.unfrozen_copy()
-                # inject the (possibly bespoke) force field where the protocol supports
-                # it, using this protocol's own base force field
-                if hasattr(edge_protocol._settings, "forcefield_settings"):
-                    base_force_field = (
-                        edge_protocol._settings.forcefield_settings.small_molecule_forcefield
-                    )
+                base_settings = self.protocol_settings[protocol_name]
+                # compute the (possibly bespoke) force field once per edge/protocol,
+                # using this protocol's own base force field; leg-independent
+                ff_string = None
+                if hasattr(base_settings, "forcefield_settings"):
                     ff_string = self._inject_bespoke_parameters(
-                        edge=mapping, base_force_field=base_force_field
-                    )
-                    edge_protocol._settings.forcefield_settings.small_molecule_forcefield = (
-                        ff_string
+                        edge=mapping,
+                        base_force_field=base_settings.forcefield_settings.small_molecule_forcefield,
                     )
 
                 for leg in ["solvent", "complex"]:
@@ -643,17 +627,29 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                         sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
                     )
 
-                    # run this edge's protocol through adaptive settings. If this list of things to pass
+                    # build a fresh, editable copy of this protocol's settings for
+                    # this edge/leg rather than deep-copying a gufe Protocol object
+                    edge_settings = base_settings.unfrozen_copy()
+                    if ff_string is not None:
+                        edge_settings.forcefield_settings.small_molecule_forcefield = (
+                            ff_string
+                        )
+
+                    # run this edge's settings through adaptive settings. If this list of things to pass
                     # grows any larger we should only pass the `FreeEnergyCalculationNetwork` and instead
                     # infer these parameters somewhere in self.adaptive_settings.
                     if self.adaptive_settings:
-                        edge_protocol = self.adaptive_settings.apply_settings(
-                            edge_protocol,  # the protocol to be adjusted
+                        edge_settings = self.adaptive_settings.apply_settings(
+                            edge_settings,  # the editable settings to be adjusted
                             self.network.scorer,  # the network edge scorer - for adaptive sampling
                             mapping,  # the atom mapping for this edge - for adaptive sampling
                             leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
-                            protocol,  # base protocol to compare with for internal checking
+                            base_settings,  # base settings to compare with for internal checking
                         )
+
+                    # build a fresh Protocol from the per-edge settings instead of
+                    # mutating a deep-copied one (keeps gufe's flyweight intact)
+                    edge_protocol = build_protocol(protocol_name, edge_settings)
 
                     # set up the transformation; the protocol name is appended so
                     # transformations for the same edge but different protocols have
