@@ -211,14 +211,21 @@ def test_collect_results_multi_protocol(
         results = {}
         for key, edge in keys_to_edges.items():
             estimate = 3 if "complex" in edge.name else 1
+            outputs = {
+                "unit_estimate": estimate * OFFUnit.kilocalorie / OFFUnit.mole,
+            }
+            # mimic that the non-RFE protocol's result units do not carry the
+            # RFE-specific `unit_estimate_error` output; collecting these must not
+            # raise even though the (single-unit) uncertainty is 0.0
+            if "NonEquilibriumCyclingProtocol" not in edge.name:
+                outputs["unit_estimate_error"] = (
+                    0.1 * OFFUnit.kilocalorie / OFFUnit.mole
+                )
             task_result = ProtocolUnitResult(
                 name=edge.name,
                 source_key=key,
                 inputs={"stateA": edge.stateA, "stateB": edge.stateB},
-                outputs={
-                    "unit_estimate": estimate * OFFUnit.kilocalorie / OFFUnit.mole,
-                    "unit_estimate_error": 0.1 * OFFUnit.kilocalorie / OFFUnit.mole,
-                },
+                outputs=outputs,
             )
             results[key] = RelativeHybridTopologyProtocolResult(
                 **{edge.name: [task_result]}

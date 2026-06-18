@@ -1,3 +1,4 @@
+import warnings
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -246,16 +247,20 @@ class AlchemiscaleHelper:
                 "Need to define one of `planned_network` or `network_key`."
             )
 
+        key_to_protocol = {}
         if planned_network:
             network_key = planned_network.results.network_key
 
-        # rebuild the network locally to map each transformation back to the
-        # protocol that produced it; gufe transformation keys are content-derived
-        # and stable across (de)serialization, so they match what was submitted
-        key_to_protocol = {
-            edge.key: protocol_name_for(edge.protocol)
-            for edge in planned_network.to_alchemical_network().edges
-        }
+            # rebuild the network locally to map each transformation back to the
+            # protocol that produced it; gufe transformation keys are content-derived
+            # and stable across (de)serialization, so they match what was submitted.
+            # We must rebuild (rather than parse the protocol-suffixed transformation
+            # name) because the bespoke-force-field injection feeds into the key, so a
+            # faithful map requires the same transformations that were submitted.
+            key_to_protocol = {
+                edge.key: protocol_name_for(edge.protocol)
+                for edge in planned_network.to_alchemical_network().edges
+            }
 
         alchemiscale_network_results = self._client.get_network_results(
             network_key
@@ -266,15 +271,23 @@ class AlchemiscaleHelper:
                 continue
             # determine which protocol produced this transformation's result
             protocol = key_to_protocol.get(transformation_key.gufe_key)
+            if protocol is None:
+                warnings.warn(
+                    f"Could not map transformation {transformation_key} back to a "
+                    "protocol; its result will be left untagged. This can happen if "
+                    "the local network no longer matches what was submitted."
+                )
             # format into our custom result schema and save
             estimate = raw_result.get_estimate()
             uncertainty = raw_result.get_uncertainty()
-            # if there is a single repeat the error is 0.0 so extract the mbar error
+            # For a single OpenFE-RFE repeat the protocol-level error is 0.0, so we
+            # fall back to the per-unit MBAR error. `unit_estimate_error` is an
+            # RFE-specific output; other protocols (e.g. feflow's NEQ cycling) do not
+            # provide it, so only use it when present to avoid a KeyError.
             if uncertainty.m == 0.0:
-                uncertainty = [
-                    edge[0].outputs["unit_estimate_error"]
-                    for edge in raw_result.data.values()
-                ][0]
+                unit_results = [edge[0] for edge in raw_result.data.values()]
+                if unit_results and "unit_estimate_error" in unit_results[0].outputs:
+                    uncertainty = unit_results[0].outputs["unit_estimate_error"]
 
             # work out the name of the molecules and the phase of the calculation
             individual_runs = list(raw_result.data.values())

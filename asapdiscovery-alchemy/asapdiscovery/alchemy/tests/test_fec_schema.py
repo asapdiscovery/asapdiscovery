@@ -450,6 +450,18 @@ def test_fec_multi_protocol_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
     assert before == after
 
 
+def test_reject_legacy_flat_format():
+    """Loading a pre-multi-protocol (flat-settings) file raises a clear error."""
+    legacy = {
+        "type": "FreeEnergyCalculationFactory",
+        "protocol": "RelativeHybridTopologyProtocol",
+        "forcefield_settings": {"small_molecule_forcefield": "openff-2.2.0.offxml"},
+        "protocol_repeats": 1,
+    }
+    with pytest.raises(ValueError, match="pre-multi-protocol"):
+        FreeEnergyCalculationFactory.model_validate(legacy)
+
+
 def test_adaptive_sampling_skipped_for_neq(tyk2_ligands, tyk2_protein):
     """adaptive_sampling is skipped (with a warning) for protocols lacking simulation_settings."""
     factory = FreeEnergyCalculationFactory(

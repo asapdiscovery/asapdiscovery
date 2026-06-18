@@ -410,6 +410,41 @@ class _FreeEnergyBase(_SchemaBase):
         "`protocol` when not provided.",
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_legacy_flat_format(cls, data: Any) -> Any:
+        """Raise a clear error when loading a pre-multi-protocol (flat) file.
+
+        Older factory/network files stored the OpenFE-RFE settings as flat
+        top-level fields and ``protocol`` as a plain string. Those fields no
+        longer exist, so without this guard loading such a file would fail with
+        an opaque ``extra="forbid"`` pydantic error on real user data.
+        """
+        legacy_fields = {
+            "forcefield_settings",
+            "thermo_settings",
+            "solvation_settings",
+            "alchemical_settings",
+            "engine_settings",
+            "integrator_settings",
+            "simulation_settings",
+            "lambda_settings",
+            "partial_charge_settings",
+            "output_settings",
+            "protocol_repeats",
+        }
+        if isinstance(data, dict):
+            found = sorted(legacy_fields.intersection(data))
+            if found:
+                raise ValueError(
+                    "This file was created with a pre-multi-protocol version of "
+                    f"asapdiscovery-alchemy (found legacy settings fields: {found}). "
+                    "These files are no longer supported. Regenerate it with "
+                    "`asap-alchemy create` / `asap-alchemy prep create` using this "
+                    "version, or rebuild the network from its original inputs."
+                )
+        return data
+
     @field_validator("protocol_settings", mode="before")
     @classmethod
     def _decode_protocol_settings(cls, value: Any) -> dict[str, Any]:
@@ -439,6 +474,10 @@ class _FreeEnergyBase(_SchemaBase):
         Pydantic would otherwise flatten the ``Settings`` into plain dicts and lose
         the gufe class markers needed to reconstruct the correct subclass. We
         pre-encode with ``JSON_HANDLER`` so the markers survive ``to_file``.
+
+        Note: ``_SchemaBase.to_file`` re-runs ``JSON_HANDLER`` over the whole
+        ``model_dump`` output, but by then these values are already marker-bearing
+        plain dicts with no gufe objects left, so that second pass is a no-op here.
         """
         return {
             name: json.loads(json.dumps(settings_obj, cls=JSON_HANDLER.encoder))
@@ -454,7 +493,9 @@ class _FreeEnergyBase(_SchemaBase):
                 raise ValueError(
                     f"Unknown protocol {name!r}; available protocols are {known}."
                 )
-            # mutate the existing dict in place so this works on frozen models too
+            # mutate the dict's contents in place rather than reassigning the
+            # field, so this also works on the frozen `FreeEnergyCalculationNetwork`
+            # subclass (where attribute assignment is disallowed)
             if name not in self.protocol_settings:
                 self.protocol_settings[name] = default_protocol_settings(name)
         return self
@@ -466,6 +507,10 @@ class _FreeEnergyBase(_SchemaBase):
         Pulled from the ``forcefield_settings`` of each protocol that exposes them;
         raises if the protocols disagree so callers (bespoke fitting, bespoke
         parameter injection) get a single, unambiguous force field.
+
+        Note: this makes bespoke fitting unavailable for genuinely mixed-force-field
+        multi-protocol networks; per-edge injection in ``to_alchemical_network`` uses
+        each protocol's own force field directly and does not rely on this helper.
         """
         ff_names = {
             self.protocol_settings[name].forcefield_settings.small_molecule_forcefield
