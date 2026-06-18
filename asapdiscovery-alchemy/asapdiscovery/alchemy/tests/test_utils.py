@@ -13,6 +13,7 @@ from openff.units import unit as OFFUnit
 from asapdiscovery.alchemy.cli.utils import get_cdd_molecules, upload_to_postera
 from asapdiscovery.alchemy.schema.fec import (
     AlchemiscaleResults,
+    FreeEnergyCalculationFactory,
     FreeEnergyCalculationNetwork,
 )
 from asapdiscovery.alchemy.utils import extract_custom_ligand_network
@@ -172,6 +173,66 @@ def test_collect_results(monkeypatch, tyk2_fec_network, alchemiscale_helper):
     assert (
         result_map.n_ligands == len(alchem_network.nodes) / 2
     )  # divide by 2 as we have a node for the solvent and complex phase
+    # every result should be tagged with the protocol that produced it
+    assert {result.protocol for result in network_with_results.results.results} == {
+        "RelativeHybridTopologyProtocol"
+    }
+    assert network_with_results.results.protocols == ["RelativeHybridTopologyProtocol"]
+
+
+def test_collect_results_multi_protocol(
+    monkeypatch, tyk2_ligands, tyk2_protein, alchemiscale_helper
+):
+    """Results from a multi-protocol network are tagged and separable by protocol."""
+    client = alchemiscale_helper
+
+    protocols = ["RelativeHybridTopologyProtocol", "NonEquilibriumCyclingProtocol"]
+    factory = FreeEnergyCalculationFactory(protocol=protocols)
+    planned_network = factory.create_fec_dataset(
+        dataset_name="tyk2-multi",
+        receptor=tyk2_protein,
+        ligands=tyk2_ligands[:3],
+    )
+
+    scope = Scope(org="asap", campaign="testing", project="tyk2")
+    alchem_network = planned_network.to_alchemical_network()
+    network_key = ScopedKey(gufe_key=alchem_network.key, **scope.model_dump())
+    result_network = FreeEnergyCalculationNetwork(
+        **planned_network.model_dump(exclude={"results"}),
+        results=AlchemiscaleResults(network_key=network_key),
+    )
+
+    keys_to_edges = {
+        ScopedKey(gufe_key=edge.key, **scope.model_dump()): edge
+        for edge in alchem_network.edges
+    }
+
+    def get_network_results(*args, **kwargs):
+        results = {}
+        for key, edge in keys_to_edges.items():
+            estimate = 3 if "complex" in edge.name else 1
+            task_result = ProtocolUnitResult(
+                name=edge.name,
+                source_key=key,
+                inputs={"stateA": edge.stateA, "stateB": edge.stateB},
+                outputs={
+                    "unit_estimate": estimate * OFFUnit.kilocalorie / OFFUnit.mole,
+                    "unit_estimate_error": 0.1 * OFFUnit.kilocalorie / OFFUnit.mole,
+                },
+            )
+            results[key] = RelativeHybridTopologyProtocolResult(
+                **{edge.name: [task_result]}
+            )
+        return results
+
+    monkeypatch.setattr(client._client, "get_network_results", get_network_results)
+
+    network_with_results = client.collect_results(planned_network=result_network)
+    # both protocols should be represented in the collected results
+    assert set(network_with_results.results.protocols) == set(protocols)
+    # and we should be able to build a separate FEMap per protocol
+    fe_maps = network_with_results.results.to_fe_map_by_protocol()
+    assert set(fe_maps) == set(protocols)
 
 
 def test_restart_tasks(monkeypatch, tyk2_fec_network, alchemiscale_helper):

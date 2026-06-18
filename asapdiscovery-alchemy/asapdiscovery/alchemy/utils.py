@@ -12,6 +12,7 @@ from asapdiscovery.alchemy.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.alchemy.schema.forcefield import ForceFieldParams
+from asapdiscovery.alchemy.schema.protocols import protocol_name_for
 
 if TYPE_CHECKING:
     from openff.bespokefit.workflows import BespokeWorkflowFactory
@@ -248,13 +249,23 @@ class AlchemiscaleHelper:
         if planned_network:
             network_key = planned_network.results.network_key
 
+        # rebuild the network locally to map each transformation back to the
+        # protocol that produced it; gufe transformation keys are content-derived
+        # and stable across (de)serialization, so they match what was submitted
+        key_to_protocol = {
+            edge.key: protocol_name_for(edge.protocol)
+            for edge in planned_network.to_alchemical_network().edges
+        }
+
         alchemiscale_network_results = self._client.get_network_results(
             network_key
         ).items()
         # use the process pool api point to gather all transformations for the network
-        for _, raw_result in alchemiscale_network_results:
+        for transformation_key, raw_result in alchemiscale_network_results:
             if raw_result is None:
                 continue
+            # determine which protocol produced this transformation's result
+            protocol = key_to_protocol.get(transformation_key.gufe_key)
             # format into our custom result schema and save
             estimate = raw_result.get_estimate()
             uncertainty = raw_result.get_uncertainty()
@@ -295,6 +306,7 @@ class AlchemiscaleHelper:
                     phase=phase,
                     estimate=estimate,
                     uncertainty=uncertainty,
+                    protocol=protocol,
                 )
             )
 
@@ -598,7 +610,7 @@ class BespokeFitHelper:
                     # make sure we use the force field which we fit to
                     # this was taken from the network originally
                     bespoke_parameters = BespokeParameters(
-                        base_force_field=network.forcefield_settings.small_molecule_forcefield
+                        base_force_field=network.small_molecule_forcefield
                     )
                     for parameter, values in refit_parameters.items():
                         bespoke_parameter = BespokeParameter(

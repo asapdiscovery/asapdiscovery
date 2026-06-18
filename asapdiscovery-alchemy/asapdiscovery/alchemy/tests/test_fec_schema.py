@@ -215,19 +215,22 @@ def test_planner_file_round_trip(tmpdir):
         assert planner.scorer == planner_2.scorer
 
 
-def test_fec_to_openfe_protocol():
-    """Make sure we can correctly reconstruct the openfe protocol needed to run the calculation from the factory settings"""
+def test_fec_to_openfe_protocols():
+    """Make sure we can correctly reconstruct the openfe protocols needed to run the calculation from the factory settings"""
 
     # change some default settings to make sure they are passed on
     factory = FreeEnergyCalculationFactory()
-    factory.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
-    protocol = factory.to_openfe_protocol()
+    rfe_settings = factory.protocol_settings["RelativeHybridTopologyProtocol"]
+    rfe_settings.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
+    protocols = factory.to_openfe_protocols()
+    assert list(protocols) == ["RelativeHybridTopologyProtocol"]
+    protocol = protocols["RelativeHybridTopologyProtocol"]
     assert isinstance(
         protocol, openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol
     )
     assert (
         protocol.settings.simulation_settings.equilibration_length
-        == factory.simulation_settings.equilibration_length
+        == rfe_settings.simulation_settings.equilibration_length
     )
 
 
@@ -377,7 +380,9 @@ def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
     # change the default settings to make sure they propagated
     # change the lomap timeout
     factory.network_planner.atom_mapping_engine.timeout = 30
-    factory.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
+    factory.protocol_settings[
+        "RelativeHybridTopologyProtocol"
+    ].simulation_settings.equilibration_length = (0.5 * OFFUnit.nanoseconds)
     # plan a network
     planned_network = factory.create_fec_dataset(
         dataset_name="TYK2-test-dataset", receptor=tyk2_protein, ligands=tyk2_ligands
@@ -397,6 +402,69 @@ def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
         )
 
 
+def test_fec_multi_protocol_network(tyk2_ligands, tyk2_protein):
+    """A network built with multiple protocols has a transformation per edge per protocol."""
+    protocols = ["RelativeHybridTopologyProtocol", "NonEquilibriumCyclingProtocol"]
+    factory = FreeEnergyCalculationFactory(protocol=protocols)
+    assert set(factory.protocol_settings) == set(protocols)
+
+    planned_network = factory.create_fec_dataset(
+        dataset_name="tyk2-multi", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    alchemical_network = planned_network.to_alchemical_network()
+
+    # count transformations per protocol via the protocol object on each edge
+    per_protocol = {protocol: 0 for protocol in protocols}
+    for edge in alchemical_network.edges:
+        per_protocol[type(edge.protocol).__name__] += 1
+    # an equal number of transformations for each protocol (same edges/phases)
+    assert per_protocol[protocols[0]] == per_protocol[protocols[1]]
+    assert all(count > 0 for count in per_protocol.values())
+    # gufe keys are unique even though the same edges are shared across protocols
+    keys = [edge.key for edge in alchemical_network.edges]
+    assert len(keys) == len(set(keys))
+    # the protocol name is encoded in each transformation name
+    for edge in alchemical_network.edges:
+        assert edge.name.endswith(type(edge.protocol).__name__)
+
+
+def test_fec_multi_protocol_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
+    """A multi-protocol network survives a to_file/from_file round-trip unchanged."""
+    factory = FreeEnergyCalculationFactory(
+        protocol=["RelativeHybridTopologyProtocol", "NonEquilibriumCyclingProtocol"]
+    )
+    planned_network = factory.create_fec_dataset(
+        dataset_name="tyk2-multi", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    path = tmp_path / "multi_network.json"
+    planned_network.to_file(path.as_posix())
+    reloaded = type(planned_network).from_file(path.as_posix())
+
+    # settings classes are preserved exactly through the round-trip
+    assert {k: type(v).__name__ for k, v in reloaded.protocol_settings.items()} == {
+        k: type(v).__name__ for k, v in planned_network.protocol_settings.items()
+    }
+    # and the rebuilt alchemical networks have identical transformation keys
+    before = {edge.key for edge in planned_network.to_alchemical_network().edges}
+    after = {edge.key for edge in reloaded.to_alchemical_network().edges}
+    assert before == after
+
+
+def test_adaptive_sampling_skipped_for_neq(tyk2_ligands, tyk2_protein):
+    """adaptive_sampling is skipped (with a warning) for protocols lacking simulation_settings."""
+    factory = FreeEnergyCalculationFactory(
+        protocol=["NonEquilibriumCyclingProtocol"],
+        adaptive_settings=AdaptiveSettings(adaptive_sampling=True),
+    )
+    planned_network = factory.create_fec_dataset(
+        dataset_name="tyk2-neq", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    # building the network must not raise even though NEQ has no simulation_settings
+    with pytest.warns(UserWarning, match="adaptive_sampling"):
+        alchemical_network = planned_network.to_alchemical_network()
+    assert len(alchemical_network.edges) > 0
+
+
 def test_fec_with_bespoke_parameters(tyk2_fec_network):
     """
     Make sure we can generate an OpenFE network with bespoke torsions parameters added
@@ -404,7 +472,7 @@ def test_fec_with_bespoke_parameters(tyk2_fec_network):
     """
     # mock some torsion parameters which hit all tyk2 amide torsions.
     bespoke_parameters = BespokeParameters(
-        base_force_field=tyk2_fec_network.forcefield_settings.small_molecule_forcefield
+        base_force_field=tyk2_fec_network.small_molecule_forcefield
     )
     bespoke_parameters.parameters.append(
         BespokeParameter(

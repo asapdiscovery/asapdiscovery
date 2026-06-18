@@ -111,7 +111,7 @@ def submit(
     # make sure the default force field matches our fec workflow
     # bespokefit will automatically strip the constraints if present
     # we need to patch the file extension for bespopkefit
-    ff_name = fec_network.forcefield_settings.small_molecule_forcefield
+    ff_name = fec_network.small_molecule_forcefield
     if ".offxml" not in ff_name:
         ff_name += ".offxml"
 

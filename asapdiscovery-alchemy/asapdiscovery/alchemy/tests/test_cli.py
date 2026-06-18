@@ -723,14 +723,22 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
         )
         assert click_success(result)
         assert "Loaded FreeEnergyCalculationNetwork from" in result.stdout
-        assert "Absolute predictions written" in result.stdout
-        assert "Relative predictions written" in result.stdout
+        assert (
+            "Absolute predictions (RelativeHybridTopologyProtocol) written"
+            in result.stdout
+        )
+        assert (
+            "Relative predictions (RelativeHybridTopologyProtocol) written"
+            in result.stdout
+        )
         assert (
             "WARNING a postera molecule set name was provided without a target, results "
             in result.stdout
         )
         # load the datasets and check the results match what's expected
-        absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
+        absolute_dataframe = pd.read_csv(
+            "predictions-absolute-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
+        )
 
         mol_data = absolute_dataframe.iloc[0]
         assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
@@ -741,7 +749,9 @@ def test_alchemy_predict_no_experimental_data(tyk2_result_network, tmpdir):
             0.0757, abs=1e-4
         )
 
-        relative_dataframe = pd.read_csv("predictions-relative-tyk2-small-test.csv")
+        relative_dataframe = pd.read_csv(
+            "predictions-relative-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
+        )
         relative_mol_data = relative_dataframe.iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
@@ -782,16 +792,18 @@ def test_alchemy_predict_experimental_data(
         )
         assert click_success(result)
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
-        assert (
-            "Absolute report written to predictions-absolute-tyk2-small-test.html"
-            in result.stdout
+        # rich may wrap the console output across lines, so assert the report
+        # files were written rather than matching the (wrapped) stdout text
+        assert os.path.exists(
+            "predictions-absolute-tyk2-small-test-RelativeHybridTopologyProtocol.html"
         )
-        assert (
-            "Relative report written to predictions-relative-tyk2-small-test.html"
-            in result.stdout
+        assert os.path.exists(
+            "predictions-relative-tyk2-small-test-RelativeHybridTopologyProtocol.html"
         )
         # load the datasets and check the results match what's expected
-        absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
+        absolute_dataframe = pd.read_csv(
+            "predictions-absolute-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
+        )
         mol_data = absolute_dataframe.iloc[0]
         assert mol_data["SMILES"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert mol_data["Inchi_Key"] == "DKNAYSZNMZIMIZ-UHFFFAOYSA-N"
@@ -808,7 +820,9 @@ def test_alchemy_predict_experimental_data(
             0.6443, abs=1e-4
         )
 
-        relative_dataframe = pd.read_csv("predictions-relative-tyk2-small-test.csv")
+        relative_dataframe = pd.read_csv(
+            "predictions-relative-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
+        )
         relative_mol_data = relative_dataframe.iloc[0]
         assert relative_mol_data["SMILES_A"] == "CC(=O)Nc1cc(ccn1)NC(=O)c2c(cccc2Cl)Cl"
         assert (
@@ -895,16 +909,18 @@ def test_alchemy_predict_ccd_data(
         result = runner.invoke(alchemy, ["predict", "-ep", protocol_name])
         assert click_success(result)
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
-        assert (
-            "Absolute report written to predictions-absolute-tyk2-small-test.html"
-            in result.stdout
+        # rich may wrap the console output across lines, so assert the report
+        # files were written rather than matching the (wrapped) stdout text
+        assert os.path.exists(
+            "predictions-absolute-tyk2-small-test-RelativeHybridTopologyProtocol.html"
         )
-        assert (
-            "Relative report written to predictions-relative-tyk2-small-test.html"
-            in result.stdout
+        assert os.path.exists(
+            "predictions-relative-tyk2-small-test-RelativeHybridTopologyProtocol.html"
         )
         # load the datasets and check the results match what's expected
-        absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
+        absolute_dataframe = pd.read_csv(
+            "predictions-absolute-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
+        )
         # make sure all results are present
         assert len(absolute_dataframe) == 10
         mol_data = absolute_dataframe.iloc[0]
@@ -923,7 +939,9 @@ def test_alchemy_predict_ccd_data(
             0.6429, abs=1e-4
         )
 
-        relative_dataframe = pd.read_csv("predictions-relative-tyk2-small-test.csv")
+        relative_dataframe = pd.read_csv(
+            "predictions-relative-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
+        )
         # make sure all results are present
         assert len(relative_dataframe) == 9
         relative_mol_data = relative_dataframe.iloc[0]
@@ -996,16 +1014,18 @@ def test_predict_missing_all_exp_data(
         assert click_success(result)
         assert "Loaded FreeEnergyCalculationNetwork" in result.stdout
         # make sure the interactive reports are still made they just won't have a figure
-        assert (
-            "Absolute report written to predictions-absolute-tyk2-small-test.html"
-            in result.stdout
+        # rich may wrap the console output across lines, so assert the report
+        # files were written rather than matching the (wrapped) stdout text
+        assert os.path.exists(
+            "predictions-absolute-tyk2-small-test-RelativeHybridTopologyProtocol.html"
         )
-        assert (
-            "Relative report written to predictions-relative-tyk2-small-test.html"
-            in result.stdout
+        assert os.path.exists(
+            "predictions-relative-tyk2-small-test-RelativeHybridTopologyProtocol.html"
         )
         # load the datasets and check the results match what's expected
-        absolute_dataframe = pd.read_csv("predictions-absolute-tyk2-small-test.csv")
+        absolute_dataframe = pd.read_csv(
+            "predictions-absolute-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
+        )
         # make sure all results are present
         assert len(absolute_dataframe) == 10
         mol_data = absolute_dataframe.iloc[0]
@@ -1018,7 +1038,9 @@ def test_predict_missing_all_exp_data(
             0.0757, abs=1e-4
         )
 
-        relative_dataframe = pd.read_csv("predictions-relative-tyk2-small-test.csv")
+        relative_dataframe = pd.read_csv(
+            "predictions-relative-tyk2-small-test-RelativeHybridTopologyProtocol.csv"
+        )
         # make sure all results are present
         assert len(relative_dataframe) == 9
         relative_mol_data = relative_dataframe.iloc[0]
@@ -1369,7 +1391,7 @@ def test_bespoke_gather(tyk2_fec_network, monkeypatch, tmpdir):
             assert ligand.bespoke_parameters is not None
             assert (
                 ligand.bespoke_parameters.base_force_field
-                == tyk2_network.forcefield_settings.small_molecule_forcefield
+                == tyk2_network.small_molecule_forcefield
             )
             parameter = ligand.bespoke_parameters.parameters[0]
             assert parameter.smirks == "[#5:1]-[#6X4:2]-[#6X4:3]-[#5:4]"

@@ -939,131 +939,169 @@ def predict(
     )
     console.print(message)
 
-    predict_status = console.status("Calculating absolute free energies")
-    predict_status.start()
-
     # gather all ligands needed for the prediction labels
     ligands = result_network.network.ligands
     if result_network.network.central_ligand is not None:
         ligands.append(result_network.network.central_ligand)
 
-    # convert to cinnabar fepmap to do the prediction via MLE
-    fe_map = result_network.results.to_fe_map()
-    is_connected = cinnabar_femap_is_connected(fe_map)
-
-    if is_connected:
-        try:
-            fe_map.generate_absolute_values()
-        except np.linalg.LinAlgError:
-            raise ValueError(
-                "MLE failed during absolute value generation. Does your result network contain "
-                "NaNs? You can manually remove these or run `predict -c` to remove them automatically."
-            )
-    elif not is_connected and force_largest:
-        fe_map = cinnabar_femap_get_largest_subnetwork(fe_map, result_network, console)
-        fe_map.generate_absolute_values()
-    else:
-        raise ValueError(
-            "Your network is missing edges resulting in a gap where ligands (nodes) are "
-            "not connected to the network. If you would like to discard those disconnected ligands "
-            "(i.e. not make predictions on them), run predict using the '-fl/--force-largest' flag."
-        )
-
     # check if we have a protocol on the network already to draw experimental results from
-    protocol = experimental_protocol or result_network.experimental_protocol
-
-    absolute_df, relative_df = get_data_from_femap(
-        fe_map=fe_map,
-        ligands=ligands,
-        assay_units=reference_units,
-        reference_dataset=reference_dataset,
-        cdd_protocol=protocol,
-    )
-
-    # write predictions to csv file
-    absolute_path = f"predictions-absolute-{result_network.dataset_name}.csv"
-    relative_path = f"predictions-relative-{result_network.dataset_name}.csv"
-    absolute_df.to_csv(absolute_path)
-    relative_df.to_csv(relative_path)
-    predict_status.stop()
-    message = Padding(
-        f"Absolute predictions written to [repr.filename]{absolute_path}[/repr.filename]",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
-    message = Padding(
-        f"Relative predictions written to [repr.filename]{relative_path}[/repr.filename]",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
-
-    # if requested, write an SDF of the top n compounds' docked poses
-    if write_top_n_poses > 0:
-        _ = get_top_n_poses(
-            absolute_df, ligands, write_top_n_poses, console, write_file=True
-        )
+    cdd_protocol = experimental_protocol or result_network.experimental_protocol
 
     # check if we have a biological target
     bio_target = target or result_network.target
 
-    # workout if we should upload to postera
-    if bio_target is not None and postera_molset_name is not None:
-        # format and upload to postera
-        postera_status = console.status(
-            f"Uploading predictions to Postera Manifold molecule set: {postera_molset_name}."
-        )
-        postera_status.start()
+    # predictions are generated and reported separately for each alchemical protocol
+    # present in the results
+    protocols = result_network.results.protocols
+    multiple_protocols = len(protocols) > 1
 
-        upload_to_postera(
-            molecule_set_name=postera_molset_name,
-            target=target,
-            absolute_dg_predictions=absolute_df,
+    for protocol in protocols:
+        # a human-readable token used to keep per-protocol output files distinct
+        protocol_label = protocol or "unknown-protocol"
+
+        predict_status = console.status(
+            f"Calculating absolute free energies ({protocol_label})"
+        )
+        predict_status.start()
+
+        # convert to cinnabar fepmap to do the prediction via MLE
+        fe_map = result_network.results.to_fe_map(protocol=protocol)
+        is_connected = cinnabar_femap_is_connected(fe_map)
+
+        if is_connected:
+            try:
+                fe_map.generate_absolute_values()
+            except np.linalg.LinAlgError:
+                raise ValueError(
+                    "MLE failed during absolute value generation. Does your result network contain "
+                    "NaNs? You can manually remove these or run `predict -c` to remove them automatically."
+                )
+        elif not is_connected and force_largest:
+            fe_map = cinnabar_femap_get_largest_subnetwork(
+                fe_map, result_network, console, protocol=protocol
+            )
+            fe_map.generate_absolute_values()
+        else:
+            raise ValueError(
+                "Your network is missing edges resulting in a gap where ligands (nodes) are "
+                "not connected to the network. If you would like to discard those disconnected ligands "
+                "(i.e. not make predictions on them), run predict using the '-fl/--force-largest' flag."
+            )
+
+        absolute_df, relative_df = get_data_from_femap(
+            fe_map=fe_map,
+            ligands=ligands,
+            assay_units=reference_units,
+            reference_dataset=reference_dataset,
+            cdd_protocol=cdd_protocol,
         )
 
+        # write predictions to csv file, suffixed with the protocol name
+        absolute_path = (
+            f"predictions-absolute-{result_network.dataset_name}-{protocol_label}.csv"
+        )
+        relative_path = (
+            f"predictions-relative-{result_network.dataset_name}-{protocol_label}.csv"
+        )
+        absolute_df.to_csv(absolute_path)
+        relative_df.to_csv(relative_path)
+        predict_status.stop()
         message = Padding(
-            f"Predictions uploaded to Postera Manifold molecule set: {postera_molset_name}",
+            f"Absolute predictions ({protocol_label}) written to [repr.filename]{absolute_path}[/repr.filename]",
             (1, 0, 1, 0),
         )
-        postera_status.stop()
         console.print(message)
-
-    elif postera_molset_name is not None and bio_target is None:
         message = Padding(
-            "[yellow]WARNING a postera molecule set name was provided without a target, results will not be uploaded! "
-            "Please run again and provide a valid target `-t`[/yellow]",
+            f"Relative predictions ({protocol_label}) written to [repr.filename]{relative_path}[/repr.filename]",
             (1, 0, 1, 0),
         )
         console.print(message)
 
-    # create interactive reports, they will work out if a plot should be included
-    report_status = console.status("Generating interactive reports")
-    report_status.start()
-    # we can only make these reports currently with experimental data
-    # TODO update once we have the per replicate estimate and error
-    absolute_layout = create_absolute_report(dataframe=absolute_df)
-    absolute_path = f"predictions-absolute-{result_network.dataset_name}.html"
-    relative_path = f"predictions-relative-{result_network.dataset_name}.html"
-    absolute_layout.save(
-        absolute_path,
-        title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}",
-        embed=True,
-    )
+        # if requested, write an SDF of the top n compounds' docked poses
+        if write_top_n_poses > 0:
+            _ = get_top_n_poses(
+                absolute_df,
+                ligands,
+                write_top_n_poses,
+                console,
+                write_file=True,
+                file_suffix=f"-{protocol_label}",
+            )
 
-    relative_layout = create_relative_report(dataframe=relative_df)
-    relative_layout.save(
-        relative_path,
-        title=f"ASAP-Alchemy-Relative-{result_network.dataset_name}",
-        embed=True,
-    )
-    report_status.stop()
+        # workout if we should upload to postera
+        if bio_target is not None and postera_molset_name is not None:
+            if multiple_protocols:
+                # reporting mixed-protocol predictions to Postera is not yet defined
+                message = Padding(
+                    "[yellow]WARNING the result network contains multiple protocols; "
+                    "Postera upload is not yet supported for multi-protocol networks and "
+                    f"will be skipped for protocol {protocol_label}.[/yellow]",
+                    (1, 0, 1, 0),
+                )
+                console.print(message)
+            else:
+                # format and upload to postera
+                postera_status = console.status(
+                    f"Uploading predictions to Postera Manifold molecule set: {postera_molset_name}."
+                )
+                postera_status.start()
 
-    message = Padding(
-        f"Absolute report written to [repr.filename]{absolute_path}[/repr.filename]",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
-    message = Padding(
-        f"Relative report written to [repr.filename]{relative_path}[/repr.filename]",
-        (1, 0, 1, 0),
-    )
-    console.print(message)
+                upload_to_postera(
+                    molecule_set_name=postera_molset_name,
+                    target=target,
+                    absolute_dg_predictions=absolute_df,
+                )
+
+                message = Padding(
+                    f"Predictions uploaded to Postera Manifold molecule set: {postera_molset_name}",
+                    (1, 0, 1, 0),
+                )
+                postera_status.stop()
+                console.print(message)
+
+        elif postera_molset_name is not None and bio_target is None:
+            message = Padding(
+                "[yellow]WARNING a postera molecule set name was provided without a target, results will not be uploaded! "
+                "Please run again and provide a valid target `-t`[/yellow]",
+                (1, 0, 1, 0),
+            )
+            console.print(message)
+
+        # create interactive reports, they will work out if a plot should be included
+        report_status = console.status(
+            f"Generating interactive reports ({protocol_label})"
+        )
+        report_status.start()
+        # we can only make these reports currently with experimental data
+        # TODO update once we have the per replicate estimate and error
+        absolute_layout = create_absolute_report(dataframe=absolute_df)
+        absolute_path = (
+            f"predictions-absolute-{result_network.dataset_name}-{protocol_label}.html"
+        )
+        relative_path = (
+            f"predictions-relative-{result_network.dataset_name}-{protocol_label}.html"
+        )
+        absolute_layout.save(
+            absolute_path,
+            title=f"ASAP-Alchemy-Absolute-{result_network.dataset_name}-{protocol_label}",
+            embed=True,
+        )
+
+        relative_layout = create_relative_report(dataframe=relative_df)
+        relative_layout.save(
+            relative_path,
+            title=f"ASAP-Alchemy-Relative-{result_network.dataset_name}-{protocol_label}",
+            embed=True,
+        )
+        report_status.stop()
+
+        message = Padding(
+            f"Absolute report ({protocol_label}) written to [repr.filename]{absolute_path}[/repr.filename]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
+        message = Padding(
+            f"Relative report ({protocol_label}) written to [repr.filename]{relative_path}[/repr.filename]",
+            (1, 0, 1, 0),
+        )
+        console.print(message)
