@@ -573,6 +573,23 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
     def to_openfe_receptor(self) -> openfe.ProteinComponent:
         return openfe.ProteinComponent.from_json(content=self.receptor)
 
+    def _protocols_for_edge(self, mapping: "LigandAtomMapping") -> list[str]:
+        """Select which protocols to apply to a given ligand mapping (edge).
+
+        Driven by ``protocol_strategy``:
+
+        - ``"all"``: every configured protocol is applied to every edge, i.e. one
+          ``Transformation`` per edge per protocol.
+
+        Future strategies (e.g. assigning a single protocol per edge based on edge
+        properties) can use ``mapping`` to make that decision here.
+        """
+        if self.protocol_strategy == "all":
+            return list(self.protocol)
+        raise NotImplementedError(
+            f"protocol_strategy {self.protocol_strategy!r} is not implemented."
+        )
+
     def to_alchemical_network(self) -> openfe.AlchemicalNetwork:
         """
         Create an openfe AlchemicalNetwork from the planned network which can be submitted to alchemiscale or ran locally
@@ -590,10 +607,11 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         # build one base protocol per configured protocol name
         protocols = self.to_openfe_protocols()
 
-        # build the network; with the "all" strategy we create a Transformation for
-        # every ligand mapping for each included protocol
+        # build the network; `protocol_strategy` decides which protocols apply to
+        # each edge (the "all" strategy uses every configured protocol per edge)
         for mapping in ligand_network.edges:
-            for protocol_name, protocol in protocols.items():
+            for protocol_name in self._protocols_for_edge(mapping):
+                protocol = protocols[protocol_name]
                 # make a copy of the protocol and add the bespoke force field
                 edge_protocol = copy.deepcopy(protocol)
                 # make the settings editable
