@@ -1,4 +1,4 @@
- import pytest
+import pytest
 from rdkit import Chem
 
 from asapdiscovery.data.backend.openeye import get_SD_data, oechem, oemol_to_inchikey
