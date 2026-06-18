@@ -36,6 +36,23 @@ if TYPE_CHECKING:
 
 MolarQuantity: TypeAlias = Annotated[GufeQuantity, specify_quantity_units("molar")]
 
+# the flat OpenFE-RFE settings fields used by the pre-multi-protocol ("legacy")
+# FreeEnergyCalculationFactory/Network format; these fold into a single
+# RelativeHybridTopologyProtocolSettings under the current schema
+_LEGACY_RFE_SETTING_FIELDS = (
+    "forcefield_settings",
+    "thermo_settings",
+    "solvation_settings",
+    "alchemical_settings",
+    "engine_settings",
+    "integrator_settings",
+    "simulation_settings",
+    "lambda_settings",
+    "protocol_repeats",
+    "partial_charge_settings",
+    "output_settings",
+)
+
 
 class SolventSettings(_SchemaBase):
     """
@@ -416,28 +433,16 @@ class _FreeEnergyBase(_SchemaBase):
         longer exist, so without this guard loading such a file would fail with
         an opaque ``extra="forbid"`` pydantic error on real user data.
         """
-        legacy_fields = {
-            "forcefield_settings",
-            "thermo_settings",
-            "solvation_settings",
-            "alchemical_settings",
-            "engine_settings",
-            "integrator_settings",
-            "simulation_settings",
-            "lambda_settings",
-            "partial_charge_settings",
-            "output_settings",
-            "protocol_repeats",
-        }
         if isinstance(data, dict):
-            found = sorted(legacy_fields.intersection(data))
+            found = sorted(set(_LEGACY_RFE_SETTING_FIELDS).intersection(data))
             if found:
                 raise ValueError(
                     "This file was created with a pre-multi-protocol version of "
                     f"asapdiscovery-alchemy (found legacy settings fields: {found}). "
-                    "These files are no longer supported. Regenerate it with "
-                    "`asap-alchemy create` / `asap-alchemy prep create` using this "
-                    "version, or rebuild the network from its original inputs."
+                    "These files are no longer supported. Convert it with "
+                    "`asap-alchemy convert-network`, regenerate it with "
+                    "`asap-alchemy create` / `asap-alchemy prep create`, or rebuild "
+                    "the network from its original inputs."
                 )
         return data
 
@@ -743,6 +748,75 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
             ff_string = ff.to_string()
 
         return ff_string
+
+
+def convert_legacy_fec_network(data: dict) -> "FreeEnergyCalculationNetwork":
+    """Convert a legacy (pre-multi-protocol) network dict to the current schema.
+
+    Old-style ``FreeEnergyCalculationNetwork`` files stored the OpenFE-RFE settings
+    as flat top-level fields with ``protocol`` as a plain string and untagged
+    results. This folds those flat settings into a single
+    ``RelativeHybridTopologyProtocolSettings`` under
+    ``protocol_settings["RelativeHybridTopologyProtocol"]``, sets ``protocol`` to a
+    one-element list, and tags each result with that protocol.
+
+    Args:
+        data: The ``gufe.tokenization.JSON_HANDLER``-decoded contents of a legacy
+            network file (i.e. ``json.load(f, cls=JSON_HANDLER.decoder)``).
+
+    Returns:
+        An equivalent ``FreeEnergyCalculationNetwork`` in the current schema.
+
+    Raises:
+        ValueError: If ``data`` does not look like a legacy flat-format network.
+    """
+    from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolSettings
+
+    if not isinstance(data, dict):
+        raise ValueError("Expected a decoded network dict to convert.")
+
+    missing = [field for field in _LEGACY_RFE_SETTING_FIELDS if field not in data]
+    if missing:
+        raise ValueError(
+            "Input does not look like a legacy (pre-multi-protocol) "
+            f"FreeEnergyCalculationNetwork; missing expected flat settings fields: "
+            f"{missing}."
+        )
+
+    protocol_name = "RelativeHybridTopologyProtocol"
+    rfe_settings = RelativeHybridTopologyProtocolSettings(
+        **{field: data[field] for field in _LEGACY_RFE_SETTING_FIELDS}
+    )
+
+    # carry results forward, tagging each with the single legacy protocol
+    results = data.get("results")
+    if results is not None:
+        for result in results.get("results", []):
+            result.setdefault("protocol", protocol_name)
+
+    # only forward optional/defaulted fields that are actually present so missing
+    # ones fall back to the current schema defaults
+    optional = {
+        field: data[field]
+        for field in (
+            "solvent_settings",
+            "adaptive_settings",
+            "experimental_protocol",
+            "target",
+        )
+        if field in data
+    }
+
+    return FreeEnergyCalculationNetwork(
+        dataset_name=data["dataset_name"],
+        network=data["network"],
+        receptor=data["receptor"],
+        protocol=[protocol_name],
+        protocol_strategy="all",
+        protocol_settings={protocol_name: rfe_settings},
+        results=results,
+        **optional,
+    )
 
 
 class FreeEnergyCalculationFactory(_FreeEnergyBase):

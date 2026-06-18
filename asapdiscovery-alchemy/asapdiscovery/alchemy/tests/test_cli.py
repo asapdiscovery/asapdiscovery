@@ -48,6 +48,35 @@ def test_alchemy_create(tmpdir):
         _ = FreeEnergyCalculationFactory.from_file("workflow.json")
 
 
+def test_alchemy_convert_network(legacy_network_file, tmpdir):
+    """Convert a legacy network file to the current schema via the CLI."""
+    runner = CliRunner()
+
+    with tmpdir.as_cwd():
+        # the legacy file cannot be loaded directly
+        with pytest.raises(ValueError, match="pre-multi-protocol"):
+            FreeEnergyCalculationNetwork.from_file(legacy_network_file.as_posix())
+
+        result = runner.invoke(
+            alchemy,
+            [
+                "convert-network",
+                "-i",
+                legacy_network_file.as_posix(),
+                "-o",
+                "converted.json",
+            ],
+        )
+        assert click_success(result)
+
+        # the converted file loads under the current schema with tagged results
+        converted = FreeEnergyCalculationNetwork.from_file("converted.json")
+        assert converted.protocol == ["RelativeHybridTopologyProtocol"]
+        assert {r.protocol for r in converted.results.results} == {
+            "RelativeHybridTopologyProtocol"
+        }
+
+
 def test_alchemy_plan_from_raw(tmpdir, tyk2_protein, tyk2_ligands):
     """Make sure we can plan networks using the CLI"""
 

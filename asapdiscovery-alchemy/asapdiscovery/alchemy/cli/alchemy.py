@@ -42,6 +42,63 @@ def create(filename: str):
 
 
 @alchemy.command(
+    help_priority=9,
+    short_help="Convert a legacy (pre-multi-protocol) FreeEnergyCalculationNetwork file to the current schema.",
+)
+@click.option(
+    "-i",
+    "--input",
+    "input_file",
+    required=True,
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    help="The legacy FreeEnergyCalculationNetwork JSON file to convert.",
+)
+@click.option(
+    "-o",
+    "--output",
+    "output_file",
+    required=True,
+    type=click.Path(exists=False, file_okay=True, dir_okay=False, writable=True),
+    help="The path to write the converted (current-schema) network JSON file to.",
+)
+def convert_network(input_file: str, output_file: str):
+    """
+    Convert an old-style (flat-settings, single-protocol) FreeEnergyCalculationNetwork
+    file into the current multi-protocol schema and write it to a new JSON file.
+
+    Args:
+        input_file: The legacy network JSON file to convert.
+        output_file: The path to write the converted network to.
+    """
+    import json
+
+    import rich
+    from gufe.tokenization import JSON_HANDLER
+    from rich import pretty
+    from rich.padding import Padding
+
+    from asapdiscovery.alchemy.cli.utils import print_header
+    from asapdiscovery.alchemy.schema.fec import convert_legacy_fec_network
+
+    pretty.install()
+    console = rich.get_console()
+    print_header(console)
+
+    with open(input_file) as f:
+        data = json.load(f, cls=JSON_HANDLER.decoder)
+
+    network = convert_legacy_fec_network(data)
+    network.to_file(output_file)
+
+    message = Padding(
+        f"Converted legacy network [repr.filename]{input_file}[/repr.filename] to the "
+        f"current schema and saved to [repr.filename]{output_file}[/repr.filename]",
+        (1, 0, 1, 0),
+    )
+    console.print(message)
+
+
+@alchemy.command(
     help_priority=2,
     short_help="Plan a FreeEnergyCalculationNetwork using the given factory and inputs. The planned network will be written to file in a folder named after the dataset.",
 )

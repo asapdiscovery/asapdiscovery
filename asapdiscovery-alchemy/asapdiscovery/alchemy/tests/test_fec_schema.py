@@ -15,6 +15,7 @@ from asapdiscovery.alchemy.schema.fec import (
     AdaptiveSettings,
     AlchemiscaleResults,
     FreeEnergyCalculationFactory,
+    FreeEnergyCalculationNetwork,
     SolventSettings,
     TransformationResult,
 )
@@ -460,6 +461,44 @@ def test_reject_legacy_flat_format():
     }
     with pytest.raises(ValueError, match="pre-multi-protocol"):
         FreeEnergyCalculationFactory.model_validate(legacy)
+
+
+def test_convert_legacy_fec_network(legacy_network_file):
+    """A legacy network file can be converted to the current multi-protocol schema."""
+    import json
+
+    from gufe.tokenization import JSON_HANDLER
+
+    from asapdiscovery.alchemy.schema.fec import convert_legacy_fec_network
+
+    # a normal load rejects the legacy file...
+    with pytest.raises(ValueError, match="pre-multi-protocol"):
+        FreeEnergyCalculationNetwork.from_file(legacy_network_file.as_posix())
+
+    # ...but conversion yields the current schema
+    with open(legacy_network_file) as f:
+        data = json.load(f, cls=JSON_HANDLER.decoder)
+    converted = convert_legacy_fec_network(data)
+
+    assert converted.protocol == ["RelativeHybridTopologyProtocol"]
+    assert converted.protocol_strategy == "all"
+    assert "RelativeHybridTopologyProtocol" in converted.protocol_settings
+    # results are carried over and tagged with the single legacy protocol
+    assert converted.results is not None
+    assert {r.protocol for r in converted.results.results} == {
+        "RelativeHybridTopologyProtocol"
+    }
+    # and the converted network builds an alchemical network
+    converted.to_alchemical_network()
+
+
+def test_convert_legacy_fec_network_rejects_new_format():
+    """Converting an already-current network raises a clear error."""
+    from asapdiscovery.alchemy.schema.fec import convert_legacy_fec_network
+
+    factory = FreeEnergyCalculationFactory()
+    with pytest.raises(ValueError, match="does not look like a legacy"):
+        convert_legacy_fec_network(factory.model_dump())
 
 
 def test_adaptive_sampling_skipped_for_neq(tyk2_ligands, tyk2_protein):
