@@ -77,6 +77,7 @@ class _BasicConstrainedPoseGenerator(BaseModel, abc.ABC):
         """Return the provenance for this pose generation method."""
         ...
 
+    @abc.abstractmethod
     def _generate_poses(
         self,
         prepared_complex: PreppedComplex,
@@ -702,8 +703,10 @@ class RDKitConstrainedPoseGenerator(_BasicConstrainedPoseGenerator):
             template_ligand: The ligand whose coordinates should be used as a reference.
 
         Returns:
-            A tuple contacting a dictionary which maps the target ligand indices to a reference atom coordinate and a
-            list of tuples matching the target and template ligand atom indices for any equivalent atoms.
+            A tuple containing a dictionary which maps the target ligand
+            indices to a reference atom coordinate and a list of tuples
+            matching the target and template ligand atom indices for any
+            equivalent atoms.
 
         """
         # map the scaffold atoms to the new molecule
