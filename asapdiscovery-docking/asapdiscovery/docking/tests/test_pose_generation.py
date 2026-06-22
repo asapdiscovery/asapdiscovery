@@ -38,9 +38,6 @@ def test_openconf_prov():
 
     pose_gen = OpenConfConstrainedPoseGenerator()
     provenance = pose_gen.provenance()
-    assert "oechem" in provenance
-    assert "oeff" in provenance
-    assert "oedocking" in provenance
     assert "rdkit" in provenance
     assert "openff.toolkit" in provenance
     assert "openconf" in provenance

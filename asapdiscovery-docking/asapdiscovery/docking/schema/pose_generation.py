@@ -995,7 +995,9 @@ class OpenConfConstrainedPoseGenerator(RDKitConstrainedPoseGenerator):
         conformer sampling step that follows the initial seed embedding differs.
     """
 
-    type: Literal["OpenConfConstrainedPoseGenerator"] = "OpenConfConstrainedPoseGenerator"
+    type: Literal["OpenConfConstrainedPoseGenerator"] = (
+        "OpenConfConstrainedPoseGenerator"
+    )
 
     max_confs: PositiveInt = Field(
         50,
@@ -1027,9 +1029,6 @@ class OpenConfConstrainedPoseGenerator(RDKitConstrainedPoseGenerator):
         import rdkit
 
         return {
-            "oechem": oechem.OEChemGetVersion(),
-            "oeff": oeff.OEFFGetVersion(),
-            "oedocking": oedocking.OEDockingGetVersion(),
             "rdkit": rdkit.__version__,
             "openff.toolkit": openff.toolkit.__version__,
             "openconf": version("openconf"),
@@ -1165,7 +1164,9 @@ class OpenConfConstrainedPoseGenerator(RDKitConstrainedPoseGenerator):
         Chem.SetDefaultPickleProperties(Chem.PropertyPickleOptions.AllProps)
 
         seed_ligand, constrained_atoms = self._generate_seed_pose(
-            target_ligand=target_ligand, core_ligand=core_ligand, core_smarts=core_smarts
+            target_ligand=target_ligand,
+            core_ligand=core_ligand,
+            core_smarts=core_smarts,
         )
 
         config = dataclasses.replace(
