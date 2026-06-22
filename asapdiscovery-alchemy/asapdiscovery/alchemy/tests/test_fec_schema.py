@@ -15,6 +15,7 @@ from asapdiscovery.alchemy.schema.fec import (
     AdaptiveSettings,
     AlchemiscaleResults,
     FreeEnergyCalculationFactory,
+    FreeEnergyCalculationNetwork,
     SolventSettings,
     TransformationResult,
 )
@@ -215,19 +216,22 @@ def test_planner_file_round_trip(tmpdir):
         assert planner.scorer == planner_2.scorer
 
 
-def test_fec_to_openfe_protocol():
-    """Make sure we can correctly reconstruct the openfe protocol needed to run the calculation from the factory settings"""
+def test_fec_to_openfe_protocols():
+    """Make sure we can correctly reconstruct the openfe protocols needed to run the calculation from the factory settings"""
 
     # change some default settings to make sure they are passed on
     factory = FreeEnergyCalculationFactory()
-    factory.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
-    protocol = factory.to_openfe_protocol()
+    rfe_settings = factory.protocol_settings["RelativeHybridTopologyProtocol"]
+    rfe_settings.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
+    protocols = factory.to_openfe_protocols()
+    assert list(protocols) == ["RelativeHybridTopologyProtocol"]
+    protocol = protocols["RelativeHybridTopologyProtocol"]
     assert isinstance(
         protocol, openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol
     )
     assert (
         protocol.settings.simulation_settings.equilibration_length
-        == factory.simulation_settings.equilibration_length
+        == rfe_settings.simulation_settings.equilibration_length
     )
 
 
@@ -377,7 +381,9 @@ def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
     # change the default settings to make sure they propagated
     # change the lomap timeout
     factory.network_planner.atom_mapping_engine.timeout = 30
-    factory.simulation_settings.equilibration_length = 0.5 * OFFUnit.nanoseconds
+    factory.protocol_settings[
+        "RelativeHybridTopologyProtocol"
+    ].simulation_settings.equilibration_length = (0.5 * OFFUnit.nanoseconds)
     # plan a network
     planned_network = factory.create_fec_dataset(
         dataset_name="TYK2-test-dataset", receptor=tyk2_protein, ligands=tyk2_ligands
@@ -397,6 +403,119 @@ def test_fec_full_workflow(tyk2_ligands, tyk2_protein):
         )
 
 
+def test_fec_multi_protocol_network(tyk2_ligands, tyk2_protein):
+    """A network built with multiple protocols has a transformation per edge per protocol."""
+    protocols = ["RelativeHybridTopologyProtocol", "NonEquilibriumCyclingProtocol"]
+    factory = FreeEnergyCalculationFactory(protocol=protocols)
+    assert set(factory.protocol_settings) == set(protocols)
+
+    planned_network = factory.create_fec_dataset(
+        dataset_name="tyk2-multi", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    alchemical_network = planned_network.to_alchemical_network()
+
+    # count transformations per protocol via the protocol object on each edge
+    per_protocol = {protocol: 0 for protocol in protocols}
+    for edge in alchemical_network.edges:
+        per_protocol[type(edge.protocol).__name__] += 1
+    # an equal number of transformations for each protocol (same edges/phases)
+    assert per_protocol[protocols[0]] == per_protocol[protocols[1]]
+    assert all(count > 0 for count in per_protocol.values())
+    # gufe keys are unique even though the same edges are shared across protocols
+    keys = [edge.key for edge in alchemical_network.edges]
+    assert len(keys) == len(set(keys))
+    # the protocol name is encoded in each transformation name
+    for edge in alchemical_network.edges:
+        assert edge.name.endswith(type(edge.protocol).__name__)
+
+
+def test_fec_multi_protocol_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
+    """A multi-protocol network survives a to_file/from_file round-trip unchanged."""
+    factory = FreeEnergyCalculationFactory(
+        protocol=["RelativeHybridTopologyProtocol", "NonEquilibriumCyclingProtocol"]
+    )
+    planned_network = factory.create_fec_dataset(
+        dataset_name="tyk2-multi", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    path = tmp_path / "multi_network.json"
+    planned_network.to_file(path.as_posix())
+    reloaded = type(planned_network).from_file(path.as_posix())
+
+    # settings classes are preserved exactly through the round-trip
+    assert {k: type(v).__name__ for k, v in reloaded.protocol_settings.items()} == {
+        k: type(v).__name__ for k, v in planned_network.protocol_settings.items()
+    }
+    # and the rebuilt alchemical networks have identical transformation keys
+    before = {edge.key for edge in planned_network.to_alchemical_network().edges}
+    after = {edge.key for edge in reloaded.to_alchemical_network().edges}
+    assert before == after
+
+
+def test_reject_legacy_flat_format():
+    """Loading a pre-multi-protocol (flat-settings) file raises a clear error."""
+    legacy = {
+        "type": "FreeEnergyCalculationFactory",
+        "protocol": "RelativeHybridTopologyProtocol",
+        "forcefield_settings": {"small_molecule_forcefield": "openff-2.2.0.offxml"},
+        "protocol_repeats": 1,
+    }
+    with pytest.raises(ValueError, match="pre-multi-protocol"):
+        FreeEnergyCalculationFactory.model_validate(legacy)
+
+
+def test_convert_legacy_fec_network(legacy_network_file):
+    """A legacy network file can be converted to the current multi-protocol schema."""
+    import json
+
+    from gufe.tokenization import JSON_HANDLER
+
+    from asapdiscovery.alchemy.schema.fec import convert_legacy_fec_network
+
+    # a normal load rejects the legacy file...
+    with pytest.raises(ValueError, match="pre-multi-protocol"):
+        FreeEnergyCalculationNetwork.from_file(legacy_network_file.as_posix())
+
+    # ...but conversion yields the current schema
+    with open(legacy_network_file) as f:
+        data = json.load(f, cls=JSON_HANDLER.decoder)
+    converted = convert_legacy_fec_network(data)
+
+    assert converted.protocol == ["RelativeHybridTopologyProtocol"]
+    assert converted.protocol_strategy == "all"
+    assert "RelativeHybridTopologyProtocol" in converted.protocol_settings
+    # results are carried over and tagged with the single legacy protocol
+    assert converted.results is not None
+    assert {r.protocol for r in converted.results.results} == {
+        "RelativeHybridTopologyProtocol"
+    }
+    # and the converted network builds an alchemical network
+    converted.to_alchemical_network()
+
+
+def test_convert_legacy_fec_network_rejects_new_format():
+    """Converting an already-current network raises a clear error."""
+    from asapdiscovery.alchemy.schema.fec import convert_legacy_fec_network
+
+    factory = FreeEnergyCalculationFactory()
+    with pytest.raises(ValueError, match="does not look like a legacy"):
+        convert_legacy_fec_network(factory.model_dump())
+
+
+def test_adaptive_sampling_skipped_for_neq(tyk2_ligands, tyk2_protein):
+    """adaptive_sampling is skipped (with a warning) for protocols lacking simulation_settings."""
+    factory = FreeEnergyCalculationFactory(
+        protocol=["NonEquilibriumCyclingProtocol"],
+        adaptive_settings=AdaptiveSettings(adaptive_sampling=True),
+    )
+    planned_network = factory.create_fec_dataset(
+        dataset_name="tyk2-neq", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    # building the network must not raise even though NEQ has no simulation_settings
+    with pytest.warns(UserWarning, match="adaptive_sampling"):
+        alchemical_network = planned_network.to_alchemical_network()
+    assert len(alchemical_network.edges) > 0
+
+
 def test_fec_with_bespoke_parameters(tyk2_fec_network):
     """
     Make sure we can generate an OpenFE network with bespoke torsions parameters added
@@ -404,7 +523,7 @@ def test_fec_with_bespoke_parameters(tyk2_fec_network):
     """
     # mock some torsion parameters which hit all tyk2 amide torsions.
     bespoke_parameters = BespokeParameters(
-        base_force_field=tyk2_fec_network.forcefield_settings.small_molecule_forcefield
+        base_force_field=tyk2_fec_network.small_molecule_forcefield
     )
     bespoke_parameters.parameters.append(
         BespokeParameter(
@@ -506,32 +625,37 @@ def test_results_to_cinnabar_with_prediction(tyk2_result_network):
     fe_map.generate_absolute_values()
     # check we get the expected results
     absolute_dataframe = fe_map.get_absolute_dataframe()
-    # define some rows to check
+    # define some rows to check; look up by label rather than position since
+    # cinnabar (>=0.6.0) deterministically sorts the dataframe rows
     row_refs = [
-        (0, "lig_ejm_31", -0.133223, 0.075722),
-        (2, "lig_ejm_42", 0.678041, 0.093269),
-        (4, "lig_ejm_48", 0.771667, 0.314375),
+        ("lig_ejm_31", -0.133223, 0.075722),
+        ("lig_ejm_42", 0.678041, 0.093269),
+        ("lig_ejm_48", 0.771667, 0.314375),
     ]
-    # grab and check the row calculated row
-    for row, label, dg, uncertainty in row_refs:
-        lig_row = absolute_dataframe.iloc[row]
-        assert lig_row["label"] == label
+    # grab and check the calculated row
+    for label, dg, uncertainty in row_refs:
+        matches = absolute_dataframe[absolute_dataframe["label"] == label]
+        assert len(matches) == 1
+        lig_row = matches.iloc[0]
         assert lig_row["DG (kcal/mol)"] == pytest.approx(dg, abs=1e-6)
         assert lig_row["uncertainty (kcal/mol)"] == pytest.approx(uncertainty, abs=1e-6)
         assert lig_row["source"] == "MLE"
         assert lig_row["computational"]
 
     relative_dataframe = fe_map.get_relative_dataframe()
-    # define some rows to check in the relative dataframe
+    # define some rows to check in the relative dataframe (looked up by edge)
     row_refs_rel = [
-        (0, "lig_ejm_31", "lig_ejm_47", 0.111551, 0.149755),
-        (1, "lig_ejm_31", "lig_ejm_42", 0.811265, 0.0861),
-        (4, "lig_ejm_42", "lig_ejm_50", 0.172555, 0.166535),
+        ("lig_ejm_31", "lig_ejm_47", 0.111551, 0.149755),
+        ("lig_ejm_31", "lig_ejm_42", 0.811265, 0.0861),
+        ("lig_ejm_42", "lig_ejm_50", 0.172555, 0.166535),
     ]
-    for row, label_a, label_b, ddg, uncertainty in row_refs_rel:
-        relative_row = relative_dataframe.iloc[row]
-        assert relative_row["labelA"] == label_a
-        assert relative_row["labelB"] == label_b
+    for label_a, label_b, ddg, uncertainty in row_refs_rel:
+        matches = relative_dataframe[
+            (relative_dataframe["labelA"] == label_a)
+            & (relative_dataframe["labelB"] == label_b)
+        ]
+        assert len(matches) == 1
+        relative_row = matches.iloc[0]
         assert relative_row["DDG (kcal/mol)"] == pytest.approx(ddg, abs=1e-6)
         assert relative_row["uncertainty (kcal/mol)"] == pytest.approx(
             uncertainty, abs=1e-6
