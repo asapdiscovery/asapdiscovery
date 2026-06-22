@@ -199,3 +199,48 @@ def p38_ligand_names(p38_graphml):
     with open(p38_graphml) as f:
         ligands = openfe.LigandNetwork.from_graphml(f.read()).nodes
     return {ligand.name for ligand in ligands}
+
+
+@pytest.fixture()
+def legacy_network_file(tyk2_result_network, tmp_path):
+    """Write a legacy (pre-multi-protocol) FreeEnergyCalculationNetwork JSON file.
+
+    Builds the old flat-settings layout (RFE sub-settings lifted to top level,
+    ``protocol`` as a plain string, results without a protocol tag) from a current
+    result network, and returns the path to the written file.
+    """
+    import json
+
+    from asapdiscovery.alchemy.schema.fec import _LEGACY_RFE_SETTING_FIELDS
+
+    new_path = tmp_path / "new_network.json"
+    tyk2_result_network.to_file(new_path.as_posix())
+    raw = json.loads(new_path.read_text())
+    rfe_encoded = raw["protocol_settings"]["RelativeHybridTopologyProtocol"]
+
+    legacy = {
+        key: raw[key]
+        for key in (
+            "type",
+            "dataset_name",
+            "network",
+            "receptor",
+            "solvent_settings",
+            "adaptive_settings",
+            "experimental_protocol",
+            "target",
+            "results",
+        )
+        if key in raw
+    }
+    legacy["protocol"] = "RelativeHybridTopologyProtocol"
+    for field in _LEGACY_RFE_SETTING_FIELDS:
+        legacy[field] = rfe_encoded[field]
+    # legacy results carry no protocol tag
+    if legacy.get("results"):
+        for result in legacy["results"]["results"]:
+            result.pop("protocol", None)
+
+    legacy_path = tmp_path / "legacy_network.json"
+    legacy_path.write_text(json.dumps(legacy))
+    return legacy_path

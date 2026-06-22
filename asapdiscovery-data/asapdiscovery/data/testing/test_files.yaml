@@ -199,7 +199,7 @@ files:
 
   # TYK2 FEC networks for testing
   - resource: tyk2_small_network.json
-    sha256hash: cf6d416ef4c802ad64d72966e2a8ce9115ef3dd87ffa9181309c7c5515b42a66
+    sha256hash: 16a8f32f5c27dae9b5309d7f9321f528d7c9976ad759fcabc37d9be212ab876f
   - resource: tyk2_small_custom_network.csv
     sha256hash: be8e0d829c5ed7dd5ac0392c67cd6fbcfb3ca05a778cea67efd8b67f4161c53d
   - resource: tyk2_small_custom_network_faulty_missing_comma.csv
@@ -212,7 +212,7 @@ files:
 
   # TYK2 FEC network for testing (disconnected, i.e. missing edges)
   - resource: tyk2_result_network_disconnected.json
-    sha256hash: 0468c9b0abffd68613fd8c391bd6422871beeb5ee075dbac3ad844526a6eb797
+    sha256hash: bfdf6d4a92327e267dfae65f00fe600746ff0a22cfa6fb96b4f77b5c34d5bffb
 
   # SMILES file with fully defined chirality for testing
   - resource: chalcogran_defined.smi
@@ -291,7 +291,7 @@ files:
 
   # alchemy result testing
   - resource: tyk2_result_network.json
-    sha256hash: 0deb89052985a3c2758c4e77160abd9afc22e3896b229618f28e8b18e9dc807a
+    sha256hash: 590bca105ba16e0ba22b96818afe041eea9e249a09dbcfebc939f8de26ef19ef
 
   - resource: tyk2_reference_data.csv
     sha256hash: 5e73f6cf3b68defcffa5cf54c91ffb5ac1569688278a91c8032d4cd3426930cc
@@ -359,7 +359,7 @@ files:
     sha256hash: 1867827bd921e269b44c88476c1dfad2f198266388eef15696eefbb669e24abd
 
   - resource: tyk2_result_network_ddg0s.json
-    sha256hash: f9ba9049f40eaa41e108a4cea5efafc726d08729b636c1df61fa771677f4c093
+    sha256hash: eb41c5ea8c0a6bd08ca1d06b2e05b8a4e13e9c082f9e6ab9a64641110045fa2f
 
   - resource: p38.graphml
     sha256hash: 23488ee26d8f717f08057d33e35a257bf63fb4ac01a05e4b4957a846d3c00394
