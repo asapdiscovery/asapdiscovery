@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Optional
 
 import click
 import pandas as pd
@@ -289,9 +289,15 @@ def cinnabar_femap_get_largest_subnetwork(
     fe_map: "FEMap",
     result_network: "FreeEnergyCalculationNetwork",
     console: "rich.Console",
+    protocol: "Optional[str]" = "__all__",
 ) -> "FEMap":
     """From a disconnected femap, returns the subnetwork with the largest number of nodes using a networkx
     workaround. Requires the original FreeEnergyCalculationNetwork to query results from.
+
+    Args:
+        protocol: Restrict the rebuilt FEMap to results from this protocol. Defaults
+            to using every result; pass a protocol name when separating predictions
+            by protocol.
 
     Returns a cinnabar FEMap that is fully connected"""
     import itertools
@@ -337,7 +343,7 @@ def cinnabar_femap_get_largest_subnetwork(
     old_data = result_network.model_dump(exclude={"results"})
     new_result_network = FreeEnergyCalculationNetwork(**old_data, results=new_results)
 
-    return new_result_network.results.to_fe_map()
+    return new_result_network.results.to_fe_map(protocol=protocol)
 
 
 def get_cpus(cpus: Literal["auto", "all"] | int) -> int:

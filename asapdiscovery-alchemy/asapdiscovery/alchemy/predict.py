@@ -42,6 +42,7 @@ def _patch_numpy_normal_for_cinnabar():
     finally:
         np.random.normal = _orig
 
+
 # run to enable plotting with bokeh
 panel.extension()
 
@@ -1057,7 +1058,11 @@ def clean_result_network(network, console=None, ddg_outlier_threshold=15):
 
     deduped_results_dict = defaultdict(list)
     for result in cleaned_results:
-        transform = f"{result.ligand_a}~{result.ligand_b}_{result.phase}"
+        # include the protocol so results from different protocols for the same
+        # edge/phase are not averaged together
+        transform = (
+            f"{result.ligand_a}~{result.ligand_b}_{result.phase}_{result.protocol}"
+        )
         deduped_results_dict[transform].append(result)
 
     deduped_results = []
@@ -1065,9 +1070,7 @@ def clean_result_network(network, console=None, ddg_outlier_threshold=15):
         if len(results) > 1:
             # take the arithmetic mean of DG and dDG and add the replaced first result,
             # all provenance data is constant between these repeats anyway
-            mean_DG = float(
-                np.mean([result.estimate.magnitude for result in results])
-            )
+            mean_DG = float(np.mean([result.estimate.magnitude for result in results]))
             mean_dDG = float(
                 np.mean([result.uncertainty.magnitude for result in results])
             )
@@ -1145,11 +1148,15 @@ def clean_result_network(network, console=None, ddg_outlier_threshold=15):
 
 
 def get_top_n_poses(
-    absolute_df, ligands, top_n, console=False, write_file=True
+    absolute_df, ligands, top_n, console=False, write_file=True, file_suffix=""
 ) -> list[Ligand]:
     """
     Takes the `top_n` number of ligands from the FE predictions and creates a list of `Ligand` objects.
     If specified, will write a multi-SDF file of those ligands into the local directory while logging this.
+
+    Args:
+        file_suffix: An optional suffix added to the output SDF filename, used to
+            keep per-protocol pose files distinct.
     """
 
     from rich.padding import Padding
@@ -1164,7 +1171,7 @@ def get_top_n_poses(
     if top_n > len(absolute_df):  # cap the slice to the max number of predictions
         top_n = len(absolute_df)
 
-    docked_hits_path = f"top_{top_n}_posed_ligands.sdf"
+    docked_hits_path = f"top_{top_n}_posed_ligands{file_suffix}.sdf"
     for compound_name in absolute_df.sort_values(by="DG (kcal/mol) (FECS)")["label"][
         :top_n
     ]:

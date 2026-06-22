@@ -1,3 +1,4 @@
+import json
 import warnings
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, TypeAlias
 
@@ -11,33 +12,46 @@ from gufe.settings.typing import (
     NanometerQuantity,
     specify_quantity_units,
 )
-from gufe.tokenization import GufeKey
-from openfe.protocols.openmm_rfe.equil_rfe_settings import (
-    AlchemicalSettings,
-    LambdaSettings,
-    MultiStateOutputSettings,
-    OpenFFPartialChargeSettings,
-)
-from openfe.protocols.openmm_utils.omm_settings import (
-    IntegratorSettings,
-    MultiStateSimulationSettings,
-    OpenMMEngineSettings,
-    OpenMMSolvationSettings,
-)
+from gufe.tokenization import JSON_HANDLER, GufeKey
 from openfe.setup.atom_mapping import lomap_scorers, perses_scorers
 from openff.units import unit as OFFUnit
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import (
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 from ._util import check_ligand_series_uniqueness_and_names
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
+from .protocols import available_protocols, build_protocol, default_protocol_settings
 
 if TYPE_CHECKING:
+    from cinnabar import FEMap
     from gufe.mapping import LigandAtomMapping
 
     from asapdiscovery.data.schema.ligand import Ligand
 
 MolarQuantity: TypeAlias = Annotated[GufeQuantity, specify_quantity_units("molar")]
+
+# the flat OpenFE-RFE settings fields used by the pre-multi-protocol ("legacy")
+# FreeEnergyCalculationFactory/Network format; these fold into a single
+# RelativeHybridTopologyProtocolSettings under the current schema
+_LEGACY_RFE_SETTING_FIELDS = (
+    "forcefield_settings",
+    "thermo_settings",
+    "solvation_settings",
+    "alchemical_settings",
+    "engine_settings",
+    "integrator_settings",
+    "simulation_settings",
+    "lambda_settings",
+    "protocol_repeats",
+    "partial_charge_settings",
+    "output_settings",
+)
 
 
 class SolventSettings(_SchemaBase):
@@ -100,13 +114,13 @@ class AdaptiveSettings(_SchemaBase):
         description="The solvent padding (in nm) to use for the solvated phase of each edge.",
     )
 
-    def get_adapted_sampling_protocol(
+    def get_adapted_sampling_settings(
         self,
         scorer_method: str,
         mapping: "LigandAtomMapping",
-        protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+        settings: "gufe.settings.Settings",
         base_sampling_length: OFFUnit.Quantity,
-    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
+    ) -> "gufe.settings.Settings":
         """
         It's advisable to increase simulation time on edges that are expected to be less reliable. There
         Aren't many good estimators for this, but the network planner edge scoring is a decent approximation.
@@ -115,7 +129,7 @@ class AdaptiveSettings(_SchemaBase):
         simulation time is multiplied by `adaptive_sampling_multiplier`. Just to be sure, we use the base
         protocol's sampling time and not the provided edge protocol sampling time as a base value.
 
-        Returns the adjusted OpenFE Protocol.
+        Mutates and returns the (editable) protocol settings.
         """
         if scorer_method == "default_lomap":
             scorer = lomap_scorers.default_lomap_score
@@ -126,64 +140,83 @@ class AdaptiveSettings(_SchemaBase):
                 f"Atom mapping scorer {scorer_method} not recognized; use one of `default_lomap`, `default_perses`."
             )
         if scorer(mapping) < self.adaptive_sampling_threshold:
-            protocol._settings.simulation_settings.production_length = (
+            settings.simulation_settings.production_length = (
                 base_sampling_length * self.adaptive_sampling_multiplier
             )
-        return protocol
+        return settings
 
-    def get_adapted_solvent_protocol(
+    def get_adapted_solvent_settings(
         self,
         leg: str,
-        protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
-    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
+        settings: "gufe.settings.Settings",
+    ) -> "gufe.settings.Settings":
         """
         Certain water box shapes (such as dodecahedron) are able to handle slightly smaller padding size
         in the complex phase compared to the solvated phase. Given the leg (either "solvent" or "complex")
         this method applies the specified padding per phase (`solvent_padding_solvated` or
         `solvent_padding_complex`, resp.).
 
-        Returns the adjusted OpenFE Protocol.
+        Mutates and returns the (editable) protocol settings.
         """
         if leg == "solvent":
-            protocol._settings.solvation_settings.solvent_padding = (
-                self.solvent_padding_solvated
-            )
+            settings.solvation_settings.solvent_padding = self.solvent_padding_solvated
         else:
-            protocol._settings.solvation_settings.solvent_padding = (
-                self.solvent_padding_complex
-            )
-        return protocol
+            settings.solvation_settings.solvent_padding = self.solvent_padding_complex
+        return settings
 
     def apply_settings(
         self,
-        edge_protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
+        edge_settings: "gufe.settings.Settings",
         network_scorer: str,
         mapping: "LigandAtomMapping",
         leg: str,
-        base_protocol: openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol,
-    ) -> openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol:
+        base_settings: "gufe.settings.Settings",
+    ) -> "gufe.settings.Settings":
         """
-        Applies a set of adaptive settings to an OpenFE Protocol if requested.
+        Applies a set of adaptive settings to a protocol's settings if requested.
+
+        Operates on (and returns) the protocol ``Settings`` directly so the caller
+        can build a fresh ``Protocol`` from them, rather than deep-copying a
+        ``Protocol`` object. ``edge_settings`` is expected to be an editable
+        (``unfrozen_copy``) settings object which is mutated in place.
+
+        Adaptive settings are only applied where the settings expose the relevant
+        fields. ``RelativeHybridTopologyProtocol`` settings carry
+        ``simulation_settings`` (sampling length) and ``solvation_settings``
+        (solvent padding); non-equilibrium protocols (e.g. feflow's
+        ``NonEquilibriumCyclingProtocol``) have no ``simulation_settings`` so
+        adaptive sampling is skipped for them with a warning.
         """
-        import copy
-
-        # create a copy of the edge_protocol to make it editable - we're returning the copy
-        edge_protocol = copy.deepcopy(edge_protocol)
-
-        # double the simulation time if requested
+        # double the simulation time if requested (RFE-style protocols only)
         if self.adaptive_sampling:
-            base_sampling_length = (
-                base_protocol.settings.simulation_settings.production_length
-            )
-            edge_protocol = self.get_adapted_sampling_protocol(
-                network_scorer, mapping, edge_protocol, base_sampling_length
-            )
+            if hasattr(edge_settings, "simulation_settings") and hasattr(
+                base_settings, "simulation_settings"
+            ):
+                base_sampling_length = (
+                    base_settings.simulation_settings.production_length
+                )
+                edge_settings = self.get_adapted_sampling_settings(
+                    network_scorer, mapping, edge_settings, base_sampling_length
+                )
+            else:
+                warnings.warn(
+                    "adaptive_sampling requested but protocol settings "
+                    f"{type(edge_settings).__name__} have no `simulation_settings`; "
+                    "skipping adaptive sampling for this protocol."
+                )
 
         # adjust solvent padding per phase if requested
         if self.adaptive_solvent_padding:
-            edge_protocol = self.get_adapted_solvent_protocol(leg, edge_protocol)
+            if hasattr(edge_settings, "solvation_settings"):
+                edge_settings = self.get_adapted_solvent_settings(leg, edge_settings)
+            else:
+                warnings.warn(
+                    "adaptive_solvent_padding requested but protocol settings "
+                    f"{type(edge_settings).__name__} have no `solvation_settings`; "
+                    "skipping adaptive solvent padding for this protocol."
+                )
 
-        return edge_protocol
+        return edge_settings
 
 
 # TODO make base class with abstract methods to collect results.
@@ -209,6 +242,11 @@ class TransformationResult(_SchemaBaseFrozen):
         ...,
         description="The standard deviation of the estimates of this transform in kcal/mol",
     )
+    protocol: Optional[str] = Field(
+        None,
+        description="The name of the alchemical protocol that produced this result. "
+        "May be None for results collected before multi-protocol support.",
+    )
 
     def name(self):
         """Make a name for this transformation based on the names of the ligands."""
@@ -225,9 +263,29 @@ class _BaseResults(_SchemaBaseFrozen):
         [], description="The list of results collected for this dataset."
     )
 
-    def to_cinnabar_measurements(self):
+    @property
+    def protocols(self) -> list[Optional[str]]:
+        """The distinct protocols present in the collected results.
+
+        Order follows first appearance in ``results``. Legacy results without a
+        protocol tag appear as ``None``.
+        """
+        seen = []
+        for result in self.results:
+            if result.protocol not in seen:
+                seen.append(result.protocol)
+        return seen
+
+    def to_cinnabar_measurements(self, protocol: Optional[str] = "__all__"):
         """
         For the given set of results combine the solvent and complex phases to make a list of cinnabar RelativeMeasurements
+
+        Args:
+            protocol: If provided (including ``None`` for legacy results), only
+                results produced by that protocol are used. The default sentinel
+                ``"__all__"`` uses every result; results are always grouped by
+                ``(protocol, transformation name)`` so different protocols for the
+                same edge are never merged.
 
         Returns:
             A list of RelativeMeasurements made from the combined solvent and complex phases.
@@ -237,28 +295,34 @@ class _BaseResults(_SchemaBaseFrozen):
         import numpy as np
         from cinnabar import Measurement
 
+        if protocol == "__all__":
+            results = self.results
+        else:
+            results = [r for r in self.results if r.protocol == protocol]
+
         raw_results = defaultdict(list)
-        # gather by transform
-        for result in self.results:
-            raw_results[result.name()].append(result)
+        # gather by (protocol, transform) so distinct protocols are kept separate
+        for result in results:
+            raw_results[(result.protocol, result.name())].append(result)
 
         # make sure we have a solvent and complex phase for each result
-        ligands_to_remove = []
-        for name, transforms in raw_results.items():
+        keys_to_remove = []
+        for key, transforms in raw_results.items():
+            _, name = key
             missing_phase = {"complex", "solvent"} - {t.phase for t in transforms}
             if missing_phase:
                 warnings.warn(
                     f"The transformation {name} is missing simulated legs in the following phases {missing_phase}; removing"
                 )
-                ligands_to_remove.append(name)
+                keys_to_remove.append(key)
             if len(transforms) > 2:
                 # We have too many simulations for this transform
                 raise RuntimeError(
                     f"The transformation {name} has too many simulated legs, found the following phases {[t.phase for t in transforms]} expected complex and solvent."
                 )
 
-        for name in ligands_to_remove:
-            raw_results.pop(name)
+        for key in keys_to_remove:
+            raw_results.pop(key)
 
         # make the cinnabar data
         all_results = []
@@ -283,10 +347,14 @@ class _BaseResults(_SchemaBaseFrozen):
             all_results.append(result)
         return all_results
 
-    def to_fe_map(self):
+    def to_fe_map(self, protocol: Optional[str] = "__all__"):
         """
         Convert the set of relative free energy estimates to a cinnabar FEMap object to calculate the absolute values
         or plot vs experiment.
+
+        Args:
+            protocol: If provided (including ``None``), restrict the map to results
+                from that protocol. The default uses every result.
 
         Returns:
             A cinnabar.FEMap made from the relative results objects.
@@ -294,9 +362,20 @@ class _BaseResults(_SchemaBaseFrozen):
         from cinnabar import FEMap
 
         fe_graph = FEMap()
-        for result in self.to_cinnabar_measurements():
+        for result in self.to_cinnabar_measurements(protocol=protocol):
             fe_graph.add_measurement(measurement=result)
         return fe_graph
+
+    def to_fe_map_by_protocol(self) -> dict[Optional[str], "FEMap"]:
+        """Build one cinnabar FEMap per protocol present in the results.
+
+        Returns:
+            A mapping of protocol name (or ``None`` for legacy results) to the
+            FEMap built from only that protocol's results.
+        """
+        return {
+            protocol: self.to_fe_map(protocol=protocol) for protocol in self.protocols
+        }
 
 
 class AlchemiscaleResults(_BaseResults):
@@ -320,86 +399,142 @@ class _FreeEnergyBase(_SchemaBase):
         SolventSettings(),
         description="The solvent settings which should be used during the free energy calculations.",
     )
-    forcefield_settings: settings.OpenMMSystemGeneratorFFSettings = Field(
-        settings.OpenMMSystemGeneratorFFSettings(
-            small_molecule_forcefield="openff-2.2.0.offxml"
-        ),
-        description="The force field settings used to parameterize the systems.",
-    )
-    thermo_settings: settings.ThermoSettings = Field(
-        settings.ThermoSettings(
-            temperature=298.15 * OFFUnit.kelvin, pressure=1 * OFFUnit.bar
-        ),
-        description="The settings for thermodynamic parameters.",
-    )
-    solvation_settings: OpenMMSolvationSettings = Field(
-        OpenMMSolvationSettings(box_shape="dodecahedron"),
-        description="Settings controlling how the systems should be solvated using OpenMM.",
-    )
-    alchemical_settings: AlchemicalSettings = Field(
-        AlchemicalSettings(softcore_LJ="gapsys"),
-        description="The alchemical protocol settings.",
-    )
-    engine_settings: OpenMMEngineSettings = Field(
-        OpenMMEngineSettings(), description="Openmm platform settings."
-    )
-    integrator_settings: IntegratorSettings = Field(
-        IntegratorSettings(),
-        description="Settings for the LangevinSplittingDynamicsMove integrator.",
-    )
-    simulation_settings: MultiStateSimulationSettings = Field(
-        MultiStateSimulationSettings(
-            equilibration_length=1.0 * OFFUnit.nanoseconds,
-            production_length=5.0 * OFFUnit.nanoseconds,
-            time_per_iteration=1 * OFFUnit.picoseconds,
-        ),
-        description="Settings for simulation control, including lengths and writing to disk.",
-    )
     adaptive_settings: Optional[AdaptiveSettings] = Field(
         AdaptiveSettings(),
         description="Run adaptive settings depending on e.g. expected edge reliability or system phase.",
     )
-    protocol: Literal["RelativeHybridTopologyProtocol"] = Field(
-        "RelativeHybridTopologyProtocol",
-        description="The name of the OpenFE alchemical protocol to use.",
+    protocol: list[str] = Field(
+        default_factory=lambda: ["RelativeHybridTopologyProtocol"],
+        description="The list of alchemical protocols to use. Each must be a protocol "
+        "registered in `asapdiscovery.alchemy.schema.protocols`, e.g. "
+        "'RelativeHybridTopologyProtocol', 'NonEquilibriumCyclingProtocol', or "
+        "'FahNonEquilibriumCyclingProtocol'.",
     )
-    protocol_repeats: int = Field(
-        1,
-        description="The number of extra times the calculation should be run and the results should be averaged over. Where 2 would mean run the calculation a total of 3 times.",
+    protocol_strategy: Literal["all"] = Field(
+        "all",
+        description="The strategy used to assign protocols to ligand transformations. "
+        "'all' creates a Transformation between every ligand mapping for each "
+        "included protocol.",
     )
-    lambda_settings: LambdaSettings = Field(
-        LambdaSettings(), description="Lambda schedule settings."
+    protocol_settings: dict[str, Any] = Field(
+        default_factory=dict,
+        description="A mapping of protocol name to its `ProtocolSettings` object. "
+        "Auto-populated with the default settings of each protocol listed in "
+        "`protocol` when not provided.",
     )
 
-    partial_charge_settings: OpenFFPartialChargeSettings = Field(
-        OpenFFPartialChargeSettings(),
-        description="The method which should be used to generate the partial charges if not provided with the ligand.",
-    )
-    output_settings: MultiStateOutputSettings = Field(
-        MultiStateOutputSettings(),
-        description="Settings for MultiState simulation output settings like writing to disk.",
-    )
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_legacy_flat_format(cls, data: Any) -> Any:
+        """Raise a clear error when loading a pre-multi-protocol (flat) file.
 
-    def to_openfe_protocol(self):
-        protocol_settings = openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocolSettings(
-            # workaround type hint being base FF engine class
-            forcefield_settings=self.forcefield_settings,
-            thermo_settings=self.thermo_settings,
-            # system_settings=self.system_settings,
-            solvation_settings=self.solvation_settings,
-            alchemical_settings=self.alchemical_settings,
-            # alchemical_sampler_settings=self.alchemical_sampler_settings,
-            engine_settings=self.engine_settings,
-            integrator_settings=self.integrator_settings,
-            simulation_settings=self.simulation_settings,
-            lambda_settings=self.lambda_settings,
-            protocol_repeats=self.protocol_repeats,
-            partial_charge_settings=self.partial_charge_settings,
-            output_settings=self.output_settings,
-        )
-        return openfe.protocols.openmm_rfe.RelativeHybridTopologyProtocol(
-            settings=protocol_settings
-        )
+        Older factory/network files stored the OpenFE-RFE settings as flat
+        top-level fields and ``protocol`` as a plain string. Those fields no
+        longer exist, so without this guard loading such a file would fail with
+        an opaque ``extra="forbid"`` pydantic error on real user data.
+        """
+        if isinstance(data, dict):
+            found = sorted(set(_LEGACY_RFE_SETTING_FIELDS).intersection(data))
+            if found:
+                raise ValueError(
+                    "This file was created with a pre-multi-protocol version of "
+                    f"asapdiscovery-alchemy (found legacy settings fields: {found}). "
+                    "These files are no longer supported. Convert it with "
+                    "`asap-alchemy convert-network`, regenerate it with "
+                    "`asap-alchemy create` / `asap-alchemy prep create`, or rebuild "
+                    "the network from its original inputs."
+                )
+        return data
+
+    @field_validator("protocol_settings", mode="before")
+    @classmethod
+    def _decode_protocol_settings(cls, value: Any) -> dict[str, Any]:
+        """Decode serialized protocol settings back into gufe ``Settings`` objects.
+
+        Values may already be live ``Settings`` objects (in-memory construction) or
+        JSON-safe dicts produced by :meth:`_encode_protocol_settings` on load; the
+        latter carry gufe class markers that ``JSON_HANDLER`` uses to reconstruct
+        the concrete ``Settings`` subclass.
+        """
+        if not isinstance(value, dict):
+            return value
+        decoded = {}
+        for name, settings_obj in value.items():
+            if isinstance(settings_obj, settings.Settings):
+                decoded[name] = settings_obj
+            else:
+                decoded[name] = json.loads(
+                    json.dumps(settings_obj), cls=JSON_HANDLER.decoder
+                )
+        return decoded
+
+    @field_serializer("protocol_settings", mode="plain")
+    def _encode_protocol_settings(self, value: dict[str, Any]) -> dict[str, Any]:
+        """Encode gufe ``Settings`` objects into self-describing JSON-safe dicts.
+
+        Pydantic would otherwise flatten the ``Settings`` into plain dicts and lose
+        the gufe class markers needed to reconstruct the correct subclass. We
+        pre-encode with ``JSON_HANDLER`` so the markers survive ``to_file``.
+
+        Note: ``_SchemaBase.to_file`` re-runs ``JSON_HANDLER`` over the whole
+        ``model_dump`` output, but by then these values are already marker-bearing
+        plain dicts with no gufe objects left, so that second pass is a no-op here.
+        """
+        return {
+            name: json.loads(json.dumps(settings_obj, cls=JSON_HANDLER.encoder))
+            for name, settings_obj in value.items()
+        }
+
+    @model_validator(mode="after")
+    def _populate_default_protocol_settings(self) -> "_FreeEnergyBase":
+        """Validate protocol names and auto-populate any missing default settings."""
+        known = available_protocols()
+        for name in self.protocol:
+            if name not in known:
+                raise ValueError(
+                    f"Unknown protocol {name!r}; available protocols are {known}."
+                )
+            # mutate the dict's contents in place rather than reassigning the
+            # field, so this also works on the frozen `FreeEnergyCalculationNetwork`
+            # subclass (where attribute assignment is disallowed)
+            if name not in self.protocol_settings:
+                self.protocol_settings[name] = default_protocol_settings(name)
+        return self
+
+    @property
+    def small_molecule_forcefield(self) -> str:
+        """The small molecule force field shared by the configured protocols.
+
+        Pulled from the ``forcefield_settings`` of each protocol that exposes them;
+        raises if the protocols disagree so callers (bespoke fitting, bespoke
+        parameter injection) get a single, unambiguous force field.
+
+        Note: this makes bespoke fitting unavailable for genuinely mixed-force-field
+        multi-protocol networks; per-edge injection in ``to_alchemical_network`` uses
+        each protocol's own force field directly and does not rely on this helper.
+        """
+        ff_names = {
+            self.protocol_settings[name].forcefield_settings.small_molecule_forcefield
+            for name in self.protocol
+            if hasattr(self.protocol_settings[name], "forcefield_settings")
+        }
+        if not ff_names:
+            raise ValueError(
+                "None of the configured protocols expose a small molecule force field."
+            )
+        if len(ff_names) > 1:
+            raise ValueError(
+                "The configured protocols use inconsistent small molecule force "
+                f"fields: {sorted(ff_names)}."
+            )
+        return ff_names.pop()
+
+    def to_openfe_protocols(self) -> dict[str, "gufe.Protocol"]:
+        """Build a mapping of protocol name to its instantiated ``gufe.Protocol``."""
+        return {
+            name: build_protocol(name, self.protocol_settings[name])
+            for name in self.protocol
+        }
 
 
 class FreeEnergyCalculationNetwork(_FreeEnergyBase):
@@ -439,6 +574,23 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
     def to_openfe_receptor(self) -> openfe.ProteinComponent:
         return openfe.ProteinComponent.from_json(content=self.receptor)
 
+    def _protocols_for_edge(self, mapping: "LigandAtomMapping") -> list[str]:
+        """Select which protocols to apply to a given ligand mapping (edge).
+
+        Driven by ``protocol_strategy``:
+
+        - ``"all"``: every configured protocol is applied to every edge, i.e. one
+          ``Transformation`` per edge per protocol.
+
+        Future strategies (e.g. assigning a single protocol per edge based on edge
+        properties) can use ``mapping`` to make that decision here.
+        """
+        if self.protocol_strategy == "all":
+            return list(self.protocol)
+        raise NotImplementedError(
+            f"protocol_strategy {self.protocol_strategy!r} is not implemented."
+        )
+
     def to_alchemical_network(self) -> openfe.AlchemicalNetwork:
         """
         Create an openfe AlchemicalNetwork from the planned network which can be submitted to alchemiscale or ran locally
@@ -446,71 +598,89 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         Returns:
             An openfe.AlchemicalNetwork created from the schema.
         """
-        import copy
-
         transformations = []
         # do all openfe conversions
         ligand_network = self.network.to_ligand_network()
         solvent = self.solvent_settings.to_solvent_component()
         receptor = self.to_openfe_receptor()
-        protocol = self.to_openfe_protocol()
 
-        # build the network
+        # build the network; `protocol_strategy` decides which protocols apply to
+        # each edge (the "all" strategy uses every configured protocol per edge)
         for mapping in ligand_network.edges:
-            # returns the name of the ff if we have no bespoke parameters
-            ff_string = self._inject_bespoke_parameters(edge=mapping)
-            # make a copy of the protocol and add the bespoke force field
-            edge_protocol = copy.deepcopy(protocol)
-            # make the settings editable
-            edge_protocol._settings = edge_protocol._settings.unfrozen_copy()
-            edge_protocol._settings.forcefield_settings.small_molecule_forcefield = (
-                ff_string
-            )
-
-            for leg in ["solvent", "complex"]:
-                sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
-                sys_b_dict = {"ligand": mapping.componentB, "solvent": solvent}
-                if leg == "complex":
-                    sys_a_dict["protein"] = receptor
-                    sys_b_dict["protein"] = receptor
-
-                system_a = openfe.ChemicalSystem(
-                    sys_a_dict, name=f"{mapping.componentA.name}_{leg}"
-                )
-                system_b = openfe.ChemicalSystem(
-                    sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
-                )
-
-                # run this edge's protocol through adaptive settings. If this list of things to pass
-                # grows any larger we should only pass the `FreeEnergyCalculationNetwork` and instead
-                # infer these parameters somewhere in self.adaptive_settings.
-                if self.adaptive_settings:
-                    edge_protocol = self.adaptive_settings.apply_settings(
-                        edge_protocol,  # the protocol to be adjusted
-                        self.network.scorer,  # the network edge scorer - for adaptive sampling
-                        mapping,  # the atom mapping for this edge - for adaptive sampling
-                        leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
-                        protocol,  # base protocol to compare with for internal checking
+            for protocol_name in self._protocols_for_edge(mapping):
+                base_settings = self.protocol_settings[protocol_name]
+                # compute the (possibly bespoke) force field once per edge/protocol,
+                # using this protocol's own base force field; leg-independent
+                ff_string = None
+                if hasattr(base_settings, "forcefield_settings"):
+                    ff_string = self._inject_bespoke_parameters(
+                        edge=mapping,
+                        base_force_field=base_settings.forcefield_settings.small_molecule_forcefield,
                     )
 
-                # set up the transformation
-                transformation = openfe.Transformation(
-                    stateA=system_a,
-                    stateB=system_b,
-                    mapping={"ligand": mapping},
-                    protocol=edge_protocol,  # use protocol created above
-                    name=f"{system_a.name}_{system_b.name}",
-                )
-                transformations.append(transformation)
+                for leg in ["solvent", "complex"]:
+                    sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
+                    sys_b_dict = {"ligand": mapping.componentB, "solvent": solvent}
+                    if leg == "complex":
+                        sys_a_dict["protein"] = receptor
+                        sys_b_dict["protein"] = receptor
+
+                    system_a = openfe.ChemicalSystem(
+                        sys_a_dict, name=f"{mapping.componentA.name}_{leg}"
+                    )
+                    system_b = openfe.ChemicalSystem(
+                        sys_b_dict, name=f"{mapping.componentB.name}_{leg}"
+                    )
+
+                    # build a fresh, editable copy of this protocol's settings for
+                    # this edge/leg rather than deep-copying a gufe Protocol object
+                    edge_settings = base_settings.unfrozen_copy()
+                    if ff_string is not None:
+                        edge_settings.forcefield_settings.small_molecule_forcefield = (
+                            ff_string
+                        )
+
+                    # run this edge's settings through adaptive settings. If this list of things to pass
+                    # grows any larger we should only pass the `FreeEnergyCalculationNetwork` and instead
+                    # infer these parameters somewhere in self.adaptive_settings.
+                    if self.adaptive_settings:
+                        edge_settings = self.adaptive_settings.apply_settings(
+                            edge_settings,  # the editable settings to be adjusted
+                            self.network.scorer,  # the network edge scorer - for adaptive sampling
+                            mapping,  # the atom mapping for this edge - for adaptive sampling
+                            leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
+                            base_settings,  # base settings to compare with for internal checking
+                        )
+
+                    # build a fresh Protocol from the per-edge settings instead of
+                    # mutating a deep-copied one (keeps gufe's flyweight intact)
+                    edge_protocol = build_protocol(protocol_name, edge_settings)
+
+                    # set up the transformation; the protocol name is appended so
+                    # transformations for the same edge but different protocols have
+                    # distinct, human-readable names (and so results can be mapped
+                    # back to their protocol)
+                    transformation = openfe.Transformation(
+                        stateA=system_a,
+                        stateB=system_b,
+                        mapping={"ligand": mapping},
+                        protocol=edge_protocol,  # use protocol created above
+                        name=f"{system_a.name}_{system_b.name}_{protocol_name}",
+                    )
+                    transformations.append(transformation)
 
         return openfe.AlchemicalNetwork(edges=transformations, name=self.dataset_name)
 
-    def _inject_bespoke_parameters(self, edge: "LigandAtomMapping") -> str:
+    def _inject_bespoke_parameters(
+        self, edge: "LigandAtomMapping", base_force_field: str
+    ) -> str:
         """
         Inject the bespoke torsion parameters for the given edge into the base force field.
 
         Args:
             edge: The edge from the OpenFE alchemical network which we want the parameters for.
+            base_force_field: The small molecule force field of the protocol this edge
+                is being built for, into which any bespoke parameters are injected.
 
         Returns:
             The string of the force field with bespoke parameters added or the name of the base force field if no
@@ -524,7 +694,7 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         from openff.units import unit
 
         # get the name of the base ff and load it
-        ff_string = self.forcefield_settings.small_molecule_forcefield
+        ff_string = base_force_field
         if ".offxml" not in ff_string:
             ff_string += ".offxml"
         ff = ForceField(ff_string)
@@ -578,6 +748,75 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
             ff_string = ff.to_string()
 
         return ff_string
+
+
+def convert_legacy_fec_network(data: dict) -> "FreeEnergyCalculationNetwork":
+    """Convert a legacy (pre-multi-protocol) network dict to the current schema.
+
+    Old-style ``FreeEnergyCalculationNetwork`` files stored the OpenFE-RFE settings
+    as flat top-level fields with ``protocol`` as a plain string and untagged
+    results. This folds those flat settings into a single
+    ``RelativeHybridTopologyProtocolSettings`` under
+    ``protocol_settings["RelativeHybridTopologyProtocol"]``, sets ``protocol`` to a
+    one-element list, and tags each result with that protocol.
+
+    Args:
+        data: The ``gufe.tokenization.JSON_HANDLER``-decoded contents of a legacy
+            network file (i.e. ``json.load(f, cls=JSON_HANDLER.decoder)``).
+
+    Returns:
+        An equivalent ``FreeEnergyCalculationNetwork`` in the current schema.
+
+    Raises:
+        ValueError: If ``data`` does not look like a legacy flat-format network.
+    """
+    from openfe.protocols.openmm_rfe import RelativeHybridTopologyProtocolSettings
+
+    if not isinstance(data, dict):
+        raise ValueError("Expected a decoded network dict to convert.")
+
+    missing = [field for field in _LEGACY_RFE_SETTING_FIELDS if field not in data]
+    if missing:
+        raise ValueError(
+            "Input does not look like a legacy (pre-multi-protocol) "
+            f"FreeEnergyCalculationNetwork; missing expected flat settings fields: "
+            f"{missing}."
+        )
+
+    protocol_name = "RelativeHybridTopologyProtocol"
+    rfe_settings = RelativeHybridTopologyProtocolSettings(
+        **{field: data[field] for field in _LEGACY_RFE_SETTING_FIELDS}
+    )
+
+    # carry results forward, tagging each with the single legacy protocol
+    results = data.get("results")
+    if results is not None:
+        for result in results.get("results", []):
+            result.setdefault("protocol", protocol_name)
+
+    # only forward optional/defaulted fields that are actually present so missing
+    # ones fall back to the current schema defaults
+    optional = {
+        field: data[field]
+        for field in (
+            "solvent_settings",
+            "adaptive_settings",
+            "experimental_protocol",
+            "target",
+        )
+        if field in data
+    }
+
+    return FreeEnergyCalculationNetwork(
+        dataset_name=data["dataset_name"],
+        network=data["network"],
+        receptor=data["receptor"],
+        protocol=[protocol_name],
+        protocol_strategy="all",
+        protocol_settings={protocol_name: rfe_settings},
+        results=results,
+        **optional,
+    )
 
 
 class FreeEnergyCalculationFactory(_FreeEnergyBase):
