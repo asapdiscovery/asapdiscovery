@@ -82,4 +82,5 @@ dependencies:
 
   # Constrained pose generation
   - pip:
+    - numpy >=2,<2.5
     - openconf
