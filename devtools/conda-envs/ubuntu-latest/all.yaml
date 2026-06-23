@@ -22,7 +22,7 @@ dependencies:
   - appdirs   # remove?
   - pydantic >2
   - pydantic-settings
-  - numpy
+  - numpy <2.5
   - pandas
   - pebble    # remove?
   - rdkit
