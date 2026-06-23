@@ -86,7 +86,7 @@ class MSELoss(TorchMSELoss):
         # r > 0 -> measurement is above thresh, want to count if pred < target
         mask = torch.tensor(
             [
-                1.0 if ((r == 0) or (r is None)) else ((r < 0) == (t < i))
+                1.0 if ((r == 0) or (r is None)) else float((r < 0) == (t < i))
                 for i, t, r in zip(
                     np.ravel(pred.detach().cpu()),
                     np.ravel(target.detach().cpu()),
