@@ -625,9 +625,20 @@ def test_download_molecules_mocked():
     with open(in_fn) as infile:
         content = infile.read()
 
-    # download_molecules should run the same filter + parse pipeline on the content
+    # retain molecules across chirality classes so rows actually survive filtering
+    # (with the default all-False retain flags filter_molecules_dataframe drops every
+    # row, which would make the frame comparison below vacuously pass on empty frames)
+    retain_kwargs = {
+        "retain_achiral": True,
+        "retain_racemic": True,
+        "retain_enantiopure": True,
+        "retain_semiquantitative_data": True,
+    }
+
+    # download_molecules should run the same filter + parse pipeline on the content;
+    # retain_* kwargs are routed to filter_molecules_dataframe
     expected = parse_fluorescence_data_cdd(
-        filter_molecules_dataframe(pandas.read_csv(StringIO(content)))
+        filter_molecules_dataframe(pandas.read_csv(StringIO(content)), **retain_kwargs)
     )
 
     with requests_mock.Mocker() as m:
@@ -635,10 +646,14 @@ def test_download_molecules_mocked():
         m.get(status_url, json={"status": "finished"})
         result_mock = m.get(result_url, content=content.encode())
 
-        result = download_molecules(header, vault=vault, search=search_id)
+        result = download_molecules(
+            header, vault=vault, search=search_id, **retain_kwargs
+        )
 
-    # the export was actually downloaded, and the pipeline output matches
+    # the export was actually downloaded, non-empty data flowed through, and the
+    # pipeline output matches what download_molecules produced
     assert result_mock.called
+    assert len(result) > 0
     pandas.testing.assert_frame_equal(result, expected)
 
 
