@@ -78,7 +78,6 @@ dependencies:
   - openfe =1.12.0
   - gufe =1.12.0
   - httpx
-  - perses >=0.10.2
   - kartograf
   - rich
   - alchemiscale-client >=0.7.2

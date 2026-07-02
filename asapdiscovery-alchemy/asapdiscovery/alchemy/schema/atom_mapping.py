@@ -74,46 +74,6 @@ class LomapAtomMapper(_BaseAtomMapper):
         }
 
 
-class PersesAtomMapper(_BaseAtomMapper):
-    """
-    A settings class for the PersesAtomMapper in openFE
-    """
-
-    type: Literal["PersesAtomMapper"] = "PersesAtomMapper"
-
-    allow_ring_breaking: bool = Field(
-        True, description="If only full cycles of the molecules should be mapped."
-    )
-    preserve_chirality: bool = Field(
-        True,
-        description="If mappings must strictly preserve the chirality of the molecules.",
-    )
-    use_positions: bool = Field(
-        True,
-        description="If 3D positions should be used during the generation of the mappings.",
-    )
-    coordinate_tolerance: PositiveFloat = Field(
-        0.25,
-        description="A tolerance on how close coordinates need to be in Angstroms before they can be mapped. Does nothing if use_positions is `False`.",
-    )
-
-    def _get_mapper(self):
-        from openfe import PersesAtomMapper
-
-        return PersesAtomMapper(**self.model_dump(exclude={"type"}))
-
-    def provenance(self) -> dict[str, str]:
-        import openeye.oechem
-        import openfe
-        import perses
-
-        return {
-            "openfe": openfe.__version__,
-            "perses": perses.__version__,
-            "openeye.oechem": openeye.oechem.OEChemGetVersion(),
-        }
-
-
 class KartografAtomMapper(_BaseAtomMapper):
     """
     A settings class for the kartograf atom mapping method.

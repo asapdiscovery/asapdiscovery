@@ -13,7 +13,7 @@ from gufe.settings.typing import (
     specify_quantity_units,
 )
 from gufe.tokenization import JSON_HANDLER, GufeKey
-from openfe.setup.atom_mapping import lomap_scorers, perses_scorers
+from openfe.setup.atom_mapping import lomap_scorers
 from openff.units import unit as OFFUnit
 from pydantic import (
     ConfigDict,
@@ -133,11 +133,9 @@ class AdaptiveSettings(_SchemaBase):
         """
         if scorer_method == "default_lomap":
             scorer = lomap_scorers.default_lomap_score
-        elif scorer_method == "default_perses":
-            scorer = perses_scorers.default_perses_scorer
         else:
             raise ValueError(
-                f"Atom mapping scorer {scorer_method} not recognized; use one of `default_lomap`, `default_perses`."
+                f"Atom mapping scorer {scorer_method} not recognized; use `default_lomap`."
             )
         if scorer(mapping) < self.adaptive_sampling_threshold:
             settings.simulation_settings.production_length = (

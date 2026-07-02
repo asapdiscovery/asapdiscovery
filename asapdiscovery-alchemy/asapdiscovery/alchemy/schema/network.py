@@ -8,7 +8,7 @@ from pydantic import ConfigDict, Field
 from asapdiscovery.data.schema.ligand import Ligand
 
 from ._util import check_ligand_series_uniqueness_and_names
-from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
+from .atom_mapping import KartografAtomMapper, LomapAtomMapper
 from .base import _SchemaBase
 
 
@@ -103,13 +103,11 @@ class _NetworkPlannerSettings(_SchemaBase):
 
     type: Literal["NetworkPlanner"] = "NetworkPlanner"
 
-    atom_mapping_engine: Union[
-        LomapAtomMapper, PersesAtomMapper, KartografAtomMapper
-    ] = Field(
+    atom_mapping_engine: Union[LomapAtomMapper, KartografAtomMapper] = Field(
         LomapAtomMapper(),
         description="The method which should be used to create the mappings between molecules in the FEC network.",
     )
-    scorer: Literal["default_lomap", "default_perses"] = Field(
+    scorer: Literal["default_lomap"] = Field(
         "default_lomap",
         description="The method which should be used to score the proposed atom mappings by the atom mapping engine.",
     )
@@ -208,11 +206,8 @@ class NetworkPlanner(_NetworkPlannerSettings):
     type: Literal["NetworkPlanner"] = "NetworkPlanner"
 
     def _get_scorer(self):
-        # We don't need to explicitly handle raising an error as pydantic validation will do it for us
-        if self.scorer == "default_lomap":
-            return openfe.lomap_scorers.default_lomap_score
-        else:
-            return openfe.perses_scorers.default_perses_scorer
+        # Only default_lomap is supported; pydantic validation enforces the scorer value
+        return openfe.lomap_scorers.default_lomap_score
 
     def generate_network(
         self,

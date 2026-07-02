@@ -64,7 +64,6 @@ dependencies:
   - openmmforcefields =0.15.1
   - mdtraj
   - httpx
-  - perses >=0.10.2
   - kartograf
   - rich
   - alchemiscale-client >=0.7.2

@@ -9,7 +9,6 @@ from openff.units import unit as OFFUnit
 from asapdiscovery.alchemy.schema.atom_mapping import (
     KartografAtomMapper,
     LomapAtomMapper,
-    PersesAtomMapper,
 )
 from asapdiscovery.alchemy.schema.fec import (
     AdaptiveSettings,
@@ -36,13 +35,6 @@ from asapdiscovery.data.schema.identifiers import BespokeParameter, BespokeParam
     [
         pytest.param(LomapAtomMapper, "max3d", 30, id="Lomap"),
         pytest.param(
-            PersesAtomMapper,
-            "coordinate_tolerance",
-            0.15,
-            id="Perses",
-            marks=pytest.mark.xfail(reason="upstream OpenFE #929"),
-        ),
-        pytest.param(
             KartografAtomMapper, "map_exact_ring_matches_only", True, id="Kartograph"
         ),
     ],
@@ -68,9 +60,6 @@ def test_lomap_atom_mapper_timeout():
     "mapper, programs",
     [
         pytest.param(LomapAtomMapper, ["openfe", "lomap", "rdkit"], id="Lomap"),
-        pytest.param(
-            PersesAtomMapper, ["openfe", "perses", "openeye.oechem"], id="Perses"
-        ),
         pytest.param(
             KartografAtomMapper, ["openfe", "rdkit", "kartograf"], id="Kartograph"
         ),
@@ -123,7 +112,6 @@ def test_plan_from_names(tyk2_ligands, tyk2_small_custom_network):
     "scorer",
     [
         pytest.param("default_lomap", id="Lomap"),
-        pytest.param("default_perses", id="Perses"),
     ],
 )
 def test_network_planner_get_scorer(scorer):
@@ -210,10 +198,11 @@ def test_planner_file_round_trip(tmpdir):
     with tmpdir.as_cwd():
         # configure with non default settings
         filename = "network_planner.json"
-        planner = NetworkPlanner(scorer="default_perses")
+        planner = NetworkPlanner(atom_mapping_engine=KartografAtomMapper())
         planner.to_file(filename=filename)
         planner_2 = NetworkPlanner.from_file(filename=filename)
         assert planner.scorer == planner_2.scorer
+        assert planner.atom_mapping_engine.type == planner_2.atom_mapping_engine.type
 
 
 def test_fec_to_openfe_protocols():
