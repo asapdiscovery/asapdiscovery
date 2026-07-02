@@ -722,6 +722,16 @@ def status(
     help="The name of the JSON file containing a planned FEC network.",
     default="planned_network.json",
     show_default=True,
+    required=False,
+)
+@click.option(
+    "-nk",
+    "--network_key",
+    type=click.STRING,
+    help="The network key of the network whose errored Tasks should be restarted. "
+    "Used in preference to --network; find it by running e.g. `asap-alchemy status -a`.",
+    default=None,
+    required=False,
 )
 @click.option(
     "-v",
@@ -733,8 +743,11 @@ def status(
     "tasks",
     nargs=-1,
 )
-def restart(network: str, verbose: bool, tasks):
+def restart(network: str, network_key: str, verbose: bool, tasks):
     """Restart errored Tasks for the given FEC network.
+
+    The network can be specified either by a planned network JSON file
+    (-n/--network) or directly by its ScopedKey (-nk/--network_key).
 
     If TASKS specified, then only these will be restarted.
 
@@ -745,11 +758,33 @@ def restart(network: str, verbose: bool, tasks):
     from asapdiscovery.alchemy.utils import AlchemiscaleHelper
 
     client = AlchemiscaleHelper.from_settings()
-    planned_network = FreeEnergyCalculationNetwork.from_file(network)
+
+    if network_key:
+        if Path(network).exists():
+            click.echo(
+                f"Network key provided: {network_key}, prefering over network file {network}."
+            )
+    else:
+        click.echo(f"Network file provided: {network}, loading network.")
+        if not Path(network).exists():
+            raise FileNotFoundError(f"Network file {network} does not exist.")
+        planned_network = FreeEnergyCalculationNetwork.from_file(network)
+        network_key = planned_network.results.network_key
+
+    # confirm the network exists before attempting to restart its tasks
+    try:
+        if not client.network_exists(network_key=network_key):
+            raise ValueError(
+                f"Network key {network_key} does not exist in Alchemiscale."
+            )
+    except Exception as e:
+        raise ValueError(
+            f"Network key {network_key} does not exist in Alchemiscale."
+        ) from e
 
     tasks = [ScopedKey.from_str(task) for task in tasks]
 
-    restarted_tasks = client.restart_tasks(planned_network, tasks)
+    restarted_tasks = client.restart_tasks(network_key=network_key, tasks=tasks)
     if verbose:
         click.echo(f"Restarted Tasks: {[str(i) for i in restarted_tasks]}")
     else:
