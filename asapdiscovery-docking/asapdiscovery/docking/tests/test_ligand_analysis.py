@@ -79,7 +79,7 @@ def test_writing_rmsd_calculation(tmp_path, ref_mol, query_mol):
             ["ERI-UCB-ce40166b-17_Mpro-P2201_0A_0", "5.791467472680422"],
         ]
     )
-    assert np.alltrue(reference == rmsds)
+    assert np.all(reference == rmsds)
 
 
 def test_tanimoto_calculation(ref_ligand, query_ligand):

@@ -22,7 +22,7 @@ dependencies:
   - appdirs
   - pydantic >2
   - pydantic-settings
-  - numpy
+  - numpy <2.5
   - pandas
   - pebble
   - rdkit
@@ -73,3 +73,8 @@ dependencies:
   - wandb
   - seaborn
   - semver
+
+  # Constrained pose generation
+  - pip:
+    - numpy >=2,<2.5
+    - openconf

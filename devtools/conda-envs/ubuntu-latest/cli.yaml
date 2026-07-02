@@ -22,7 +22,7 @@ dependencies:
   - appdirs
   - pydantic >2
   - pydantic-settings
-  - numpy
+  - numpy <2.5
   - pandas
   - pebble
   - rdkit
@@ -111,4 +111,6 @@ dependencies:
   - cryptography
   - plyvel
   - pip:
+    - numpy >=2,<2.5
     - git+https://github.com/OpenFreeEnergy/alchemiscale-fah.git@v0.3.1
+    - openconf

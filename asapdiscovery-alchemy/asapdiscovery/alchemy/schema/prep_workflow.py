@@ -19,6 +19,7 @@ from asapdiscovery.data.operators.state_expanders.tautomer_expander import (
 )
 from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.docking.schema.pose_generation import (
+    OpenConfConstrainedPoseGenerator,
     OpenEyeConstrainedPoseGenerator,
     RDKitConstrainedPoseGenerator,
 )
@@ -45,9 +46,11 @@ class _AlchemyPrepBase(_SchemaBase):
         "should be applied to the ligands. This stage will be skipped if set to `None`.",
     )
     pose_generator: Union[
-        OpenEyeConstrainedPoseGenerator, RDKitConstrainedPoseGenerator
+        OpenConfConstrainedPoseGenerator,
+        OpenEyeConstrainedPoseGenerator,
+        RDKitConstrainedPoseGenerator,
     ] = Field(
-        RDKitConstrainedPoseGenerator(),
+        OpenConfConstrainedPoseGenerator(),
         description="The method "
         "to generate the initial poses for the molecules for FEC.",
     )
