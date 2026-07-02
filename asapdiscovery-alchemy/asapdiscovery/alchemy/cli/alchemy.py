@@ -471,7 +471,7 @@ def gather(
     if network_key:
         if Path(network).exists():
             click.echo(
-                f"Network key provided: {network_key}, prefering over network file {network}."
+                f"Network key provided: {network_key}, preferring over network file {network}."
             )
         using_network_key = True
     else:
@@ -673,7 +673,7 @@ def status(
         if network_key:
             if Path(network).exists():
                 click.echo(
-                    f"Network key provided: {network_key}, prefering over network file {network}."
+                    f"Network key provided: {network_key}, preferring over network file {network}."
                 )
 
         else:
@@ -762,7 +762,7 @@ def restart(network: str, network_key: str, verbose: bool, tasks):
     if network_key:
         if Path(network).exists():
             click.echo(
-                f"Network key provided: {network_key}, prefering over network file {network}."
+                f"Network key provided: {network_key}, preferring over network file {network}."
             )
     else:
         click.echo(f"Network file provided: {network}, loading network.")
