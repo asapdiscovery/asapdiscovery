@@ -18,7 +18,7 @@ from asapdiscovery.dataviz._gif_blocks import GIFBlockData
 from asapdiscovery.dataviz.resources.fonts import opensans_regular
 from asapdiscovery.dataviz.show_contacts import show_contacts
 from asapdiscovery.dataviz.visualizer import VisualizerBase
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.data.schema.docking_data_validation import DockingResultCols
 from asapdiscovery.simulation.simulate import SimulationResult
 
 logger = logging.getLogger(__name__)
