@@ -107,7 +107,7 @@ dependencies:
   - kartograf
   - rich
   - alchemiscale-client
-  - cinnabar >=0.4.1
+  - cinnabar >=0.6.0
 
 
 
