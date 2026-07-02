@@ -609,9 +609,16 @@ def test_download_url_polls_until_finished():
     assert status_mock.call_count == 2
 
 
-def test_download_molecules_mocked():
-    """download_molecules fetches the CSV export via download_url and returns the
-    filtered + parsed dataframe, without hitting the real CDD API."""
+def test_download_molecules_mocked(monkeypatch):
+    """download_molecules downloads the CSV export via download_url, parses it, and
+    routes kwargs to filter_molecules_dataframe / parse_fluorescence_data_cdd.
+
+    The filter/parse stages are stubbed here (they have their own dedicated tests);
+    this isolates download_molecules' own behavior: fetching the export, decoding it,
+    reading the CSV, splitting kwargs between the two stages, and returning the parsed
+    result. (Chaining the real filter+parse on a fixture is not viable: test_filter_in.csv
+    lacks the assay CI columns that parse_fluorescence_data_cdd requires.)
+    """
     vault = "1"
     export_id = 1
     search_id = "my-search-id"
@@ -620,25 +627,27 @@ def test_download_molecules_mocked():
     result_url = f"{CDD_URL}/{vault}/exports/{export_id}"
     header = {"X-CDD-token": "my-token"}
 
-    # use a known-good CDD export CSV as the mocked download content
-    in_fn = fetch_test_file("test_filter_in.csv")
-    with open(in_fn) as infile:
-        content = infile.read()
+    content = "Canonical PostEra ID,suspected_SMILES\nMOL-1,CCO\nMOL-2,CCC\n"
 
-    # retain molecules across chirality classes so rows actually survive filtering
-    # (with the default all-False retain flags filter_molecules_dataframe drops every
-    # row, which would make the frame comparison below vacuously pass on empty frames)
-    retain_kwargs = {
-        "retain_achiral": True,
-        "retain_racemic": True,
-        "retain_enantiopure": True,
-        "retain_semiquantitative_data": True,
-    }
+    # stub the filter/parse stages (each imported inside download_molecules from
+    # asapdiscovery.data.util.utils) so we can observe exactly what they receive
+    captured = {}
 
-    # download_molecules should run the same filter + parse pipeline on the content;
-    # retain_* kwargs are routed to filter_molecules_dataframe
-    expected = parse_fluorescence_data_cdd(
-        filter_molecules_dataframe(pandas.read_csv(StringIO(content)), **retain_kwargs)
+    def fake_filter(df, **kwargs):
+        captured["filter_df"] = df
+        captured["filter_kwargs"] = kwargs
+        return df
+
+    def fake_parse(df, **kwargs):
+        captured["parse_df"] = df
+        captured["parse_kwargs"] = kwargs
+        return df
+
+    monkeypatch.setattr(
+        "asapdiscovery.data.util.utils.filter_molecules_dataframe", fake_filter
+    )
+    monkeypatch.setattr(
+        "asapdiscovery.data.util.utils.parse_fluorescence_data_cdd", fake_parse
     )
 
     with requests_mock.Mocker() as m:
@@ -647,14 +656,25 @@ def test_download_molecules_mocked():
         result_mock = m.get(result_url, content=content.encode())
 
         result = download_molecules(
-            header, vault=vault, search=search_id, **retain_kwargs
+            header,
+            vault=vault,
+            search=search_id,
+            retain_achiral=True,  # -> filter stage
+            keep_best_per_mol=False,  # -> parse stage
         )
 
-    # the export was actually downloaded, non-empty data flowed through, and the
-    # pipeline output matches what download_molecules produced
+    # the export was actually downloaded
     assert result_mock.called
-    assert len(result) > 0
-    pandas.testing.assert_frame_equal(result, expected)
+    # download_molecules parsed the downloaded CSV and handed it to the filter stage
+    pandas.testing.assert_frame_equal(
+        captured["filter_df"], pandas.read_csv(StringIO(content))
+    )
+    # kwargs were split correctly between the two stages
+    assert captured["filter_kwargs"] == {"retain_achiral": True}
+    assert captured["parse_kwargs"] == {"keep_best_per_mol": False}
+    # parse received the filter output, and its result is what download_molecules returns
+    pandas.testing.assert_frame_equal(captured["parse_df"], captured["filter_df"])
+    assert result is captured["parse_df"]
 
 
 def test_cdd_api_get_readout(mocked_cdd_api):
