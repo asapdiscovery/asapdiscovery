@@ -3,6 +3,7 @@ Tests for downloading and processing Moonshot data from CDD.
 """
 
 import os
+from io import StringIO
 
 import pandas
 import pytest
@@ -560,3 +561,161 @@ def test_cdd_api_get_ic50(mocked_cdd_api):
         assert mol_data["inchi"] == ethanol_data["Inchi"]
         assert mol_data["inchi_key"] == ethanol_data["Inchi Key"]
         assert mol_data["name"] == ethanol_data["Molecule Name"]
+
+
+def test_download_url():
+    """download_url initiates a search, waits for the export, and returns the
+    final export response, all mocked."""
+    vault = "1"
+    export_id = 1
+    search_url = f"{CDD_URL}/{vault}/searches/my-search-id"
+    status_url = f"{CDD_URL}/{vault}/export_progress/{export_id}"
+    result_url = f"{CDD_URL}/{vault}/exports/{export_id}"
+    header = {"X-CDD-token": "my-token"}
+
+    with requests_mock.Mocker() as m:
+        m.get(search_url, json={"id": export_id})
+        m.get(status_url, json={"status": "finished"})
+        m.get(result_url, content=b"col1,col2\n1,2\n")
+
+        response = download_url(search_url, header, vault=vault)
+
+    assert response.content == b"col1,col2\n1,2\n"
+
+
+def test_download_url_polls_until_finished():
+    """download_url keeps polling export_progress until the status is 'finished',
+    and infers the vault from the search URL when it is not passed explicitly."""
+    vault = "1"
+    export_id = 7
+    search_url = f"{CDD_URL}/{vault}/searches/my-search-id"
+    status_url = f"{CDD_URL}/{vault}/export_progress/{export_id}"
+    result_url = f"{CDD_URL}/{vault}/exports/{export_id}"
+    header = {"X-CDD-token": "my-token"}
+
+    with requests_mock.Mocker() as m:
+        m.get(search_url, json={"id": export_id})
+        # first poll: not ready; second poll: finished
+        status_mock = m.get(
+            status_url,
+            [{"json": {"status": "new"}}, {"json": {"status": "finished"}}],
+        )
+        m.get(result_url, content=b"done")
+
+        # vault omitted -> parsed from the search URL; retry_delay=0 to avoid sleeping
+        response = download_url(search_url, header, retry_delay=0)
+
+    assert response.content == b"done"
+    assert status_mock.call_count == 2
+
+
+def test_download_molecules_mocked():
+    """download_molecules fetches the CSV export via download_url and returns the
+    filtered + parsed dataframe, without hitting the real CDD API."""
+    vault = "1"
+    export_id = 1
+    search_id = "my-search-id"
+    search_url = f"{CDD_URL}/{vault}/searches/{search_id}"
+    status_url = f"{CDD_URL}/{vault}/export_progress/{export_id}"
+    result_url = f"{CDD_URL}/{vault}/exports/{export_id}"
+    header = {"X-CDD-token": "my-token"}
+
+    # use a known-good CDD export CSV as the mocked download content
+    in_fn = fetch_test_file("test_filter_in.csv")
+    with open(in_fn) as infile:
+        content = infile.read()
+
+    # download_molecules should run the same filter + parse pipeline on the content
+    expected = parse_fluorescence_data_cdd(
+        filter_molecules_dataframe(pandas.read_csv(StringIO(content)))
+    )
+
+    with requests_mock.Mocker() as m:
+        m.get(search_url, json={"id": export_id})
+        m.get(status_url, json={"status": "finished"})
+        result_mock = m.get(result_url, content=content.encode())
+
+        result = download_molecules(header, vault=vault, search=search_id)
+
+    # the export was actually downloaded, and the pipeline output matches
+    assert result_mock.called
+    pandas.testing.assert_frame_equal(result, expected)
+
+
+def test_cdd_api_get_readout(mocked_cdd_api):
+    """Test pulling a single readout column for a protocol and merging molecule info."""
+    assay_name = "My_fancy_assay"
+    mock_protocol_response = {
+        "objects": [
+            {
+                "id": 1,
+                "readout_definitions": [
+                    {"name": "IC50", "id": 500},
+                    {"name": "Curve class", "id": 503},
+                ],
+            }
+        ]
+    }
+    mock_readout_response = {
+        "count": 1,
+        "objects": [
+            {
+                "id": 1,
+                "molecule": 1,
+                "readouts": {
+                    "500": {"value": 0.03},
+                    "503": {"value": 1.1},
+                },
+                "modified_at": "2021-01-01T00:00:00Z",
+            }
+        ],
+    }
+    mock_molecule_response = {
+        "count": 1,
+        "objects": [
+            {
+                "id": 1,
+                "smiles": "CCO",
+                "inchi": "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3",
+                "inchi_key": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
+                "name": "ASAP-Ethanol",
+                "cxsmiles": "CCO",
+            }
+        ],
+    }
+    with requests_mock.Mocker() as m:
+        m.post(mocked_cdd_api.api_url + "protocols/query", json=mock_protocol_response)
+        m.post(mocked_cdd_api.api_url + "readout_rows/query", json={"id": 100})
+        m.get(mocked_cdd_api.api_url + "exports/100", json=mock_readout_response)
+        m.post(mocked_cdd_api.api_url + "molecules/query", json={"id": 101})
+        m.get(mocked_cdd_api.api_url + "exports/101", json=mock_molecule_response)
+
+        readout_df = mocked_cdd_api.get_readout(protocol_name=assay_name, readout="IC50")
+
+    row = readout_df.iloc[0]
+    assert row["IC50"] == 0.03
+    assert row["name"] == 1
+    assert row["modified_at"] == "2021-01-01T00:00:00Z"
+    assert row["Smiles"] == "CCO"
+    assert row["Inchi"] == "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3"
+    assert row["Inchi Key"] == "LFQSCWFLJHTTHZ-UHFFFAOYSA-N"
+    assert row["Molecule Name"] == "ASAP-Ethanol"
+    assert row["CXSmiles"] == "CCO"
+
+
+def test_cdd_api_get_readout_missing_column(mocked_cdd_api):
+    """get_readout raises a ValueError if the requested readout is not defined on
+    the protocol."""
+    assay_name = "My_fancy_assay"
+    mock_protocol_response = {
+        "objects": [
+            {
+                "id": 1,
+                "readout_definitions": [{"name": "IC50", "id": 500}],
+            }
+        ]
+    }
+    with requests_mock.Mocker() as m:
+        m.post(mocked_cdd_api.api_url + "protocols/query", json=mock_protocol_response)
+        with pytest.raises(ValueError, match="not found in protocol"):
+            mocked_cdd_api.get_readout(protocol_name=assay_name, readout="NopeColumn")
