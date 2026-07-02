@@ -1,5 +1,4 @@
 import base64
-import contextlib
 import warnings
 from typing import Literal, Optional
 
@@ -18,30 +17,6 @@ from rdkit import Chem
 from rdkit.Chem import Draw
 
 from asapdiscovery.data.schema.ligand import Ligand
-
-
-@contextlib.contextmanager
-def _patch_numpy_normal_for_cinnabar():
-    """Monkey-patch np.random.normal to return scalars when size=1.
-
-    Works around cinnabar bootstrap_statistic incompatibility with numpy 2.x
-    where np.random.normal(size=1) returns a 1-element array that can't be
-    assigned to a scalar array element.
-    """
-    _orig = np.random.normal
-
-    def _compat(*args, **kwargs):
-        result = _orig(*args, **kwargs)
-        if isinstance(result, np.ndarray) and result.size == 1:
-            return result.item()
-        return result
-
-    np.random.normal = _compat
-    try:
-        yield
-    finally:
-        np.random.normal = _orig
-
 
 # run to enable plotting with bokeh
 panel.extension()
@@ -818,25 +793,24 @@ def create_absolute_report(dataframe: pd.DataFrame) -> panel.Column:
         )
         # calculate the bootstrapped stats using cinnabar
         stats_data = []
-        with _patch_numpy_normal_for_cinnabar():
-            for statistic in ["RMSE", "MUE", "R2", "rho"]:
-                s = stats.bootstrap_statistic(
-                    plotting_df["pIC50 (EXPT)"].to_numpy(),
-                    plotting_df["pIC50 (FECS)"].to_numpy(),
-                    plotting_df["uncertainty (pIC50) (EXPT)"].to_numpy(),
-                    plotting_df["uncertainty (pIC50) (FECS)"].to_numpy(),
-                    statistic=statistic,
-                    include_true_uncertainty=False,
-                    include_pred_uncertainty=False,
-                )
-                stats_data.append(
-                    {
-                        "Statistic": statistic,
-                        "value": s["mle"],
-                        "lower bound": s["low"],
-                        "upper bound": s["high"],
-                    }
-                )
+        for statistic in ["RMSE", "MUE", "R2", "rho"]:
+            s = stats.bootstrap_statistic(
+                plotting_df["pIC50 (EXPT)"].to_numpy(),
+                plotting_df["pIC50 (FECS)"].to_numpy(),
+                plotting_df["uncertainty (pIC50) (EXPT)"].to_numpy(),
+                plotting_df["uncertainty (pIC50) (FECS)"].to_numpy(),
+                statistic=statistic,
+                include_true_uncertainty=False,
+                include_pred_uncertainty=False,
+            )
+            stats_data.append(
+                {
+                    "Statistic": statistic,
+                    "value": s["mle"],
+                    "lower bound": s["low"],
+                    "upper bound": s["high"],
+                }
+            )
         stats_df = pd.DataFrame(stats_data)
         # create a format for numerical data in the tables
         stats_format = {col: number_format for col in stats_df.columns}
@@ -931,25 +905,24 @@ def create_relative_report(dataframe: pd.DataFrame) -> panel.Column:
         )
         # calculate the bootstrapped stats using cinnabar
         stats_data = []
-        with _patch_numpy_normal_for_cinnabar():
-            for statistic in ["RMSE", "MUE", "R2", "rho"]:
-                s = stats.bootstrap_statistic(
-                    plotting_df["DpIC50 (EXPT)"].to_numpy(),
-                    plotting_df["DpIC50 (FECS)"].to_numpy(),
-                    plotting_df["uncertainty (pIC50) (EXPT)"].to_numpy(),
-                    plotting_df["uncertainty (pIC50) (FECS)"].to_numpy(),
-                    statistic=statistic,
-                    include_true_uncertainty=False,
-                    include_pred_uncertainty=False,
-                )
-                stats_data.append(
-                    {
-                        "Statistic": statistic,
-                        "value": s["mle"],
-                        "lower bound": s["low"],
-                        "upper bound": s["high"],
-                    }
-                )
+        for statistic in ["RMSE", "MUE", "R2", "rho"]:
+            s = stats.bootstrap_statistic(
+                plotting_df["DpIC50 (EXPT)"].to_numpy(),
+                plotting_df["DpIC50 (FECS)"].to_numpy(),
+                plotting_df["uncertainty (pIC50) (EXPT)"].to_numpy(),
+                plotting_df["uncertainty (pIC50) (FECS)"].to_numpy(),
+                statistic=statistic,
+                include_true_uncertainty=False,
+                include_pred_uncertainty=False,
+            )
+            stats_data.append(
+                {
+                    "Statistic": statistic,
+                    "value": s["mle"],
+                    "lower bound": s["low"],
+                    "upper bound": s["high"],
+                }
+            )
         stats_df = pd.DataFrame(stats_data)
         # create a format for numerical data in the tables
         stats_format = {col: number_format for col in stats_df.columns}

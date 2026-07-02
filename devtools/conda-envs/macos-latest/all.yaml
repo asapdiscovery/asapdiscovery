@@ -85,7 +85,7 @@ dependencies:
   - rich
   - alchemiscale-client >=0.7.2
   - feflow =0.2.0
-  - cinnabar >=0.4.1
+  - cinnabar >=0.6.0
 
   # Visualization
   - seaborn
