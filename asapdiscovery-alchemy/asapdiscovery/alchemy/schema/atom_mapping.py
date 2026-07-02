@@ -114,12 +114,13 @@ class KartografAtomMapper(_BaseAtomMapper):
         return KartografAtomMapper(**settings)
 
     def provenance(self) -> dict[str, str]:
-        import kartograf._version
+        from importlib.metadata import version
+
         import openfe
         import rdkit
 
         return {
             "openfe": openfe.__version__,
             "rdkit": rdkit.__version__,
-            "kartograf": kartograf._version.__version__,
+            "kartograf": version("kartograf"),
         }
