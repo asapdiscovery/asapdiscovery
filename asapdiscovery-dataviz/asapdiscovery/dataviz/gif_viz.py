@@ -3,7 +3,6 @@ import shutil
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from multimethod import multimethod
 from pydantic import ConfigDict, Field, PositiveInt
 
 from asapdiscovery.data.metadata.resources import master_structures
@@ -94,9 +93,7 @@ class GIFVisualizer(VisualizerBase):
     interval: PositiveInt = Field(1, description="Interval between frames")
     debug: bool = Field(False, description="Whether to run in debug mode")
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True, ignored_types=(multimethod,)
-    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @dask_vmap(["inputs"], has_failure_mode=True)
     @backend_wrapper("inputs")
@@ -342,137 +339,142 @@ class GIFVisualizer(VisualizerBase):
 
         return path
 
-    @multimethod
     def _dispatch(
         self,
-        inputs: list[SimulationResult],
+        inputs,
         outpaths: Optional[list[Path]] = None,
         failure_mode: str = "skip",
         **kwargs,
     ):
-        data = []
+        """
+        Dispatch visualization based on the type of the input elements:
+        SimulationResults, or (trajectory_path, topology_path) tuples.
+        """
+        if not inputs:
+            return []
 
-        for i, res in enumerate(inputs):
-            try:
-                if not outpaths:
-                    if self.static_view_only:
-                        out = (
-                            self.output_dir
-                            / res.input_docking_result.unique_name
-                            / "view.pse"
-                        )
+        if isinstance(inputs[0], SimulationResult):
+            data = []
+
+            for i, res in enumerate(inputs):
+                try:
+                    if not outpaths:
+                        if self.static_view_only:
+                            out = (
+                                self.output_dir
+                                / res.input_docking_result.unique_name
+                                / "view.pse"
+                            )
+                        else:
+                            out = (
+                                self.output_dir
+                                / res.input_docking_result.unique_name
+                                / "trajectory.gif"
+                            )
                     else:
-                        out = (
-                            self.output_dir
-                            / res.input_docking_result.unique_name
-                            / "trajectory.gif"
+                        out = self.output_dir / outpaths[i]
+
+                    path = self.pymol_traj_viz(
+                        target=self.target,
+                        traj=res.traj_path,
+                        system=res.minimized_pdb_path,
+                        outpath=out,
+                        static_view_only=self.static_view_only,
+                        pse=self.pse,
+                        pse_share=self.pse_share,
+                        start=self.start,
+                        stop=self.stop,
+                        interval=self.interval,
+                        smooth=self.smooth,
+                        contacts=self.contacts,
+                        frames_per_ns=self.frames_per_ns,
+                        zoom_view=self.zoom_view,
+                        out_dir=self.output_dir,
+                    )
+                    row = {}
+                    row[DockingResultCols.LIGAND_ID.value] = (
+                        res.input_docking_result.posed_ligand.compound_name
+                    )
+                    row[DockingResultCols.TARGET_ID.value] = (
+                        res.input_docking_result.input_pair.complex.target.target_name
+                    )
+                    row[DockingResultCols.SMILES.value] = (
+                        res.input_docking_result.posed_ligand.smiles
+                    )
+                    row[DockingResultCols.GIF_PATH.value] = path
+                    data.append(row)
+                except Exception as e:
+                    if failure_mode == "skip":
+                        logger.error(
+                            f"Error processing {res.input_docking_result.unique_name}: {e}"
                         )
-                else:
-                    out = self.output_dir / outpaths[i]
-
-                path = self.pymol_traj_viz(
-                    target=self.target,
-                    traj=res.traj_path,
-                    system=res.minimized_pdb_path,
-                    outpath=out,
-                    static_view_only=self.static_view_only,
-                    pse=self.pse,
-                    pse_share=self.pse_share,
-                    start=self.start,
-                    stop=self.stop,
-                    interval=self.interval,
-                    smooth=self.smooth,
-                    contacts=self.contacts,
-                    frames_per_ns=self.frames_per_ns,
-                    zoom_view=self.zoom_view,
-                    out_dir=self.output_dir,
-                )
-                row = {}
-                row[DockingResultCols.LIGAND_ID.value] = (
-                    res.input_docking_result.posed_ligand.compound_name
-                )
-                row[DockingResultCols.TARGET_ID.value] = (
-                    res.input_docking_result.input_pair.complex.target.target_name
-                )
-                row[DockingResultCols.SMILES.value] = (
-                    res.input_docking_result.posed_ligand.smiles
-                )
-                row[DockingResultCols.GIF_PATH.value] = path
-                data.append(row)
-            except Exception as e:
-                if failure_mode == "skip":
-                    logger.error(
-                        f"Error processing {res.input_docking_result.unique_name}: {e}"
-                    )
-                elif failure_mode == "raise":
-                    raise e
-                else:
-                    raise ValueError(
-                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
-                    )
-        return data
-
-    @_dispatch.register
-    def _dispatch(
-        self,
-        inputs: list[tuple[Optional[Path], Path]],
-        outpaths: Optional[list[Path]] = None,
-        failure_mode: str = "skip",
-        **kwargs,
-    ):
-        data = []
-        for i, tup in enumerate(inputs):
-            try:
-                # unpack the tuple
-                traj, top = tup
-                # find with the unique identifier for the ligand would be
-                complex = Complex.from_pdb(
-                    top,
-                    target_kwargs={"target_name": f"{top.stem}_target"},
-                    ligand_kwargs={"compound_name": f"{top.stem}_ligand"},
-                )
-                csp = CompoundStructurePair(complex=complex, ligand=complex.ligand)
-                if not outpaths:
-                    if self.static_view_only:
-                        out = self.output_dir / csp.unique_name / "view.pse"
+                    elif failure_mode == "raise":
+                        raise e
                     else:
-                        out = self.output_dir / csp.unique_name / "trajectory.gif"
-                else:
-                    out = self.output_dir / outpaths[i]
+                        raise ValueError(
+                            f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                        )
+            return data
 
-                path = self.pymol_traj_viz(
-                    target=self.target,
-                    traj=traj,
-                    system=top,
-                    outpath=out,
-                    static_view_only=self.static_view_only,
-                    pse=self.pse,
-                    pse_share=self.pse_share,
-                    start=self.start,
-                    stop=self.stop,
-                    interval=self.interval,
-                    smooth=self.smooth,
-                    contacts=self.contacts,
-                    frames_per_ns=self.frames_per_ns,
-                    zoom_view=self.zoom_view,
-                    out_dir=self.output_dir,
-                )
-                row = {}
-                row[DockingResultCols.LIGAND_ID.value] = complex.ligand.compound_name
-                row[DockingResultCols.TARGET_ID.value] = complex.target.target_name
-                row[DockingResultCols.SMILES.value] = complex.ligand.smiles
-                row[DockingResultCols.GIF_PATH.value] = path
-                data.append(row)
-            except Exception as e:
-                if failure_mode == "skip":
-                    logger.error(f"Error processing {csp.unique_name}: {e}")
-                elif failure_mode == "raise":
-                    raise e
-                else:
-                    raise ValueError(
-                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+        elif isinstance(inputs[0], tuple):
+            data = []
+            for i, tup in enumerate(inputs):
+                try:
+                    # unpack the tuple
+                    traj, top = tup
+                    # find with the unique identifier for the ligand would be
+                    complex = Complex.from_pdb(
+                        top,
+                        target_kwargs={"target_name": f"{top.stem}_target"},
+                        ligand_kwargs={"compound_name": f"{top.stem}_ligand"},
                     )
-        return data
+                    csp = CompoundStructurePair(complex=complex, ligand=complex.ligand)
+                    if not outpaths:
+                        if self.static_view_only:
+                            out = self.output_dir / csp.unique_name / "view.pse"
+                        else:
+                            out = self.output_dir / csp.unique_name / "trajectory.gif"
+                    else:
+                        out = self.output_dir / outpaths[i]
+
+                    path = self.pymol_traj_viz(
+                        target=self.target,
+                        traj=traj,
+                        system=top,
+                        outpath=out,
+                        static_view_only=self.static_view_only,
+                        pse=self.pse,
+                        pse_share=self.pse_share,
+                        start=self.start,
+                        stop=self.stop,
+                        interval=self.interval,
+                        smooth=self.smooth,
+                        contacts=self.contacts,
+                        frames_per_ns=self.frames_per_ns,
+                        zoom_view=self.zoom_view,
+                        out_dir=self.output_dir,
+                    )
+                    row = {}
+                    row[DockingResultCols.LIGAND_ID.value] = complex.ligand.compound_name
+                    row[DockingResultCols.TARGET_ID.value] = complex.target.target_name
+                    row[DockingResultCols.SMILES.value] = complex.ligand.smiles
+                    row[DockingResultCols.GIF_PATH.value] = path
+                    data.append(row)
+                except Exception as e:
+                    if failure_mode == "skip":
+                        logger.error(f"Error processing {csp.unique_name}: {e}")
+                    elif failure_mode == "raise":
+                        raise e
+                    else:
+                        raise ValueError(
+                            f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                        )
+            return data
+
+        else:
+            raise NotImplementedError(
+                f"Cannot dispatch visualization on inputs of type {type(inputs[0])}"
+            )
 
 
 def add_gif_progress_bar(

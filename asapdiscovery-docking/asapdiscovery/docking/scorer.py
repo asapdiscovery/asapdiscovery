@@ -10,8 +10,7 @@ import MDAnalysis as mda
 import numpy as np
 import pandas as pd
 from mtenn.config import ModelType
-from multimethod import multimethod
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from asapdiscovery.data.backend.openeye import oedocking, oemol_to_pdb_string
 from asapdiscovery.data.schema.complex import Complex
@@ -118,8 +117,6 @@ class Score(BaseModel):
     Result of scoring, we don't embed the input result because it can be large,
     instead we just store the input result ids.
     """
-
-    model_config = ConfigDict(ignored_types=(multimethod,))
 
     score_type: ScoreType
     score: float
@@ -260,8 +257,6 @@ class ScorerBase(BaseModel):
     Base class for scoring functions.
     """
 
-    model_config = ConfigDict(ignored_types=(multimethod,))
-
     score_type: ScoreType = Field(ScoreType.INVALID, description="Type of score")
     score_units: ClassVar[ScoreUnits.INVALID] = ScoreUnits.INVALID
 
@@ -392,69 +387,70 @@ class ChemGauss4Scorer(ScorerBase):
             inputs, return_for_disk_backend=return_for_disk_backend, **kwargs
         )
 
-    @multimethod
     def _dispatch(
         self,
-        inputs: list[DockingResult],
+        inputs,
         return_for_disk_backend: bool = False,
         **kwargs,
     ) -> list[Score]:
         """
-        Dispatch for DockingResults
+        Dispatch scoring based on the type of the input elements
+        (DockingResults, Complexes, or Paths to PDB files).
         """
-        results = []
-        for inp in inputs:
-            posed_mol = inp.posed_ligand.to_oemol()
-            pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
-            du = inp.input_pair.complex.target.to_oedu()
-            pose_scorer.Initialize(du)
-            chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
+        if not inputs:
+            return []
 
-            sc = Score.from_score_and_docking_result(
-                chemgauss_score, self.score_type, self.units, inp
-            )
+        if isinstance(inputs[0], DockingResult):
+            results = []
+            for inp in inputs:
+                posed_mol = inp.posed_ligand.to_oemol()
+                pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
+                du = inp.input_pair.complex.target.to_oedu()
+                pose_scorer.Initialize(du)
+                chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
 
-            # overwrite the input with the path to the file
-            if return_for_disk_backend:
-                sc.input = _get_disk_path_from_docking_result(inp)
-
-            results.append(sc)
-        return results
-
-    @_dispatch.register
-    def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
-        """
-        Dispatch for Complexes
-        """
-        results = []
-        for inp in inputs:
-            posed_mol = inp.ligand.to_oemol()
-            pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
-            receptor = inp.target.to_oemol()
-            pose_scorer.Initialize(receptor)
-            chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
-            results.append(
-                Score.from_score_and_complex(
+                sc = Score.from_score_and_docking_result(
                     chemgauss_score, self.score_type, self.units, inp
                 )
-            )
-        return results
 
-    @_dispatch.register
-    def _dispatch(self, inputs: list[Path], **kwargs) -> list[Score]:
-        """
-        Dispatch for PDB files from disk
-        """
-        # assuming reading PDB files from disk
-        complexes = [
-            Complex.from_pdb(
-                p,
-                ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
-                target_kwargs={"target_name": f"{p.stem}_target"},
+                # overwrite the input with the path to the file
+                if return_for_disk_backend:
+                    sc.input = _get_disk_path_from_docking_result(inp)
+
+                results.append(sc)
+            return results
+
+        elif isinstance(inputs[0], Complex):
+            results = []
+            for inp in inputs:
+                posed_mol = inp.ligand.to_oemol()
+                pose_scorer = oedocking.OEScore(oedocking.OEScoreType_Chemgauss4)
+                receptor = inp.target.to_oemol()
+                pose_scorer.Initialize(receptor)
+                chemgauss_score = pose_scorer.ScoreLigand(posed_mol)
+                results.append(
+                    Score.from_score_and_complex(
+                        chemgauss_score, self.score_type, self.units, inp
+                    )
+                )
+            return results
+
+        elif isinstance(inputs[0], Path):
+            # assuming reading PDB files from disk
+            complexes = [
+                Complex.from_pdb(
+                    p,
+                    ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
+                    target_kwargs={"target_name": f"{p.stem}_target"},
+                )
+                for p in inputs
+            ]
+            return self._dispatch(complexes)
+
+        else:
+            raise NotImplementedError(
+                f"Cannot dispatch scoring on inputs of type {type(inputs[0])}"
             )
-            for p in inputs
-        ]
-        return self._dispatch(complexes)
 
 
 class FINTScorer(ScorerBase):
@@ -492,66 +488,67 @@ class FINTScorer(ScorerBase):
             inputs, return_for_disk_backend=return_for_disk_backend, **kwargs
         )
 
-    @multimethod
     def _dispatch(
         self,
-        inputs: list[DockingResult],
+        inputs,
         return_for_disk_backend: bool = False,
         **kwargs,
     ) -> list[Score]:
         """
-        Dispatch for DockingResults
+        Dispatch scoring based on the type of the input elements
+        (DockingResults, Complexes, or Paths to PDB files).
         """
-        results = []
-        for inp in inputs:
-            _, fint_score = compute_fint_score(
-                inp.to_protein(), inp.posed_ligand.to_oemol(), self.target
-            )
+        if not inputs:
+            return []
 
-            sc = Score.from_score_and_docking_result(
-                fint_score, self.score_type, self.units, inp
-            )
-            # overwrite the input with the path to the file
-            if return_for_disk_backend:
-                sc.input = _get_disk_path_from_docking_result(inp)
+        if isinstance(inputs[0], DockingResult):
+            results = []
+            for inp in inputs:
+                _, fint_score = compute_fint_score(
+                    inp.to_protein(), inp.posed_ligand.to_oemol(), self.target
+                )
 
-            results.append(sc)
-
-        return results
-
-    @_dispatch.register
-    def _dispatch(self, inputs: list[Complex], **kwargs):
-        """
-        Dispatch for Complexes
-        """
-        results = []
-        for inp in inputs:
-            _, fint_score = compute_fint_score(
-                inp.target.to_oemol(), inp.ligand.to_oemol(), self.target
-            )
-            results.append(
-                Score.from_score_and_complex(
+                sc = Score.from_score_and_docking_result(
                     fint_score, self.score_type, self.units, inp
                 )
-            )
-        return results
+                # overwrite the input with the path to the file
+                if return_for_disk_backend:
+                    sc.input = _get_disk_path_from_docking_result(inp)
 
-    @_dispatch.register
-    def _dispatch(self, inputs: list[Path], **kwargs):
-        """
-        Dispatch for PDB files from disk
-        """
-        # assuming reading PDB files from disk
-        complexes = [
-            Complex.from_pdb(
-                p,
-                ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
-                target_kwargs={"target_name": f"{p.stem}_target"},
-            )
-            for p in inputs
-        ]
+                results.append(sc)
 
-        return self._dispatch(complexes, **kwargs)
+            return results
+
+        elif isinstance(inputs[0], Complex):
+            results = []
+            for inp in inputs:
+                _, fint_score = compute_fint_score(
+                    inp.target.to_oemol(), inp.ligand.to_oemol(), self.target
+                )
+                results.append(
+                    Score.from_score_and_complex(
+                        fint_score, self.score_type, self.units, inp
+                    )
+                )
+            return results
+
+        elif isinstance(inputs[0], Path):
+            # assuming reading PDB files from disk
+            complexes = [
+                Complex.from_pdb(
+                    p,
+                    ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
+                    target_kwargs={"target_name": f"{p.stem}_target"},
+                )
+                for p in inputs
+            ]
+
+            return self._dispatch(complexes, **kwargs)
+
+        else:
+            raise NotImplementedError(
+                f"Cannot dispatch scoring on inputs of type {type(inputs[0])}"
+            )
 
 
 # keep track of all the ml scorers
@@ -697,73 +694,76 @@ class GATScorer(MLModelScorer):
             inputs, return_for_disk_backend=return_for_disk_backend, **kwargs
         )
 
-    @multimethod
     def _dispatch(
         self,
-        inputs: list[DockingResult],
+        inputs,
         return_for_disk_backend: bool = False,
         **kwargs,
     ) -> list[Score]:
         """
-        Dispatch for DockingResults
+        Dispatch scoring based on the type of the input elements
+        (DockingResults, SMILES strings, or Ligands).
         """
-        results = []
-        for inp in inputs:
-            gat_score = self.inference_cls.predict_from_smiles(inp.posed_ligand.smiles)
-            sc = Score.from_score_and_docking_result(
-                gat_score,
-                self.score_type,
-                self.units,
-                inp,
-            )
-            # overwrite the input with the path to the file
-            if return_for_disk_backend:
-                sc.input = _get_disk_path_from_docking_result(inp)
-            results.append(sc)
-        return results
+        if not inputs:
+            return []
 
-    @_dispatch.register
-    def _dispatch(self, inputs: list[str], **kwargs) -> list[Score]:
-        """
-        Dispatch for SMILES strings
-        """
-        results = []
-        for inp in inputs:
-            gat_score = self.inference_cls.predict_from_smiles(inp)
-            results.append(
-                Score.from_score_and_smiles(
+        if isinstance(inputs[0], DockingResult):
+            results = []
+            for inp in inputs:
+                gat_score = self.inference_cls.predict_from_smiles(
+                    inp.posed_ligand.smiles
+                )
+                sc = Score.from_score_and_docking_result(
                     gat_score,
-                    inp,
                     self.score_type,
                     self.units,
-                )
-            )
-        return results
-
-    @_dispatch.register
-    def _dispatch(self, inputs: list[Ligand], **kwargs) -> list[Score]:
-        """
-        Dispatch for Ligands
-        """
-        results = []
-        for inp in inputs:
-            gat_score = self.inference_cls.predict_from_smiles(inp.smiles)
-            results.append(
-                Score.from_score_and_ligand(
-                    gat_score,
                     inp,
-                    self.score_type,
-                    self.units,
                 )
+                # overwrite the input with the path to the file
+                if return_for_disk_backend:
+                    sc.input = _get_disk_path_from_docking_result(inp)
+                results.append(sc)
+            return results
+
+        elif isinstance(inputs[0], Ligand):
+            results = []
+            for inp in inputs:
+                gat_score = self.inference_cls.predict_from_smiles(inp.smiles)
+                results.append(
+                    Score.from_score_and_ligand(
+                        gat_score,
+                        inp,
+                        self.score_type,
+                        self.units,
+                    )
+                )
+            return results
+
+        elif isinstance(inputs[0], str):
+            results = []
+            for inp in inputs:
+                gat_score = self.inference_cls.predict_from_smiles(inp)
+                results.append(
+                    Score.from_score_and_smiles(
+                        gat_score,
+                        inp,
+                        self.score_type,
+                        self.units,
+                    )
+                )
+            return results
+
+        else:
+            raise NotImplementedError(
+                f"Cannot dispatch scoring on inputs of type {type(inputs[0])}"
             )
-        return results
 
 
 class E3MLModelScorer(MLModelScorer):
     """
     Scoring using ML Models that operate over 3D structures
-    These all share an interface so we can use multimethods to dispatch
-    for the different input types for all subclasses.
+    These all share an interface so we can dispatch on the input type
+    for all subclasses.
     """
 
     model_type: ClassVar[ModelType.INVALID] = ModelType.INVALID
@@ -781,49 +781,61 @@ class E3MLModelScorer(MLModelScorer):
             inputs, return_for_disk_backend=return_for_disk_backend, **kwargs
         )
 
-    @multimethod
     def _dispatch(
         self,
-        inputs: list[DockingResult],
+        inputs,
         return_for_disk_backend: bool = False,
         **kwargs,
     ) -> list[Score]:
-        results = []
-        for inp in inputs:
-            score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
+        """
+        Dispatch scoring based on the type of the input elements
+        (DockingResults, Complexes, or Paths to PDB files).
+        """
+        if not inputs:
+            return []
 
-            sc = Score.from_score_and_docking_result(
-                score, self.score_type, self.units, inp
+        if isinstance(inputs[0], DockingResult):
+            results = []
+            for inp in inputs:
+                score = self.inference_cls.predict_from_oemol(inp.to_posed_oemol())
+
+                sc = Score.from_score_and_docking_result(
+                    score, self.score_type, self.units, inp
+                )
+                # overwrite the input with the path to the file
+                if return_for_disk_backend:
+                    sc.input = _get_disk_path_from_docking_result(inp)
+                results.append(sc)
+
+            return results
+
+        elif isinstance(inputs[0], Complex):
+            results = []
+            for inp in inputs:
+                score = self.inference_cls.predict_from_oemol(inp.to_combined_oemol())
+                results.append(
+                    Score.from_score_and_complex(
+                        score, self.score_type, self.units, inp
+                    )
+                )
+            return results
+
+        elif isinstance(inputs[0], Path):
+            # assuming reading PDB files from disk
+            complexes = [
+                Complex.from_pdb(
+                    p,
+                    ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
+                    target_kwargs={"target_name": f"{p.stem}_target"},
+                )
+                for i, p in enumerate(inputs)
+            ]
+            return self._dispatch(complexes, **kwargs)
+
+        else:
+            raise NotImplementedError(
+                f"Cannot dispatch scoring on inputs of type {type(inputs[0])}"
             )
-            # overwrite the input with the path to the file
-            if return_for_disk_backend:
-                sc.input = _get_disk_path_from_docking_result(inp)
-            results.append(sc)
-
-        return results
-
-    @_dispatch.register
-    def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
-        results = []
-        for inp in inputs:
-            score = self.inference_cls.predict_from_oemol(inp.to_combined_oemol())
-            results.append(
-                Score.from_score_and_complex(score, self.score_type, self.units, inp)
-            )
-        return results
-
-    @_dispatch.register
-    def _dispatch(self, inputs: list[Path], **kwargs) -> list[Score]:
-        # assuming reading PDB files from disk
-        complexes = [
-            Complex.from_pdb(
-                p,
-                ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
-                target_kwargs={"target_name": f"{p.stem}_target"},
-            )
-            for i, p in enumerate(inputs)
-        ]
-        return self._dispatch(complexes, **kwargs)
 
 
 @register_ml_scorer
@@ -860,8 +872,6 @@ class MetaScorer(BaseModel):
     """
     Score from a combination of other scorers, the scorers must share an input type,
     """
-
-    model_config = ConfigDict(ignored_types=(multimethod,))
 
     scorers: list[ScorerBase] = Field(..., description="Scorers to score with")
 
@@ -927,11 +937,18 @@ class SymClashScorer(ScorerBase):
         """
         return self._dispatch(inputs, **kwargs)
 
-    @multimethod
-    def _dispatch(self, inputs: list[Complex], **kwargs) -> list[Score]:
+    def _dispatch(self, inputs, **kwargs) -> list[Score]:
         """
-        Dispatch for Complex
+        Dispatch scoring for Complexes.
         """
+        if not inputs:
+            return []
+
+        if not isinstance(inputs[0], Complex):
+            raise NotImplementedError(
+                f"Cannot dispatch scoring on inputs of type {type(inputs[0])}"
+            )
+
         results = []
         warnings.warn(
             "SymClashScorer relies on expanded protein units having chain X as constructed by SymmetryExpander"
