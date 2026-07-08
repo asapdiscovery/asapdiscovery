@@ -19,7 +19,7 @@ from asapdiscovery.data.services.services_config import (
     PosteraSettings,
     S3Settings,
 )
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.data.schema.docking_data_validation import DockingResultCols
 
 
 class ArtifactType(Enum):

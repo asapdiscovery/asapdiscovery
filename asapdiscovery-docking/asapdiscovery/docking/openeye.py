@@ -20,7 +20,7 @@ from asapdiscovery.docking.docking import (
     DockingInputPair,
     DockingResult,
 )
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.data.schema.docking_data_validation import DockingResultCols
 
 logger = logging.getLogger(__name__)
 

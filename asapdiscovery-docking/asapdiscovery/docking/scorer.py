@@ -25,7 +25,7 @@ from asapdiscovery.data.util.dask_utils import (
     dask_vmap,
 )
 from asapdiscovery.docking.docking import DockingResult
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.data.schema.docking_data_validation import DockingResultCols
 from asapdiscovery.ml.inference import InferenceBase, get_inference_cls_from_model_type
 from asapdiscovery.ml.models import MLModelSpecBase
 from asapdiscovery.spectrum.fitness import target_has_fitness_data

@@ -34,7 +34,7 @@ from asapdiscovery.data.util.logging import HiddenPrint
 from asapdiscovery.dataviz._html_blocks import HTMLBlockData
 from asapdiscovery.dataviz.visualizer import VisualizerBase
 from asapdiscovery.docking.docking import DockingResult
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.data.schema.docking_data_validation import DockingResultCols
 from asapdiscovery.modeling.modeling import superpose_molecule  # TODO: move to backend
 from asapdiscovery.spectrum.fitness import (
     _FITNESS_DATA_FIT_THRESHOLD,

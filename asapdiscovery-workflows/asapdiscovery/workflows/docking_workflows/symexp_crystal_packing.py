@@ -29,7 +29,7 @@ from asapdiscovery.data.util.dask_utils import BackendType, make_dask_client_met
 from asapdiscovery.data.util.logging import FileLogger
 from asapdiscovery.data.util.utils import check_empty_dataframe
 from asapdiscovery.docking.docking import write_results_to_multi_sdf
-from asapdiscovery.docking.docking_data_validation import DockingResultCols
+from asapdiscovery.data.schema.docking_data_validation import DockingResultCols
 from asapdiscovery.docking.openeye import POSITDocker
 from asapdiscovery.docking.scorer import ChemGauss4Scorer, SymClashScorer
 from asapdiscovery.modeling.protein_prep import ProteinPrepper
