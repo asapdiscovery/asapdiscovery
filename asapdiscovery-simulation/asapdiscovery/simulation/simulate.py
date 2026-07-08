@@ -10,7 +10,6 @@ import openmm
 import pandas as pd
 from mdtraj.core.residue_names import _SOLVENT_TYPES
 from mdtraj.reporters import XTCReporter
-from multimethod import multimethod
 from openff.toolkit.topology import Molecule
 from openmm import LangevinMiddleIntegrator, MonteCarloBarostat, Platform, app, unit
 from openmm.app import Modeller, PDBFile, Simulation, StateDataReporter
@@ -206,7 +205,6 @@ class VanillaMDSimulator(SimulatorBase):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         extra="allow",
-        ignored_types=(multimethod,),
     )
 
     @model_validator(mode="after")
@@ -296,69 +294,79 @@ class VanillaMDSimulator(SimulatorBase):
 
         return self._dispatch(inputs, outpaths=outpaths, **kwargs)
 
-    @multimethod
-    def _dispatch(
-        self, inputs: list[DockingResult], failure_mode: str = "skip", **kwargs
-    ):
-        # outpaths is unused in this overload
-        results = []
-        for inp in inputs:
-            try:
-                output_pref = inp.unique_name
-                outpath = self.output_dir / output_pref
-                if not outpath.exists():
-                    outpath.mkdir(parents=True)
-                posed_sdf_path = outpath / "posed_ligand.sdf"
-                inp.posed_ligand.to_sdf(posed_sdf_path)
-                # write pdb to pre file
-                pre_pdb_path = outpath / "pre.pdb"
-                save_openeye_pdb(inp.to_protein(), pre_pdb_path)
-                res = self._simulate_loop(
-                    pre_pdb_path, posed_sdf_path, outpath, input_docking_result=inp
-                )
-                results.append(res)
-            except Exception as e:
-                if failure_mode == "skip":
-                    logger.error(f"Error processing {inp.unique_name}: {e}")
-                elif failure_mode == "raise":
-                    raise e
-                else:
-                    raise ValueError(
-                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
-                    )
-        return results
-
-    @_dispatch.register
     def _dispatch(
         self,
-        inputs: list[tuple[Path, Path]],
+        inputs,
         outpaths: Optional[list[Path]] = None,
         failure_mode: str = "skip",
+        **kwargs,
     ):
-        results = []
-        if not outpaths:
-            outpaths = [None] * len(inputs)
-        for (protein, ligand), outpath in zip(inputs, outpaths):
-            try:
-                tag = protein.stem + "_" + ligand.stem
-                if outpath:
-                    outpath = Path(outpath) / tag
-                else:
-                    outpath = self.output_dir / tag
-                if not outpath.exists():
-                    outpath.mkdir(parents=True)
-                res = self._simulate_loop(protein, ligand, outpath)
-                results.append(res)
-            except Exception as e:
-                if failure_mode == "skip":
-                    logger.error(f"Error processing {tag}: {e}")
-                elif failure_mode == "raise":
-                    raise e
-                else:
-                    raise ValueError(
-                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+        """
+        Dispatch simulation based on the type of the input elements:
+        DockingResults, or (protein_path, ligand_path) tuples.
+        """
+        if not inputs:
+            return []
+
+        if isinstance(inputs[0], DockingResult):
+            # outpaths is unused for DockingResult inputs
+            results = []
+            for inp in inputs:
+                try:
+                    output_pref = inp.unique_name
+                    outpath = self.output_dir / output_pref
+                    if not outpath.exists():
+                        outpath.mkdir(parents=True)
+                    posed_sdf_path = outpath / "posed_ligand.sdf"
+                    inp.posed_ligand.to_sdf(posed_sdf_path)
+                    # write pdb to pre file
+                    pre_pdb_path = outpath / "pre.pdb"
+                    save_openeye_pdb(inp.to_protein(), pre_pdb_path)
+                    res = self._simulate_loop(
+                        pre_pdb_path, posed_sdf_path, outpath, input_docking_result=inp
                     )
-        return results
+                    results.append(res)
+                except Exception as e:
+                    if failure_mode == "skip":
+                        logger.error(f"Error processing {inp.unique_name}: {e}")
+                    elif failure_mode == "raise":
+                        raise e
+                    else:
+                        raise ValueError(
+                            f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                        )
+            return results
+
+        elif isinstance(inputs[0], tuple):
+            results = []
+            if not outpaths:
+                outpaths = [None] * len(inputs)
+            for (protein, ligand), outpath in zip(inputs, outpaths):
+                try:
+                    tag = protein.stem + "_" + ligand.stem
+                    if outpath:
+                        outpath = Path(outpath) / tag
+                    else:
+                        outpath = self.output_dir / tag
+                    if not outpath.exists():
+                        outpath.mkdir(parents=True)
+                    res = self._simulate_loop(protein, ligand, outpath)
+                    results.append(res)
+                except Exception as e:
+                    if failure_mode == "skip":
+                        logger.error(f"Error processing {tag}: {e}")
+                    elif failure_mode == "raise":
+                        raise e
+                    else:
+                        raise ValueError(
+                            f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                        )
+            return results
+
+        else:
+            raise NotImplementedError(
+                f"Cannot dispatch simulation on inputs of type {type(inputs[0])}"
+            )
 
     def _simulate_loop(
         self,

@@ -11,8 +11,7 @@ import logomaker
 import matplotlib.pyplot as plt
 import pandas as pd
 from airium import Airium
-from multimethod import multimethod
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
 
 from asapdiscovery.data.backend.openeye import (
     combine_protein_ligand,
@@ -24,7 +23,6 @@ from asapdiscovery.data.backend.openeye import (
 )
 from asapdiscovery.data.metadata.resources import active_site_chains, master_structures
 from asapdiscovery.data.schema.complex import Complex
-from asapdiscovery.data.schema.ligand import Ligand
 from asapdiscovery.data.services.postera.manifold_data_validation import (
     TargetTags,
     TargetVirusMap,
@@ -107,8 +105,6 @@ class HTMLVisualizer(VisualizerBase):
     fitness_data_logoplots: Optional[Any] = None
     reference_protein: Optional[Any] = None
 
-    model_config = ConfigDict(ignored_types=(multimethod,))
-
     @model_validator(mode="before")
     @classmethod
     def check_and_set_chains(cls, values):
@@ -183,255 +179,195 @@ class HTMLVisualizer(VisualizerBase):
     def provenance(self):
         return {}
 
-    @multimethod
     def _dispatch(
         self,
-        inputs: list[DockingResult],
+        inputs,
         outpaths: Optional[list[Path]] = None,
         failure_mode: str = "skip",
         **kwargs,
     ) -> Union[list[dict[str, str]], list[str]]:
         """
-        Implementation for a list of DockingResult objects.
-
-        Parameters
-        ----------
-        inputs : list[DockingResult]
-            List of DockingResult objects
-        outpaths : Optional[list[Path]], optional
-            List of output paths, by default None
-
-        Returns
-        -------
-        Union[list[dict[str, str]], list[str]]
-            List of metadata dictionaries or list of HTML strings if write_to_disk is False
+        Dispatch visualization based on the type of the input elements:
+        DockingResults, Complexes, Paths to PDB files, or
+        (Complex, list[Ligand]) tuples.
         """
-        data = []
-        viz_data = []
+        if not inputs:
+            return []
 
-        for i, result in enumerate(inputs):
-            try:
-                output_pref = result.unique_name
-                if self.write_to_disk:
-                    if not outpaths:
-                        outpath = self.output_dir / output_pref / "pose.html"
+        if isinstance(inputs[0], DockingResult):
+            data = []
+            viz_data = []
+
+            for i, result in enumerate(inputs):
+                try:
+                    output_pref = result.unique_name
+                    if self.write_to_disk:
+                        if not outpaths:
+                            outpath = self.output_dir / output_pref / "pose.html"
+                        else:
+                            outpath = self.output_dir / Path(outpaths[i])
+                        outpath.parent.mkdir(parents=True, exist_ok=True)
                     else:
-                        outpath = self.output_dir / Path(outpaths[i])
-                    outpath.parent.mkdir(parents=True, exist_ok=True)
-                else:
-                    outpath = None  # we don't need to write to disk
+                        outpath = None  # we don't need to write to disk
 
-                viz = self.html_pose_viz(
-                    poses=[result.posed_ligand.to_oemol()], protein=result.to_protein()
-                )
-                viz_data.append(viz)
-                # write to disk
-                if self.write_to_disk:
-                    self.write_html(viz, outpath)
-
-                # make dataframe with ligand name, target name, and path to HTML
-                row = {}
-                row[DockingResultCols.LIGAND_ID.value] = (
-                    result.input_pair.ligand.compound_name
-                )
-                row[DockingResultCols.TARGET_ID.value] = (
-                    result.input_pair.complex.target.target_name
-                )
-                row[DockingResultCols.SMILES.value] = result.posed_ligand.smiles
-                row[self.get_tag_for_color_method()] = outpath
-                data.append(row)
-            except Exception as e:
-                if failure_mode == "skip":
-                    logger.error(f"Error processing {result.unique_name}: {e}")
-                elif failure_mode == "raise":
-                    raise e
-                else:
-                    raise ValueError(
-                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                    viz = self.html_pose_viz(
+                        poses=[result.posed_ligand.to_oemol()],
+                        protein=result.to_protein(),
                     )
+                    viz_data.append(viz)
+                    # write to disk
+                    if self.write_to_disk:
+                        self.write_html(viz, outpath)
 
-        if self.write_to_disk:
-            return data
-        else:
-            return viz_data
+                    # make dataframe with ligand name, target name, and path to HTML
+                    row = {}
+                    row[DockingResultCols.LIGAND_ID.value] = (
+                        result.input_pair.ligand.compound_name
+                    )
+                    row[DockingResultCols.TARGET_ID.value] = (
+                        result.input_pair.complex.target.target_name
+                    )
+                    row[DockingResultCols.SMILES.value] = result.posed_ligand.smiles
+                    row[self.get_tag_for_color_method()] = outpath
+                    data.append(row)
+                except Exception as e:
+                    if failure_mode == "skip":
+                        logger.error(f"Error processing {result.unique_name}: {e}")
+                    elif failure_mode == "raise":
+                        raise e
+                    else:
+                        raise ValueError(
+                            f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                        )
 
-    @_dispatch.register
-    def _dispatch(
-        self, inputs: list[Path], outpaths: Optional[list[Path]] = None, **kwargs
-    ) -> Union[list[dict[str, str]], list[str]]:
-        """
-        Implementation for a list of Path objects. Assumes that the Path objects are PDB files.
-        in turn calls the Complex version of the dispatch.
+            if self.write_to_disk:
+                return data
+            else:
+                return viz_data
 
-        Parameters
-        ----------
-        inputs : list[Path]
-            List of Path objects
-        outpaths : Optional[list[Path]], optional
-            List of output paths, by default None
+        elif isinstance(inputs[0], Complex):
+            data = []
+            viz_data = []
+            for i, cmplx in enumerate(inputs):
+                try:
+                    if self.write_to_disk:
+                        if not outpaths:
+                            output_pref = cmplx.unique_name
+                            outpath = self.output_dir / output_pref / "pose.html"
+                        else:
+                            outpath = self.output_dir / Path(outpaths[i])
 
-        Returns
-        -------
-        Union[list[dict[str, str]], list[str]]
-            List of metadata dictionaries or list of HTML strings if write_to_disk is False
-        """
-        complexes = [
-            Complex.from_pdb(
-                p,
-                target_kwargs={"target_name": f"{p.stem}_target"},
-                ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
+                        outpath.parent.mkdir(parents=True, exist_ok=True)
+                    else:
+                        outpath = None
+
+                    # make html string
+                    viz = self.html_pose_viz(
+                        poses=[cmplx.ligand.to_oemol()], protein=cmplx.target.to_oemol()
+                    )
+                    viz_data.append(viz)
+                    # write to disk
+                    if self.write_to_disk:
+                        self.write_html(viz, outpath)
+
+                    # make dataframe with ligand name, target name, and path to HTML
+                    row = {}
+                    row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
+                    row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
+                    row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
+                    row[self.get_tag_for_color_method()] = outpath
+                    data.append(row)
+                except Exception as e:
+                    if failure_mode == "skip":
+                        logger.error(f"Error processing {cmplx.unique_name}: {e}")
+                    elif failure_mode == "raise":
+                        raise e
+                    else:
+                        raise ValueError(
+                            f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                        )
+
+            if self.write_to_disk:
+                # if we are writing to disk, return the metadata
+                return data
+            else:
+                # if we are not writing to disk, return the HTML strings
+                return viz_data
+
+        elif isinstance(inputs[0], Path):
+            # assuming reading PDB files from disk; dispatch to the Complex branch
+            complexes = [
+                Complex.from_pdb(
+                    p,
+                    target_kwargs={"target_name": f"{p.stem}_target"},
+                    ligand_kwargs={"compound_name": f"{p.stem}_ligand"},
+                )
+                for i, p in enumerate(inputs)
+            ]
+            return self._dispatch(
+                complexes, outpaths=outpaths, failure_mode=failure_mode, **kwargs
             )
-            for i, p in enumerate(inputs)
-        ]
-        # dispatch to complex version
-        return self._dispatch(complexes, outpaths=outpaths, **kwargs)
 
-    @_dispatch.register
-    def _dispatch(
-        self,
-        inputs: list[Complex],
-        outpaths: Optional[list[Path]] = None,
-        failure_mode: str = "skip",
-        **kwargs,
-    ) -> Union[list[dict[str, str]], list[str]]:
-        """
-        Implementation for a list of Complex objects.
-
-        Parameters
-        ----------
-        inputs : list[Complex]
-            List of Complex objects
-        outpaths : Optional[list[Path]], optional
-            List of output paths, by default None
-
-        Returns
-        -------
-        Union[list[dict[str, str]], list[str]]
-            List of metadata dictionaries or list of HTML strings if write_to_disk is False
-        """
-        data = []
-        viz_data = []
-        for i, cmplx in enumerate(inputs):
-            try:
-                if self.write_to_disk:
-                    if not outpaths:
-                        output_pref = cmplx.unique_name
-                        outpath = self.output_dir / output_pref / "pose.html"
+        elif isinstance(inputs[0], tuple):
+            # each input is a (Complex, list[Ligand]) tuple; every ligand in the
+            # list is visualized, useful for multiple poses of a single ligand,
+            # or multiple ligands in a single complex.
+            data = []
+            viz_data = []
+            for i, inp in enumerate(inputs):
+                try:
+                    cmplx, liglist = inp
+                    if self.write_to_disk:
+                        if not outpaths:
+                            output_pref = cmplx.unique_name
+                            outpath = self.output_dir / output_pref / "pose.html"
+                        else:
+                            outpath = self.output_dir / Path(outpaths[i])
+                        outpath.parent.mkdir(parents=True, exist_ok=True)
                     else:
-                        outpath = self.output_dir / Path(outpaths[i])
+                        outpath = None
 
-                    outpath.parent.mkdir(parents=True, exist_ok=True)
-                else:
-                    outpath = None
-
-                # make html string
-                viz = self.html_pose_viz(
-                    poses=[cmplx.ligand.to_oemol()], protein=cmplx.target.to_oemol()
-                )
-                viz_data.append(viz)
-                # write to disk
-                if self.write_to_disk:
-                    self.write_html(viz, outpath)
-
-                # make dataframe with ligand name, target name, and path to HTML
-                row = {}
-                row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
-                row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
-                row[DockingResultCols.SMILES.value] = cmplx.ligand.smiles
-                row[self.get_tag_for_color_method()] = outpath
-                data.append(row)
-            except Exception as e:
-                if failure_mode == "skip":
-                    logger.error(f"Error processing {cmplx.unique_name}: {e}")
-                elif failure_mode == "raise":
-                    raise e
-                else:
-                    raise ValueError(
-                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                    # make html string
+                    viz = self.html_pose_viz(
+                        poses=[lig.to_oemol() for lig in liglist],
+                        protein=cmplx.target.to_oemol(),
                     )
+                    viz_data.append(viz)
+                    # write to disk
+                    if self.write_to_disk:
+                        self.write_html(viz, outpath)
 
-        if self.write_to_disk:
-            # if we are writing to disk, return the metadata
-            return data
-        else:
-            # if we are not writing to disk, return the HTML strings
-            return viz_data
-
-    @_dispatch.register
-    def _dispatch(
-        self,
-        inputs: list[tuple[Complex, list[Ligand]]],
-        outpaths: Optional[list[Path]] = None,
-        failure_mode: str = "skip",
-        **kwargs,
-    ) -> Union[list[dict[str, str]], list[str]]:
-        """
-        Implementation for a list of tuples of Complex and list of Ligand objects. Each ligand in the list is visualized, making this perfect for
-        visualizing multiple poses of a single ligand, or multiple ligands in a single complex.
-
-        Parameters
-        ----------
-        inputs : list[tuple[Complex, list[Ligand]]]
-            List of tuples of Complex and list of Ligand objects
-        outpaths : Optional[list[Path]], optional
-            List of output paths, by default None
-
-        Returns
-        -------
-        Union[list[dict[str, str]], list[str]]
-            List of metadata dictionaries or list of HTML strings if write_to_disk is False
-        """
-        data = []
-        viz_data = []
-        for i, inp in enumerate(inputs):
-            try:
-                cmplx, liglist = inp
-                if self.write_to_disk:
-                    if not outpaths:
-                        output_pref = cmplx.unique_name
-                        outpath = self.output_dir / output_pref / "pose.html"
+                    # make dataframe with ligand name, target name, and path to HTML
+                    row = {}
+                    row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
+                    row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
+                    if len(liglist) > 1:
+                        row[DockingResultCols.SMILES.value] = "MANY"
                     else:
-                        outpath = self.output_dir / Path(outpaths[i])
-                    outpath.parent.mkdir(parents=True, exist_ok=True)
-                else:
-                    outpath = None
+                        row[DockingResultCols.SMILES.value] = liglist[0].smiles
+                    row[self.get_tag_for_color_method()] = outpath
+                    data.append(row)
+                except Exception as e:
+                    if failure_mode == "skip":
+                        logger.error(f"Error processing {cmplx.unique_name}: {e}")
+                    elif failure_mode == "raise":
+                        raise e
+                    else:
+                        raise ValueError(
+                            f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
+                        )
 
-                # make html string
-                viz = self.html_pose_viz(
-                    poses=[lig.to_oemol() for lig in liglist],
-                    protein=cmplx.target.to_oemol(),
-                )
-                viz_data.append(viz)
-                # write to disk
-                if self.write_to_disk:
-                    self.write_html(viz, outpath)
+            if self.write_to_disk:
+                # if we are writing to disk, return the metadata
+                return data
+            else:
+                # if we are not writing to disk, return the HTML strings
+                return viz_data
 
-                # make dataframe with ligand name, target name, and path to HTML
-                row = {}
-                row[DockingResultCols.LIGAND_ID.value] = cmplx.ligand.compound_name
-                row[DockingResultCols.TARGET_ID.value] = cmplx.target.target_name
-                if len(liglist) > 1:
-                    row[DockingResultCols.SMILES.value] = "MANY"
-                else:
-                    row[DockingResultCols.SMILES.value] = liglist[0].smiles
-                row[self.get_tag_for_color_method()] = outpath
-                data.append(row)
-            except Exception as e:
-                if failure_mode == "skip":
-                    logger.error(f"Error processing {cmplx.unique_name}: {e}")
-                elif failure_mode == "raise":
-                    raise e
-                else:
-                    raise ValueError(
-                        f"Unknown error mode: {failure_mode}, must be 'skip' or 'raise'"
-                    )
-
-        if self.write_to_disk:
-            # if we are writing to disk, return the metadata
-            return data
         else:
-            # if we are not writing to disk, return the HTML strings
-            return viz_data
+            raise NotImplementedError(
+                f"Cannot dispatch visualization on inputs of type {type(inputs[0])}"
+            )
 
     def html_pose_viz(
         self, poses: list[oechem.OEMolBase], protein: oechem.OEMolBase, **kwargs
