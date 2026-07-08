@@ -709,6 +709,51 @@ def test_alchemy_stop_hard(monkeypatch):
     )
 
 
+def test_alchemy_restart_network_key(monkeypatch):
+    """Test restarting errored tasks on a network identified by its ScopedKey,
+    without needing a planned_network.json file."""
+    monkeypatch.setenv("ALCHEMISCALE_ID", "my-id")
+    monkeypatch.setenv("ALCHEMISCALE_KEY", "my-key")
+
+    runner = CliRunner()
+
+    network_key = ScopedKey(
+        gufe_key="fakenetwork-12345",
+        org="asap",
+        campaign="alchemy",
+        project="testing",
+    )
+    errored_tasks = [
+        ScopedKey(
+            gufe_key=f"task-{i}",
+            org="asap",
+            campaign="alchemy",
+            project="testing",
+        )
+        for i in range(3)
+    ]
+
+    def check_exists(*args, **kwargs):
+        return True
+
+    def get_network_tasks(self, network, status=None):
+        assert ScopedKey.from_str(network) == network_key
+        assert status == "error"
+        return errored_tasks
+
+    def set_tasks_status(self, tasks, status=None):
+        assert status == "waiting"
+        return tasks
+
+    monkeypatch.setattr(AlchemiscaleClient, "check_exists", check_exists)
+    monkeypatch.setattr(AlchemiscaleClient, "get_network_tasks", get_network_tasks)
+    monkeypatch.setattr(AlchemiscaleClient, "set_tasks_status", set_tasks_status)
+
+    result = runner.invoke(alchemy, ["restart", "-nk", network_key])
+    assert click_success(result)
+    assert "Restarted 3 Tasks" in result.stdout
+
+
 def test_submit_bad_campaign(tyk2_fec_network, tmpdir):
     """Make sure an error is raised if the org is asap but the campaign is not in public or confidential."""
 
