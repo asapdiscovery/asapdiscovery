@@ -308,20 +308,22 @@ class AlchemiscaleHelper:
             else:
                 phase = "solvent"
 
-            # extract the names of the end state ligands to build the affinity estimate graph
-            name_a = individual_runs[0][0].inputs["stateA"].components["ligand"].name
-            name_b = individual_runs[0][0].inputs["stateB"].components["ligand"].name
-            # print(individual_runs[0][0].inputs["stateB"].components["ligand"], name_b)
+            # extract the name of the ligand in stateA; stateB may have no ligand
+            # for node-based (ABFE) protocols where the ligand is annihilated
+            stateA_components = individual_runs[0][0].inputs["stateA"].components
+            stateB_components = individual_runs[0][0].inputs["stateB"].components
 
-            # if end state ligands did not have names, use SMILES instead
+            name_a = stateA_components["ligand"].name
             if not name_a:
-                name_a = (
-                    individual_runs[0][0].inputs["stateA"].components["ligand"].smiles
-                )
-            if not name_b:
-                name_b = (
-                    individual_runs[0][0].inputs["stateB"].components["ligand"].smiles
-                )
+                name_a = stateA_components["ligand"].smiles
+
+            if "ligand" in stateB_components:
+                name_b = stateB_components["ligand"].name
+                if not name_b:
+                    name_b = stateB_components["ligand"].smiles
+            else:
+                # ABFE: stateB has no ligand (annihilated)
+                name_b = None
 
             results.append(
                 TransformationResult(

@@ -9,6 +9,7 @@ from asapdiscovery.alchemy.schema.protocols import (
     build_protocol,
     default_protocol_settings,
     get_protocol_class,
+    is_node_protocol,
     protocol_name_for,
 )
 
@@ -16,8 +17,40 @@ from asapdiscovery.alchemy.schema.protocols import (
 def test_available_protocols():
     names = available_protocols()
     assert "RelativeHybridTopologyProtocol" in names
+    assert "SepTopProtocol" in names
+    assert "AbsoluteBindingProtocol" in names
     assert "NonEquilibriumCyclingProtocol" in names
     assert "FahNonEquilibriumCyclingProtocol" in names
+
+
+def test_is_node_protocol():
+    """Edge-based protocols return False; ABFE returns True."""
+    assert not is_node_protocol("RelativeHybridTopologyProtocol")
+    assert not is_node_protocol("SepTopProtocol")
+    assert is_node_protocol("AbsoluteBindingProtocol")
+
+
+def test_is_node_protocol_unknown_raises():
+    with pytest.raises(KeyError, match="Unknown protocol"):
+        is_node_protocol("NotAProtocol")
+
+
+def test_septop_default_settings():
+    """SepTopProtocol defaults include the ASAP force field and one repeat."""
+    settings = default_protocol_settings("SepTopProtocol")
+    assert (
+        settings.forcefield_settings.small_molecule_forcefield == "openff-2.2.0.offxml"
+    )
+    assert settings.protocol_repeats == 1
+
+
+def test_abfe_default_settings():
+    """AbsoluteBindingProtocol defaults include the ASAP force field and one repeat."""
+    settings = default_protocol_settings("AbsoluteBindingProtocol")
+    assert (
+        settings.forcefield_settings.small_molecule_forcefield == "openff-2.2.0.offxml"
+    )
+    assert settings.protocol_repeats == 1
 
 
 @pytest.mark.parametrize("name", available_protocols())

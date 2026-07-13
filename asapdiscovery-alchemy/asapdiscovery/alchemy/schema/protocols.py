@@ -26,6 +26,9 @@ class _ProtocolRegistration(NamedTuple):
     protocol_class: str
     #: The distribution that must be installed to use this protocol (for error messages).
     package: str
+    #: True for node-based protocols (ABFE: one Transformation per ligand, no mapping);
+    #: False for edge-based protocols (RBFE: one Transformation per ligand *pair*).
+    is_node_protocol: bool = False
 
 
 #: Index of the alchemical protocols ASAP-Alchemy knows how to build.
@@ -35,6 +38,11 @@ PROTOCOL_REGISTRY: dict[str, _ProtocolRegistration] = {
     "RelativeHybridTopologyProtocol": _ProtocolRegistration(
         module="openfe.protocols.openmm_rfe",
         protocol_class="RelativeHybridTopologyProtocol",
+        package="openfe",
+    ),
+    "SepTopProtocol": _ProtocolRegistration(
+        module="openfe.protocols.openmm_septop",
+        protocol_class="SepTopProtocol",
         package="openfe",
     ),
     "NonEquilibriumCyclingProtocol": _ProtocolRegistration(
@@ -47,7 +55,32 @@ PROTOCOL_REGISTRY: dict[str, _ProtocolRegistration] = {
         protocol_class="FahNonEquilibriumCyclingProtocol",
         package="alchemiscale-fah",
     ),
+    "AbsoluteBindingProtocol": _ProtocolRegistration(
+        module="openfe.protocols.openmm_afe",
+        protocol_class="AbsoluteBindingProtocol",
+        package="openfe",
+        is_node_protocol=True,
+    ),
 }
+
+
+def is_node_protocol(name: str) -> bool:
+    """Return ``True`` if ``name`` is a node-based (ABFE) protocol.
+
+    Node-based protocols generate one ``Transformation`` per *ligand* (no
+    partner ligand and no atom mapping). Edge-based protocols generate one
+    ``Transformation`` per *ligand pair*.
+
+    Raises:
+        KeyError: If ``name`` is not a registered protocol.
+    """
+    try:
+        return PROTOCOL_REGISTRY[name].is_node_protocol
+    except KeyError:
+        raise KeyError(
+            f"Unknown protocol {name!r}; available protocols are "
+            f"{available_protocols()}."
+        )
 
 
 def available_protocols() -> list[str]:
@@ -119,10 +152,56 @@ def _asap_relative_hybrid_topology_settings() -> "Settings":
     return protocol_settings
 
 
+def _asap_septop_settings() -> "Settings":
+    """ASAP-tuned default settings for ``SepTopProtocol``.
+
+    Applies the same force-field and thermodynamic conditions as the RFE defaults
+    (openff-2.2.0, 298.15 K / 1 bar) and limits to a single protocol repeat, while
+    leaving simulation lengths and lambda schedules at the openfe upstream defaults.
+    """
+    from openff.units import unit as OFFUnit
+
+    protocol_class = get_protocol_class("SepTopProtocol")
+    protocol_settings = protocol_class.default_settings().unfrozen_copy()
+
+    protocol_settings.forcefield_settings.small_molecule_forcefield = (
+        "openff-2.2.0.offxml"
+    )
+    protocol_settings.thermo_settings.temperature = 298.15 * OFFUnit.kelvin
+    protocol_settings.thermo_settings.pressure = 1 * OFFUnit.bar
+    protocol_settings.protocol_repeats = 1
+
+    return protocol_settings
+
+
+def _asap_absolute_binding_settings() -> "Settings":
+    """ASAP-tuned default settings for ``AbsoluteBindingProtocol``.
+
+    Applies the same force-field and thermodynamic conditions as the RFE defaults
+    and limits to a single protocol repeat. Simulation lengths and lambda schedules
+    are left at the openfe upstream defaults.
+    """
+    from openff.units import unit as OFFUnit
+
+    protocol_class = get_protocol_class("AbsoluteBindingProtocol")
+    protocol_settings = protocol_class.default_settings().unfrozen_copy()
+
+    protocol_settings.forcefield_settings.small_molecule_forcefield = (
+        "openff-2.2.0.offxml"
+    )
+    protocol_settings.thermo_settings.temperature = 298.15 * OFFUnit.kelvin
+    protocol_settings.thermo_settings.pressure = 1 * OFFUnit.bar
+    protocol_settings.protocol_repeats = 1
+
+    return protocol_settings
+
+
 #: Builders that produce the ASAP-Alchemy default settings for a protocol. Where a
 #: protocol is absent, the protocol's own ``default_settings()`` is used unchanged.
 _DEFAULT_SETTINGS_BUILDERS = {
     "RelativeHybridTopologyProtocol": _asap_relative_hybrid_topology_settings,
+    "SepTopProtocol": _asap_septop_settings,
+    "AbsoluteBindingProtocol": _asap_absolute_binding_settings,
 }
 
 

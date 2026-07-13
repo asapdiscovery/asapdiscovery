@@ -661,3 +661,170 @@ def test_results_to_cinnabar_with_prediction(tyk2_result_network):
             uncertainty, abs=1e-6
         )
         assert relative_row["source"] == "calculated"
+
+
+# ---------------------------------------------------------------------------
+# SepTopProtocol tests
+# ---------------------------------------------------------------------------
+
+
+def test_fec_septop_network(tyk2_ligands, tyk2_protein):
+    """A SepTopProtocol network has solvent + complex transformations per edge."""
+    factory = FreeEnergyCalculationFactory(protocol=["SepTopProtocol"])
+    planned_network = factory.create_fec_dataset(
+        dataset_name="tyk2-septop", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    alchemical_network = planned_network.to_alchemical_network()
+
+    # every transformation belongs to SepTopProtocol
+    protocol_names = {type(e.protocol).__name__ for e in alchemical_network.edges}
+    assert protocol_names == {"SepTopProtocol"}
+
+    # both solvent and complex legs are present
+    legs = {
+        ("complex" if "protein" in e.stateA.components else "solvent")
+        for e in alchemical_network.edges
+    }
+    assert legs == {"complex", "solvent"}
+
+    # each edge carries an atom mapping
+    for edge in alchemical_network.edges:
+        assert edge.mapping is not None
+
+    # transformation names end with the protocol class name
+    for edge in alchemical_network.edges:
+        assert edge.name.endswith("SepTopProtocol")
+
+
+def test_fec_septop_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
+    """A SepTopProtocol network survives a to_file/from_file round-trip."""
+    factory = FreeEnergyCalculationFactory(protocol=["SepTopProtocol"])
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-septop-rt", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    path = tmp_path / "septop_network.json"
+    planned.to_file(path.as_posix())
+    reloaded = FreeEnergyCalculationNetwork.from_file(path.as_posix())
+
+    assert type(reloaded.protocol_settings["SepTopProtocol"]).__name__ == "SepTopSettings"
+    before = {e.key for e in planned.to_alchemical_network().edges}
+    after = {e.key for e in reloaded.to_alchemical_network().edges}
+    assert before == after
+
+
+def test_fec_rfe_and_septop_combined(tyk2_ligands, tyk2_protein):
+    """RFE and SepTop protocols produce independent transformation sets per edge."""
+    protocols = ["RelativeHybridTopologyProtocol", "SepTopProtocol"]
+    factory = FreeEnergyCalculationFactory(protocol=protocols)
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-combined", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    network = planned.to_alchemical_network()
+
+    counts = {"RelativeHybridTopologyProtocol": 0, "SepTopProtocol": 0}
+    for edge in network.edges:
+        counts[type(edge.protocol).__name__] += 1
+
+    assert counts["RelativeHybridTopologyProtocol"] == counts["SepTopProtocol"]
+    assert counts["RelativeHybridTopologyProtocol"] > 0
+    # gufe keys are unique across both protocols
+    keys = [e.key for e in network.edges]
+    assert len(keys) == len(set(keys))
+
+
+# ---------------------------------------------------------------------------
+# AbsoluteBindingProtocol (ABFE) tests
+# ---------------------------------------------------------------------------
+
+
+def test_fec_abfe_network_no_edges(tyk2_ligands, tyk2_protein):
+    """A pure ABFE network has no mapping and iterates over nodes (not edges)."""
+    factory = FreeEnergyCalculationFactory(protocol=["AbsoluteBindingProtocol"])
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-abfe", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    network = planned.to_alchemical_network()
+
+    # every transformation belongs to AbsoluteBindingProtocol
+    protocol_names = {type(e.protocol).__name__ for e in network.edges}
+    assert protocol_names == {"AbsoluteBindingProtocol"}
+
+    # no atom mapping (ligand is annihilated, not transformed to another)
+    for edge in network.edges:
+        assert edge.mapping is None
+
+    # stateB has no ligand; stateA does
+    for edge in network.edges:
+        assert "ligand" in edge.stateA.components
+        assert "ligand" not in edge.stateB.components
+
+    # one complex + one solvent transformation per ligand
+    n_ligands = 3
+    assert len(network.edges) == n_ligands * 2
+
+    # gufe keys are unique
+    keys = [e.key for e in network.edges]
+    assert len(keys) == len(set(keys))
+
+
+def test_fec_abfe_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
+    """An ABFE network survives a to_file/from_file round-trip."""
+    factory = FreeEnergyCalculationFactory(protocol=["AbsoluteBindingProtocol"])
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-abfe-rt", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    path = tmp_path / "abfe_network.json"
+    planned.to_file(path.as_posix())
+    reloaded = FreeEnergyCalculationNetwork.from_file(path.as_posix())
+
+    assert (
+        type(reloaded.protocol_settings["AbsoluteBindingProtocol"]).__name__
+        == "AbsoluteBindingSettings"
+    )
+    before = {e.key for e in planned.to_alchemical_network().edges}
+    after = {e.key for e in reloaded.to_alchemical_network().edges}
+    assert before == after
+
+
+def test_fec_rbfe_and_abfe_combined(tyk2_ligands, tyk2_protein):
+    """RBFE and ABFE protocols coexist in the same AlchemicalNetwork."""
+    protocols = ["RelativeHybridTopologyProtocol", "AbsoluteBindingProtocol"]
+    factory = FreeEnergyCalculationFactory(protocol=protocols)
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-mixed", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    network = planned.to_alchemical_network()
+
+    rbfe_edges = [e for e in network.edges if type(e.protocol).__name__ == "RelativeHybridTopologyProtocol"]
+    abfe_edges = [e for e in network.edges if type(e.protocol).__name__ == "AbsoluteBindingProtocol"]
+
+    assert len(rbfe_edges) > 0
+    assert len(abfe_edges) > 0
+
+    # RBFE edges have mappings; ABFE edges do not
+    for edge in rbfe_edges:
+        assert edge.mapping is not None
+    for edge in abfe_edges:
+        assert edge.mapping is None
+
+    # ABFE stateB has no ligand
+    for edge in abfe_edges:
+        assert "ligand" not in edge.stateB.components
+
+    # all keys are unique
+    keys = [e.key for e in network.edges]
+    assert len(keys) == len(set(keys))
+
+
+def test_abfe_transformation_result_name():
+    """ABFE TransformationResult.name() returns just ligand_a when ligand_b is None."""
+    from openff.units import unit as OFFUnit
+    result = TransformationResult(
+        ligand_a="mylig",
+        ligand_b=None,
+        phase="complex",
+        estimate=1.0 * OFFUnit.kilocalorie_per_mole,
+        uncertainty=0.1 * OFFUnit.kilocalorie_per_mole,
+        protocol="AbsoluteBindingProtocol",
+    )
+    assert result.name() == "mylig"
