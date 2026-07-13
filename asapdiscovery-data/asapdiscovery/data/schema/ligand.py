@@ -271,7 +271,7 @@ class Ligand(DataModelAbstractBase):
         """
         mol = sdf_string_to_oemol(self.data)
         data = {}
-        for key in self.model_fields.keys():
+        for key in self.__class__.model_fields.keys():
             if key not in ["data", "tags", "conf_tags", "data_format"]:
                 field = getattr(self, key)
                 try:
@@ -355,7 +355,7 @@ class Ligand(DataModelAbstractBase):
 
         rdkit_mol: Chem.Mol = sdf_str_to_rdkit_mol(self.data)
         data = {}
-        for key in self.model_fields.keys():
+        for key in self.__class__.model_fields.keys():
             if key not in ["data", "tags", "data_format", "conf_tags"]:
                 field = getattr(self, key)
                 try:
@@ -554,7 +554,7 @@ class Ligand(DataModelAbstractBase):
         # and ensure that the length of the data matches the number of conformers
         new_data = {}
         for k, v in data.items():
-            if k in self.model_fields.keys():
+            if k in self.__class__.model_fields.keys():
                 warnings.warn(f"Tag name {k} is a reserved attribute name, skipping")
             else:
                 # if list is len 1, generate a list of len N, where N is the number of conformers
