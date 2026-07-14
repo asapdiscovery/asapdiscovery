@@ -747,7 +747,13 @@ def test_fec_rfe_and_septop_combined(tyk2_ligands, tyk2_protein):
 
 
 def test_fec_abfe_network_no_edges(tyk2_ligands, tyk2_protein):
-    """A pure ABFE network has no mapping and iterates over nodes (not edges)."""
+    """A pure ABFE network produces exactly one Transformation per ligand.
+
+    AbsoluteBindingProtocol handles both complex and solvent legs internally from a
+    single Transformation (same architecture as SepTopProtocol).  Its
+    _validate_endstates() requires ProteinComponent in both stateA and stateB, so
+    stateB is the apo protein (no ligand) rather than a bare solvent box.
+    """
     factory = FreeEnergyCalculationFactory(protocol=["AbsoluteBindingProtocol"])
     planned = factory.create_fec_dataset(
         dataset_name="tyk2-abfe", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
@@ -762,14 +768,16 @@ def test_fec_abfe_network_no_edges(tyk2_ligands, tyk2_protein):
     for edge in network.edges:
         assert edge.mapping is None
 
-    # stateB has no ligand; stateA does
+    # stateA has ligand + protein; stateB has protein but no ligand (apo)
     for edge in network.edges:
         assert "ligand" in edge.stateA.components
         assert "ligand" not in edge.stateB.components
+        assert "protein" in edge.stateA.components
+        assert "protein" in edge.stateB.components
 
-    # one complex + one solvent transformation per ligand
+    # exactly one Transformation per ligand (both legs handled internally)
     n_ligands = 3
-    assert len(network.edges) == n_ligands * 2
+    assert len(network.edges) == n_ligands
 
     # gufe keys are unique
     keys = [e.key for e in network.edges]
@@ -796,7 +804,11 @@ def test_fec_abfe_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
 
 
 def test_fec_rbfe_and_abfe_combined(tyk2_ligands, tyk2_protein):
-    """RBFE and ABFE protocols coexist in the same AlchemicalNetwork."""
+    """RBFE and ABFE protocols coexist in the same AlchemicalNetwork.
+
+    RFE: 2 Transformations per graph-edge (complex + solvent).
+    ABFE: 1 Transformation per ligand-node (both legs handled internally).
+    """
     protocols = ["RelativeHybridTopologyProtocol", "AbsoluteBindingProtocol"]
     factory = FreeEnergyCalculationFactory(protocol=protocols)
     planned = factory.create_fec_dataset(
@@ -808,7 +820,8 @@ def test_fec_rbfe_and_abfe_combined(tyk2_ligands, tyk2_protein):
     abfe_edges = [e for e in network.edges if type(e.protocol).__name__ == "AbsoluteBindingProtocol"]
 
     assert len(rbfe_edges) > 0
-    assert len(abfe_edges) > 0
+    # one ABFE Transformation per ligand (3 ligands)
+    assert len(abfe_edges) == 3
 
     # RBFE edges have mappings; ABFE edges do not
     for edge in rbfe_edges:
@@ -816,9 +829,10 @@ def test_fec_rbfe_and_abfe_combined(tyk2_ligands, tyk2_protein):
     for edge in abfe_edges:
         assert edge.mapping is None
 
-    # ABFE stateB has no ligand
+    # ABFE: stateA has ligand+protein, stateB has protein but no ligand (apo)
     for edge in abfe_edges:
         assert "ligand" not in edge.stateB.components
+        assert "protein" in edge.stateB.components
 
     # all keys are unique
     keys = [e.key for e in network.edges]
@@ -831,7 +845,7 @@ def test_abfe_transformation_result_name():
     result = TransformationResult(
         ligand_a="mylig",
         ligand_b=None,
-        phase="complex",
+        phase="combined",
         estimate=1.0 * OFFUnit.kilocalorie_per_mole,
         uncertainty=0.1 * OFFUnit.kilocalorie_per_mole,
         protocol="AbsoluteBindingProtocol",

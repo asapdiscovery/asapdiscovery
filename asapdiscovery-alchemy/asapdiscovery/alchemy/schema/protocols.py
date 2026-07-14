@@ -65,6 +65,7 @@ PROTOCOL_REGISTRY: dict[str, _ProtocolRegistration] = {
         protocol_class="AbsoluteBindingProtocol",
         package="openfe",
         is_node_protocol=True,
+        needs_solvent_leg=False,
     ),
 }
 

@@ -407,17 +407,41 @@ class _BaseResults(_SchemaBaseFrozen):
         for transforms in raw_results.values():
             phases = {t.phase for t in transforms}
             if "combined" in phases:
-                # SepTopProtocol: estimate IS already ΔΔG (complex − solvent computed
-                # internally); use it directly without a second leg.
+                # Single-Transformation protocols return the final free energy directly
+                # from get_estimate() — no leg subtraction required.
+                # SepTop → ΔΔG_bind (RBFE); AbsoluteBinding → ΔG_bind (ABFE).
                 combined = transforms[0]
-                result = Measurement(
-                    labelA=combined.ligand_a,
-                    labelB=combined.ligand_b,
-                    DG=combined.estimate,
-                    uncertainty=combined.uncertainty,
-                    computational=True,
-                    source="calculated",
-                )
+                if combined.ligand_b is None:
+                    # ABFE: absolute ΔG_bind
+                    try:
+                        from cinnabar import AbsoluteMeasurement
+
+                        result = AbsoluteMeasurement(
+                            label=combined.ligand_a,
+                            DG=combined.estimate,
+                            uncertainty=combined.uncertainty,
+                            computational=True,
+                            source="calculated",
+                        )
+                    except ImportError:
+                        result = Measurement(
+                            labelA=combined.ligand_a,
+                            labelB="__vacuum__",
+                            DG=combined.estimate,
+                            uncertainty=combined.uncertainty,
+                            computational=True,
+                            source="calculated",
+                        )
+                else:
+                    # SepTop (and similar): relative ΔΔG_bind
+                    result = Measurement(
+                        labelA=combined.ligand_a,
+                        labelB=combined.ligand_b,
+                        DG=combined.estimate,
+                        uncertainty=combined.uncertainty,
+                        computational=True,
+                        source="calculated",
+                    )
             else:
                 leg1, leg2 = transforms
                 complex_leg: TransformationResult = (
@@ -803,48 +827,32 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     )
                     transformations.append(transformation)
 
-        # node-based (ABFE) protocols: one complex + one solvent Transformation per ligand
+        # node-based (ABFE) protocols: one Transformation per ligand.
+        # AbsoluteBindingProtocol (and similar) runs both complex and solvent legs
+        # internally from a single Transformation and returns ΔG_bind directly from
+        # get_estimate().  Its _validate_endstates() requires ProteinComponent in both
+        # stateA and stateB, so stateB is the apo protein (no ligand), not a bare
+        # solvent box.
         for protocol_name in self._protocols_for_node():
             base_settings = self.protocol_settings[protocol_name]
 
             for ligand in ligand_network.nodes:
-                node_protocol = build_protocol(protocol_name, base_settings)
-
-                # complex leg: ligand disappears in the protein-bound environment
-                sys_a_complex = openfe.ChemicalSystem(
+                sys_a = openfe.ChemicalSystem(
                     {"ligand": ligand, "protein": receptor, "solvent": solvent},
-                    name=f"{ligand.name}_complex",
+                    name=f"{ligand.name}_bound",
                 )
-                sys_b_complex = openfe.ChemicalSystem(
+                # stateB: ligand is annihilated; protein + solvent remain.
+                sys_b = openfe.ChemicalSystem(
                     {"protein": receptor, "solvent": solvent},
-                    name=f"{ligand.name}_complex_vacuum",
+                    name=f"{ligand.name}_apo",
                 )
                 transformations.append(
                     openfe.Transformation(
-                        stateA=sys_a_complex,
-                        stateB=sys_b_complex,
+                        stateA=sys_a,
+                        stateB=sys_b,
                         mapping=None,
                         protocol=build_protocol(protocol_name, base_settings),
-                        name=f"{ligand.name}_complex_{protocol_name}",
-                    )
-                )
-
-                # solvent leg: ligand disappears in bulk solvent (hydration correction)
-                sys_a_solvent = openfe.ChemicalSystem(
-                    {"ligand": ligand, "solvent": solvent},
-                    name=f"{ligand.name}_solvent",
-                )
-                sys_b_solvent = openfe.ChemicalSystem(
-                    {"solvent": solvent},
-                    name=f"{ligand.name}_solvent_vacuum",
-                )
-                transformations.append(
-                    openfe.Transformation(
-                        stateA=sys_a_solvent,
-                        stateB=sys_b_solvent,
-                        mapping=None,
-                        protocol=build_protocol(protocol_name, base_settings),
-                        name=f"{ligand.name}_solvent_{protocol_name}",
+                        name=f"{ligand.name}_{protocol_name}",
                     )
                 )
 
