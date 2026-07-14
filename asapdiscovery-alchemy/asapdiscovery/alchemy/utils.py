@@ -13,7 +13,7 @@ from asapdiscovery.alchemy.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.alchemy.schema.forcefield import ForceFieldParams
-from asapdiscovery.alchemy.schema.protocols import protocol_name_for
+from asapdiscovery.alchemy.schema.protocols import needs_solvent_leg, protocol_name_for
 
 if TYPE_CHECKING:
     from openff.bespokefit.workflows import BespokeWorkflowFactory
@@ -331,7 +331,14 @@ class AlchemiscaleHelper:
                 )
                 continue
 
-            phase = "complex" if "protein" in stateA_components else "solvent"
+            if protocol and not needs_solvent_leg(protocol):
+                # Protocols like SepTopProtocol handle both complex and solvent legs
+                # internally from a single Transformation and return ΔΔG directly from
+                # get_estimate(); the result should not be split or combined with a
+                # second leg.
+                phase = "combined"
+            else:
+                phase = "complex" if "protein" in stateA_components else "solvent"
 
             name_a = stateA_components["ligand"].name or stateA_components["ligand"].smiles
 

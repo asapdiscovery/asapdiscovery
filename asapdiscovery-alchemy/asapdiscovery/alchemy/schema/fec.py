@@ -32,6 +32,7 @@ from .protocols import (
     build_protocol,
     default_protocol_settings,
     is_node_protocol,
+    needs_solvent_leg,
 )
 
 if TYPE_CHECKING:
@@ -284,8 +285,13 @@ class TransformationResult(_SchemaBaseFrozen):
         description="The name of the ligand in state B of the transformation. "
         "``None`` for node-based (ABFE) results where state B contains no ligand.",
     )
-    phase: Literal["complex", "solvent"] = Field(
-        ..., description="The phase of the transformation."
+    phase: Literal["complex", "solvent", "combined"] = Field(
+        ...,
+        description=(
+            "The phase of the transformation.  ``'combined'`` is used for protocols "
+            "that handle both complex and solvent legs internally and return ΔΔG "
+            "directly (e.g. SepTopProtocol)."
+        ),
     )
     estimate: KCalPerMolQuantity = Field(
         ..., description="The average estimate of this transformation in kcal/mol"
@@ -367,73 +373,98 @@ class _BaseResults(_SchemaBaseFrozen):
         for result in results:
             raw_results[(result.protocol, result.name())].append(result)
 
-        # make sure we have a solvent and complex phase for each result
+        # Validate phase completeness and separate "combined" (SepTop) edges from
+        # two-leg (RFE/NEQ/ABFE) edges.
         keys_to_remove = []
         for key, transforms in raw_results.items():
             _, name = key
-            missing_phase = {"complex", "solvent"} - {t.phase for t in transforms}
-            if missing_phase:
-                warnings.warn(
-                    f"The transformation {name} is missing simulated legs in the following phases {missing_phase}; removing"
-                )
-                keys_to_remove.append(key)
-            if len(transforms) > 2:
-                # We have too many simulations for this transform
-                raise RuntimeError(
-                    f"The transformation {name} has too many simulated legs, found the following phases {[t.phase for t in transforms]} expected complex and solvent."
-                )
+            phases = {t.phase for t in transforms}
+            if "combined" in phases:
+                # Single-Transformation protocols (e.g. SepTopProtocol) return ΔΔG
+                # directly; expect exactly one result per edge.
+                if len(transforms) != 1:
+                    raise RuntimeError(
+                        f"The transformation {name} has {len(transforms)} results with "
+                        f"phase='combined'; expected exactly one."
+                    )
+            else:
+                missing_phase = {"complex", "solvent"} - phases
+                if missing_phase:
+                    warnings.warn(
+                        f"The transformation {name} is missing simulated legs in the following phases {missing_phase}; removing"
+                    )
+                    keys_to_remove.append(key)
+                elif len(transforms) > 2:
+                    raise RuntimeError(
+                        f"The transformation {name} has too many simulated legs, found the following phases {[t.phase for t in transforms]} expected complex and solvent."
+                    )
 
         for key in keys_to_remove:
             raw_results.pop(key)
 
         # make the cinnabar data
         all_results = []
-        for leg1, leg2 in raw_results.values():
-            complex_leg: TransformationResult = (
-                leg1 if leg1.phase == "complex" else leg2
-            )
-            solvent_leg: TransformationResult = (
-                leg1 if leg1.phase == "solvent" else leg2
-            )
-            dg = complex_leg.estimate - solvent_leg.estimate
-            uncertainty = np.sqrt(
-                complex_leg.uncertainty**2 + solvent_leg.uncertainty**2
-            )
-
-            if leg1.ligand_b is None:
-                # ABFE: absolute ΔG_bind — use cinnabar AbsoluteMeasurement so it
-                # can serve as an anchor in a combined RBFE+ABFE FEMap
-                try:
-                    from cinnabar import AbsoluteMeasurement
-
-                    result = AbsoluteMeasurement(
-                        label=leg1.ligand_a,
-                        DG=dg,
-                        uncertainty=uncertainty,
-                        computational=True,
-                        source="calculated",
-                    )
-                except ImportError:
-                    # fall back to a relative measurement with a sentinel second label
-                    # if the installed cinnabar version predates AbsoluteMeasurement
-                    result = Measurement(
-                        labelA=leg1.ligand_a,
-                        labelB="__vacuum__",
-                        DG=dg,
-                        uncertainty=uncertainty,
-                        computational=True,
-                        source="calculated",
-                    )
-            else:
-                # RBFE: relative ΔΔG_bind
+        for transforms in raw_results.values():
+            phases = {t.phase for t in transforms}
+            if "combined" in phases:
+                # SepTopProtocol: estimate IS already ΔΔG (complex − solvent computed
+                # internally); use it directly without a second leg.
+                combined = transforms[0]
                 result = Measurement(
-                    labelA=leg1.ligand_a,
-                    labelB=leg1.ligand_b,
-                    DG=dg,
-                    uncertainty=uncertainty,
+                    labelA=combined.ligand_a,
+                    labelB=combined.ligand_b,
+                    DG=combined.estimate,
+                    uncertainty=combined.uncertainty,
                     computational=True,
                     source="calculated",
                 )
+            else:
+                leg1, leg2 = transforms
+                complex_leg: TransformationResult = (
+                    leg1 if leg1.phase == "complex" else leg2
+                )
+                solvent_leg: TransformationResult = (
+                    leg1 if leg1.phase == "solvent" else leg2
+                )
+                dg = complex_leg.estimate - solvent_leg.estimate
+                uncertainty = np.sqrt(
+                    complex_leg.uncertainty**2 + solvent_leg.uncertainty**2
+                )
+
+                if leg1.ligand_b is None:
+                    # ABFE: absolute ΔG_bind — use cinnabar AbsoluteMeasurement so it
+                    # can serve as an anchor in a combined RBFE+ABFE FEMap
+                    try:
+                        from cinnabar import AbsoluteMeasurement
+
+                        result = AbsoluteMeasurement(
+                            label=leg1.ligand_a,
+                            DG=dg,
+                            uncertainty=uncertainty,
+                            computational=True,
+                            source="calculated",
+                        )
+                    except ImportError:
+                        # fall back to a relative measurement with a sentinel second label
+                        # if the installed cinnabar version predates AbsoluteMeasurement
+                        result = Measurement(
+                            labelA=leg1.ligand_a,
+                            labelB="__vacuum__",
+                            DG=dg,
+                            uncertainty=uncertainty,
+                            computational=True,
+                            source="calculated",
+                        )
+                else:
+                    # RBFE: relative ΔΔG_bind
+                    result = Measurement(
+                        labelA=leg1.ligand_a,
+                        labelB=leg1.ligand_b,
+                        DG=dg,
+                        uncertainty=uncertainty,
+                        computational=True,
+                        source="calculated",
+                    )
             all_results.append(result)
         return all_results
 
@@ -717,7 +748,11 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                         base_force_field=base_settings.forcefield_settings.small_molecule_forcefield,
                     )
 
-                for leg in ["solvent", "complex"]:
+                # Protocols that handle both legs internally (e.g. SepTopProtocol)
+                # require a single complex-phase Transformation only; their
+                # get_estimate() already returns ΔΔG = ΔG_complex − ΔG_solvent.
+                legs = ["complex"] if not needs_solvent_leg(protocol_name) else ["solvent", "complex"]
+                for leg in legs:
                     sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
                     sys_b_dict = {"ligand": mapping.componentB, "solvent": solvent}
                     if leg == "complex":

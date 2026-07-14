@@ -669,7 +669,11 @@ def test_results_to_cinnabar_with_prediction(tyk2_result_network):
 
 
 def test_fec_septop_network(tyk2_ligands, tyk2_protein):
-    """A SepTopProtocol network has solvent + complex transformations per edge."""
+    """A SepTopProtocol network has exactly one complex-phase Transformation per edge.
+
+    SepTopProtocol handles both legs (complex and solvent) internally from a single
+    Transformation; no separate solvent Transformation is created.
+    """
     factory = FreeEnergyCalculationFactory(protocol=["SepTopProtocol"])
     planned_network = factory.create_fec_dataset(
         dataset_name="tyk2-septop", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
@@ -680,12 +684,11 @@ def test_fec_septop_network(tyk2_ligands, tyk2_protein):
     protocol_names = {type(e.protocol).__name__ for e in alchemical_network.edges}
     assert protocol_names == {"SepTopProtocol"}
 
-    # both solvent and complex legs are present
-    legs = {
-        ("complex" if "protein" in e.stateA.components else "solvent")
-        for e in alchemical_network.edges
-    }
-    assert legs == {"complex", "solvent"}
+    # SepTop uses only the complex phase (protein in both stateA and stateB); no
+    # separate solvent-only Transformation should be present.
+    for edge in alchemical_network.edges:
+        assert "protein" in edge.stateA.components, "SepTop stateA must have ProteinComponent"
+        assert "protein" in edge.stateB.components, "SepTop stateB must have ProteinComponent"
 
     # each edge carries an atom mapping
     for edge in alchemical_network.edges:
@@ -713,7 +716,12 @@ def test_fec_septop_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
 
 
 def test_fec_rfe_and_septop_combined(tyk2_ligands, tyk2_protein):
-    """RFE and SepTop protocols produce independent transformation sets per edge."""
+    """RFE and SepTop protocols produce independent transformation sets per edge.
+
+    RFE produces two Transformations per graph-edge (complex + solvent), while
+    SepTopProtocol produces one (combined).  For N graph-edges the network should
+    therefore contain 2*N RFE Transformations and N SepTop Transformations.
+    """
     protocols = ["RelativeHybridTopologyProtocol", "SepTopProtocol"]
     factory = FreeEnergyCalculationFactory(protocol=protocols)
     planned = factory.create_fec_dataset(
@@ -725,8 +733,9 @@ def test_fec_rfe_and_septop_combined(tyk2_ligands, tyk2_protein):
     for edge in network.edges:
         counts[type(edge.protocol).__name__] += 1
 
-    assert counts["RelativeHybridTopologyProtocol"] == counts["SepTopProtocol"]
-    assert counts["RelativeHybridTopologyProtocol"] > 0
+    # RFE: 2 Transformations per graph-edge; SepTop: 1 Transformation per graph-edge
+    assert counts["RelativeHybridTopologyProtocol"] == 2 * counts["SepTopProtocol"]
+    assert counts["SepTopProtocol"] > 0
     # gufe keys are unique across both protocols
     keys = [e.key for e in network.edges]
     assert len(keys) == len(set(keys))

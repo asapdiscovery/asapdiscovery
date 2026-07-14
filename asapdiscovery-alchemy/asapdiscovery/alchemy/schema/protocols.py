@@ -29,6 +29,10 @@ class _ProtocolRegistration(NamedTuple):
     #: True for node-based protocols (ABFE: one Transformation per ligand, no mapping);
     #: False for edge-based protocols (RBFE: one Transformation per ligand *pair*).
     is_node_protocol: bool = False
+    #: True when the protocol requires separate complex and solvent Transformations
+    #: (e.g. RFE, NEQ); False when the protocol handles both legs internally from a
+    #: single complex-phase Transformation and returns ΔΔG directly (e.g. SepTop).
+    needs_solvent_leg: bool = True
 
 
 #: Index of the alchemical protocols ASAP-Alchemy knows how to build.
@@ -44,6 +48,7 @@ PROTOCOL_REGISTRY: dict[str, _ProtocolRegistration] = {
         module="openfe.protocols.openmm_septop",
         protocol_class="SepTopProtocol",
         package="openfe",
+        needs_solvent_leg=False,
     ),
     "NonEquilibriumCyclingProtocol": _ProtocolRegistration(
         module="feflow.protocols",
@@ -62,6 +67,27 @@ PROTOCOL_REGISTRY: dict[str, _ProtocolRegistration] = {
         is_node_protocol=True,
     ),
 }
+
+
+def needs_solvent_leg(name: str) -> bool:
+    """Return ``True`` if ``name`` requires a separate solvent-phase Transformation.
+
+    Most RBFE protocols (RFE, NEQ) need two ``Transformation``s per edge — one
+    complex and one solvent — and combine them as ΔΔG = ΔG_complex − ΔG_solvent.
+    ``SepTopProtocol`` runs both legs inside a single complex-phase ``Transformation``
+    and returns ΔΔG directly from ``get_estimate()``, so no separate solvent
+    ``Transformation`` should be created.
+
+    Raises:
+        KeyError: If ``name`` is not a registered protocol.
+    """
+    try:
+        return PROTOCOL_REGISTRY[name].needs_solvent_leg
+    except KeyError:
+        raise KeyError(
+            f"Unknown protocol {name!r}; available protocols are "
+            f"{available_protocols()}."
+        )
 
 
 def is_node_protocol(name: str) -> bool:
