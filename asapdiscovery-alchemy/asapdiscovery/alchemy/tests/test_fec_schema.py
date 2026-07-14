@@ -841,7 +841,6 @@ def test_fec_rbfe_and_abfe_combined(tyk2_ligands, tyk2_protein):
 
 def test_abfe_transformation_result_name():
     """ABFE TransformationResult.name() returns just ligand_a when ligand_b is None."""
-    from openff.units import unit as OFFUnit
     result = TransformationResult(
         ligand_a="mylig",
         ligand_b=None,
@@ -851,3 +850,44 @@ def test_abfe_transformation_result_name():
         protocol="AbsoluteBindingProtocol",
     )
     assert result.name() == "mylig"
+
+
+def test_clean_result_network_combined_phase(tyk2_result_network, tmp_path):
+    """clean_result_network must not crash on combined-phase (SepTop/ABFE) results
+    and must correctly apply the outlier threshold to the estimate directly."""
+    from asapdiscovery.alchemy.predict import clean_result_network
+    from asapdiscovery.alchemy.schema.fec import AlchemiscaleResults
+
+    # Build mock combined-phase results: one within threshold, one outlier.
+    combined_results = [
+        TransformationResult(
+            ligand_a="lig_a",
+            ligand_b="lig_b",
+            phase="combined",
+            estimate=2.0 * OFFUnit.kilocalorie_per_mole,
+            uncertainty=0.1 * OFFUnit.kilocalorie_per_mole,
+            protocol="SepTopProtocol",
+        ),
+        TransformationResult(
+            ligand_a="lig_c",
+            ligand_b="lig_d",
+            phase="combined",
+            estimate=999.0 * OFFUnit.kilocalorie_per_mole,  # outlier
+            uncertainty=0.1 * OFFUnit.kilocalorie_per_mole,
+            protocol="SepTopProtocol",
+        ),
+    ]
+
+    # Rebuild the network with our combined results (models are frozen, use model_validate).
+    data = tyk2_result_network.model_dump()
+    data["results"]["results"] = [r.model_dump() for r in combined_results]
+    network_with_combined = FreeEnergyCalculationNetwork.model_validate(data)
+
+    # clean_result_network expects a file path.
+    network_file = tmp_path / "combined_network.json"
+    network_with_combined.to_file(network_file.as_posix())
+
+    cleaned = clean_result_network(network_file.as_posix(), ddg_outlier_threshold=100.0)
+    kept = cleaned.results.results
+    assert len(kept) == 1
+    assert kept[0].ligand_a == "lig_a"
