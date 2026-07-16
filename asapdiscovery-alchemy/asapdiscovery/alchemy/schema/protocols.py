@@ -222,6 +222,23 @@ def _asap_absolute_binding_settings() -> "Settings":
 
     return protocol_settings
 
+def _asap_fah_nonequilibrium_cycling_settings() -> "Settings":
+    """ASAP-tuned default settings for ``FahNonEquilibriumCyclingProtocol``.
+
+    Sets compute platform explicitly to ``None`` to avoid e.g. ``CUDA``
+    failures on the work server.
+    """
+    protocol_class = get_protocol_class("FahNonEquilibriumCyclingProtocol")
+    protocol_settings = protocol_class.default_settings().unfrozen_copy()
+
+    # the default for this setting upstream is `CUDA`;
+    # setting it to `None` will use the fastest platform available on the host,
+    # and not raise an exception if a GPU is not present;
+    # this setting has no bearing on `openm-core` behavior downstream
+    protocol_settings.engine_settings.compute_platform = None
+
+    return protocol_settings
+
 
 #: Builders that produce the ASAP-Alchemy default settings for a protocol. Where a
 #: protocol is absent, the protocol's own ``default_settings()`` is used unchanged.
@@ -229,6 +246,7 @@ _DEFAULT_SETTINGS_BUILDERS = {
     "RelativeHybridTopologyProtocol": _asap_relative_hybrid_topology_settings,
     "SepTopProtocol": _asap_septop_settings,
     "AbsoluteBindingProtocol": _asap_absolute_binding_settings,
+    "FahNonEquilibriumCyclingProtocol": _asap_fah_nonequilibrium_cycling_settings,
 }
 
 
