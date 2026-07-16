@@ -52,6 +52,10 @@ def test_abfe_default_settings():
     )
     assert settings.protocol_repeats == 1
 
+def test_fah_nonequilibrium_cycling_default_settings():
+    """FahNonEquilibriumCyclingProtocol settings set compute platform to ``None``"""
+    settings = default_protocol_settings("FahNonEquilibriumCyclingProtocol")
+    assert settings.engine_settings.compute_platform is None
 
 @pytest.mark.parametrize("name", available_protocols())
 def test_build_and_roundtrip_name(name):
