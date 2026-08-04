@@ -6,6 +6,7 @@ import gufe
 import openfe
 from alchemiscale import ScopedKey
 from gufe import settings
+from gufe.settings.models import SettingsBaseModel
 from gufe.settings.typing import (
     GufeQuantity,
     KCalPerMolQuantity,
@@ -26,7 +27,13 @@ from pydantic import (
 from ._util import check_ligand_series_uniqueness_and_names
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
-from .protocols import available_protocols, build_protocol, default_protocol_settings
+from .protocols import (
+    available_protocols,
+    build_protocol,
+    default_protocol_settings,
+    is_node_protocol,
+    needs_solvent_leg,
+)
 
 if TYPE_CHECKING:
     from cinnabar import FEMap
@@ -120,6 +127,7 @@ class AdaptiveSettings(_SchemaBase):
         mapping: "LigandAtomMapping",
         settings: "gufe.settings.Settings",
         base_sampling_length: OFFUnit.Quantity,
+        sim_settings_attr: str = "simulation_settings",
     ) -> "gufe.settings.Settings":
         """
         It's advisable to increase simulation time on edges that are expected to be less reliable. There
@@ -128,6 +136,12 @@ class AdaptiveSettings(_SchemaBase):
         If the edge scoring (computed using `scorer_method`) is below the `adaptive_sampling_threshold` the
         simulation time is multiplied by `adaptive_sampling_multiplier`. Just to be sure, we use the base
         protocol's sampling time and not the provided edge protocol sampling time as a base value.
+
+        ``sim_settings_attr`` names the attribute on ``settings`` that holds the
+        simulation-time sub-settings (e.g. ``"simulation_settings"`` for RFE, or
+        ``"complex_simulation_settings"`` / ``"solvent_simulation_settings"`` for
+        protocols with per-leg settings such as ``SepTopProtocol`` or
+        ``AbsoluteBindingProtocol``).
 
         Mutates and returns the (editable) protocol settings.
         """
@@ -140,7 +154,7 @@ class AdaptiveSettings(_SchemaBase):
                 f"Atom mapping scorer {scorer_method} not recognized; use one of `default_lomap`, `default_perses`."
             )
         if scorer(mapping) < self.adaptive_sampling_threshold:
-            settings.simulation_settings.production_length = (
+            getattr(settings, sim_settings_attr).production_length = (
                 base_sampling_length * self.adaptive_sampling_multiplier
             )
         return settings
@@ -149,6 +163,7 @@ class AdaptiveSettings(_SchemaBase):
         self,
         leg: str,
         settings: "gufe.settings.Settings",
+        solv_settings_attr: str = "solvation_settings",
     ) -> "gufe.settings.Settings":
         """
         Certain water box shapes (such as dodecahedron) are able to handle slightly smaller padding size
@@ -156,12 +171,19 @@ class AdaptiveSettings(_SchemaBase):
         this method applies the specified padding per phase (`solvent_padding_solvated` or
         `solvent_padding_complex`, resp.).
 
+        ``solv_settings_attr`` names the solvation sub-settings attribute to mutate
+        (e.g. ``"solvation_settings"`` for RFE, or ``"complex_solvation_settings"`` /
+        ``"solvent_solvation_settings"`` for protocols with per-leg settings such as
+        ``SepTopProtocol`` or ``AbsoluteBindingProtocol``).
+
         Mutates and returns the (editable) protocol settings.
         """
-        if leg == "solvent":
-            settings.solvation_settings.solvent_padding = self.solvent_padding_solvated
-        else:
-            settings.solvation_settings.solvent_padding = self.solvent_padding_complex
+        padding = (
+            self.solvent_padding_solvated
+            if leg == "solvent"
+            else self.solvent_padding_complex
+        )
+        getattr(settings, solv_settings_attr).solvent_padding = padding
         return settings
 
     def apply_settings(
@@ -181,17 +203,20 @@ class AdaptiveSettings(_SchemaBase):
         (``unfrozen_copy``) settings object which is mutated in place.
 
         Adaptive settings are only applied where the settings expose the relevant
-        fields. ``RelativeHybridTopologyProtocol`` settings carry
+        fields. ``RelativeHybridTopologyProtocol`` settings carry a flat
         ``simulation_settings`` (sampling length) and ``solvation_settings``
-        (solvent padding); non-equilibrium protocols (e.g. feflow's
-        ``NonEquilibriumCyclingProtocol``) have no ``simulation_settings`` so
-        adaptive sampling is skipped for them with a warning.
+        (solvent padding). ``SepTopProtocol`` and ``AbsoluteBindingProtocol``
+        use per-leg split attributes (``complex_simulation_settings`` /
+        ``solvent_simulation_settings`` and the equivalent solvation attributes).
+        Non-equilibrium protocols (e.g. feflow's ``NonEquilibriumCyclingProtocol``)
+        have no ``simulation_settings`` so adaptive sampling is skipped with a warning.
         """
-        # double the simulation time if requested (RFE-style protocols only)
+        # double the simulation time if requested
         if self.adaptive_sampling:
             if hasattr(edge_settings, "simulation_settings") and hasattr(
                 base_settings, "simulation_settings"
             ):
+                # flat settings: RelativeHybridTopologyProtocol style
                 base_sampling_length = (
                     base_settings.simulation_settings.production_length
                 )
@@ -199,22 +224,48 @@ class AdaptiveSettings(_SchemaBase):
                     network_scorer, mapping, edge_settings, base_sampling_length
                 )
             else:
-                warnings.warn(
-                    "adaptive_sampling requested but protocol settings "
-                    f"{type(edge_settings).__name__} have no `simulation_settings`; "
-                    "skipping adaptive sampling for this protocol."
-                )
+                # split per-leg settings: SepTopProtocol / AbsoluteBindingProtocol style
+                leg_sim_attr = f"{leg}_simulation_settings"
+                if hasattr(edge_settings, leg_sim_attr) and hasattr(
+                    base_settings, leg_sim_attr
+                ):
+                    base_sampling_length = getattr(
+                        base_settings, leg_sim_attr
+                    ).production_length
+                    edge_settings = self.get_adapted_sampling_settings(
+                        network_scorer,
+                        mapping,
+                        edge_settings,
+                        base_sampling_length,
+                        sim_settings_attr=leg_sim_attr,
+                    )
+                else:
+                    warnings.warn(
+                        "adaptive_sampling requested but protocol settings "
+                        f"{type(edge_settings).__name__} have no `simulation_settings` "
+                        f"or `{leg}_simulation_settings`; "
+                        "skipping adaptive sampling for this protocol."
+                    )
 
         # adjust solvent padding per phase if requested
         if self.adaptive_solvent_padding:
             if hasattr(edge_settings, "solvation_settings"):
+                # flat settings: RelativeHybridTopologyProtocol style
                 edge_settings = self.get_adapted_solvent_settings(leg, edge_settings)
             else:
-                warnings.warn(
-                    "adaptive_solvent_padding requested but protocol settings "
-                    f"{type(edge_settings).__name__} have no `solvation_settings`; "
-                    "skipping adaptive solvent padding for this protocol."
-                )
+                # split per-leg settings: SepTopProtocol / AbsoluteBindingProtocol style
+                leg_solv_attr = f"{leg}_solvation_settings"
+                if hasattr(edge_settings, leg_solv_attr):
+                    edge_settings = self.get_adapted_solvent_settings(
+                        leg, edge_settings, solv_settings_attr=leg_solv_attr
+                    )
+                else:
+                    warnings.warn(
+                        "adaptive_solvent_padding requested but protocol settings "
+                        f"{type(edge_settings).__name__} have no `solvation_settings` "
+                        f"or `{leg}_solvation_settings`; "
+                        "skipping adaptive solvent padding for this protocol."
+                    )
 
         return edge_settings
 
@@ -229,11 +280,18 @@ class TransformationResult(_SchemaBaseFrozen):
     ligand_a: str = Field(
         ..., description="The name of the ligand in state A of the transformation."
     )
-    ligand_b: str = Field(
-        ..., description="The name of the ligand in state B of the transformation."
+    ligand_b: Optional[str] = Field(
+        None,
+        description="The name of the ligand in state B of the transformation. "
+        "``None`` for node-based (ABFE) results where state B contains no ligand.",
     )
-    phase: Literal["complex", "solvent"] = Field(
-        ..., description="The phase of the transformation."
+    phase: Literal["complex", "solvent", "combined"] = Field(
+        ...,
+        description=(
+            "The phase of the transformation.  ``'combined'`` is used for protocols "
+            "that handle both complex and solvent legs internally and return ΔΔG "
+            "directly (e.g. SepTopProtocol)."
+        ),
     )
     estimate: KCalPerMolQuantity = Field(
         ..., description="The average estimate of this transformation in kcal/mol"
@@ -250,6 +308,8 @@ class TransformationResult(_SchemaBaseFrozen):
 
     def name(self):
         """Make a name for this transformation based on the names of the ligands."""
+        if self.ligand_b is None:
+            return self.ligand_a
         return "-".join([self.ligand_a, self.ligand_b])
 
 
@@ -278,7 +338,16 @@ class _BaseResults(_SchemaBaseFrozen):
 
     def to_cinnabar_measurements(self, protocol: Optional[str] = "__all__"):
         """
-        For the given set of results combine the solvent and complex phases to make a list of cinnabar RelativeMeasurements
+        Combine the solvent and complex phases of each transformation into cinnabar
+        measurement objects.
+
+        For edge-based (RBFE) results (``ligand_b`` is set) a relative
+        ``cinnabar.Measurement`` (ΔΔG) is produced from ``ΔG_complex − ΔG_solvent``.
+        For node-based (ABFE) results (``ligand_b is None``) an *absolute*
+        ``cinnabar.Measurement`` (ΔG) is produced from the same combination,
+        using cinnabar's idiomatic representation of an absolute value: a
+        ``Measurement`` anchored at a true-ground ``ReferenceState`` so it can
+        serve as an anchor in a combined RBFE+ABFE FEMap.
 
         Args:
             protocol: If provided (including ``None`` for legacy results), only
@@ -288,12 +357,14 @@ class _BaseResults(_SchemaBaseFrozen):
                 same edge are never merged.
 
         Returns:
-            A list of RelativeMeasurements made from the combined solvent and complex phases.
+            A list of ``cinnabar.Measurement`` objects (relative for RBFE,
+            absolute — anchored at a ``ReferenceState`` — for ABFE) made from the
+            combined solvent and complex phases.
         """
         from collections import defaultdict
 
         import numpy as np
-        from cinnabar import Measurement
+        from cinnabar import Measurement, ReferenceState
 
         if protocol == "__all__":
             results = self.results
@@ -305,45 +376,101 @@ class _BaseResults(_SchemaBaseFrozen):
         for result in results:
             raw_results[(result.protocol, result.name())].append(result)
 
-        # make sure we have a solvent and complex phase for each result
+        # Validate phase completeness and separate "combined" (SepTop) edges from
+        # two-leg (RFE/NEQ/ABFE) edges.
         keys_to_remove = []
         for key, transforms in raw_results.items():
             _, name = key
-            missing_phase = {"complex", "solvent"} - {t.phase for t in transforms}
-            if missing_phase:
-                warnings.warn(
-                    f"The transformation {name} is missing simulated legs in the following phases {missing_phase}; removing"
-                )
-                keys_to_remove.append(key)
-            if len(transforms) > 2:
-                # We have too many simulations for this transform
-                raise RuntimeError(
-                    f"The transformation {name} has too many simulated legs, found the following phases {[t.phase for t in transforms]} expected complex and solvent."
-                )
+            phases = {t.phase for t in transforms}
+            if "combined" in phases:
+                # Single-Transformation protocols (e.g. SepTopProtocol) return ΔΔG
+                # directly; expect exactly one result per edge.
+                if len(transforms) != 1:
+                    raise RuntimeError(
+                        f"The transformation {name} has {len(transforms)} results with "
+                        f"phase='combined'; expected exactly one."
+                    )
+            else:
+                missing_phase = {"complex", "solvent"} - phases
+                if missing_phase:
+                    warnings.warn(
+                        f"The transformation {name} is missing simulated legs in the following phases {missing_phase}; removing"
+                    )
+                    keys_to_remove.append(key)
+                elif len(transforms) > 2:
+                    raise RuntimeError(
+                        f"The transformation {name} has too many simulated legs, found the following phases {[t.phase for t in transforms]} expected complex and solvent."
+                    )
 
         for key in keys_to_remove:
             raw_results.pop(key)
 
         # make the cinnabar data
         all_results = []
-        for leg1, leg2 in raw_results.values():
-            complex_leg: TransformationResult = (
-                leg1 if leg1.phase == "complex" else leg2
-            )
-            solvent_leg: TransformationResult = (
-                leg1 if leg1.phase == "solvent" else leg2
-            )
-            result = Measurement(
-                labelA=leg1.ligand_a,
-                labelB=leg1.ligand_b,
-                DG=(complex_leg.estimate - solvent_leg.estimate),
-                # propagate errors
-                uncertainty=np.sqrt(
+        for transforms in raw_results.values():
+            phases = {t.phase for t in transforms}
+            if "combined" in phases:
+                # Single-Transformation protocols return the final free energy directly
+                # from get_estimate() — no leg subtraction required.
+                # SepTop → ΔΔG_bind (RBFE); AbsoluteBinding → ΔG_bind (ABFE).
+                combined = transforms[0]
+                if combined.ligand_b is None:
+                    # ABFE: absolute ΔG_bind — expressed as a Measurement relative to
+                    # a true-ground ReferenceState (cinnabar's idiomatic absolute value)
+                    # so it can anchor a combined RBFE+ABFE FEMap.
+                    result = Measurement(
+                        labelA=ReferenceState(),
+                        labelB=combined.ligand_a,
+                        DG=combined.estimate,
+                        uncertainty=combined.uncertainty,
+                        computational=True,
+                        source="calculated",
+                    )
+                else:
+                    # SepTop (and similar): relative ΔΔG_bind
+                    result = Measurement(
+                        labelA=combined.ligand_a,
+                        labelB=combined.ligand_b,
+                        DG=combined.estimate,
+                        uncertainty=combined.uncertainty,
+                        computational=True,
+                        source="calculated",
+                    )
+            else:
+                leg1, leg2 = transforms
+                complex_leg: TransformationResult = (
+                    leg1 if leg1.phase == "complex" else leg2
+                )
+                solvent_leg: TransformationResult = (
+                    leg1 if leg1.phase == "solvent" else leg2
+                )
+                dg = complex_leg.estimate - solvent_leg.estimate
+                uncertainty = np.sqrt(
                     complex_leg.uncertainty**2 + solvent_leg.uncertainty**2
-                ),
-                computational=True,
-                source="calculated",
-            )
+                )
+
+                if leg1.ligand_b is None:
+                    # ABFE: absolute ΔG_bind — expressed as a Measurement relative to
+                    # a true-ground ReferenceState (cinnabar's idiomatic absolute value)
+                    # so it can serve as an anchor in a combined RBFE+ABFE FEMap.
+                    result = Measurement(
+                        labelA=ReferenceState(),
+                        labelB=leg1.ligand_a,
+                        DG=dg,
+                        uncertainty=uncertainty,
+                        computational=True,
+                        source="calculated",
+                    )
+                else:
+                    # RBFE: relative ΔΔG_bind
+                    result = Measurement(
+                        labelA=leg1.ligand_a,
+                        labelB=leg1.ligand_b,
+                        DG=dg,
+                        uncertainty=uncertainty,
+                        computational=True,
+                        source="calculated",
+                    )
             all_results.append(result)
         return all_results
 
@@ -460,7 +587,7 @@ class _FreeEnergyBase(_SchemaBase):
             return value
         decoded = {}
         for name, settings_obj in value.items():
-            if isinstance(settings_obj, settings.Settings):
+            if isinstance(settings_obj, SettingsBaseModel):
                 decoded[name] = settings_obj
             else:
                 decoded[name] = json.loads(
@@ -579,17 +706,26 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
 
         Driven by ``protocol_strategy``:
 
-        - ``"all"``: every configured protocol is applied to every edge, i.e. one
-          ``Transformation`` per edge per protocol.
+        - ``"all"``: every configured *edge-based* protocol is applied to every
+          edge.  Node-based protocols (ABFE) are excluded — they are applied per
+          ligand node in :meth:`_protocols_for_node`.
 
         Future strategies (e.g. assigning a single protocol per edge based on edge
         properties) can use ``mapping`` to make that decision here.
         """
         if self.protocol_strategy == "all":
-            return list(self.protocol)
+            return [p for p in self.protocol if not is_node_protocol(p)]
         raise NotImplementedError(
             f"protocol_strategy {self.protocol_strategy!r} is not implemented."
         )
+
+    def _protocols_for_node(self) -> list[str]:
+        """Return the node-based (ABFE) protocols to apply to each ligand node.
+
+        Node-based protocols generate one ``Transformation`` per ligand rather
+        than per ligand pair, so they are handled separately from edge protocols.
+        """
+        return [p for p in self.protocol if is_node_protocol(p)]
 
     def to_alchemical_network(self) -> openfe.AlchemicalNetwork:
         """
@@ -618,7 +754,11 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                         base_force_field=base_settings.forcefield_settings.small_molecule_forcefield,
                     )
 
-                for leg in ["solvent", "complex"]:
+                # Protocols that handle both legs internally (e.g. SepTopProtocol)
+                # require a single complex-phase Transformation only; their
+                # get_estimate() already returns ΔΔG = ΔG_complex − ΔG_solvent.
+                legs = ["complex"] if not needs_solvent_leg(protocol_name) else ["solvent", "complex"]
+                for leg in legs:
                     sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
                     sys_b_dict = {"ligand": mapping.componentB, "solvent": solvent}
                     if leg == "complex":
@@ -668,6 +808,35 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                         name=f"{system_a.name}_{system_b.name}_{protocol_name}",
                     )
                     transformations.append(transformation)
+
+        # node-based (ABFE) protocols: one Transformation per ligand.
+        # AbsoluteBindingProtocol (and similar) runs both complex and solvent legs
+        # internally from a single Transformation and returns ΔG_bind directly from
+        # get_estimate().  Its _validate_endstates() requires ProteinComponent in both
+        # stateA and stateB, so stateB is the apo protein (no ligand), not a bare
+        # solvent box.
+        for protocol_name in self._protocols_for_node():
+            base_settings = self.protocol_settings[protocol_name]
+
+            for ligand in ligand_network.nodes:
+                sys_a = openfe.ChemicalSystem(
+                    {"ligand": ligand, "protein": receptor, "solvent": solvent},
+                    name=f"{ligand.name}_bound",
+                )
+                # stateB: ligand is annihilated; protein + solvent remain.
+                sys_b = openfe.ChemicalSystem(
+                    {"protein": receptor, "solvent": solvent},
+                    name=f"{ligand.name}_apo",
+                )
+                transformations.append(
+                    openfe.Transformation(
+                        stateA=sys_a,
+                        stateB=sys_b,
+                        mapping=None,
+                        protocol=build_protocol(protocol_name, base_settings),
+                        name=f"{ligand.name}_{protocol_name}",
+                    )
+                )
 
         return openfe.AlchemicalNetwork(edges=transformations, name=self.dataset_name)
 

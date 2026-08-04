@@ -26,6 +26,13 @@ class _ProtocolRegistration(NamedTuple):
     protocol_class: str
     #: The distribution that must be installed to use this protocol (for error messages).
     package: str
+    #: True for node-based protocols (ABFE: one Transformation per ligand, no mapping);
+    #: False for edge-based protocols (RBFE: one Transformation per ligand *pair*).
+    is_node_protocol: bool = False
+    #: True when the protocol requires separate complex and solvent Transformations
+    #: (e.g. RFE, NEQ); False when the protocol handles both legs internally from a
+    #: single complex-phase Transformation and returns ΔΔG directly (e.g. SepTop).
+    needs_solvent_leg: bool = True
 
 
 #: Index of the alchemical protocols ASAP-Alchemy knows how to build.
@@ -37,6 +44,12 @@ PROTOCOL_REGISTRY: dict[str, _ProtocolRegistration] = {
         protocol_class="RelativeHybridTopologyProtocol",
         package="openfe",
     ),
+    "SepTopProtocol": _ProtocolRegistration(
+        module="openfe.protocols.openmm_septop",
+        protocol_class="SepTopProtocol",
+        package="openfe",
+        needs_solvent_leg=False,
+    ),
     "NonEquilibriumCyclingProtocol": _ProtocolRegistration(
         module="feflow.protocols",
         protocol_class="NonEquilibriumCyclingProtocol",
@@ -47,7 +60,54 @@ PROTOCOL_REGISTRY: dict[str, _ProtocolRegistration] = {
         protocol_class="FahNonEquilibriumCyclingProtocol",
         package="alchemiscale-fah",
     ),
+    "AbsoluteBindingProtocol": _ProtocolRegistration(
+        module="openfe.protocols.openmm_afe",
+        protocol_class="AbsoluteBindingProtocol",
+        package="openfe",
+        is_node_protocol=True,
+        needs_solvent_leg=False,
+    ),
 }
+
+
+def needs_solvent_leg(name: str) -> bool:
+    """Return ``True`` if ``name`` requires a separate solvent-phase Transformation.
+
+    Most RBFE protocols (RFE, NEQ) need two ``Transformation``s per edge — one
+    complex and one solvent — and combine them as ΔΔG = ΔG_complex − ΔG_solvent.
+    ``SepTopProtocol`` runs both legs inside a single complex-phase ``Transformation``
+    and returns ΔΔG directly from ``get_estimate()``, so no separate solvent
+    ``Transformation`` should be created.
+
+    Raises:
+        KeyError: If ``name`` is not a registered protocol.
+    """
+    try:
+        return PROTOCOL_REGISTRY[name].needs_solvent_leg
+    except KeyError:
+        raise KeyError(
+            f"Unknown protocol {name!r}; available protocols are "
+            f"{available_protocols()}."
+        )
+
+
+def is_node_protocol(name: str) -> bool:
+    """Return ``True`` if ``name`` is a node-based (ABFE) protocol.
+
+    Node-based protocols generate one ``Transformation`` per *ligand* (no
+    partner ligand and no atom mapping). Edge-based protocols generate one
+    ``Transformation`` per *ligand pair*.
+
+    Raises:
+        KeyError: If ``name`` is not a registered protocol.
+    """
+    try:
+        return PROTOCOL_REGISTRY[name].is_node_protocol
+    except KeyError:
+        raise KeyError(
+            f"Unknown protocol {name!r}; available protocols are "
+            f"{available_protocols()}."
+        )
 
 
 def available_protocols() -> list[str]:
@@ -119,10 +179,74 @@ def _asap_relative_hybrid_topology_settings() -> "Settings":
     return protocol_settings
 
 
+def _asap_septop_settings() -> "Settings":
+    """ASAP-tuned default settings for ``SepTopProtocol``.
+
+    Applies the same force-field and thermodynamic conditions as the RFE defaults
+    (openff-2.2.0, 298.15 K / 1 bar) and limits to a single protocol repeat, while
+    leaving simulation lengths and lambda schedules at the openfe upstream defaults.
+    """
+    from openff.units import unit as OFFUnit
+
+    protocol_class = get_protocol_class("SepTopProtocol")
+    protocol_settings = protocol_class.default_settings().unfrozen_copy()
+
+    protocol_settings.forcefield_settings.small_molecule_forcefield = (
+        "openff-2.2.0.offxml"
+    )
+    protocol_settings.thermo_settings.temperature = 298.15 * OFFUnit.kelvin
+    protocol_settings.thermo_settings.pressure = 1 * OFFUnit.bar
+    protocol_settings.protocol_repeats = 1
+
+    return protocol_settings
+
+
+def _asap_absolute_binding_settings() -> "Settings":
+    """ASAP-tuned default settings for ``AbsoluteBindingProtocol``.
+
+    Applies the same force-field and thermodynamic conditions as the RFE defaults
+    and limits to a single protocol repeat. Simulation lengths and lambda schedules
+    are left at the openfe upstream defaults.
+    """
+    from openff.units import unit as OFFUnit
+
+    protocol_class = get_protocol_class("AbsoluteBindingProtocol")
+    protocol_settings = protocol_class.default_settings().unfrozen_copy()
+
+    protocol_settings.forcefield_settings.small_molecule_forcefield = (
+        "openff-2.2.0.offxml"
+    )
+    protocol_settings.thermo_settings.temperature = 298.15 * OFFUnit.kelvin
+    protocol_settings.thermo_settings.pressure = 1 * OFFUnit.bar
+    protocol_settings.protocol_repeats = 1
+
+    return protocol_settings
+
+def _asap_fah_nonequilibrium_cycling_settings() -> "Settings":
+    """ASAP-tuned default settings for ``FahNonEquilibriumCyclingProtocol``.
+
+    Sets compute platform explicitly to ``None`` to avoid e.g. ``CUDA``
+    failures on the work server.
+    """
+    protocol_class = get_protocol_class("FahNonEquilibriumCyclingProtocol")
+    protocol_settings = protocol_class.default_settings().unfrozen_copy()
+
+    # the default for this setting upstream is `CUDA`;
+    # setting it to `None` will use the fastest platform available on the host,
+    # and not raise an exception if a GPU is not present;
+    # this setting has no bearing on `openm-core` behavior downstream
+    protocol_settings.engine_settings.compute_platform = None
+
+    return protocol_settings
+
+
 #: Builders that produce the ASAP-Alchemy default settings for a protocol. Where a
 #: protocol is absent, the protocol's own ``default_settings()`` is used unchanged.
 _DEFAULT_SETTINGS_BUILDERS = {
     "RelativeHybridTopologyProtocol": _asap_relative_hybrid_topology_settings,
+    "SepTopProtocol": _asap_septop_settings,
+    "AbsoluteBindingProtocol": _asap_absolute_binding_settings,
+    "FahNonEquilibriumCyclingProtocol": _asap_fah_nonequilibrium_cycling_settings,
 }
 
 

@@ -1099,12 +1099,15 @@ def clean_result_network(network, console=None, ddg_outlier_threshold=15):
     # remove edges that have erroneously high DDG values
     results_complex = []
     results_solvent = []
+    results_combined = []  # SepTop/ABFE: both legs handled internally
 
     for edge_result in denand_results:
         if edge_result.phase == "complex":
             results_complex.append(edge_result)
         elif edge_result.phase == "solvent":
             results_solvent.append(edge_result)
+        elif edge_result.phase == "combined":
+            results_combined.append(edge_result)
         else:
             raise ValueError(
                 f"Edge phase {edge_result.phase} not recognized for edge {edge_result}"
@@ -1127,6 +1130,14 @@ def clean_result_network(network, console=None, ddg_outlier_threshold=15):
                     results_not_overly_large.append(res_complex)
                 else:
                     large_edge_removal_counter += 1
+
+    # Combined-phase results already contain the full ΔΔG / ΔG_bind; apply the
+    # outlier threshold directly on the estimate magnitude.
+    for result in results_combined:
+        if abs(result.estimate.magnitude) < ddg_outlier_threshold:
+            results_not_overly_large.append(result)
+        else:
+            large_edge_removal_counter += 1
 
     # done! let's repack everything.
     if console:

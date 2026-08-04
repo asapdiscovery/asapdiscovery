@@ -13,7 +13,7 @@ from asapdiscovery.alchemy.schema.fec import (
     TransformationResult,
 )
 from asapdiscovery.alchemy.schema.forcefield import ForceFieldParams
-from asapdiscovery.alchemy.schema.protocols import protocol_name_for
+from asapdiscovery.alchemy.schema.protocols import needs_solvent_leg, protocol_name_for
 
 if TYPE_CHECKING:
     from openff.bespokefit.workflows import BespokeWorkflowFactory
@@ -259,6 +259,7 @@ class AlchemiscaleHelper:
             )
 
         key_to_protocol = {}
+        key_to_transformation = {}
         if planned_network:
             network_key = planned_network.results.network_key
 
@@ -268,9 +269,17 @@ class AlchemiscaleHelper:
             # We must rebuild (rather than parse the protocol-suffixed transformation
             # name) because the bespoke-force-field injection feeds into the key, so a
             # faithful map requires the same transformations that were submitted.
+            alchemical_network = planned_network.to_alchemical_network()
             key_to_protocol = {
                 edge.key: protocol_name_for(edge.protocol)
-                for edge in planned_network.to_alchemical_network().edges
+                for edge in alchemical_network.edges
+            }
+            # also map each key to the Transformation itself so we can read
+            # stateA/stateB without touching raw protocol unit result internals —
+            # the unit result data layout varies between protocols (OpenMM DAG vs
+            # feflow NEQ numpy arrays) so we cannot rely on it for component lookup.
+            key_to_transformation = {
+                edge.key: edge for edge in alchemical_network.edges
             }
 
         alchemiscale_network_results = self._client.get_network_results(
@@ -295,33 +304,49 @@ class AlchemiscaleHelper:
             # fall back to the per-unit MBAR error. `unit_estimate_error` is an
             # RFE-specific output; other protocols (e.g. feflow's NEQ cycling) do not
             # provide it, so only use it when present to avoid a KeyError.
+            # Guard with hasattr/try because different protocols have different
+            # ProtocolResult.data layouts (OpenMM DAG results vs NEQ numpy arrays).
             if uncertainty.m == 0.0:
-                unit_results = [edge[0] for edge in raw_result.data.values()]
-                if unit_results and "unit_estimate_error" in unit_results[0].outputs:
-                    uncertainty = unit_results[0].outputs["unit_estimate_error"]
+                try:
+                    unit_results = [edge[0] for edge in raw_result.data.values()]
+                    if unit_results and hasattr(unit_results[0], "outputs") and "unit_estimate_error" in unit_results[0].outputs:
+                        uncertainty = unit_results[0].outputs["unit_estimate_error"]
+                except (AttributeError, TypeError, KeyError):
+                    pass
 
-            # work out the name of the molecules and the phase of the calculation
-            individual_runs = list(raw_result.data.values())
-            # track the phase to correctly work out the total relative energy as complex - solvent
-            if "protein" in individual_runs[0][0].inputs["stateA"].components:
-                phase = "complex"
+            # Read phase and ligand names from the planned Transformation's ChemicalSystems
+            # rather than from raw protocol unit result internals.  The unit result data
+            # layout differs across protocols (OpenMM ProtocolUnitResult objects for
+            # RFE/SepTop/ABFE, numpy work arrays for feflow NEQ) so parsing unit inputs
+            # is not portable.  The planned network's Transformation objects always carry
+            # the full stateA/stateB ChemicalSystems regardless of protocol.
+            transformation = key_to_transformation.get(transformation_key.gufe_key)
+            if transformation is not None:
+                stateA_components = transformation.stateA.components
+                stateB_components = transformation.stateB.components
             else:
-                phase = "solvent"
-
-            # extract the names of the end state ligands to build the affinity estimate graph
-            name_a = individual_runs[0][0].inputs["stateA"].components["ligand"].name
-            name_b = individual_runs[0][0].inputs["stateB"].components["ligand"].name
-            # print(individual_runs[0][0].inputs["stateB"].components["ligand"], name_b)
-
-            # if end state ligands did not have names, use SMILES instead
-            if not name_a:
-                name_a = (
-                    individual_runs[0][0].inputs["stateA"].components["ligand"].smiles
+                warnings.warn(
+                    f"Could not find transformation {transformation_key} in the local "
+                    "network; skipping this result."
                 )
-            if not name_b:
-                name_b = (
-                    individual_runs[0][0].inputs["stateB"].components["ligand"].smiles
-                )
+                continue
+
+            if protocol and not needs_solvent_leg(protocol):
+                # Protocols like SepTopProtocol handle both complex and solvent legs
+                # internally from a single Transformation and return ΔΔG directly from
+                # get_estimate(); the result should not be split or combined with a
+                # second leg.
+                phase = "combined"
+            else:
+                phase = "complex" if "protein" in stateA_components else "solvent"
+
+            name_a = stateA_components["ligand"].name or stateA_components["ligand"].smiles
+
+            if "ligand" in stateB_components:
+                name_b = stateB_components["ligand"].name or stateB_components["ligand"].smiles
+            else:
+                # ABFE: stateB has no ligand (annihilated)
+                name_b = None
 
             results.append(
                 TransformationResult(

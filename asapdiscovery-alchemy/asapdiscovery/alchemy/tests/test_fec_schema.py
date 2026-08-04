@@ -661,3 +661,325 @@ def test_results_to_cinnabar_with_prediction(tyk2_result_network):
             uncertainty, abs=1e-6
         )
         assert relative_row["source"] == "calculated"
+
+
+# ---------------------------------------------------------------------------
+# SepTopProtocol tests
+# ---------------------------------------------------------------------------
+
+
+def test_fec_septop_network(tyk2_ligands, tyk2_protein):
+    """A SepTopProtocol network has exactly one complex-phase Transformation per edge.
+
+    SepTopProtocol handles both legs (complex and solvent) internally from a single
+    Transformation; no separate solvent Transformation is created.
+    """
+    factory = FreeEnergyCalculationFactory(protocol=["SepTopProtocol"])
+    planned_network = factory.create_fec_dataset(
+        dataset_name="tyk2-septop", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    alchemical_network = planned_network.to_alchemical_network()
+
+    # every transformation belongs to SepTopProtocol
+    protocol_names = {type(e.protocol).__name__ for e in alchemical_network.edges}
+    assert protocol_names == {"SepTopProtocol"}
+
+    # SepTop uses only the complex phase (protein in both stateA and stateB); no
+    # separate solvent-only Transformation should be present.
+    for edge in alchemical_network.edges:
+        assert "protein" in edge.stateA.components, "SepTop stateA must have ProteinComponent"
+        assert "protein" in edge.stateB.components, "SepTop stateB must have ProteinComponent"
+
+    # each edge carries an atom mapping
+    for edge in alchemical_network.edges:
+        assert edge.mapping is not None
+
+    # transformation names end with the protocol class name
+    for edge in alchemical_network.edges:
+        assert edge.name.endswith("SepTopProtocol")
+
+
+def test_fec_septop_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
+    """A SepTopProtocol network survives a to_file/from_file round-trip."""
+    factory = FreeEnergyCalculationFactory(protocol=["SepTopProtocol"])
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-septop-rt", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    path = tmp_path / "septop_network.json"
+    planned.to_file(path.as_posix())
+    reloaded = FreeEnergyCalculationNetwork.from_file(path.as_posix())
+
+    assert type(reloaded.protocol_settings["SepTopProtocol"]).__name__ == "SepTopSettings"
+    before = {e.key for e in planned.to_alchemical_network().edges}
+    after = {e.key for e in reloaded.to_alchemical_network().edges}
+    assert before == after
+
+
+def test_fec_rfe_and_septop_combined(tyk2_ligands, tyk2_protein):
+    """RFE and SepTop protocols produce independent transformation sets per edge.
+
+    RFE produces two Transformations per graph-edge (complex + solvent), while
+    SepTopProtocol produces one (combined).  For N graph-edges the network should
+    therefore contain 2*N RFE Transformations and N SepTop Transformations.
+    """
+    protocols = ["RelativeHybridTopologyProtocol", "SepTopProtocol"]
+    factory = FreeEnergyCalculationFactory(protocol=protocols)
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-combined", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    network = planned.to_alchemical_network()
+
+    counts = {"RelativeHybridTopologyProtocol": 0, "SepTopProtocol": 0}
+    for edge in network.edges:
+        counts[type(edge.protocol).__name__] += 1
+
+    # RFE: 2 Transformations per graph-edge; SepTop: 1 Transformation per graph-edge
+    assert counts["RelativeHybridTopologyProtocol"] == 2 * counts["SepTopProtocol"]
+    assert counts["SepTopProtocol"] > 0
+    # gufe keys are unique across both protocols
+    keys = [e.key for e in network.edges]
+    assert len(keys) == len(set(keys))
+
+
+# ---------------------------------------------------------------------------
+# AbsoluteBindingProtocol (ABFE) tests
+# ---------------------------------------------------------------------------
+
+
+def test_fec_abfe_network_no_edges(tyk2_ligands, tyk2_protein):
+    """A pure ABFE network produces exactly one Transformation per ligand.
+
+    AbsoluteBindingProtocol handles both complex and solvent legs internally from a
+    single Transformation (same architecture as SepTopProtocol).  Its
+    _validate_endstates() requires ProteinComponent in both stateA and stateB, so
+    stateB is the apo protein (no ligand) rather than a bare solvent box.
+    """
+    factory = FreeEnergyCalculationFactory(protocol=["AbsoluteBindingProtocol"])
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-abfe", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    network = planned.to_alchemical_network()
+
+    # every transformation belongs to AbsoluteBindingProtocol
+    protocol_names = {type(e.protocol).__name__ for e in network.edges}
+    assert protocol_names == {"AbsoluteBindingProtocol"}
+
+    # no atom mapping (ligand is annihilated, not transformed to another)
+    for edge in network.edges:
+        assert edge.mapping is None
+
+    # stateA has ligand + protein; stateB has protein but no ligand (apo)
+    for edge in network.edges:
+        assert "ligand" in edge.stateA.components
+        assert "ligand" not in edge.stateB.components
+        assert "protein" in edge.stateA.components
+        assert "protein" in edge.stateB.components
+
+    # exactly one Transformation per ligand (both legs handled internally)
+    n_ligands = 3
+    assert len(network.edges) == n_ligands
+
+    # gufe keys are unique
+    keys = [e.key for e in network.edges]
+    assert len(keys) == len(set(keys))
+
+
+def test_fec_abfe_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
+    """An ABFE network survives a to_file/from_file round-trip."""
+    factory = FreeEnergyCalculationFactory(protocol=["AbsoluteBindingProtocol"])
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-abfe-rt", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    path = tmp_path / "abfe_network.json"
+    planned.to_file(path.as_posix())
+    reloaded = FreeEnergyCalculationNetwork.from_file(path.as_posix())
+
+    assert (
+        type(reloaded.protocol_settings["AbsoluteBindingProtocol"]).__name__
+        == "AbsoluteBindingSettings"
+    )
+    before = {e.key for e in planned.to_alchemical_network().edges}
+    after = {e.key for e in reloaded.to_alchemical_network().edges}
+    assert before == after
+
+
+def test_fec_rbfe_and_abfe_combined(tyk2_ligands, tyk2_protein):
+    """RBFE and ABFE protocols coexist in the same AlchemicalNetwork.
+
+    RFE: 2 Transformations per graph-edge (complex + solvent).
+    ABFE: 1 Transformation per ligand-node (both legs handled internally).
+    """
+    protocols = ["RelativeHybridTopologyProtocol", "AbsoluteBindingProtocol"]
+    factory = FreeEnergyCalculationFactory(protocol=protocols)
+    planned = factory.create_fec_dataset(
+        dataset_name="tyk2-mixed", receptor=tyk2_protein, ligands=tyk2_ligands[:3]
+    )
+    network = planned.to_alchemical_network()
+
+    rbfe_edges = [e for e in network.edges if type(e.protocol).__name__ == "RelativeHybridTopologyProtocol"]
+    abfe_edges = [e for e in network.edges if type(e.protocol).__name__ == "AbsoluteBindingProtocol"]
+
+    assert len(rbfe_edges) > 0
+    # one ABFE Transformation per ligand (3 ligands)
+    assert len(abfe_edges) == 3
+
+    # RBFE edges have mappings; ABFE edges do not
+    for edge in rbfe_edges:
+        assert edge.mapping is not None
+    for edge in abfe_edges:
+        assert edge.mapping is None
+
+    # ABFE: stateA has ligand+protein, stateB has protein but no ligand (apo)
+    for edge in abfe_edges:
+        assert "ligand" not in edge.stateB.components
+        assert "protein" in edge.stateB.components
+
+    # all keys are unique
+    keys = [e.key for e in network.edges]
+    assert len(keys) == len(set(keys))
+
+
+def test_abfe_transformation_result_name():
+    """ABFE TransformationResult.name() returns just ligand_a when ligand_b is None."""
+    result = TransformationResult(
+        ligand_a="mylig",
+        ligand_b=None,
+        phase="combined",
+        estimate=1.0 * OFFUnit.kilocalorie_per_mole,
+        uncertainty=0.1 * OFFUnit.kilocalorie_per_mole,
+        protocol="AbsoluteBindingProtocol",
+    )
+    assert result.name() == "mylig"
+
+
+def test_abfe_to_cinnabar_absolute_measurement(tyk2_result_network):
+    """ABFE (combined, ``ligand_b is None``) results convert to an *absolute*
+    cinnabar measurement.
+
+    ``cinnabar.AbsoluteMeasurement`` does not exist (verified against cinnabar
+    0.6.1 — the package exports only ``Measurement`` and ``ReferenceState``).  An
+    absolute value is expressed idiomatically as a ``Measurement`` anchored at a
+    true-ground ``ReferenceState``: ``labelA=ReferenceState()``, ``labelB=<ligand>``.
+    """
+    from cinnabar import Measurement, ReferenceState
+
+    abfe_result = TransformationResult(
+        ligand_a="lig_a",
+        ligand_b=None,
+        phase="combined",
+        estimate=-9.0 * OFFUnit.kilocalorie_per_mole,
+        uncertainty=0.3 * OFFUnit.kilocalorie_per_mole,
+        protocol="AbsoluteBindingProtocol",
+    )
+
+    # Rebuild the network with our ABFE result (models are frozen, use model_validate).
+    data = tyk2_result_network.model_dump()
+    data["results"]["results"] = [abfe_result.model_dump()]
+    network = FreeEnergyCalculationNetwork.model_validate(data)
+
+    measurements = network.results.to_cinnabar_measurements()
+    assert len(measurements) == 1
+    measurement = measurements[0]
+
+    # absolute measurement: A-side is the true-ground reference, B-side the ligand
+    assert isinstance(measurement, Measurement)
+    assert isinstance(measurement.labelA, ReferenceState)
+    assert measurement.labelA.is_true_ground()
+    assert measurement.labelB == "lig_a"
+    assert measurement.DG.m_as(OFFUnit.kilocalorie_per_mole) == pytest.approx(-9.0)
+    assert measurement.uncertainty.m_as(OFFUnit.kilocalorie_per_mole) == pytest.approx(
+        0.3
+    )
+    assert measurement.computational
+
+    # the absolute measurement must be ingestible by a cinnabar FEMap (it anchors
+    # the graph on the ligand rather than introducing a spurious sentinel node)
+    fe_map = network.results.to_fe_map()
+    assert fe_map.n_measurements == 1
+    assert fe_map.ligands == ["lig_a"]
+
+
+def test_abfe_two_leg_to_cinnabar_absolute_measurement(tyk2_result_network):
+    """Two-leg ABFE results (complex + solvent, ``ligand_b is None``) combine to an
+    absolute cinnabar ``Measurement`` anchored at a ``ReferenceState`` with
+    ``ΔG = ΔG_complex − ΔG_solvent``."""
+    from cinnabar import Measurement, ReferenceState
+
+    abfe_results = [
+        TransformationResult(
+            ligand_a="lig_a",
+            ligand_b=None,
+            phase="complex",
+            estimate=-12.0 * OFFUnit.kilocalorie_per_mole,
+            uncertainty=0.3 * OFFUnit.kilocalorie_per_mole,
+            protocol="AbsoluteBindingProtocol",
+        ),
+        TransformationResult(
+            ligand_a="lig_a",
+            ligand_b=None,
+            phase="solvent",
+            estimate=-3.0 * OFFUnit.kilocalorie_per_mole,
+            uncertainty=0.4 * OFFUnit.kilocalorie_per_mole,
+            protocol="AbsoluteBindingProtocol",
+        ),
+    ]
+
+    data = tyk2_result_network.model_dump()
+    data["results"]["results"] = [r.model_dump() for r in abfe_results]
+    network = FreeEnergyCalculationNetwork.model_validate(data)
+
+    measurements = network.results.to_cinnabar_measurements()
+    assert len(measurements) == 1
+    measurement = measurements[0]
+
+    assert isinstance(measurement, Measurement)
+    assert isinstance(measurement.labelA, ReferenceState)
+    assert measurement.labelA.is_true_ground()
+    assert measurement.labelB == "lig_a"
+    # ΔG_bind = ΔG_complex − ΔG_solvent = -12.0 − (-3.0) = -9.0
+    assert measurement.DG.m_as(OFFUnit.kilocalorie_per_mole) == pytest.approx(-9.0)
+    # uncertainty combines in quadrature: sqrt(0.3**2 + 0.4**2) = 0.5
+    assert measurement.uncertainty.m_as(OFFUnit.kilocalorie_per_mole) == pytest.approx(
+        0.5
+    )
+
+
+def test_clean_result_network_combined_phase(tyk2_result_network, tmp_path):
+    """clean_result_network must not crash on combined-phase (SepTop/ABFE) results
+    and must correctly apply the outlier threshold to the estimate directly."""
+    from asapdiscovery.alchemy.predict import clean_result_network
+    from asapdiscovery.alchemy.schema.fec import AlchemiscaleResults
+
+    # Build mock combined-phase results: one within threshold, one outlier.
+    combined_results = [
+        TransformationResult(
+            ligand_a="lig_a",
+            ligand_b="lig_b",
+            phase="combined",
+            estimate=2.0 * OFFUnit.kilocalorie_per_mole,
+            uncertainty=0.1 * OFFUnit.kilocalorie_per_mole,
+            protocol="SepTopProtocol",
+        ),
+        TransformationResult(
+            ligand_a="lig_c",
+            ligand_b="lig_d",
+            phase="combined",
+            estimate=999.0 * OFFUnit.kilocalorie_per_mole,  # outlier
+            uncertainty=0.1 * OFFUnit.kilocalorie_per_mole,
+            protocol="SepTopProtocol",
+        ),
+    ]
+
+    # Rebuild the network with our combined results (models are frozen, use model_validate).
+    data = tyk2_result_network.model_dump()
+    data["results"]["results"] = [r.model_dump() for r in combined_results]
+    network_with_combined = FreeEnergyCalculationNetwork.model_validate(data)
+
+    # clean_result_network expects a file path.
+    network_file = tmp_path / "combined_network.json"
+    network_with_combined.to_file(network_file.as_posix())
+
+    cleaned = clean_result_network(network_file.as_posix(), ddg_outlier_threshold=100.0)
+    kept = cleaned.results.results
+    assert len(kept) == 1
+    assert kept[0].ligand_a == "lig_a"
