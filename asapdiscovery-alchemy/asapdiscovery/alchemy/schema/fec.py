@@ -341,11 +341,13 @@ class _BaseResults(_SchemaBaseFrozen):
         Combine the solvent and complex phases of each transformation into cinnabar
         measurement objects.
 
-        For edge-based (RBFE) results (``ligand_b`` is set) a
-        ``cinnabar.Measurement`` (relative ΔΔG) is produced from
-        ``ΔG_complex − ΔG_solvent``.  For node-based (ABFE) results
-        (``ligand_b is None``) a ``cinnabar.AbsoluteMeasurement`` (absolute ΔG)
-        is produced from the same combination.
+        For edge-based (RBFE) results (``ligand_b`` is set) a relative
+        ``cinnabar.Measurement`` (ΔΔG) is produced from ``ΔG_complex − ΔG_solvent``.
+        For node-based (ABFE) results (``ligand_b is None``) an *absolute*
+        ``cinnabar.Measurement`` (ΔG) is produced from the same combination,
+        using cinnabar's idiomatic representation of an absolute value: a
+        ``Measurement`` anchored at a true-ground ``ReferenceState`` so it can
+        serve as an anchor in a combined RBFE+ABFE FEMap.
 
         Args:
             protocol: If provided (including ``None`` for legacy results), only
@@ -355,13 +357,14 @@ class _BaseResults(_SchemaBaseFrozen):
                 same edge are never merged.
 
         Returns:
-            A list of ``cinnabar.Measurement`` and/or ``cinnabar.AbsoluteMeasurement``
-            objects made from the combined solvent and complex phases.
+            A list of ``cinnabar.Measurement`` objects (relative for RBFE,
+            absolute — anchored at a ``ReferenceState`` — for ABFE) made from the
+            combined solvent and complex phases.
         """
         from collections import defaultdict
 
         import numpy as np
-        from cinnabar import Measurement
+        from cinnabar import Measurement, ReferenceState
 
         if protocol == "__all__":
             results = self.results
@@ -412,26 +415,17 @@ class _BaseResults(_SchemaBaseFrozen):
                 # SepTop → ΔΔG_bind (RBFE); AbsoluteBinding → ΔG_bind (ABFE).
                 combined = transforms[0]
                 if combined.ligand_b is None:
-                    # ABFE: absolute ΔG_bind
-                    try:
-                        from cinnabar import AbsoluteMeasurement
-
-                        result = AbsoluteMeasurement(
-                            label=combined.ligand_a,
-                            DG=combined.estimate,
-                            uncertainty=combined.uncertainty,
-                            computational=True,
-                            source="calculated",
-                        )
-                    except ImportError:
-                        result = Measurement(
-                            labelA=combined.ligand_a,
-                            labelB="__vacuum__",
-                            DG=combined.estimate,
-                            uncertainty=combined.uncertainty,
-                            computational=True,
-                            source="calculated",
-                        )
+                    # ABFE: absolute ΔG_bind — expressed as a Measurement relative to
+                    # a true-ground ReferenceState (cinnabar's idiomatic absolute value)
+                    # so it can anchor a combined RBFE+ABFE FEMap.
+                    result = Measurement(
+                        labelA=ReferenceState(),
+                        labelB=combined.ligand_a,
+                        DG=combined.estimate,
+                        uncertainty=combined.uncertainty,
+                        computational=True,
+                        source="calculated",
+                    )
                 else:
                     # SepTop (and similar): relative ΔΔG_bind
                     result = Measurement(
@@ -456,29 +450,17 @@ class _BaseResults(_SchemaBaseFrozen):
                 )
 
                 if leg1.ligand_b is None:
-                    # ABFE: absolute ΔG_bind — use cinnabar AbsoluteMeasurement so it
-                    # can serve as an anchor in a combined RBFE+ABFE FEMap
-                    try:
-                        from cinnabar import AbsoluteMeasurement
-
-                        result = AbsoluteMeasurement(
-                            label=leg1.ligand_a,
-                            DG=dg,
-                            uncertainty=uncertainty,
-                            computational=True,
-                            source="calculated",
-                        )
-                    except ImportError:
-                        # fall back to a relative measurement with a sentinel second label
-                        # if the installed cinnabar version predates AbsoluteMeasurement
-                        result = Measurement(
-                            labelA=leg1.ligand_a,
-                            labelB="__vacuum__",
-                            DG=dg,
-                            uncertainty=uncertainty,
-                            computational=True,
-                            source="calculated",
-                        )
+                    # ABFE: absolute ΔG_bind — expressed as a Measurement relative to
+                    # a true-ground ReferenceState (cinnabar's idiomatic absolute value)
+                    # so it can serve as an anchor in a combined RBFE+ABFE FEMap.
+                    result = Measurement(
+                        labelA=ReferenceState(),
+                        labelB=leg1.ligand_a,
+                        DG=dg,
+                        uncertainty=uncertainty,
+                        computational=True,
+                        source="calculated",
+                    )
                 else:
                     # RBFE: relative ΔΔG_bind
                     result = Measurement(

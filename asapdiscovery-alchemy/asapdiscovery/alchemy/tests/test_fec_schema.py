@@ -852,6 +852,98 @@ def test_abfe_transformation_result_name():
     assert result.name() == "mylig"
 
 
+def test_abfe_to_cinnabar_absolute_measurement(tyk2_result_network):
+    """ABFE (combined, ``ligand_b is None``) results convert to an *absolute*
+    cinnabar measurement.
+
+    ``cinnabar.AbsoluteMeasurement`` does not exist (verified against cinnabar
+    0.6.1 — the package exports only ``Measurement`` and ``ReferenceState``).  An
+    absolute value is expressed idiomatically as a ``Measurement`` anchored at a
+    true-ground ``ReferenceState``: ``labelA=ReferenceState()``, ``labelB=<ligand>``.
+    """
+    from cinnabar import Measurement, ReferenceState
+
+    abfe_result = TransformationResult(
+        ligand_a="lig_a",
+        ligand_b=None,
+        phase="combined",
+        estimate=-9.0 * OFFUnit.kilocalorie_per_mole,
+        uncertainty=0.3 * OFFUnit.kilocalorie_per_mole,
+        protocol="AbsoluteBindingProtocol",
+    )
+
+    # Rebuild the network with our ABFE result (models are frozen, use model_validate).
+    data = tyk2_result_network.model_dump()
+    data["results"]["results"] = [abfe_result.model_dump()]
+    network = FreeEnergyCalculationNetwork.model_validate(data)
+
+    measurements = network.results.to_cinnabar_measurements()
+    assert len(measurements) == 1
+    measurement = measurements[0]
+
+    # absolute measurement: A-side is the true-ground reference, B-side the ligand
+    assert isinstance(measurement, Measurement)
+    assert isinstance(measurement.labelA, ReferenceState)
+    assert measurement.labelA.is_true_ground()
+    assert measurement.labelB == "lig_a"
+    assert measurement.DG.m_as(OFFUnit.kilocalorie_per_mole) == pytest.approx(-9.0)
+    assert measurement.uncertainty.m_as(OFFUnit.kilocalorie_per_mole) == pytest.approx(
+        0.3
+    )
+    assert measurement.computational
+
+    # the absolute measurement must be ingestible by a cinnabar FEMap (it anchors
+    # the graph on the ligand rather than introducing a spurious sentinel node)
+    fe_map = network.results.to_fe_map()
+    assert fe_map.n_measurements == 1
+    assert fe_map.ligands == ["lig_a"]
+
+
+def test_abfe_two_leg_to_cinnabar_absolute_measurement(tyk2_result_network):
+    """Two-leg ABFE results (complex + solvent, ``ligand_b is None``) combine to an
+    absolute cinnabar ``Measurement`` anchored at a ``ReferenceState`` with
+    ``ΔG = ΔG_complex − ΔG_solvent``."""
+    from cinnabar import Measurement, ReferenceState
+
+    abfe_results = [
+        TransformationResult(
+            ligand_a="lig_a",
+            ligand_b=None,
+            phase="complex",
+            estimate=-12.0 * OFFUnit.kilocalorie_per_mole,
+            uncertainty=0.3 * OFFUnit.kilocalorie_per_mole,
+            protocol="AbsoluteBindingProtocol",
+        ),
+        TransformationResult(
+            ligand_a="lig_a",
+            ligand_b=None,
+            phase="solvent",
+            estimate=-3.0 * OFFUnit.kilocalorie_per_mole,
+            uncertainty=0.4 * OFFUnit.kilocalorie_per_mole,
+            protocol="AbsoluteBindingProtocol",
+        ),
+    ]
+
+    data = tyk2_result_network.model_dump()
+    data["results"]["results"] = [r.model_dump() for r in abfe_results]
+    network = FreeEnergyCalculationNetwork.model_validate(data)
+
+    measurements = network.results.to_cinnabar_measurements()
+    assert len(measurements) == 1
+    measurement = measurements[0]
+
+    assert isinstance(measurement, Measurement)
+    assert isinstance(measurement.labelA, ReferenceState)
+    assert measurement.labelA.is_true_ground()
+    assert measurement.labelB == "lig_a"
+    # ΔG_bind = ΔG_complex − ΔG_solvent = -12.0 − (-3.0) = -9.0
+    assert measurement.DG.m_as(OFFUnit.kilocalorie_per_mole) == pytest.approx(-9.0)
+    # uncertainty combines in quadrature: sqrt(0.3**2 + 0.4**2) = 0.5
+    assert measurement.uncertainty.m_as(OFFUnit.kilocalorie_per_mole) == pytest.approx(
+        0.5
+    )
+
+
 def test_clean_result_network_combined_phase(tyk2_result_network, tmp_path):
     """clean_result_network must not crash on combined-phase (SepTop/ABFE) results
     and must correctly apply the outlier threshold to the estimate directly."""
