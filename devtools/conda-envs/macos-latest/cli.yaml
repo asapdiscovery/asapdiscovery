@@ -27,7 +27,7 @@ dependencies:
   - pebble
   - rdkit
   - openff-toolkit =0.18.0
-  - openff-interchange =0.4.11
+  - openff-interchange >=0.5.0,!=0.5.1
   - openff-forcefields >=2024.04.0
   - openeye-toolkits
 
@@ -74,15 +74,14 @@ dependencies:
   - mdanalysis
 
   # Alchemy / Free energy
-  - openfe =1.8.0
-  - gufe =1.7.1
+  - openfe =1.12.0
+  - gufe =1.12.0
   - httpx
-  - perses >=0.10.2
   - kartograf
   - rich
   - alchemiscale-client >=0.7.2
-  - feflow =0.2.0
-  - cinnabar >=0.4.1
+  - feflow =0.2.1
+  - cinnabar >=0.6.0
 
   # Visualization
   - seaborn
