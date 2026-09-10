@@ -25,13 +25,17 @@ defaults:
 
 jobs:
   test:
-    name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}, ${{ matrix.alchemy-env }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.12"]
+        # Two parallel stacks: `alchemy` is openfe 1.8, `alchemy-membrane` is openfe 1.12.
+        # Membrane support (gufe's ProteinMembraneComponent) requires >=1.11, but the 1.8
+        # stack stays supported, so the suite must pass on both.
+        alchemy-env: [alchemy, alchemy-membrane]
 
     env:
       OE_LICENSE: ${{ github.workspace }}/oe_license.txt
@@ -58,12 +62,12 @@ jobs:
         # micromamba-version: latest
         # pin to latest 1.x release
         micromamba-version: '1.5.10-0'
-        environment-file: devtools/conda-envs/${{ matrix.os }}/alchemy.yaml
-        environment-name: alchemy
+        environment-file: devtools/conda-envs/${{ matrix.os }}/${{ matrix.alchemy-env }}.yaml
+        environment-name: ${{ matrix.alchemy-env }}
         cache-environment: true
         cache-downloads: true
-        cache-environment-key: environment-alchemy-${{ steps.date.outputs.date }}
-        cache-downloads-key: downloads-alchemy-${{ steps.date.outputs.date }}
+        cache-environment-key: environment-${{ matrix.alchemy-env }}-${{ steps.date.outputs.date }}
+        cache-downloads-key: downloads-${{ matrix.alchemy-env }}-${{ steps.date.outputs.date }}
         create-args: >-
           python==${{ matrix.python-version }}
 
@@ -102,5 +106,5 @@ jobs:
       with:
         files: ./coverage.xml
         flags: unittests
-        name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
+        name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.alchemy-env }}
         fail_ci_if_error: false
