@@ -14,14 +14,19 @@ from asapdiscovery.alchemy.membrane import (
     MembraneBuildSettings,
     ResidueRange,
     StructuralIonSite,
+    align_receptor,
     best_inplane_angle,
     check_landmarks,
+    composition,
+    diagnostics,
     get_preset,
+    lipid_patch,
     membrane_axis,
     membrane_placement,
     read_pdb_atoms,
     rotation_to_z,
     structural_ion_positions,
+    wrap_molecules,
 )
 
 
@@ -523,3 +528,369 @@ def test_membrane_network_rejects_incapable_protocol(membrane_receptor, tyk2_lig
     )
     with pytest.raises(NotImplementedError, match="cannot run membrane systems"):
         planned.to_alchemical_network()
+
+
+# --------------------------------------------------------------------------------------
+# builder: the OpenMM-side helpers.
+#
+# These need openmm but no GPU and no equilibration, so they cover the parts of
+# builder.py that would otherwise only be exercised by a multi-hour production build.
+# --------------------------------------------------------------------------------------
+
+from asapdiscovery.alchemy.membrane.builder import (  # noqa: E402
+    LIGAND_RESNAME,
+    _non_protein_resnames,
+)
+
+openmm_app = pytest.importorskip("openmm.app", reason="openmm not installed")
+
+
+def _topology_with(residues):
+    """A minimal OpenMM Topology: one chain, one single-atom residue per name given."""
+    from openmm import app
+
+    topology = app.Topology()
+    chain = topology.addChain()
+    for name in residues:
+        residue = topology.addResidue(name, chain)
+        topology.addAtom("C", app.element.carbon, residue)
+    return topology
+
+
+def test_lipid_patch_renames_truncated_residues():
+    """PDB truncates POPC to POP; lipid17 defines POPC, so addMembrane needs the rename."""
+    patch, n_renamed = lipid_patch(MembraneBuildSettings())
+    assert n_renamed > 0
+    names = {r.name for r in patch.topology.residues()}
+    # the shipped patch is a *hydrated* bilayer, so water is expected alongside the lipid
+    assert "POPC" in names
+    assert "POP" not in names, f"unrenamed lipid residues remain: {names}"
+
+
+def test_lipid_patch_rejects_lipid_openmm_does_not_ship():
+    with pytest.raises(FileNotFoundError, match="no pre-equilibrated patch"):
+        lipid_patch(MembraneBuildSettings(lipid="NOTALIPID"))
+
+
+def test_composition_counts_each_category():
+    topology = _topology_with(
+        ["ALA", "GLY", "POPC", "POPC", "HOH", "HOH", "HOH", "NA", "CL", LIGAND_RESNAME]
+    )
+    counts = composition(topology, MembraneBuildSettings())
+    assert counts["protein_residues"] == 2
+    assert counts["lipids"] == 2
+    assert counts["waters"] == 3
+    assert counts["Na"] == 1 and counts["Cl"] == 1
+    assert counts["ligand"] == 1
+    assert counts["atoms"] == 10
+
+
+def test_composition_accepts_truncated_lipid_name():
+    """A system read back from a PDB carries POP, not POPC -- both must count as lipid."""
+    counts = composition(_topology_with(["POP", "POP", "ALA"]), MembraneBuildSettings())
+    assert counts["lipids"] == 2
+    assert counts["protein_residues"] == 1
+
+
+def test_composition_does_not_count_structural_ions_as_protein():
+    """Regression: ion residue names come from the spec, so they cannot be hardcoded.
+
+    A spec using Ca2+ would otherwise have its ions counted as protein residues -- and
+    their atoms folded into the protein cross-section in diagnostics().
+    """
+    spec = HERG.model_copy(
+        update={
+            "structural_ions": [
+                StructuralIonSite(
+                    name="site", element="Ca", lower_residue=1, upper_residue=2
+                )
+            ]
+        }
+    )
+    topology = _topology_with(["ALA", "CA", "CA"])
+    without_spec = composition(topology, MembraneBuildSettings())
+    with_spec = composition(topology, MembraneBuildSettings(), spec)
+    assert without_spec["protein_residues"] == 3  # the bug this guards against
+    assert with_spec["protein_residues"] == 1
+    assert with_spec["structural_ions"] == {"CA": 2}
+
+
+def test_non_protein_resnames_follows_the_spec():
+    settings = MembraneBuildSettings()
+    base = _non_protein_resnames(settings)
+    assert {"HOH", "WAT", "NA", "CL", LIGAND_RESNAME, "POPC", "POP"} <= base
+    assert "K" not in base
+    # hERG declares potassium filter ions, so K becomes non-protein for that spec
+    assert "K" in _non_protein_resnames(settings, HERG)
+
+
+def test_wrap_molecules_moves_whole_molecules_only():
+    """Per-atom wrapping splits molecules across the boundary; per-molecule does not.
+
+    Getting this wrong once reported a leaflet split of 431/1 and a P-P thickness of
+    27.1 A against a true ~37 A.
+    """
+    from openmm import app, unit
+
+    topology = app.Topology()
+    chain = topology.addChain()
+    residue = topology.addResidue("HOH", chain)
+    atoms = [
+        topology.addAtom(n, app.element.oxygen, residue) for n in ("O", "H1", "H2")
+    ]
+    topology.addBond(atoms[0], atoms[1])
+    topology.addBond(atoms[0], atoms[2])
+
+    box = np.diag([4.0, 4.0, 4.0])
+    # a molecule sitting a full box length out, straddling nothing
+    positions = unit.Quantity(
+        np.array([[4.4, 0.0, 0.0], [4.5, 0.0, 0.0], [4.6, 0.0, 0.0]]), unit.nanometer
+    )
+    wrapped = np.array(
+        wrap_molecules(topology, positions, box, verbose=False).value_in_unit(
+            unit.nanometer
+        )
+    )
+    original = np.array(positions.value_in_unit(unit.nanometer))
+    # the whole molecule moved by exactly one box vector -- internal geometry preserved
+    shift = wrapped - original
+    assert np.allclose(shift, shift[0]), "molecule was split across the boundary"
+    assert np.allclose(shift[0], [-4.0, 0.0, 0.0])
+    assert abs(wrapped[:, 0].mean()) <= 2.0
+
+
+def test_wrap_molecules_leaves_centred_molecules_alone():
+    from openmm import app, unit
+
+    topology = app.Topology()
+    chain = topology.addChain()
+    residue = topology.addResidue("HOH", chain)
+    topology.addAtom("O", app.element.oxygen, residue)
+    positions = unit.Quantity(np.array([[0.1, -0.2, 0.3]]), unit.nanometer)
+    wrapped = np.array(
+        wrap_molecules(
+            topology, positions, np.diag([4.0, 4.0, 4.0]), verbose=False
+        ).value_in_unit(unit.nanometer)
+    )
+    assert np.allclose(wrapped, [[0.1, -0.2, 0.3]])
+
+
+def test_diagnostics_splits_leaflets_and_measures_thickness():
+    """A synthetic bilayer: phosphates at +-19 A give a 38 A P-P thickness."""
+    from openmm import app, unit
+
+    topology = app.Topology()
+    chain = topology.addChain()
+    coords = []
+    for z in (19.0, -19.0):
+        for i in range(8):
+            residue = topology.addResidue("POPC", chain)
+            topology.addAtom("P", app.element.phosphorus, residue)
+            coords.append([float(i), 0.0, z])
+    positions = unit.Quantity(np.array(coords), unit.angstrom)
+
+    diag = diagnostics(
+        topology, positions, np.diag([6.0, 6.0, 9.0]), MembraneBuildSettings()
+    )
+    assert diag["n_lipids_upper"] == 8
+    assert diag["n_lipids_lower"] == 8
+    assert diag["leaflet_imbalance"] == 0
+    assert diag["P_P_thickness_A"] == pytest.approx(38.0, abs=0.1)
+    assert diag["leaflet_split_z_A"] == pytest.approx(0.0, abs=1e-6)
+    # 6x6 nm box over 8 lipids per leaflet
+    assert diag["area_per_lipid_A2_uncorrected"] == pytest.approx(450.0, abs=1.0)
+
+
+def test_diagnostics_handles_a_system_with_no_lipids():
+    """Must not raise on an empty phosphate set -- min()/max() on an empty array would."""
+    diag = diagnostics(
+        _topology_with(["ALA"]),
+        __import__("openmm").unit.Quantity(
+            np.array([[0.0, 0.0, 0.0]]), __import__("openmm").unit.angstrom
+        ),
+        np.diag([4.0, 4.0, 4.0]),
+        MembraneBuildSettings(),
+    )
+    assert diag["n_lipids_upper"] == 0 and diag["n_lipids_lower"] == 0
+    assert diag["P_P_thickness_A"] is None
+    assert diag["area_per_lipid_A2"] is None
+
+
+def _write_pdb(path, atoms):
+    """Write parsed-atom dicts back out as a minimal PDB."""
+    with open(path, "w") as fh:
+        for i, a in enumerate(atoms, 1):
+            x, y, z = a["xyz"]
+            fh.write(
+                f"ATOM  {i:>5} {a['name']:<4}{a['resn']:>3} {a['chain']}"
+                f"{a['resi']:>4}    {x:>8.3f}{y:>8.3f}{z:>8.3f}"
+                f"  1.00  0.00          {a['el']:>2}\n"
+            )
+        fh.write("END\n")
+
+
+def test_align_receptor_puts_the_axis_on_z(tmp_path, toy_channel, toy_spec):
+    """End-to-end alignment: an axis along x must come out along z, midplane at zero."""
+    pdb = tmp_path / "toy.pdb"
+    _write_pdb(pdb, toy_channel)
+
+    _, rot, origin, info = align_receptor(pdb.as_posix(), toy_spec)
+
+    # the bundle axis was along x and is 90 degrees off z before alignment
+    assert info["angle_axis_to_z_deg"] == pytest.approx(90.0, abs=0.5)
+    # after alignment the midplane sits at z=0 by construction
+    assert info["belt"]["membrane_centre_z"] == pytest.approx(0.0, abs=1e-6)
+    # rot is a proper rotation: orthonormal, right-handed
+    assert np.allclose(rot @ rot.T, np.eye(3), atol=1e-9)
+    assert np.linalg.det(rot) == pytest.approx(1.0, abs=1e-9)
+    # the extracellular landmark ends up at +z, not -z
+    assert info["belt"]["landmark_z_after_centring"]["tip"] > 0
+    assert info["landmark_violations"] == []
+    # protein is centred in xy
+    xy = np.array([rot @ (a["xyz"] - origin) for a in toy_channel])[:, :2]
+    assert np.allclose(xy.mean(axis=0), [0.0, 0.0], atol=1e-6)
+
+
+def test_align_receptor_strict_raises_but_non_strict_reports(tmp_path, toy_channel):
+    """`analyse` needs the geometry of a BAD placement; `build` must refuse it."""
+    impossible = MembraneAlignmentSpec(
+        name="impossible",
+        axis_from=ResidueRange(start=30, end=30),
+        axis_to=ResidueRange(start=40, end=40),
+        tm_helices={"H1": ResidueRange(start=1, end=20)},
+        midplane_helices=["H1"],
+        landmarks={"tip": ResidueRange(start=30, end=30)},
+        # the tip really lands near +20 A, so this window cannot be satisfied
+        landmark_bounds={"tip": (-100.0, -50.0)},
+    )
+    pdb = tmp_path / "toy.pdb"
+    _write_pdb(pdb, toy_channel)
+
+    with pytest.raises(ValueError, match="failed the landmark checks"):
+        align_receptor(pdb.as_posix(), impossible)
+
+    _, _, _, info = align_receptor(pdb.as_posix(), impossible, strict=False)
+    assert len(info["landmark_violations"]) == 1
+    assert "tip" in info["landmark_violations"][0]
+    # ...and the geometry is still there to look at, which is the point
+    assert "belt" in info and "inplane" in info
+
+
+@pytest.mark.parametrize(
+    "target,receptor,report",
+    [
+        pytest.param(
+            "8ZYO",
+            "posed_sets/_membrane/8ZYO_receptor_c4complete.pdb",
+            "posed_sets/_membrane/8ZYO_membrane_report.json",
+            id="8ZYO",
+        ),
+        pytest.param(
+            "8ZYP",
+            "posed_sets/cumming_8ZYP/prepared_receptor.pdb",
+            "posed_sets/_membrane/8ZYP_membrane_report.json",
+            id="8ZYP",
+        ),
+    ],
+)
+def test_align_receptor_reproduces_production_geometry(target, receptor, report):
+    """Regression against the systems the hERG production networks were built on.
+
+    Skipped unless the reference project is present; set ASAP_HERG_PROJECT to point at
+    it. Guards the numbers that a change to the alignment maths would silently move.
+    """
+    import json
+    import os
+    import pathlib
+
+    root = os.environ.get(
+        "ASAP_HERG_PROJECT",
+        os.path.expanduser(
+            "~/projects/project_support/alchemy/2026-07-16_openadmet_hERG"
+        ),
+    )
+    receptor_path = pathlib.Path(root) / receptor
+    report_path = pathlib.Path(root) / report
+    if not (receptor_path.exists() and report_path.exists()):
+        pytest.skip(
+            f"hERG reference data not found under {root}; set ASAP_HERG_PROJECT to run"
+        )
+
+    _, _, _, info = align_receptor(receptor_path.as_posix(), get_preset("herg"))
+    reference = json.loads(report_path.read_text())
+
+    assert info["membrane_axis"] == reference["pore_axis_deposited"]
+    assert info["angle_axis_to_z_deg"] == reference["angle_axis_to_z_deg"]
+    assert info["axis_vs_normal_deg"] == reference["axis_vs_normal_deg"]
+    assert (
+        info["protein_z_extent_after_align"]
+        == reference["protein_z_extent_after_align"]
+    )
+    assert (
+        info["inplane"]["inplane_spin_deg"] == reference["inplane"]["inplane_spin_deg"]
+    )
+    assert info["inplane"]["patch_copies_xy"] == reference["inplane"]["patch_copies_xy"]
+    assert info["inplane"]["footprint_nm"] == reference["inplane"]["footprint_nm"]
+    assert (
+        info["belt"]["landmark_z_after_centring"]
+        == reference["belt"]["landmark_z_after_centring"]
+    )
+    assert info["belt"]["tm_helix_spans"] == reference["belt"]["tm_helix_spans"]
+    assert info["landmark_violations"] == []
+
+
+# --------------------------------------------------------------------------------------
+# is_membrane must not pay for deserialisation just to read a type name.
+# --------------------------------------------------------------------------------------
+
+from asapdiscovery.alchemy.schema._util import (  # noqa: E402
+    receptor_json_is_membrane,
+    receptor_json_is_presolvated,
+)
+
+
+def test_serialised_type_check_agrees_with_deserialising_one(tyk2_protein):
+    """The cheap path must give the same answer as rebuilding the component."""
+    payload = tyk2_protein.to_json()
+    assert receptor_json_is_membrane(payload) is is_membrane_receptor(tyk2_protein)
+    assert receptor_json_is_presolvated(payload) is is_presolvated_receptor(
+        tyk2_protein
+    )
+
+
+@requires_membrane_openfe
+def test_serialised_type_check_recognises_a_membrane_receptor(membrane_receptor):
+    payload = membrane_receptor.to_json()
+    assert receptor_json_is_membrane(payload) is True
+    assert receptor_json_is_presolvated(payload) is True
+    assert receptor_json_is_membrane(payload) is is_membrane_receptor(membrane_receptor)
+
+
+@pytest.mark.parametrize("payload", ["not json", "", "[]", "null", "[[1,2,3]]"])
+def test_serialised_type_check_returns_none_when_undeterminable(payload):
+    """Unrecognised shapes must say 'I don't know' so callers fall back, not guess."""
+    assert receptor_json_is_membrane(payload) is None
+    assert receptor_json_is_presolvated(payload) is None
+
+
+@requires_membrane_openfe
+def test_is_membrane_does_not_deserialise_the_receptor(
+    membrane_receptor, tyk2_ligands, monkeypatch
+):
+    """Regression: deserialising a real membrane receptor costs ~79 s; this must not."""
+    from asapdiscovery.alchemy.schema.fec import (
+        FreeEnergyCalculationFactory,
+        FreeEnergyCalculationNetwork,
+    )
+
+    planned = FreeEnergyCalculationFactory().create_fec_dataset(
+        dataset_name="cheap_is_membrane",
+        receptor=membrane_receptor,
+        ligands=tyk2_ligands[:3],
+    )
+
+    def _explode(self):
+        raise AssertionError("is_membrane must not call to_openfe_receptor()")
+
+    monkeypatch.setattr(FreeEnergyCalculationNetwork, "to_openfe_receptor", _explode)
+    assert planned.is_membrane is True
