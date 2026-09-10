@@ -33,6 +33,13 @@ class _ProtocolRegistration(NamedTuple):
     #: (e.g. RFE, NEQ); False when the protocol handles both legs internally from a
     #: single complex-phase Transformation and returns ΔΔG directly (e.g. SepTop).
     needs_solvent_leg: bool = True
+    #: True if the protocol can run a membrane-embedded receptor (a gufe
+    #: ``ProteinMembraneComponent``). Requires openfe >=1.11.
+    supports_membrane: bool = False
+    #: Name(s) of the settings attribute holding the *complex*-leg integrator settings.
+    #: Protocols that run both legs from one Transformation (SepTop, ABFE) split these
+    #: into solvent/complex; only the complex leg gets the membrane barostat.
+    complex_integrator_fields: tuple[str, ...] = ("integrator_settings",)
 
 
 #: Index of the alchemical protocols ASAP-Alchemy knows how to build.
@@ -43,12 +50,15 @@ PROTOCOL_REGISTRY: dict[str, _ProtocolRegistration] = {
         module="openfe.protocols.openmm_rfe",
         protocol_class="RelativeHybridTopologyProtocol",
         package="openfe",
+        supports_membrane=True,
     ),
     "SepTopProtocol": _ProtocolRegistration(
         module="openfe.protocols.openmm_septop",
         protocol_class="SepTopProtocol",
         package="openfe",
         needs_solvent_leg=False,
+        supports_membrane=True,
+        complex_integrator_fields=("complex_integrator_settings",),
     ),
     "NonEquilibriumCyclingProtocol": _ProtocolRegistration(
         module="feflow.protocols",
@@ -66,6 +76,8 @@ PROTOCOL_REGISTRY: dict[str, _ProtocolRegistration] = {
         package="openfe",
         is_node_protocol=True,
         needs_solvent_leg=False,
+        supports_membrane=True,
+        complex_integrator_fields=("complex_integrator_settings",),
     ),
 }
 
@@ -108,6 +120,90 @@ def is_node_protocol(name: str) -> bool:
             f"Unknown protocol {name!r}; available protocols are "
             f"{available_protocols()}."
         )
+
+
+#: OpenFE's default lipid parameter set, supplied by openmmforcefields (not OpenMM).
+#: openfe >=1.12 already ships this in ``forcefield_settings.forcefields``, so adding it is
+#: usually a no-op -- but a factory that sets its own force field list (as a tuned
+#: production factory does) would otherwise drop it, leaving the lipids unparameterised.
+LIPID_FORCEFIELD = "amber/lipid17_merged.xml"
+
+
+def supports_membrane(name: str) -> bool:
+    """Return ``True`` if ``name`` can run a membrane-embedded receptor.
+
+    A membrane receptor is a gufe ``ProteinMembraneComponent``, which only exists in
+    openfe >=1.11. Protocols executed by external compute services pinned to older
+    openfe (the F@H protocols) are marked unsupported regardless.
+
+    Raises:
+        KeyError: If ``name`` is not a registered protocol.
+    """
+    try:
+        return PROTOCOL_REGISTRY[name].supports_membrane
+    except KeyError:
+        raise KeyError(
+            f"Unknown protocol {name!r}; available protocols are "
+            f"{available_protocols()}."
+        )
+
+
+def apply_membrane_settings(name: str, settings: "Settings") -> "Settings":
+    """Adapt ``settings`` in place for a membrane-embedded complex leg.
+
+    Two things must change relative to a soluble receptor:
+
+    * the complex leg needs a ``MonteCarloMembraneBarostat``, which couples pressure
+      anisotropically along z. An isotropic barostat on a bilayer is silently wrong,
+      not loudly wrong, so this is not optional;
+    * the lipids need parameters, i.e. :data:`LIPID_FORCEFIELD` on top of the protein
+      force fields.
+
+    OpenFE's own ``_adaptive_settings`` does the barostat half of this, but ASAP-Alchemy
+    builds protocols directly via :func:`build_protocol` and never calls it, so the
+    adaptation is applied here instead.
+
+    Args:
+        name: The registered protocol name.
+        settings: An **unfrozen** settings object (see ``Settings.unfrozen_copy()``).
+
+    Returns:
+        The same settings object, mutated.
+
+    Raises:
+        KeyError: If ``name`` is not a registered protocol.
+        NotImplementedError: If the protocol cannot run membrane systems, or if the
+            installed openfe is too old to express a membrane barostat.
+    """
+    if not supports_membrane(name):
+        raise NotImplementedError(
+            f"Protocol {name!r} does not support membrane-embedded receptors. "
+            "Membrane-capable protocols are "
+            f"{[p for p in available_protocols() if supports_membrane(p)]}."
+        )
+
+    registration = PROTOCOL_REGISTRY[name]
+
+    for field in registration.complex_integrator_fields:
+        integrator_settings = getattr(settings, field)
+        # openfe <1.11 has no `barostat` field at all and its settings models forbid
+        # extra fields, so setting it would raise an opaque pydantic error.
+        if not hasattr(integrator_settings, "barostat"):
+            import openfe
+
+            raise NotImplementedError(
+                f"openfe {openfe.__version__} cannot express a membrane barostat "
+                f"({field} has no 'barostat' field). Membrane systems need openfe "
+                ">=1.11; use the 'alchemy-membrane' environment."
+            )
+        integrator_settings.barostat = "MonteCarloMembraneBarostat"
+
+    forcefields = list(settings.forcefield_settings.forcefields)
+    if LIPID_FORCEFIELD not in forcefields:
+        forcefields.append(LIPID_FORCEFIELD)
+        settings.forcefield_settings.forcefields = forcefields
+
+    return settings
 
 
 def available_protocols() -> list[str]:

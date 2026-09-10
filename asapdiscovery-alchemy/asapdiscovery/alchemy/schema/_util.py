@@ -67,3 +67,34 @@ def get_mapping_scorer(scorer_name: str):
     raise ValueError(
         f"Atom mapping scorer {scorer_name} not recognized; use one of {list(SCORERS)}."
     )
+
+
+def is_presolvated_receptor(component) -> bool:
+    """True if ``component`` is a receptor that carries its own solvent and box.
+
+    A gufe ``SolvatedPDBComponent`` (and its ``ProteinMembraneComponent`` subclass) is
+    supplied as an already-solvated, already-equilibrated PDB with explicit box vectors,
+    so its waters, ions and box come from the file. Such a system must **not** also be
+    given a ``SolventComponent``.
+
+    Returns False on openfe <1.11, where the class does not exist.
+    """
+    import gufe
+
+    solvated_cls = getattr(gufe, "SolvatedPDBComponent", None)
+    return solvated_cls is not None and isinstance(component, solvated_cls)
+
+
+def is_membrane_receptor(component) -> bool:
+    """True if ``component`` is a membrane-embedded receptor.
+
+    A gufe ``ProteinMembraneComponent`` is the marker type that tells the protocol to use
+    a ``MonteCarloMembraneBarostat`` (anisotropic along z) rather than an isotropic one.
+    Every membrane receptor is also a pre-solvated one; the converse is not true.
+
+    Returns False on openfe <1.11, where the class does not exist.
+    """
+    import gufe
+
+    membrane_cls = getattr(gufe, "ProteinMembraneComponent", None)
+    return membrane_cls is not None and isinstance(component, membrane_cls)
