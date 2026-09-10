@@ -17,7 +17,9 @@ _orig_showwarning = warnings.showwarning
 
 
 def _showwarning(msg, cat, fname, lno, *args, **kwargs):
-    if issubclass(cat, (DeprecationWarning, UserWarning)) and _SUPPRESSED_DEPRECATION_PATTERNS.search(str(msg)):
+    if issubclass(
+        cat, (DeprecationWarning, UserWarning)
+    ) and _SUPPRESSED_DEPRECATION_PATTERNS.search(str(msg)):
         return
     _orig_showwarning(msg, cat, fname, lno, *args, **kwargs)
 
@@ -26,7 +28,9 @@ warnings.showwarning = _showwarning
 
 from asapdiscovery.alchemy.cli.alchemy import alchemy
 from asapdiscovery.alchemy.cli.bespoke import bespoke
+from asapdiscovery.alchemy.cli.membrane import membrane
 from asapdiscovery.alchemy.cli.prep import prep
 
 alchemy.add_command(prep)
 alchemy.add_command(bespoke)
+alchemy.add_command(membrane)
