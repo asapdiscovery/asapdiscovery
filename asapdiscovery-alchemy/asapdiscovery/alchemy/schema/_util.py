@@ -1,5 +1,6 @@
+import json
 from collections import Counter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from asapdiscovery.data.schema.ligand import Ligand
@@ -98,3 +99,49 @@ def is_membrane_receptor(component) -> bool:
 
     membrane_cls = getattr(gufe, "ProteinMembraneComponent", None)
     return membrane_cls is not None and isinstance(component, membrane_cls)
+
+
+#: gufe component classes whose receptors carry their own solvent and box.
+_PRESOLVATED_QUALNAMES = frozenset({"SolvatedPDBComponent", "ProteinMembraneComponent"})
+#: ...and the subset of those that are membrane-embedded.
+_MEMBRANE_QUALNAMES = frozenset({"ProteinMembraneComponent"})
+
+
+def _serialised_qualname(receptor_json: str) -> Optional[str]:
+    """The gufe class name recorded in a serialised component, without rebuilding it.
+
+    ``GufeTokenizable.to_json`` emits a keyed chain -- a list of ``[key, payload]`` pairs
+    whose last entry is the top-level object -- and every payload carries the class in
+    ``__qualname__``. Reading that is O(size of JSON); actually deserialising a membrane
+    receptor rebuilds a ~150,000-atom RDKit molecule, which is far too expensive for a
+    type check.
+
+    Returns None if the payload is not in the expected shape, so callers fall back to
+    real deserialisation rather than guessing wrong.
+    """
+    try:
+        payload = json.loads(receptor_json)
+    except (TypeError, ValueError):
+        return None
+    # keyed chain: [[key, {...}], ...]; plain dict form: {...}
+    if isinstance(payload, list) and payload:
+        last = payload[-1]
+        if isinstance(last, (list, tuple)) and len(last) == 2:
+            payload = last[1]
+    if isinstance(payload, dict):
+        qualname = payload.get("__qualname__")
+        if isinstance(qualname, str):
+            return qualname
+    return None
+
+
+def receptor_json_is_presolvated(receptor_json: str) -> Optional[bool]:
+    """Whether a serialised receptor carries its own solvent, or None if undeterminable."""
+    qualname = _serialised_qualname(receptor_json)
+    return None if qualname is None else qualname in _PRESOLVATED_QUALNAMES
+
+
+def receptor_json_is_membrane(receptor_json: str) -> Optional[bool]:
+    """Whether a serialised receptor is membrane-embedded, or None if undeterminable."""
+    qualname = _serialised_qualname(receptor_json)
+    return None if qualname is None else qualname in _MEMBRANE_QUALNAMES

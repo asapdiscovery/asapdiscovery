@@ -709,7 +709,17 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
 
     @property
     def is_membrane(self) -> bool:
-        """True if this network's receptor is membrane-embedded."""
+        """True if this network's receptor is membrane-embedded.
+
+        Answered from the serialised class name where possible. Deserialising a membrane
+        receptor rebuilds a ~150,000-atom molecule, which is far too expensive for a type
+        check that `submit` makes on every network.
+        """
+        from ._util import receptor_json_is_membrane
+
+        cheap = receptor_json_is_membrane(self.receptor)
+        if cheap is not None:
+            return cheap
         return is_membrane_receptor(self.to_openfe_receptor())
 
     def _protocols_for_edge(self, mapping: "LigandAtomMapping") -> list[str]:
