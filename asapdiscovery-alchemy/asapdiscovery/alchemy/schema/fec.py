@@ -23,15 +23,22 @@ from pydantic import (
     model_validator,
 )
 
-from ._util import check_ligand_series_uniqueness_and_names, get_mapping_scorer
+from ._util import (
+    check_ligand_series_uniqueness_and_names,
+    get_mapping_scorer,
+    is_membrane_receptor,
+    is_presolvated_receptor,
+)
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
 from .protocols import (
+    apply_membrane_settings,
     available_protocols,
     build_protocol,
     default_protocol_settings,
     is_node_protocol,
     needs_solvent_leg,
+    supports_membrane,
 )
 
 if TYPE_CHECKING:
@@ -690,8 +697,20 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
 
     model_config = ConfigDict(frozen=True, from_attributes=True)
 
-    def to_openfe_receptor(self) -> openfe.ProteinComponent:
-        return openfe.ProteinComponent.from_json(content=self.receptor)
+    def to_openfe_receptor(self) -> gufe.Component:
+        """Rebuild the receptor component from its stored JSON.
+
+        Dispatches on the serialised type rather than assuming ``ProteinComponent``, so
+        that a pre-solvated ``SolvatedPDBComponent`` or a membrane-embedded
+        ``ProteinMembraneComponent`` round-trips as itself. The distinction is load
+        bearing: the component *type* is what selects the membrane barostat downstream.
+        """
+        return gufe.tokenization.GufeTokenizable.from_json(content=self.receptor)
+
+    @property
+    def is_membrane(self) -> bool:
+        """True if this network's receptor is membrane-embedded."""
+        return is_membrane_receptor(self.to_openfe_receptor())
 
     def _protocols_for_edge(self, mapping: "LigandAtomMapping") -> list[str]:
         """Select which protocols to apply to a given ligand mapping (edge).
@@ -732,6 +751,23 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
         solvent = self.solvent_settings.to_solvent_component()
         receptor = self.to_openfe_receptor()
 
+        # A pre-solvated receptor (SolvatedPDBComponent, and its membrane subclass)
+        # supplies its own water, ions and box from the PDB, so the complex leg must not
+        # also carry a SolventComponent. The solvent leg is unaffected.
+        presolvated = is_presolvated_receptor(receptor)
+        membrane = is_membrane_receptor(receptor)
+
+        # Fail before building 120 transformations rather than at submission time.
+        if membrane:
+            unsupported = [p for p in self.protocol if not supports_membrane(p)]
+            if unsupported:
+                raise NotImplementedError(
+                    f"Receptor {receptor.name!r} is membrane-embedded, but the "
+                    f"configured protocol(s) {unsupported} cannot run membrane systems. "
+                    f"Membrane-capable protocols are "
+                    f"{[p for p in available_protocols() if supports_membrane(p)]}."
+                )
+
         # build the network; `protocol_strategy` decides which protocols apply to
         # each edge (the "all" strategy uses every configured protocol per edge)
         for mapping in ligand_network.edges:
@@ -760,6 +796,10 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                     if leg == "complex":
                         sys_a_dict["protein"] = receptor
                         sys_b_dict["protein"] = receptor
+                        if presolvated:
+                            # water, ions and box come from the receptor PDB
+                            del sys_a_dict["solvent"]
+                            del sys_b_dict["solvent"]
 
                     system_a = openfe.ChemicalSystem(
                         sys_a_dict, name=f"{mapping.componentA.name}_{leg}"
@@ -786,6 +826,15 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                             mapping,  # the atom mapping for this edge - for adaptive sampling
                             leg,  # whether this edge is complex or solvated phase - for adaptive solvent box padding
                             base_settings,  # base settings to compare with for internal checking
+                        )
+
+                    # A bilayer needs an anisotropic barostat and lipid parameters.
+                    # OpenFE's own _adaptive_settings would do the barostat half, but
+                    # ASAP-Alchemy builds protocols directly and never calls it, so an
+                    # unadapted membrane complex leg would silently run isotropic.
+                    if membrane and leg == "complex":
+                        edge_settings = apply_membrane_settings(
+                            protocol_name, edge_settings
                         )
 
                     # build a fresh Protocol from the per-edge settings instead of
@@ -815,21 +864,29 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
             base_settings = self.protocol_settings[protocol_name]
 
             for ligand in ligand_network.nodes:
-                sys_a = openfe.ChemicalSystem(
-                    {"ligand": ligand, "protein": receptor, "solvent": solvent},
-                    name=f"{ligand.name}_bound",
-                )
-                # stateB: ligand is annihilated; protein + solvent remain.
-                sys_b = openfe.ChemicalSystem(
-                    {"protein": receptor, "solvent": solvent},
-                    name=f"{ligand.name}_apo",
-                )
+                # a pre-solvated receptor brings its own water, ions and box
+                bound = {"ligand": ligand, "protein": receptor}
+                apo = {"protein": receptor}
+                if not presolvated:
+                    bound["solvent"] = solvent
+                    apo["solvent"] = solvent
+
+                sys_a = openfe.ChemicalSystem(bound, name=f"{ligand.name}_bound")
+                # stateB: ligand is annihilated; protein (+ solvent) remain.
+                sys_b = openfe.ChemicalSystem(apo, name=f"{ligand.name}_apo")
+
+                node_settings = base_settings
+                if membrane:
+                    node_settings = apply_membrane_settings(
+                        protocol_name, base_settings.unfrozen_copy()
+                    )
+
                 transformations.append(
                     openfe.Transformation(
                         stateA=sys_a,
                         stateB=sys_b,
                         mapping=None,
-                        protocol=build_protocol(protocol_name, base_settings),
+                        protocol=build_protocol(protocol_name, node_settings),
                         name=f"{ligand.name}_{protocol_name}",
                     )
                 )
@@ -998,7 +1055,7 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
     def create_fec_dataset(
         self,
         dataset_name: str,
-        receptor: openfe.ProteinComponent,
+        receptor: "gufe.Component",
         ligands: Optional[list["Ligand"]] = None,
         central_ligand: Optional["Ligand"] = None,
         graphml: Optional[str] = None,
@@ -1011,7 +1068,10 @@ class FreeEnergyCalculationFactory(_FreeEnergyBase):
         Args:
             dataset_name: The name which should be given to this dataset, this will be used for local file creation or
                 to identify on alchemiscale
-            receptor: The prepared receptor to use in the FEC dataset.
+            receptor: The prepared receptor to use in the FEC dataset. Either an
+                ``openfe.ProteinComponent``, or -- for a pre-solvated or
+                membrane-embedded system -- a ``SolvatedPDBComponent`` /
+                ``ProteinMembraneComponent`` (openfe >=1.11).
             ligands: The list of prepared and state enumerated ligands to use in the FEC calculation.
             central_ligand: An optional ligand which should be considered as the center only needed for radial networks.
                 Note this ligand will be deduplicated from the list if it appears in both.
