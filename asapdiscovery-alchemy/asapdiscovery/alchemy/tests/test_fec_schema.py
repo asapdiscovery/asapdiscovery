@@ -30,6 +30,15 @@ from asapdiscovery.alchemy.schema.network import (
 from asapdiscovery.alchemy.utils import extract_custom_ligand_network
 from asapdiscovery.data.schema.identifiers import BespokeParameter, BespokeParameters
 
+# openfe 1.12 (the alchemy-membrane stack) removed PersesAtomMapper and perses_scorers,
+# and perses is not installed there at all. The schema still carries both so that networks
+# planned on the openfe 1.8 stack deserialise on either, but the mapper/scorer cannot be
+# exercised.
+requires_perses = pytest.mark.skipif(
+    not hasattr(openfe, "PersesAtomMapper"),
+    reason=f"openfe {openfe.__version__} does not ship PersesAtomMapper/perses_scorers",
+)
+
 
 @pytest.mark.parametrize(
     "mapper, argument, value",
@@ -40,7 +49,7 @@ from asapdiscovery.data.schema.identifiers import BespokeParameter, BespokeParam
             "coordinate_tolerance",
             0.15,
             id="Perses",
-            marks=pytest.mark.xfail(reason="upstream OpenFE #929"),
+            marks=[pytest.mark.xfail(reason="upstream OpenFE #929"), requires_perses],
         ),
         pytest.param(
             KartografAtomMapper, "map_exact_ring_matches_only", True, id="Kartograph"
@@ -69,7 +78,10 @@ def test_lomap_atom_mapper_timeout():
     [
         pytest.param(LomapAtomMapper, ["openfe", "lomap", "rdkit"], id="Lomap"),
         pytest.param(
-            PersesAtomMapper, ["openfe", "perses", "openeye.oechem"], id="Perses"
+            PersesAtomMapper,
+            ["openfe", "perses", "openeye.oechem"],
+            id="Perses",
+            marks=requires_perses,
         ),
         pytest.param(
             KartografAtomMapper, ["openfe", "rdkit", "kartograf"], id="Kartograph"
@@ -123,7 +135,7 @@ def test_plan_from_names(tyk2_ligands, tyk2_small_custom_network):
     "scorer",
     [
         pytest.param("default_lomap", id="Lomap"),
-        pytest.param("default_perses", id="Perses"),
+        pytest.param("default_perses", id="Perses", marks=requires_perses),
     ],
 )
 def test_network_planner_get_scorer(scorer):
@@ -687,8 +699,12 @@ def test_fec_septop_network(tyk2_ligands, tyk2_protein):
     # SepTop uses only the complex phase (protein in both stateA and stateB); no
     # separate solvent-only Transformation should be present.
     for edge in alchemical_network.edges:
-        assert "protein" in edge.stateA.components, "SepTop stateA must have ProteinComponent"
-        assert "protein" in edge.stateB.components, "SepTop stateB must have ProteinComponent"
+        assert (
+            "protein" in edge.stateA.components
+        ), "SepTop stateA must have ProteinComponent"
+        assert (
+            "protein" in edge.stateB.components
+        ), "SepTop stateB must have ProteinComponent"
 
     # each edge carries an atom mapping
     for edge in alchemical_network.edges:
@@ -709,7 +725,9 @@ def test_fec_septop_roundtrip(tyk2_ligands, tyk2_protein, tmp_path):
     planned.to_file(path.as_posix())
     reloaded = FreeEnergyCalculationNetwork.from_file(path.as_posix())
 
-    assert type(reloaded.protocol_settings["SepTopProtocol"]).__name__ == "SepTopSettings"
+    assert (
+        type(reloaded.protocol_settings["SepTopProtocol"]).__name__ == "SepTopSettings"
+    )
     before = {e.key for e in planned.to_alchemical_network().edges}
     after = {e.key for e in reloaded.to_alchemical_network().edges}
     assert before == after
@@ -816,8 +834,16 @@ def test_fec_rbfe_and_abfe_combined(tyk2_ligands, tyk2_protein):
     )
     network = planned.to_alchemical_network()
 
-    rbfe_edges = [e for e in network.edges if type(e.protocol).__name__ == "RelativeHybridTopologyProtocol"]
-    abfe_edges = [e for e in network.edges if type(e.protocol).__name__ == "AbsoluteBindingProtocol"]
+    rbfe_edges = [
+        e
+        for e in network.edges
+        if type(e.protocol).__name__ == "RelativeHybridTopologyProtocol"
+    ]
+    abfe_edges = [
+        e
+        for e in network.edges
+        if type(e.protocol).__name__ == "AbsoluteBindingProtocol"
+    ]
 
     assert len(rbfe_edges) > 0
     # one ABFE Transformation per ligand (3 ligands)

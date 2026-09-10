@@ -169,6 +169,10 @@ def _asap_relative_hybrid_topology_settings() -> "Settings":
     protocol_settings.thermo_settings.pressure = 1 * OFFUnit.bar
     protocol_settings.solvation_settings.box_shape = "dodecahedron"
     protocol_settings.alchemical_settings.softcore_LJ = "gapsys"
+    # Pinned explicitly rather than inherited: openfe flipped this default from False to
+    # True in 1.12, and asapdiscovery supports both the 1.8 and 1.12 stacks. Leaving it
+    # implicit would silently change production behavior depending on the environment.
+    protocol_settings.alchemical_settings.turn_off_core_unique_exceptions = False
     protocol_settings.simulation_settings.equilibration_length = (
         1.0 * OFFUnit.nanoseconds
     )
@@ -221,6 +225,7 @@ def _asap_absolute_binding_settings() -> "Settings":
     protocol_settings.protocol_repeats = 1
 
     return protocol_settings
+
 
 def _asap_fah_nonequilibrium_cycling_settings() -> "Settings":
     """ASAP-tuned default settings for ``FahNonEquilibriumCyclingProtocol``.

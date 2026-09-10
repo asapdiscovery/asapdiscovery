@@ -7,7 +7,7 @@ from pydantic import ConfigDict, Field
 
 from asapdiscovery.data.schema.ligand import Ligand
 
-from ._util import check_ligand_series_uniqueness_and_names
+from ._util import check_ligand_series_uniqueness_and_names, get_mapping_scorer
 from .atom_mapping import KartografAtomMapper, LomapAtomMapper, PersesAtomMapper
 from .base import _SchemaBase
 
@@ -209,10 +209,7 @@ class NetworkPlanner(_NetworkPlannerSettings):
 
     def _get_scorer(self):
         # We don't need to explicitly handle raising an error as pydantic validation will do it for us
-        if self.scorer == "default_lomap":
-            return openfe.lomap_scorers.default_lomap_score
-        else:
-            return openfe.perses_scorers.default_perses_scorer
+        return get_mapping_scorer(self.scorer)
 
     def generate_network(
         self,

@@ -14,7 +14,6 @@ from gufe.settings.typing import (
     specify_quantity_units,
 )
 from gufe.tokenization import JSON_HANDLER, GufeKey
-from openfe.setup.atom_mapping import lomap_scorers, perses_scorers
 from openff.units import unit as OFFUnit
 from pydantic import (
     ConfigDict,
@@ -24,7 +23,7 @@ from pydantic import (
     model_validator,
 )
 
-from ._util import check_ligand_series_uniqueness_and_names
+from ._util import check_ligand_series_uniqueness_and_names, get_mapping_scorer
 from .base import _SchemaBase, _SchemaBaseFrozen
 from .network import NetworkPlanner, PlannedNetwork
 from .protocols import (
@@ -145,14 +144,7 @@ class AdaptiveSettings(_SchemaBase):
 
         Mutates and returns the (editable) protocol settings.
         """
-        if scorer_method == "default_lomap":
-            scorer = lomap_scorers.default_lomap_score
-        elif scorer_method == "default_perses":
-            scorer = perses_scorers.default_perses_scorer
-        else:
-            raise ValueError(
-                f"Atom mapping scorer {scorer_method} not recognized; use one of `default_lomap`, `default_perses`."
-            )
+        scorer = get_mapping_scorer(scorer_method)
         if scorer(mapping) < self.adaptive_sampling_threshold:
             getattr(settings, sim_settings_attr).production_length = (
                 base_sampling_length * self.adaptive_sampling_multiplier
@@ -757,7 +749,11 @@ class FreeEnergyCalculationNetwork(_FreeEnergyBase):
                 # Protocols that handle both legs internally (e.g. SepTopProtocol)
                 # require a single complex-phase Transformation only; their
                 # get_estimate() already returns ΔΔG = ΔG_complex − ΔG_solvent.
-                legs = ["complex"] if not needs_solvent_leg(protocol_name) else ["solvent", "complex"]
+                legs = (
+                    ["complex"]
+                    if not needs_solvent_leg(protocol_name)
+                    else ["solvent", "complex"]
+                )
                 for leg in legs:
                     sys_a_dict = {"ligand": mapping.componentA, "solvent": solvent}
                     sys_b_dict = {"ligand": mapping.componentB, "solvent": solvent}

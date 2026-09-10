@@ -6,6 +6,37 @@ from pydantic import Field, PositiveFloat, PositiveInt
 from .base import _SchemaBase
 
 
+def _kartograf_version() -> str:
+    """Kartograf's version, however this build happens to expose it.
+
+    Kartograf has moved this around and no single access path works across the versions
+    ASAP-Alchemy supports: 1.2.0 ships a ``kartograf._version`` module but sets no
+    ``kartograf.__version__``, while the conda-forge build of 2.0.0 sets
+    ``__version__`` but ships no ``_version`` module at all (and reports ``0.0.0``,
+    as does its package metadata). Reaching straight for either one raises on the other,
+    which would take provenance -- and therefore network planning -- down with it.
+    """
+    import kartograf
+
+    version = getattr(kartograf, "__version__", None)
+    if version and version != "0.0.0":
+        return version
+
+    try:
+        from kartograf import _version
+
+        return _version.__version__
+    except (ImportError, AttributeError):
+        pass
+
+    try:
+        from importlib.metadata import version as _metadata_version
+
+        return _metadata_version("kartograf")
+    except Exception:
+        return version or "unknown"
+
+
 class _BaseAtomMapper(_SchemaBase):
     """
     A base atom mapper which should be used to configure the method used to generate atom mappings.
@@ -98,9 +129,19 @@ class PersesAtomMapper(_BaseAtomMapper):
     )
 
     def _get_mapper(self):
-        from openfe import PersesAtomMapper
+        import openfe
 
-        return PersesAtomMapper(**self.model_dump(exclude={"type"}))
+        # openfe 1.12 (the membrane stack) removed PersesAtomMapper, and perses is not
+        # installable alongside it. This class is kept so that FreeEnergyCalculationNetwork
+        # JSON written on the openfe 1.8 stack still deserialises on both stacks; only
+        # *using* the mapper is gated.
+        if not hasattr(openfe, "PersesAtomMapper"):
+            raise NotImplementedError(
+                f"PersesAtomMapper is unavailable: openfe {openfe.__version__} no "
+                "longer ships it. Use KartografAtomMapper or LomapAtomMapper instead, "
+                "or plan on the openfe 1.8 ('alchemy') environment."
+            )
+        return openfe.PersesAtomMapper(**self.model_dump(exclude={"type"}))
 
     def provenance(self) -> dict[str, str]:
         import openeye.oechem
@@ -154,12 +195,11 @@ class KartografAtomMapper(_BaseAtomMapper):
         return KartografAtomMapper(**settings)
 
     def provenance(self) -> dict[str, str]:
-        import kartograf._version
         import openfe
         import rdkit
 
         return {
             "openfe": openfe.__version__,
             "rdkit": rdkit.__version__,
-            "kartograf": kartograf._version.__version__,
+            "kartograf": _kartograf_version(),
         }
