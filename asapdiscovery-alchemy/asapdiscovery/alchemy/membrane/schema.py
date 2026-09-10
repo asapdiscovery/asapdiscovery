@@ -311,6 +311,17 @@ class MembraneBuildSettings(_SchemaBase):
         description="Restrained stages run before the unrestrained remainder. Lipids "
         "relax around a fixed protein first, then the protein is released gradually.",
     )
+    surface_tension_bar_nm: float = Field(
+        0.0,
+        description="Surface tension for the MonteCarloMembraneBarostat, in bar*nm. Zero "
+        "is the usual choice for an equilibrium bilayer, and matches what the FEC "
+        "protocol applies to the complex leg.",
+    )
+    random_seed: Optional[int] = Field(
+        None,
+        description="Seed for the initial velocity assignment. Set it to make a build "
+        "reproducible; None lets OpenMM choose, so repeated builds differ.",
+    )
     platform: Optional[str] = Field(
         "CUDA",
         description="OpenMM platform name. None picks the fastest available -- useful for "

@@ -17,7 +17,7 @@ import json
 import pathlib
 import time
 from collections import Counter
-from typing import Optional
+from typing import NamedTuple, Optional
 
 import numpy as np
 
@@ -32,8 +32,37 @@ from .geometry import (
 )
 from .schema import MembraneAlignmentSpec, MembraneBuildSettings
 
-#: Residue names that are never protein, used when separating protein from everything else.
-_NON_PROTEIN = ("HOH", "WAT", "NA", "CL", "K", "LIG")
+
+class _EquilibrationResult(NamedTuple):
+    """What :func:`_equilibrate` produces: the log, plus the ligand-stripped system."""
+
+    equilibration: dict
+    topology: object
+    positions: object
+    box: "np.ndarray"
+
+
+#: Residue name given to the pocket-holding ligand while it is present.
+LIGAND_RESNAME = "LIG"
+
+#: Residue names that are never protein regardless of the spec: waters, the ions
+#: addMembrane itself adds for neutralisation, and the pocket placeholder.
+_NON_PROTEIN_BASE = frozenset({"HOH", "WAT", "NA", "CL", LIGAND_RESNAME})
+
+
+def _non_protein_resnames(
+    settings: MembraneBuildSettings, spec: Optional[MembraneAlignmentSpec] = None
+) -> frozenset[str]:
+    """Residue names to exclude when picking out the protein.
+
+    Structural ion elements are configurable per spec, so they cannot be hardcoded: a
+    spec using Ca2+ would otherwise have its ions counted as protein residues and their
+    atoms folded into the protein cross-section.
+    """
+    names = set(_NON_PROTEIN_BASE) | set(settings.lipid_resnames)
+    if spec is not None:
+        names |= {site.element.upper() for site in spec.structural_ions}
+    return frozenset(names)
 
 
 def lipid_patch(settings: MembraneBuildSettings):
@@ -75,22 +104,31 @@ def lipid_patch(settings: MembraneBuildSettings):
     return patch, n
 
 
-def composition(topology, settings: MembraneBuildSettings) -> dict:
+def composition(
+    topology,
+    settings: MembraneBuildSettings,
+    spec: Optional[MembraneAlignmentSpec] = None,
+) -> dict:
     """Residue counts by category, for the build report."""
     counts = Counter(r.name for r in topology.residues())
     lipid_names = set(settings.lipid_resnames)
-    protein = sum(
-        v for k, v in counts.items() if k not in set(_NON_PROTEIN) | lipid_names
+    non_protein = _non_protein_resnames(settings, spec)
+    protein = sum(v for k, v in counts.items() if k not in non_protein)
+    ion_names = (
+        {site.element.upper() for site in spec.structural_ions} if spec else set()
     )
-    return {
+    out = {
         "protein_residues": protein,
         "lipids": sum(counts.get(n, 0) for n in lipid_names),
         "waters": counts.get("HOH", 0) + counts.get("WAT", 0),
         "Na": counts.get("NA", 0),
         "Cl": counts.get("CL", 0),
-        "ligand": counts.get("LIG", 0),
+        "ligand": counts.get(LIGAND_RESNAME, 0),
         "atoms": topology.getNumAtoms(),
     }
+    if ion_names:
+        out["structural_ions"] = {n: counts.get(n, 0) for n in sorted(ion_names)}
+    return out
 
 
 def wrap_molecules(topology, positions, box, verbose: bool = True):
@@ -154,7 +192,13 @@ def wrap_molecules(topology, positions, box, verbose: bool = True):
     return unit.Quantity(xyz, unit.nanometer)
 
 
-def diagnostics(topology, positions, box, settings: MembraneBuildSettings) -> dict:
+def diagnostics(
+    topology,
+    positions,
+    box,
+    settings: MembraneBuildSettings,
+    spec: Optional[MembraneAlignmentSpec] = None,
+) -> dict:
     """Area per lipid, bilayer thickness and leaflet balance.
 
     These are the numbers that say whether the bilayer is physically sane. Note that area
@@ -167,6 +211,7 @@ def diagnostics(topology, positions, box, settings: MembraneBuildSettings) -> di
     xyz = np.array(positions.value_in_unit(unit.angstrom))
     atom_info = [(a.index, a.residue.name, a.name) for a in topology.atoms()]
     lipid_names = set(settings.lipid_resnames)
+    non_protein = _non_protein_resnames(settings, spec)
 
     # the phosphate P marks each headgroup; leaflets split by sign of z about the midpoint
     # of the P distribution, so the diagnostic is independent of any rigid translation
@@ -188,7 +233,7 @@ def diagnostics(topology, positions, box, settings: MembraneBuildSettings) -> di
         [
             xyz[i, :2]
             for i, rn, an in atom_info
-            if rn not in lipid_names | set(_NON_PROTEIN) and abs(xyz[i, 2] - mid) < 10.0
+            if rn not in non_protein and abs(xyz[i, 2] - mid) < 10.0
         ]
     )
     probe_a, cell_a = 4.0, 1.0
@@ -241,6 +286,7 @@ def align_receptor(
     receptor_pdb,
     spec: MembraneAlignmentSpec,
     settings: Optional[MembraneBuildSettings] = None,
+    strict: bool = True,
 ):
     """Compute the transform putting the receptor in its membrane frame.
 
@@ -248,11 +294,20 @@ def align_receptor(
     z=0, the protein centred in xy, and the footprint spun to its cheapest in-plane
     orientation.
 
+    Args:
+        receptor_pdb: Prepared receptor PDB.
+        spec: How to orient this receptor and where the midplane goes.
+        settings: Build settings; only the lipid patch and padding are used here.
+        strict: Raise when the placement violates the spec's ``landmark_bounds``. Pass
+            False to get the geometry back regardless, with the violations recorded under
+            ``info["landmark_violations"]`` -- which is what you want when *diagnosing* a
+            bad placement rather than building on one.
+
     Returns:
         (atoms, rot, origin, info) -- ``rot @ (xyz - origin)`` maps into the membrane frame.
 
     Raises:
-        ValueError: If the placement violates the spec's ``landmark_bounds``.
+        ValueError: If ``strict`` and the placement violates ``spec.landmark_bounds``.
     """
     from openmm import unit as omm_unit
 
@@ -265,9 +320,7 @@ def align_receptor(
 
     # two passes: place the midplane from an uncentred frame, then re-measure in the final one
     first = membrane_placement(atoms, rot, from_centroid, spec)
-    origin = from_centroid + np.linalg.inv(rot) @ np.array(
-        [0, 0, first["membrane_centre_z"]]
-    )
+    origin = from_centroid + rot.T @ np.array([0, 0, first["membrane_centre_z"]])
 
     # spin about z to the cheapest footprint, then centre the protein in xy
     patch, _ = lipid_patch(settings)
@@ -290,19 +343,10 @@ def align_receptor(
     )
     rot = spin @ rot
     xy = np.array([rot @ (a["xyz"] - origin) for a in atoms if a["el"] != "H"])[:, :2]
-    origin = origin + np.linalg.inv(rot) @ np.array([xy.mean(0)[0], xy.mean(0)[1], 0.0])
+    origin = origin + rot.T @ np.array([xy.mean(0)[0], xy.mean(0)[1], 0.0])
 
     placement = membrane_placement(atoms, rot, origin, spec)
-
     violations = check_landmarks(placement, spec)
-    if violations:
-        raise ValueError(
-            "membrane placement failed the landmark checks defined by preset "
-            f"{spec.name!r}:\n  "
-            + "\n  ".join(violations)
-            + "\nThis usually means the residue numbering in the structure does not match "
-            "the spec, or the receptor is not the construct the spec describes."
-        )
 
     z = np.array([(rot @ (a["xyz"] - origin))[2] for a in atoms if a["el"] != "H"])
     info = {
@@ -310,7 +354,7 @@ def align_receptor(
         "n_atoms": len(atoms),
         "membrane_axis": [round(float(x), 4) for x in axis],
         "angle_axis_to_z_deg": round(
-            float(np.degrees(np.arccos(abs(axis @ [0, 0, 1])))), 2
+            float(np.degrees(np.arccos(np.clip(abs(axis @ [0, 0, 1]), -1, 1)))), 2
         ),
         "crosscheck_chain_normal": [round(float(x), 4) for x in normal],
         "axis_vs_normal_deg": round(
@@ -327,7 +371,18 @@ def align_receptor(
             round(float(z.min()), 2),
             round(float(z.max()), 2),
         ],
+        "landmark_violations": violations,
     }
+
+    if violations and strict:
+        raise ValueError(
+            "membrane placement failed the landmark checks defined by spec "
+            f"{spec.name!r}:\n  "
+            + "\n  ".join(violations)
+            + "\nThis usually means the residue numbering in the structure does not "
+            "match the spec, or the receptor is not the construct the spec describes. "
+            "Run `asap-alchemy membrane analyse` to see the full geometry."
+        )
     return atoms, rot, origin, info
 
 
@@ -413,10 +468,24 @@ def build_membrane_system(
         from openff.toolkit import Molecule
         from openmmforcefields.generators import SMIRNOFFTemplateGenerator
 
-        off_ligand = Molecule.from_file(str(pocket_ligand), allow_undefined_stereo=True)
+        loaded = Molecule.from_file(str(pocket_ligand), allow_undefined_stereo=True)
+        # a multi-record SDF gives a list; the pocket placeholder is a single molecule
+        if isinstance(loaded, (list, tuple)):
+            if len(loaded) != 1:
+                raise ValueError(
+                    f"{pocket_ligand} holds {len(loaded)} molecules; the pocket "
+                    "placeholder must be a single ligand (use the crystallographic pose)."
+                )
+            loaded = loaded[0]
+        off_ligand = loaded
+        if not off_ligand.conformers:
+            raise ValueError(
+                f"{pocket_ligand} has no 3D conformer; the pocket placeholder must be "
+                "posed in the receptor's frame."
+            )
         ligand_topology = off_ligand.to_topology().to_openmm()
         for residue in ligand_topology.residues():
-            residue.name = "LIG"
+            residue.name = LIGAND_RESNAME
         ligand_xyz = np.array(off_ligand.conformers[0].to("angstrom").magnitude)
         modeller.add(
             ligand_topology,
@@ -473,23 +542,23 @@ def build_membrane_system(
         ionicStrength=settings.ion_concentration_molar * omm_unit.molar,
         neutralize=True,
     )
-    built = composition(modeller.topology, settings)
+    built = composition(modeller.topology, settings, spec)
     say(f"  built: {built}")
 
     with open(f"{prefix}_complex_raw.pdb", "w") as fh:
         app.PDBFile.writeFile(modeller.topology, modeller.positions, fh, keepIds=True)
 
-    report = _equilibrate(
+    result = _equilibrate(
         modeller,
         forcefield,
         settings,
+        spec,
         equilibration_ns,
         prefix,
         say,
+        verbose,
     )
-
-    strip_topology, strip_positions, final_box = report.pop("_system")
-    diag = diagnostics(strip_topology, strip_positions, final_box, settings)
+    diag = diagnostics(result.topology, result.positions, result.box, settings, spec)
 
     info.update(
         {
@@ -500,9 +569,9 @@ def build_membrane_system(
             "small_molecule_forcefield": settings.small_molecule_forcefield,
             "pocket_placeholder": ligand_name,
             "composition_with_ligand": built,
-            "composition_openfe_input": composition(strip_topology, settings),
-            "box_vectors_nm": [[round(float(x), 5) for x in row] for row in final_box],
-            "equilibration": report["equilibration"],
+            "composition_openfe_input": composition(result.topology, settings, spec),
+            "box_vectors_nm": [[round(float(x), 5) for x in row] for row in result.box],
+            "equilibration": result.equilibration,
             "diagnostics": diag,
             "files": {
                 "openfe_input": f"{prefix.name}_membrane_system.pdb",
@@ -524,7 +593,9 @@ def build_membrane_system(
     return info
 
 
-def _equilibrate(modeller, forcefield, settings, equilibration_ns, prefix, say):
+def _equilibrate(
+    modeller, forcefield, settings, spec, equilibration_ns, prefix, say, verbose
+):
     """Minimise then equilibrate under a membrane barostat, tapering restraints.
 
     Restraints are released in stages so the lipids relax around a fixed protein before
@@ -535,6 +606,7 @@ def _equilibrate(modeller, forcefield, settings, equilibration_ns, prefix, say):
     from openmm import unit as omm_unit
 
     temperature = settings.temperature_kelvin * omm_unit.kelvin
+    non_protein = _non_protein_resnames(settings, spec)
 
     system = forcefield.createSystem(
         modeller.topology,
@@ -544,11 +616,11 @@ def _equilibrate(modeller, forcefield, settings, equilibration_ns, prefix, say):
         rigidWater=True,
         hydrogenMass=settings.hydrogen_mass * omm_unit.amu,
     )
-    # semi-isotropic in xy, free in z, zero surface tension
+    # semi-isotropic in xy, free in z
     system.addForce(
         openmm.MonteCarloMembraneBarostat(
             settings.pressure_bar * omm_unit.bar,
-            0.0 * omm_unit.bar * omm_unit.nanometer,
+            settings.surface_tension_bar_nm * omm_unit.bar * omm_unit.nanometer,
             temperature,
             openmm.MonteCarloMembraneBarostat.XYIsotropic,
             openmm.MonteCarloMembraneBarostat.ZFree,
@@ -557,17 +629,22 @@ def _equilibrate(modeller, forcefield, settings, equilibration_ns, prefix, say):
     )
 
     restraint = openmm.CustomExternalForce("k*periodicdistance(x, y, z, x0, y0, z0)^2")
+    # start at the first stage's force constant so minimisation and the first
+    # equilibration stage agree; a hardcoded value here would silently ignore a
+    # customised restraint_schedule
+    initial_k = (
+        settings.restraint_schedule[0].restraint_k
+        if settings.restraint_schedule
+        else 0.0
+    )
     restraint.addGlobalParameter(
-        "k", 10.0 * omm_unit.kilocalories_per_mole / omm_unit.angstrom**2
+        "k", initial_k * omm_unit.kilocalories_per_mole / omm_unit.angstrom**2
     )
     for parameter in ("x0", "y0", "z0"):
         restraint.addPerParticleParameter(parameter)
 
-    lipid_names = set(settings.lipid_resnames)
     protein_residues = {
-        r.index
-        for r in modeller.topology.residues()
-        if r.name not in lipid_names | set(_NON_PROTEIN) | {"LIG"}
+        r.index for r in modeller.topology.residues() if r.name not in non_protein
     }
     n_restrained = 0
     for atom in modeller.topology.atoms():
@@ -605,7 +682,10 @@ def _equilibrate(modeller, forcefield, settings, equilibration_ns, prefix, say):
         f"{after.value_in_unit(omm_unit.kilojoule_per_mole):.0f} kJ/mol"
     )
 
-    simulation.context.setVelocitiesToTemperature(temperature)
+    if settings.random_seed is None:
+        simulation.context.setVelocitiesToTemperature(temperature)
+    else:
+        simulation.context.setVelocitiesToTemperature(temperature, settings.random_seed)
     steps_per_ns = int(1e6 / settings.timestep_fs)
 
     restrained_ns = sum(stage.nanoseconds for stage in settings.restraint_schedule)
@@ -662,7 +742,7 @@ def _equilibrate(modeller, forcefield, settings, equilibration_ns, prefix, say):
     topology = simulation.topology
     topology.setPeriodicBoxVectors(state.getPeriodicBoxVectors())
     final_positions = wrap_molecules(
-        topology, state.getPositions(), final_box, verbose=bool(say)
+        topology, state.getPositions(), final_box, verbose=verbose
     )
 
     # inspection copy: everything, ligand included
@@ -671,17 +751,24 @@ def _equilibrate(modeller, forcefield, settings, equilibration_ns, prefix, say):
 
     # OpenFE input: ligand stripped, leaving a ligand-shaped cavity rather than water
     stripped = app.Modeller(topology, final_positions)
-    stripped.delete([r for r in stripped.topology.residues() if r.name == "LIG"])
+    stripped.delete(
+        [r for r in stripped.topology.residues() if r.name == LIGAND_RESNAME]
+    )
     stripped.topology.setPeriodicBoxVectors(state.getPeriodicBoxVectors())
     with open(f"{prefix}_membrane_system.pdb", "w") as fh:
         app.PDBFile.writeFile(stripped.topology, stripped.positions, fh, keepIds=True)
 
-    return {
-        "equilibration": {
-            "ns_total": equilibration_ns,
-            "timestep_fs": settings.timestep_fs,
-            "barostat": "MonteCarloMembraneBarostat XYIsotropic/ZFree",
-            "stages": log,
-        },
-        "_system": (stripped.topology, stripped.positions, final_box),
+    equilibration = {
+        "ns_total": equilibration_ns,
+        "timestep_fs": settings.timestep_fs,
+        "barostat": "MonteCarloMembraneBarostat XYIsotropic/ZFree",
+        "surface_tension_bar_nm": settings.surface_tension_bar_nm,
+        "random_seed": settings.random_seed,
+        "stages": log,
     }
+    return _EquilibrationResult(
+        equilibration=equilibration,
+        topology=stripped.topology,
+        positions=stripped.positions,
+        box=final_box,
+    )

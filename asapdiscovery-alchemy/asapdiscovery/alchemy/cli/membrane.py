@@ -118,11 +118,26 @@ def analyse(receptor: str, preset: Optional[str], spec_file: Optional[str]):
     print_header(console)
 
     spec = _load_spec(preset, spec_file)
-    try:
-        _, _, _, info = align_receptor(receptor, spec)
-    except ValueError as error:
-        raise click.ClickException(str(error))
+    # strict=False: reporting the geometry of a BAD placement is the whole point of this
+    # command, so violations are printed alongside the numbers rather than replacing them
+    _, _, _, info = align_receptor(receptor, spec, strict=False)
     console.print(json.dumps(info, indent=1))
+
+    violations = info.get("landmark_violations") or []
+    if violations:
+        console.print(
+            f"\n[red]{len(violations)} landmark check(s) failed for spec "
+            f"{spec.name!r}:[/red]"
+        )
+        for violation in violations:
+            console.print(f"  - {violation}")
+        console.print(
+            "\nThis usually means the residue numbering in the structure does not match "
+            "the spec, or the receptor is not the construct the spec describes. "
+            "`membrane build` would refuse this placement."
+        )
+        raise SystemExit(1)
+    console.print(f"\n[green]all landmark checks passed for spec {spec.name!r}[/green]")
 
 
 @membrane.command(
