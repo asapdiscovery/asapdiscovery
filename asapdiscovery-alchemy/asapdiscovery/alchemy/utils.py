@@ -1,3 +1,4 @@
+import contextlib
 import warnings
 from typing import TYPE_CHECKING, Optional
 
@@ -40,6 +41,48 @@ def create_protein_only_system(input_pdb_path: str, ff_params: ForceFieldParams)
         hydrogenMass=ff_params.hydrogenMass,
     )
     return system
+
+
+#: Settings fields that only exist in openfe >=1.11. Their presence in a payload written
+#: by a newer client is what an older client trips over.
+_NEWER_OPENFE_FIELDS = ("barostat", "surface_tension")
+
+
+@contextlib.contextmanager
+def _translate_openfe_version_error():
+    """Turn "extra fields not permitted" into an actionable message.
+
+    Anything that pulls a *gufe object* back off alchemiscale -- a Transformation, a
+    ProtocolDAGResult, a network -- is deserialised by the local openfe. openfe 1.12
+    writes ``barostat`` and ``surface_tension`` into every ``IntegratorSettings``, and
+    openfe 1.8's settings models forbid extra fields, so an older client reading a newer
+    network fails with a raw pydantic ``extra_forbidden`` error that names neither openfe
+    nor the environment.
+
+    Note this is not membrane-specific: *any* network planned on openfe 1.12 is
+    unreadable by an openfe 1.8 client, because those fields are written to the solvent
+    leg too. Status and task-count queries are unaffected -- they return ScopedKeys and
+    counts, never gufe objects -- so monitoring works across the version boundary even
+    when gathering does not.
+    """
+    from pydantic import ValidationError
+
+    try:
+        yield
+    except ValidationError as error:
+        message = str(error)
+        if not any(field in message for field in _NEWER_OPENFE_FIELDS):
+            raise
+        import openfe
+
+        raise RuntimeError(
+            f"This network was planned with a newer openfe than the one installed "
+            f"({openfe.__version__}): its settings carry fields "
+            f"{list(_NEWER_OPENFE_FIELDS)} that this version rejects. Re-run from the "
+            "'alchemy-membrane' environment (openfe >=1.11) to gather these results. "
+            "Note `asap-alchemy status` does work from this environment, as it does not "
+            "deserialise the network."
+        ) from error
 
 
 class AlchemiscaleHelper:
@@ -282,9 +325,10 @@ class AlchemiscaleHelper:
                 edge.key: edge for edge in alchemical_network.edges
             }
 
-        alchemiscale_network_results = self._client.get_network_results(
-            network_key
-        ).items()
+        with _translate_openfe_version_error():
+            alchemiscale_network_results = self._client.get_network_results(
+                network_key
+            ).items()
         # use the process pool api point to gather all transformations for the network
         for transformation_key, raw_result in alchemiscale_network_results:
             if raw_result is None:
@@ -309,7 +353,11 @@ class AlchemiscaleHelper:
             if uncertainty.m == 0.0:
                 try:
                     unit_results = [edge[0] for edge in raw_result.data.values()]
-                    if unit_results and hasattr(unit_results[0], "outputs") and "unit_estimate_error" in unit_results[0].outputs:
+                    if (
+                        unit_results
+                        and hasattr(unit_results[0], "outputs")
+                        and "unit_estimate_error" in unit_results[0].outputs
+                    ):
                         uncertainty = unit_results[0].outputs["unit_estimate_error"]
                 except (AttributeError, TypeError, KeyError):
                     pass
@@ -340,10 +388,15 @@ class AlchemiscaleHelper:
             else:
                 phase = "complex" if "protein" in stateA_components else "solvent"
 
-            name_a = stateA_components["ligand"].name or stateA_components["ligand"].smiles
+            name_a = (
+                stateA_components["ligand"].name or stateA_components["ligand"].smiles
+            )
 
             if "ligand" in stateB_components:
-                name_b = stateB_components["ligand"].name or stateB_components["ligand"].smiles
+                name_b = (
+                    stateB_components["ligand"].name
+                    or stateB_components["ligand"].smiles
+                )
             else:
                 # ABFE: stateB has no ligand (annihilated)
                 name_b = None
@@ -387,7 +440,9 @@ class AlchemiscaleHelper:
 
         error_data = []
         for task in errored_tasks:
-            for err_result in self._client.get_task_failures(task):
+            with _translate_openfe_version_error():
+                task_failures = self._client.get_task_failures(task)
+            for err_result in task_failures:
                 for protocol_failure in err_result.protocol_unit_failures:
                     failure = AlchemiscaleFailure(
                         network_key=network_key,

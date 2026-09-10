@@ -121,6 +121,16 @@ def convert_network(input_file: str, output_file: str):
     help="The name of the file which contains the prepared receptor.",
 )
 @click.option(
+    "-mr",
+    "--membrane-receptor",
+    type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
+    help="A fully built, solvated and pre-equilibrated membrane system as a single PDB "
+    "with explicit box vectors, containing protein + lipids + water + ions and NO ligand. "
+    "The complex leg then takes its water, ions and box from this file and runs under a "
+    "MonteCarloMembraneBarostat. Build one with `asap-alchemy membrane build`. "
+    "Mutually exclusive with --receptor; requires openfe >=1.11.",
+)
+@click.option(
     "-l",
     "--ligands",
     type=click.Path(resolve_path=True, exists=True, file_okay=True, dir_okay=False),
@@ -167,6 +177,7 @@ def convert_network(input_file: str, output_file: str):
 def plan(
     name: Optional[str] = None,
     receptor: Optional[str] = None,
+    membrane_receptor: Optional[str] = None,
     ligands: Optional[str] = None,
     center_ligand: Optional[str] = None,
     graphml: Optional[str] = None,
@@ -197,6 +208,11 @@ def plan(
     if graphml and custom_network_file:
         raise RuntimeError(
             "Please provide either a graphml file or a custom network file, not both."
+        )
+
+    if receptor and membrane_receptor:
+        raise RuntimeError(
+            "Please provide either --receptor or --membrane-receptor, not both."
         )
 
     # nothing specified
@@ -244,8 +260,26 @@ def plan(
             # parse all required data/ assume sdf currently
             input_ligands = MolFileFactory(filename=ligands).load()
 
-        click.echo(f"Loading protein from {receptor}")
-        receptor = openfe.ProteinComponent.from_pdb_file(receptor)
+        if membrane_receptor is not None:
+            click.echo(f"Loading membrane system from {membrane_receptor}")
+            if not hasattr(openfe, "ProteinMembraneComponent"):
+                raise RuntimeError(
+                    f"Membrane systems require openfe >=1.11 (found "
+                    f"{openfe.__version__}). Use the 'alchemy-membrane' environment."
+                )
+            receptor = openfe.ProteinMembraneComponent.from_pdb_file(
+                membrane_receptor, name=pathlib.Path(membrane_receptor).stem
+            )
+            # density and minimum-water checks; a system that fails these would only
+            # fail later, on a compute node, after the network had been submitted
+            receptor.validate()
+            click.echo(
+                "Membrane system validated; the complex leg will use its box, water "
+                "and ions, and run under a MonteCarloMembraneBarostat."
+            )
+        else:
+            click.echo(f"Loading protein from {receptor}")
+            receptor = openfe.ProteinComponent.from_pdb_file(receptor)
 
     if center_ligand is not None:
         # handle the center ligand needed for radial networks
@@ -385,6 +419,23 @@ def submit(
     network_scope = Scope(org=organization, campaign=campaign, project=project)
     # load the network
     planned_network = FreeEnergyCalculationNetwork.from_file(network)
+
+    # A membrane network can only be ingested and executed by an alchemiscale instance
+    # running openfe >=1.11. The default ASAP instance is pinned to openfe 1.8 and will
+    # reject it (or, worse, accept it and fail on a compute node), so refuse here rather
+    # than surfacing an opaque 422 from the server.
+    if (
+        planned_network.is_membrane
+        and "asap.alchemiscale.org" in client._client.api_url
+    ):
+        raise RuntimeError(
+            f"This network has a membrane-embedded receptor, but "
+            f"{client._client.api_url} runs openfe 1.8 and cannot deserialise a "
+            "ProteinMembraneComponent. Submit membrane networks to an instance with "
+            "openfe >=1.11 support, e.g. "
+            "ALCHEMISCALE_URL=https://api.openadmet.alchemiscale.org."
+        )
+
     # create network on alchemiscale
     print_message(
         console=console,
